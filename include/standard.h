@@ -61,5 +61,6 @@ int directoryExists(const char *path);
 char* getRootPath();
 char* readFilename(char* filename);
 char* readFile(FILE* fp);
+int clampAngle(int angle);
 
 #endif

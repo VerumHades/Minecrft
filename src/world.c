@@ -13,7 +13,11 @@ World* newWorld(){
     return world;  
 }
 
-int generateChunkThread(void* arg){
+#ifdef _WIN32
+DWORD WINAPI generateChunkThread(LPVOID arg) {
+#else
+int generateChunkThread(void *arg) {
+#endif
     Chunk* chunk = arg;
 
     chunk->solidMesh = newMesh3D();
@@ -66,40 +70,71 @@ Chunk* getWorldChunkWithMesh(World* world, int x, int z){
 
 
     if(!chunk->meshGenerated && !chunk->meshGenerating){
-        thrd_t thread;
+        chunk->meshGenerating = 1;
 
-        if (thrd_create(&thread, generateChunkThread, chunk) != thrd_success) {
+        #ifdef _WIN32
+        thread_t thread = CreateThread(
+            NULL,                // default security attributes
+            0,                   // default stack size
+            generateChunkThread, // thread function
+            chunk,               // argument to thread function
+            0,                   // default creation flags
+            NULL);               // receive thread identifier
+
+        if (thread == THREAD_ERROR) {
             fprintf(stderr, "Error creating thread\n");
             return NULL;
         }
+        #else
+        thrd_t thread;
 
-        chunk->meshGenerating = 1;
+        if (thrd_create(&thread, generateChunkThread, chunk) != THREAD_SUCCESS) {
+            fprintf(stderr, "Error creating thread\n");
+            return NULL;
+        }
+        #endif
+
         return NULL;
     }
 
     if(!chunk->buffersLoaded && chunk->meshGenerated){
-        chunk->buffersLoaded = 1;
+        if(!chunk->buffersAsigned){
+            chunk->solidBuffer = newBuffer();
+            chunk->solidBackBuffer = newBuffer();
 
-        //printf("Loading meshes %2i:%2i (%i)...\n",x,z,chunk->buffersLoaded);
+            chunk->transparentBuffer = newBuffer();
+            chunk->transparentBackBuffer = newBuffer();
+            chunk->buffersAsigned = 1;
+        }
+        printf("Loading meshes %2i:%2i (%i)...\n",x,z,chunk->buffersLoaded);
 
         //printf("Vertices:%i Indices:%i\n", chunk->solidMesh->vertices_count, chunk->solidMesh->indices_count);
-        chunk->solidBuffer = newBuffer();
-        loadMeshToBuffer(chunk->solidMesh,&chunk->solidBuffer);
-
-        chunk->transparentBuffer = newBuffer();
-        loadMeshToBuffer(chunk->transparentMesh,&chunk->transparentBuffer);
+        loadMeshToBuffer(chunk->solidMesh,&chunk->solidBackBuffer);
+        loadMeshToBuffer(chunk->transparentMesh,&chunk->transparentBackBuffer);
 
         destoryMesh(chunk->solidMesh);
         destoryMesh(chunk->transparentMesh);
+        
+        GLBuffer tempSolid = chunk->solidBuffer;
+        GLBuffer tempTransparent = chunk->transparentBuffer;
+
+        chunk->solidBuffer = chunk->solidBackBuffer;
+        chunk->transparentBuffer =  chunk->transparentBackBuffer;
+
+        chunk->solidBackBuffer = tempSolid;
+        chunk->transparentBackBuffer = tempTransparent;
+
+        chunk->buffersLoaded = 1;
+        chunk->isDrawn = 1;
     }
 
    return chunk;
 }
 
-int worldCollides(World* world, float x, float y, float z){
-    int range = 1;
+CollisionCheckResult worldCollides(World* world, float x, float y, float z){
+    CollisionCheckResult result = {0};
+    int range = 4;
 
-    int collisionFound = 0;
     float blockWidth = 1;
 
     for(int i = -range;i <= range;i++){
@@ -113,24 +148,89 @@ int worldCollides(World* world, float x, float y, float z){
                 if(blocki >= 0){
                     BlockType block = predefinedBlocks[blocki];
                     if(!block.solid) continue;
+
+                    //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
+
+                    if(
+                        x >= cx && x <= cx + blockWidth &&
+                        y >= cy && y <= cy + blockWidth &&
+                        z >= cz && z <= cz + blockWidth 
+                    ){
+                        result.collidedBlock = blocki;
+                        result.collision = 1;
+                        result.x = cx;
+                        result.y = cy;
+                        result.z = cz;
+                        return result;
+                    }
                 }
-                
-                if(
-                    x > cx && x < cx + blockWidth &&
-                    y > cy && y < cy + blockWidth &&
-                    z > cz && z < cz + blockWidth 
-                ){
-                    collisionFound = 1;
-                    printf("collision!");
-                    break;
+                else{
+                    result.collidedBlock = blocki;
+                    result.collision = 1;
+                    result.x = cx;
+                    result.y = cy;
+                    result.z = cz;
+                    return result;
                 }
             }
-            if(collisionFound) break;
         }
-        if(collisionFound) break;
     }
 
-    return collisionFound;
+    return result;
+}
+
+RaycastResult raycast(World* world, float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance){
+    RaycastResult result = {0};
+    
+    float step = 0.5;
+    float distance = 0;
+
+    float x = fromX;
+    float y = fromY;
+    float z = fromZ;
+
+    CollisionCheckResult check;
+
+    while(distance < maxDistance){
+        x += dirX * step;
+        y += dirY * step;
+        z += dirZ * step;
+
+        check = worldCollides(world, x,y,z);
+        if( check.collision){
+            result.hit = 1;
+            result.hitBlock = check.collidedBlock;
+            result.x = check.x;
+            result.y = check.y;
+            result.z = check.z;
+            return result;
+        }
+
+        distance += step;
+    }
+
+    return result;
+}
+
+const float DEG_TO_RAD = M_PI / 180.0f;
+RaycastResult raycastFromAngles(World* world, float fromX, float fromY, float fromZ, int angleX, int angleY, float maxDistance){
+    float camAngleYRad = clampAngle(clampAngle(360 - angleY) + 180) * DEG_TO_RAD;
+    float camAngleXRad = clampAngle(clampAngle(360 - angleX) + 180) * DEG_TO_RAD;
+
+    // Compute direction vector components
+    float x = cos(camAngleXRad) * sin(camAngleYRad);
+    float y = sin(camAngleXRad);
+    float z = cos(camAngleXRad) * cos(camAngleYRad);
+
+    float magnitude = sqrt(x * x + y * y + z * z);
+
+    if (magnitude > 0.0f) {
+        x /= magnitude;
+        y /= magnitude;
+        z /= magnitude;
+    }
+
+    return raycast(world,fromX,fromY,fromZ,x,y,z,10);
 }
 
 BlockIndex getWorldBlock(World* world,int x, int y, int z){

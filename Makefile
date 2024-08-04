@@ -1,7 +1,17 @@
-# Compiler and compiler flags
-CC = gcc
-CFLAGS = -Wall -Iinclude
-LDFLAGS = -lglfw -lGL -lm
+# Platform detection
+#CC = gcc
+#CFLAGS = -Wall -Iinclude
+#LDFLAGS = -lglfw -lGL -lm
+#MKDIR = mkdir -p
+#RM = rm -f
+#EXE_EXT =
+
+# Windows-specific settings (using MSYS2 or MinGW)
+CC = x86_64-w64-mingw32-gcc
+CFLAGS = -Wall -Iinclude -Iglfw/include
+LDFLAGS = -Lglfw\lib-mingw-w64 -lglfw3 -lgdi32 -lopengl32 -lgdiplus
+MKDIR = mkdir -p
+RM = del /Q
 
 # Directories
 SRC_DIR = src
@@ -13,7 +23,7 @@ SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
 
 # Target executable
-TARGET = program
+TARGET = program$(EXE_EXT)
 
 # Default target
 all: $(TARGET)
@@ -28,11 +38,11 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 
 # Create obj directory if it doesn't exist
 $(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
+	$(MKDIR) $(OBJ_DIR)
 
 # Clean target to remove generated files
 clean:
-	rm -f $(OBJ_DIR)/*.o $(TARGET)
+	$(RM) $(OBJ_DIR)/*.o $(TARGET)
 	rmdir $(OBJ_DIR)
 
 # Phony targets
@@ -42,8 +52,8 @@ clean:
 -include $(OBJS:.o=.d)
 
 # Rule to generate the dependency files
-$(OBJ_DIR)/%.d: $(SRC_DIR)/%.c | $(OBJ_DIR)
-	@set -e; rm -f $@; \
-	$(CC) -MM $(CFLAGS) $< > $@.$$$$; \
-	sed 's,\($*\)\.o[ :]*,$(OBJ_DIR)/\1.o $@ : ,g' < $@.$$$$ > $@; \
-	rm -f $@.$$$$
+#$(OBJ_DIR)/%.d: $(SRC_DIR)/%.c | $(OBJ_DIR)
+#	@set -e; rm -f $@; \
+#	$(CC) -MM $(CFLAGS) $< > $@.$$$$; \
+#	sed 's,\($*\)\.o[ :]*,$(OBJ_DIR)/\1.o $@ : ,g' < $@.$$$$ > $@; \
+#	rm -f $@.$$$$

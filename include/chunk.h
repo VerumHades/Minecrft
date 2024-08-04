@@ -59,12 +59,19 @@ typedef struct Chunk{
 
     unsigned meshGenerating: 1;
     unsigned meshGenerated: 1;
+
     unsigned buffersLoaded: 1;
+    unsigned buffersAsigned: 1;
+
+    unsigned isDrawn: 1;
+    
     Mesh* solidMesh;
     Mesh* transparentMesh;
 
     GLBuffer solidBuffer;
+    GLBuffer solidBackBuffer;
     GLBuffer transparentBuffer;
+    GLBuffer transparentBackBuffer;
 } Chunk; 
 
 typedef struct World World;

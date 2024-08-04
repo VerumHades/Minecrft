@@ -8,6 +8,7 @@
 #include <shaders.h>
 #include <view.h>
 #include <texture.h>
+#include <standard.h>
 
 ShaderProgram mainProgram;
 ShaderProgram skyboxProgram;
@@ -15,12 +16,16 @@ ShaderProgram skyboxProgram;
 int lastMouseX = 0;
 int lastMouseY = 0;
 
-int camAngleZ = 0;
+int camAngleX = 0;
 int camAngleY = 0;
 
-int clampAngle(int angle){
-    return (angle + 360) % 360;
-}
+float camX = 0;
+float camY = 60;
+float camZ = 0;
+
+float playerHeight = 1.5;
+
+World* world;
 
 struct BoundKey{
     int key;
@@ -55,15 +60,32 @@ void cursor_position_callback(GLFWwindow* window, double mouseX, double mouseY)
     int mouseYDelta = mouseY - lastMouseY;
 
     camAngleY = clampAngle(camAngleY + mouseXDelta);
-    camAngleZ = clampAngle(camAngleZ + mouseYDelta);
-    if(camAngleZ > 260) camAngleZ = 260;
-    if(camAngleZ < 110) camAngleZ = 110;
+    camAngleX = clampAngle(camAngleX + mouseYDelta);
+    if(camAngleX > 260) camAngleX = 260;
+    if(camAngleX < 110) camAngleX = 110;
 
-    setViewRotation(&mainProgram, camAngleZ + 180, camAngleY,0);
-    setViewRotation(&skyboxProgram, camAngleZ + 180, camAngleY,0);
+    setViewRotation(&mainProgram, camAngleX + 180, camAngleY,0);
+    setViewRotation(&skyboxProgram, camAngleX + 180, camAngleY,0);
 
     lastMouseX = mouseX;
     lastMouseY = mouseY;
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
+
+        RaycastResult hit = raycastFromAngles(world,camX,camY,camZ,camAngleX,camAngleY,10);
+        printf("%i->block:%i\n", hit.hit,hit.hitBlock);
+
+        setWorldBlock(world, hit.x, hit.y, hit.z, 0);
+
+        Chunk* chunk = getWorldChunk(world, hit.x / DEFAULT_CHUNK_SIZE,hit.z / DEFAULT_CHUNK_SIZE);
+
+        chunk->meshGenerated = 0;
+        chunk->meshGenerating = 0;
+        chunk->buffersLoaded = 0;
+    }
 }
 
 int main(void) {
@@ -86,9 +108,11 @@ int main(void) {
     }
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, cursor_position_callback);
     glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
     
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -114,7 +138,7 @@ int main(void) {
     addFragmentShader(&skyboxProgram, "shaders/skybox.fs");
     compileShaderProgram(&skyboxProgram);
     setupProjection(&skyboxProgram);
-    
+
     char* skyboxPaths[] = {
         "skybox/stars/right.png",
         "skybox/stars/left.png",
@@ -126,19 +150,15 @@ int main(void) {
     GLSkybox skybox = createSkybox(skyboxPaths, 6);
     GLTexture tilemap = createTexture(&mainProgram,"textures/tilemap.png");
 
-    World* world = newWorld();
+    world = newWorld();
 
     int renderDistance = 6;
-
-    float camX = 0;
-    float camY = 60;
-    float camZ = 0;
 
     float accelX = 0;
     float accelZ = 0;
     float accelY = 0;
 
-    float camSpeed = 0.1;
+    float camSpeed = 0.01;
     float M_PI_D180 = M_PI / 180;
 
     /* Loop until the user closes the window */
@@ -147,9 +167,8 @@ int main(void) {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        if(boundKeys[0].isDown) camY += camSpeed;
-        if(boundKeys[1].isDown) camY -= camSpeed;
-
+        if(boundKeys[0].isDown) accelY += camSpeed;
+        if(boundKeys[1].isDown) accelY -= camSpeed;
 
         int iCamAngleY = (360 - camAngleY);
         if(boundKeys[2].isDown){
@@ -174,22 +193,24 @@ int main(void) {
             accelZ = 0;
         }
 
-        if(worldCollides(world, camX + accelX,camY,camZ)){
+        accelY -= 0.005;
+
+        if(worldCollides(world, camX + accelX,camY - playerHeight,camZ).collision){
             accelX = 0;
         }
         else camX += accelX; 
 
-        if(worldCollides(world, camX,camY + accelY,camZ)){
+        if(worldCollides(world, camX,camY + accelY - playerHeight,camZ).collision){
             accelY = 0;
         }
         else camY += accelY;
 
-        if(worldCollides(world, camX,camY,camZ + accelZ)){
+        if(worldCollides(world, camX,camY - playerHeight,camZ + accelZ).collision){
             accelZ = 0;
         }
         else camZ += accelZ;
 
-        //printf("x:%f y:%f z:%f\n",camX,camY,camZ);
+        //printf("x:%f y:%f z:%f ax:%f ay:%f az:%f\n",camX,camY,camZ,accelX,accelY,accelZ);
 
         useShaderProgram(&skyboxProgram);
         drawSkybox(&skybox);
@@ -207,7 +228,7 @@ int main(void) {
 
                 Chunk* chunk = getWorldChunkWithMesh(world, rx, rz);
                 if(chunk == NULL) chunk = generateWorldChunk(world, rx, rz);
-                if(!chunk->buffersLoaded) continue;
+                if(!chunk->isDrawn) continue;
 
                 setViewOffset(&mainProgram, -camX + rx * DEFAULT_CHUNK_SIZE, -camY, -camZ + rz * DEFAULT_CHUNK_SIZE);
                 drawBuffer(&chunk->solidBuffer);

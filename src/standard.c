@@ -223,7 +223,10 @@ void walkPath(const char *path, List* files) {
 char* readFilename(char* filename){
     FILE* f;
     f = fopen(filename,"r");
-    if(f == NULL) return NULL;
+    if(f == NULL){
+        perror("Error\n");
+        return NULL;
+    }
 
     char* data = readFile(f);
     fclose(f);
@@ -240,12 +243,12 @@ char* readFile(FILE* fp){
         rewind(fp);
 
         fcontent = (char*) calloc(fsize + 1,sizeof(char));
-        size_t read = fread(fcontent, 1, fsize, fp);
+        fread(fcontent, 1, fsize, fp);
 
-        if((int)read != (int)fsize){
+        /*if((int)read != (int)fsize){
+            printf("%i != %i\n" ,(int)read, fsize);
             return NULL;
-        }
-
+        }*/
         //fclose(fp);
     }
     else{
@@ -254,4 +257,8 @@ char* readFile(FILE* fp){
 
     fcontent[fsize] = '\0';
     return fcontent;
+}
+
+int clampAngle(int angle){
+    return (angle + 360) % 360;
 }

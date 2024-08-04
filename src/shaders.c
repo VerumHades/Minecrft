@@ -41,6 +41,7 @@ void addVertexShader(ShaderProgram* program, char* filename){
     char* source = readFilename(filename);
     if(source == NULL){
         printf("Failed to read shader source file '%s'\n", filename);
+        exit(-1);
         return;
     }
 
@@ -51,6 +52,7 @@ void addFragmentShader(ShaderProgram* program, char* filename){
     char* source = readFilename(filename);
     if(source == NULL){
         printf("Failed to read shader source file '%s'\n", filename);
+        exit(-1);
         return;
     }
 

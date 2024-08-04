@@ -1,7 +1,8 @@
 {
     "files.associations": {
-        "*.uwt": "uwt",
-        "glfw3.h": "c",
-        "glad.h": "c"
+        "windows.h": "c",
+        "algorithm": "c",
+        "xutility": "c",
+        "glfw3.h": "c"
     }
 }
