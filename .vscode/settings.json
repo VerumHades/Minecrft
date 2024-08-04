@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.uwt": "uwt",
+        "glfw3.h": "c",
+        "glad.h": "c"
+    }
+}
