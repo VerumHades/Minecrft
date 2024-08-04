@@ -15,12 +15,16 @@ typedef struct World{
 } World;
 
 World* newWorld();
+void freeWorld(World* world);
 
 BlockIndex getWorldBlock(World* world,int x, int y, int z);
+int setWorldBlock(World* world,int x, int y, int z, BlockIndex index);
+
 Chunk* generateWorldChunk(World* world, int x, int z);
 Chunk* getWorldChunk(World* world, int x, int z);
 Chunk* getWorldChunkWithMesh(World* world, int x, int z);
 
-void freeWorld(World* world);
+
+int worldCollides(World* world, float x, float y, float z);
 
 #endif

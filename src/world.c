@@ -21,7 +21,7 @@ int generateChunkThread(void* arg){
 
 
     clock_t start = clock();
-    
+
     generateMeshForChunk(chunk->solidMesh,chunk->transparentMesh,chunk);
 
     clock_t end = clock();
@@ -41,10 +41,9 @@ Chunk* generateWorldChunk(World* world, int x, int z){
     if(chunk == NULL){
         //printf("Generating chunk %i:%i\n", x, z);
         //chunk = generatePlainChunk(1,2);
-        chunk = generatePerlinChunk(x,z);
+        chunk = generatePerlinChunk(world,x,z);
         chunk->worldX = x;
         chunk->worldZ = z;
-        chunk->world = world;
 
         putIntoHashMap(chunk->world->chunks, key, chunk);
     }
@@ -97,6 +96,43 @@ Chunk* getWorldChunkWithMesh(World* world, int x, int z){
    return chunk;
 }
 
+int worldCollides(World* world, float x, float y, float z){
+    int range = 1;
+
+    int collisionFound = 0;
+    float blockWidth = 1;
+
+    for(int i = -range;i <= range;i++){
+        for(int j = -range;j <= range;j++){
+            for(int g = -range;g <= range;g++){
+                int cx = x + i;
+                int cy = y + j;
+                int cz = z + g;
+
+                BlockIndex blocki = getWorldBlock(world, cx, cy, cz);
+                if(blocki >= 0){
+                    BlockType block = predefinedBlocks[blocki];
+                    if(!block.solid) continue;
+                }
+                
+                if(
+                    x > cx && x < cx + blockWidth &&
+                    y > cy && y < cy + blockWidth &&
+                    z > cz && z < cz + blockWidth 
+                ){
+                    collisionFound = 1;
+                    printf("collision!");
+                    break;
+                }
+            }
+            if(collisionFound) break;
+        }
+        if(collisionFound) break;
+    }
+
+    return collisionFound;
+}
+
 BlockIndex getWorldBlock(World* world,int x, int y, int z){
     if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return INVALID_COORDINATES;
     
@@ -108,9 +144,29 @@ BlockIndex getWorldBlock(World* world,int x, int y, int z){
     //printf("Chunk coords: %ix%i Block coords: %i(%i)x%ix%i(%i)\n", chunkX, chunkZ, ix,y,iz);
 
     Chunk* chunk = getWorldChunk(world, chunkX,chunkZ);
-    if(chunk == NULL) return INVALID_COORDINATES;
+    if(chunk == NULL) chunk = generateWorldChunk(world, chunkX, chunkZ);
 
     return getChunkBlock(chunk, ix, y, iz);
+}
+
+int setWorldBlock(World* world, int x, int y, int z, BlockIndex index){
+    if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return INVALID_COORDINATES;
+    
+    int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
+    int chunkZ = floor((double)z / (double)DEFAULT_CHUNK_SIZE);
+
+    int ix = abs(x - chunkX * DEFAULT_CHUNK_SIZE);
+    int iz = abs(z - chunkZ * DEFAULT_CHUNK_SIZE);
+    printf("Chunk coords: %ix%i Block coords: %ix%ix%i\n", chunkX, chunkZ, ix,y,iz);
+
+    //BlockIndex i = getWorldBlock(world, ix, y, iz);
+
+    Chunk* chunk = getWorldChunk(world, chunkX,chunkZ);
+    if(chunk == NULL) chunk = generateWorldChunk(world, chunkX, chunkZ);
+
+    setChunkBlock(chunk, ix, y, iz,index);
+
+    return OK;
 }
 
 void freeWorld(World* world){

@@ -1,6 +1,6 @@
 #include <chunk.h>
 
-static BlockType predefinedBlocks[] = {
+BlockType predefinedBlocks[] = {
     { // air
         .transparent = 1,
         .untextured = 1,
@@ -11,19 +11,23 @@ static BlockType predefinedBlocks[] = {
         .textureFront = 1,
         .textureBack = 1,
         .textureLeft = 1,
-        .textureRight = 1
+        .textureRight = 1,
+        .solid = 1
     },
     { // dirt
         .repeatTexture = 1,
-        .textureTop = 2
+        .textureTop = 2,
+        .solid = 1
     },
     { // stone
         .repeatTexture = 1,
-        .textureTop = 3
+        .textureTop = 3,
+        .solid = 1
     },
     { // leaf block
         .repeatTexture = 1,
-        .textureTop = 6
+        .textureTop = 6,
+        .solid = 1
     },
     { // oak log
         .textureTop = 4,
@@ -31,7 +35,8 @@ static BlockType predefinedBlocks[] = {
         .textureFront = 5,
         .textureBack = 5,
         .textureLeft = 5,
-        .textureRight = 5
+        .textureRight = 5,
+        .solid = 1
     }
 };
 
@@ -102,8 +107,9 @@ Chunk* generatePlainChunk(BlockIndex top, BlockIndex rest){
     return chunk;
 }
 
-Chunk* generateEmptyChunk(){
+Chunk* generateEmptyChunk(World* world){
     Chunk* chunk = calloc(1, sizeof(Chunk));
+    chunk->world = world;
 
     chunk->size_x = DEFAULT_CHUNK_SIZE;
     chunk->size_z = DEFAULT_CHUNK_SIZE;
@@ -151,8 +157,8 @@ void generateTree(Chunk* chunk, int x, int y, int z){
     }
 }
 
-Chunk* generatePerlinChunk(int chunkX, int chunkZ){
-    Chunk* chunk = generateEmptyChunk();
+Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ){
+    Chunk* chunk = generateEmptyChunk(world);
 
     for(int x = 0;x < DEFAULT_CHUNK_SIZE;x++){
         for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
@@ -212,6 +218,8 @@ void setVertexTextureCoordinates(Vertex* vertex, float x, float y){
     setVertexTextureCoordinates(&b, textureX + textureSize, textureY); \
     setVertexTextureCoordinates(&c, textureX + textureSize, textureY + textureSize); \
     setVertexTextureCoordinates(&d, textureX, textureY + textureSize); \
+
+
 
 #define TEX_SELECT(texture) (currentBlock.repeatTexture ? currentBlock.textureTop : texture)
 #define HAS_FACE(block) block <= 0;

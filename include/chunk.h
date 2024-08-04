@@ -21,9 +21,10 @@
 
 #define TEXTURES_TOTAL 4
 
-typedef unsigned char BlockIndex;
+typedef short BlockIndex;
 
 typedef struct BlockType{
+    // For rendering
     unsigned char textureTop;
     unsigned char textureBottom;
     unsigned char textureLeft;
@@ -34,6 +35,9 @@ typedef struct BlockType{
     unsigned transparent: 1;
     unsigned untextured: 1;
     unsigned repeatTexture: 1;
+    
+    // For physics
+    unsigned solid: 1;
 } BlockType;
 
 typedef struct ChunkLayer{
@@ -63,11 +67,14 @@ typedef struct Chunk{
     GLBuffer transparentBuffer;
 } Chunk; 
 
+typedef struct World World;
+extern BlockType predefinedBlocks[];
+
 BlockIndex getChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z);
 int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, BlockIndex  value);
 
 Chunk* generatePlainChunk(BlockIndex  top, BlockIndex  rest);
-Chunk* generatePerlinChunk(int chunkX, int chunkZ);
+Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ);
 
 Vertex createVertex(float x, float y, float z);
 void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk);

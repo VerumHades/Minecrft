@@ -174,9 +174,20 @@ int main(void) {
             accelZ = 0;
         }
 
-        camX += accelX;
-        camY += accelY;
-        camZ += accelZ;
+        if(worldCollides(world, camX + accelX,camY,camZ)){
+            accelX = 0;
+        }
+        else camX += accelX; 
+
+        if(worldCollides(world, camX,camY + accelY,camZ)){
+            accelY = 0;
+        }
+        else camY += accelY;
+
+        if(worldCollides(world, camX,camY,camZ + accelZ)){
+            accelZ = 0;
+        }
+        else camZ += accelZ;
 
         //printf("x:%f y:%f z:%f\n",camX,camY,camZ);
 
