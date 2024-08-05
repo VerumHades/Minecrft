@@ -3,13 +3,13 @@
 Mesh* newMesh3D(){
     Mesh* mesh = calloc(1,sizeof(Mesh));
     
-    mesh->vertices = calloc(1,sizeof(float));
+    mesh->vertices = calloc(1000,sizeof(float));
     mesh->vertices_count = 0;
-    mesh->vertices_size = 1;
+    mesh->vertices_size = 1000;
 
-    mesh->indices = calloc(1,sizeof(float));
+    mesh->indices = calloc(1000,sizeof(float));
     mesh->indices_count = 0;
-    mesh->indices_size = 1;
+    mesh->indices_size = 1000;
 
     mesh->vertex_format = NULL;
     mesh->format_size = 0;
@@ -40,14 +40,12 @@ void destoryMesh(Mesh* mesh){
     free(mesh);
 }
 
-void addVertexValueToMesh(Mesh* mesh, float value){
-    if(mesh->vertices_size <= mesh->vertices_count+1){ // Real array is too small, double the size
+void requireVerticesSize(Mesh* mesh, size_t size){
+    while(mesh->vertices_size <= mesh->vertices_count+size){ // Real array is too small, double the size
         mesh->vertices_size  *= 2;
+        //printf("Resized vertices array");
         mesh->vertices = realloc(mesh->vertices, mesh->vertices_size * sizeof(float));
     }
-
-    mesh->vertices[mesh->vertices_count] = value;
-    mesh->vertices_count++;
 }
 
 void addIndexValueToMesh(Mesh* mesh, int value){
@@ -69,9 +67,10 @@ int getVertexFromMesh(Mesh* mesh, Vertex vertex){
 
     int index = mesh->vertices_count / mesh->vertex_size;
 
-    for(int i = 0;i < vertex.size;i++){
-        addVertexValueToMesh(mesh, vertex.values[i]);
-    }
+    requireVerticesSize(mesh, vertex.size);
+    memcpy(mesh->vertices + mesh->vertices_count, vertex.values, sizeof(float) * vertex.size);
+    mesh->vertices_count += vertex.size;
+    //addVertexValueToMesh(mesh, vertex.values[i]);
     
     return index;
 }

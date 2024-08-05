@@ -30,7 +30,7 @@ int generateChunkThread(void *arg) {
 
     clock_t end = clock();
     double seconds = (double)(end - start) / (double)CLOCKS_PER_SEC;
-    //printf("Time generate chunk mesh: %f\n", seconds);
+    printf("Time generate chunk mesh: %f\n", seconds);
 
     chunk->meshGenerating = 0;
     chunk->meshGenerated = 1;

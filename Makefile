@@ -1,17 +1,17 @@
-# Platform detection
-#CC = gcc
-#CFLAGS = -static -Wall -Iinclude
-#LDFLAGS = -lglfw -lGL -lm
-#MKDIR = mkdir -p
-#RM = rm -f
-#EXE_EXT =
-
-# Windows-specific settings (using MSYS2 or MinGW)
-CC = x86_64-w64-mingw32-gcc
-CFLAGS = -static -Wall -Iinclude -Iglfw/include
-LDFLAGS = -Lglfw\lib-mingw-w64 -lglfw3 -lgdi32 -lopengl32 -lgdiplus
+# Linux settings
+CC = gcc
+CFLAGS = -Wall -Iinclude
+LDFLAGS = -lglfw -lGL -lm
 MKDIR = mkdir -p
-RM = del /Q
+RM = rm -f
+EXE_EXT =
+
+## Windows-specific settings 
+#CC = x86_64-w64-mingw32-gcc
+#CFLAGS = -static -Wall -Iinclude -Iglfw/include
+#LDFLAGS = -Lglfw\lib-mingw-w64 -lglfw3 -lgdi32 -lopengl32 -lgdiplus
+#MKDIR = mkdir -p
+#RM = del /Q
 
 # Directories
 SRC_DIR = src
