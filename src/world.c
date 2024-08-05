@@ -30,7 +30,7 @@ int generateChunkThread(void *arg) {
 
     clock_t end = clock();
     double seconds = (double)(end - start) / (double)CLOCKS_PER_SEC;
-    printf("Time generate chunk mesh: %f\n", seconds);
+    //printf("Time generate chunk mesh: %f\n", seconds);
 
     chunk->meshGenerating = 0;
     chunk->meshGenerated = 1;
@@ -38,12 +38,20 @@ int generateChunkThread(void *arg) {
     return 0;
 }
 
+void regenerateChunkMesh(Chunk* chunk){
+    if(!chunk->buffersLoaded) return;
+
+    chunk->meshGenerated = 0;
+    chunk->meshGenerating = 0;
+    chunk->buffersLoaded = 0;
+}
+
 Chunk* generateWorldChunk(World* world, int x, int z){
     char* key = keyFromPosition(x,0,z);
     Chunk* chunk = getFromHashMap(world->chunks, key);
 
     if(chunk == NULL){
-        //printf("Generating chunk %i:%i\n", x, z);
+        printf("Generating chunk %i:%i %s\n", x, z, key);
         //chunk = generatePlainChunk(1,2);
         chunk = generatePerlinChunk(world,x,z);
         chunk->worldX = x;
@@ -106,7 +114,7 @@ Chunk* getWorldChunkWithMesh(World* world, int x, int z){
             chunk->transparentBackBuffer = newBuffer();
             chunk->buffersAsigned = 1;
         }
-        printf("Loading meshes %2i:%2i (%i)...\n",x,z,chunk->buffersLoaded);
+        //printf("Loading meshes %2i:%2i (%i)...\n",x,z,chunk->buffersLoaded);
 
         //printf("Vertices:%i Indices:%i\n", chunk->solidMesh->vertices_count, chunk->solidMesh->indices_count);
         loadMeshToBuffer(chunk->solidMesh,&chunk->solidBackBuffer);
@@ -131,7 +139,7 @@ Chunk* getWorldChunkWithMesh(World* world, int x, int z){
    return chunk;
 }
 
-CollisionCheckResult worldCollides(World* world, float x, float y, float z){
+CollisionCheckResult worldCollides(World* world, float x, float y, float z, int includeAir){
     CollisionCheckResult result = {0};
     int range = 4;
 
@@ -147,7 +155,7 @@ CollisionCheckResult worldCollides(World* world, float x, float y, float z){
                 BlockIndex blocki = getWorldBlock(world, cx, cy, cz);
                 if(blocki >= 0){
                     BlockType block = predefinedBlocks[blocki];
-                    if(!block.solid) continue;
+                    if(!block.solid && !(includeAir ? blocki == 0 : 0)) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
 
@@ -192,17 +200,23 @@ RaycastResult raycast(World* world, float fromX, float fromY, float fromZ, float
     CollisionCheckResult check;
 
     while(distance < maxDistance){
+        result.lastX = x;
+        result.lastY = y;
+        result.lastZ = z;
+
         x += dirX * step;
         y += dirY * step;
         z += dirZ * step;
 
-        check = worldCollides(world, x,y,z);
+        check = worldCollides(world, x,y,z, 0);
         if( check.collision){
             result.hit = 1;
             result.hitBlock = check.collidedBlock;
+            
             result.x = check.x;
             result.y = check.y;
             result.z = check.z;
+
             return result;
         }
 
@@ -249,6 +263,16 @@ BlockIndex getWorldBlock(World* world,int x, int y, int z){
     return getChunkBlock(chunk, ix, y, iz);
 }
 
+Chunk* getChunkFromBlockPosition(World* world, int x, int z){
+    int cx,cz;
+    if(x >= 0) cx = x / DEFAULT_CHUNK_SIZE;
+    else cx = x / DEFAULT_CHUNK_SIZE - 1;
+    if(z >= 0) cz = z / DEFAULT_CHUNK_SIZE;
+    else cz = z / DEFAULT_CHUNK_SIZE - 1;
+
+    return getWorldChunk(world, cx, cz);
+}
+
 int setWorldBlock(World* world, int x, int y, int z, BlockIndex index){
     if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return INVALID_COORDINATES;
     
@@ -257,7 +281,7 @@ int setWorldBlock(World* world, int x, int y, int z, BlockIndex index){
 
     int ix = abs(x - chunkX * DEFAULT_CHUNK_SIZE);
     int iz = abs(z - chunkZ * DEFAULT_CHUNK_SIZE);
-    printf("Chunk coords: %ix%i Block coords: %ix%ix%i\n", chunkX, chunkZ, ix,y,iz);
+    //printf("Chunk coords: %ix%i Block coords: %ix%ix%i\n", chunkX, chunkZ, ix,y,iz);
 
     //BlockIndex i = getWorldBlock(world, ix, y, iz);
 

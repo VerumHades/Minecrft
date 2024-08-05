@@ -61,7 +61,7 @@ void cursor_position_callback(GLFWwindow* window, double mouseX, double mouseY)
 
     camAngleY = clampAngle(camAngleY + mouseXDelta);
     camAngleX = clampAngle(camAngleX + mouseYDelta);
-    if(camAngleX > 260) camAngleX = 260;
+    if(camAngleX > 270) camAngleX = 270;
     if(camAngleX < 110) camAngleX = 110;
 
     setViewRotation(&mainProgram, camAngleX + 180, camAngleY,0);
@@ -73,18 +73,20 @@ void cursor_position_callback(GLFWwindow* window, double mouseX, double mouseY)
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
+    RaycastResult hit = raycastFromAngles(world,camX,camY,camZ,camAngleX,camAngleY,10);
 
-        RaycastResult hit = raycastFromAngles(world,camX,camY,camZ,camAngleX,camAngleY,10);
-        printf("%i->block:%i\n", hit.hit,hit.hitBlock);
-
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && hit.hitBlock){
         setWorldBlock(world, hit.x, hit.y, hit.z, 0);
+        Chunk* chunk = getChunkFromBlockPosition(world, hit.x, hit.z);
+        regenerateChunkMesh(chunk);
+    }
+    else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hitBlock){
+        CollisionCheckResult result = worldCollides(world, hit.lastX, hit.lastY, hit.lastZ, 1);
 
-        Chunk* chunk = getWorldChunk(world, hit.x / DEFAULT_CHUNK_SIZE,hit.z / DEFAULT_CHUNK_SIZE);
+        setWorldBlock(world, result.x,  result.y,  result.z, 3);
 
-        chunk->meshGenerated = 0;
-        chunk->meshGenerating = 0;
-        chunk->buffersLoaded = 0;
+        Chunk* chunk = getChunkFromBlockPosition(world, result.x, result.z);
+        regenerateChunkMesh(chunk);
     }
 }
 
@@ -195,17 +197,17 @@ int main(void) {
 
         accelY -= 0.005;
 
-        if(worldCollides(world, camX + accelX,camY - playerHeight,camZ).collision){
+        if(worldCollides(world, camX + accelX,camY - playerHeight,camZ,0).collision){
             accelX = 0;
         }
         else camX += accelX; 
 
-        if(worldCollides(world, camX,camY + accelY - playerHeight,camZ).collision){
+        if(worldCollides(world, camX,camY + accelY - playerHeight,camZ,0).collision){
             accelY = 0;
         }
         else camY += accelY;
 
-        if(worldCollides(world, camX,camY - playerHeight,camZ + accelZ).collision){
+        if(worldCollides(world, camX,camY - playerHeight,camZ + accelZ,0).collision){
             accelZ = 0;
         }
         else camZ += accelZ;

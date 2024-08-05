@@ -35,6 +35,10 @@ typedef struct RaycastResult{
     int x;
     int y;
     int z;
+
+    float lastX;
+    float lastY;
+    float lastZ;
 } RaycastResult;
 
 typedef struct CollisionCheckResult{
@@ -54,9 +58,10 @@ int setWorldBlock(World* world,int x, int y, int z, BlockIndex index);
 Chunk* generateWorldChunk(World* world, int x, int z);
 Chunk* getWorldChunk(World* world, int x, int z);
 Chunk* getWorldChunkWithMesh(World* world, int x, int z);
+Chunk* getChunkFromBlockPosition(World* world, int x, int z);
+void regenerateChunkMesh(Chunk* chunk);
 
-
-CollisionCheckResult worldCollides(World* world, float x, float y, float z);
+CollisionCheckResult worldCollides(World* world, float x, float y, float z, int includeAir);
 RaycastResult raycast(World* world, float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance);
 RaycastResult raycastFromAngles(World* world, float fromX, float fromY, float fromZ, int angleX, int angleY, float maxDistance);
 
