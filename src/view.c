@@ -43,7 +43,7 @@ void createPerspectiveMatrix(float* m, float fov, float aspectRatio, float near_
 void setArray(float* dest, float* source, int size){
     for(int i = 0; i < size;i++) dest[i] = source[i];
 }
-void setupProjection(ShaderProgram* program){
+void setupProjection(ShaderProgram* program, float FOV){
     /*glEnable(GL_CULL_FACE);
     // Specify which faces to cull (back faces)
     glCullFace(GL_BACK);
@@ -86,8 +86,8 @@ void setupProjection(ShaderProgram* program){
     if(program->modelLoc != -1) glUniformMatrix4fv(program->modelLoc, 1, GL_TRUE, program->modelMatrix);
 }
 
-void recalculateProjectionMatrix(ShaderProgram* program, int width, int height){
-    createPerspectiveMatrix(program->projectionMatrix, (M_PI / 180.0f) * 45.0f, (double)width / (double)height, 0.1f, 1000.0f);
+void recalculateProjectionMatrix(ShaderProgram* program, int width, int height, float FOV){
+    createPerspectiveMatrix(program->projectionMatrix, (M_PI / 180.0f) * FOV, (double)width / (double)height, 0.1f, 1000.0f);
     glUniformMatrix4fv(program->projLoc, 1, GL_FALSE, program->projectionMatrix);
 }
 

@@ -61,7 +61,9 @@ Chunk* getWorldChunkWithMesh(World* world, int x, int z);
 Chunk* getChunkFromBlockPosition(World* world, int x, int z);
 void regenerateChunkMesh(Chunk* chunk);
 
-CollisionCheckResult worldCollides(World* world, float x, float y, float z, int includeAir);
+CollisionCheckResult checkForPointCollision(World* world, float x, float y, float z, int includeRectangularColliderLess);
+CollisionCheckResult checkForRectangularCollision(World* world, float x, float y, float z, RectangularCollider* collider);
+
 RaycastResult raycast(World* world, float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance);
 RaycastResult raycastFromAngles(World* world, float fromX, float fromY, float fromZ, int angleX, int angleY, float maxDistance);
 

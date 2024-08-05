@@ -23,6 +23,16 @@
 
 typedef short BlockIndex;
 
+// A rectangular collider
+typedef struct RectangularCollider{
+    float x; // Positional offsets
+    float y;
+    float z;
+    float width;
+    float height; //Size
+    float depth;
+} RectangularCollider;
+
 typedef struct BlockType{
     // For rendering
     unsigned char textureTop;
@@ -37,7 +47,8 @@ typedef struct BlockType{
     unsigned repeatTexture: 1;
     
     // For physics
-    unsigned solid: 1;
+    RectangularCollider* colliders;
+    unsigned int colliderCount;
 } BlockType;
 
 typedef struct ChunkLayer{

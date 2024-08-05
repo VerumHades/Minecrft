@@ -1,6 +1,6 @@
 # Platform detection
 #CC = gcc
-#CFLAGS = -Wall -Iinclude
+#CFLAGS = -static -Wall -Iinclude
 #LDFLAGS = -lglfw -lGL -lm
 #MKDIR = mkdir -p
 #RM = rm -f
@@ -8,7 +8,7 @@
 
 # Windows-specific settings (using MSYS2 or MinGW)
 CC = x86_64-w64-mingw32-gcc
-CFLAGS = -Wall -Iinclude -Iglfw/include
+CFLAGS = -static -Wall -Iinclude -Iglfw/include
 LDFLAGS = -Lglfw\lib-mingw-w64 -lglfw3 -lgdi32 -lopengl32 -lgdiplus
 MKDIR = mkdir -p
 RM = del /Q
@@ -23,7 +23,7 @@ SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
 
 # Target executable
-TARGET = program$(EXE_EXT)
+TARGET = main$(EXE_EXT)
 
 # Default target
 all: $(TARGET)

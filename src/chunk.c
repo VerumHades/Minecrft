@@ -12,22 +12,34 @@ BlockType predefinedBlocks[] = {
         .textureBack = 1,
         .textureLeft = 1,
         .textureRight = 1,
-        .solid = 1
+        .colliders = (RectangularCollider[]){
+            {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
+        },
+        .colliderCount = 1
     },
     { // dirt
         .repeatTexture = 1,
         .textureTop = 2,
-        .solid = 1
+        .colliders = (RectangularCollider[]){
+            {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
+        },
+        .colliderCount = 1
     },
     { // stone
         .repeatTexture = 1,
         .textureTop = 3,
-        .solid = 1
+        .colliders = (RectangularCollider[]){
+            {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
+        },
+        .colliderCount = 1
     },
     { // leaf block
         .repeatTexture = 1,
         .textureTop = 6,
-        .solid = 1
+        .colliders = (RectangularCollider[]){
+            {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
+        },
+        .colliderCount = 1
     },
     { // oak log
         .textureTop = 4,
@@ -36,7 +48,10 @@ BlockType predefinedBlocks[] = {
         .textureBack = 5,
         .textureLeft = 5,
         .textureRight = 5,
-        .solid = 1
+        .colliders = (RectangularCollider[]){
+            {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
+        },
+        .colliderCount = 1
     }
 };
 

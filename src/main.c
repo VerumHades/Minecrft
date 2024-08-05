@@ -20,10 +20,21 @@ int camAngleX = 0;
 int camAngleY = 0;
 
 float camX = 0;
-float camY = 60;
+float camY = 150;
 float camZ = 0;
 
-float playerHeight = 1.5;
+int renderDistance = 6;
+
+float accelX = 0;
+float accelZ = 0;
+float accelY = 0;
+
+float camSpeed = 0.002;
+float M_PI_D180 = M_PI / 180;
+
+float camFOV = 100;
+
+RectangularCollider playerCollider = {.x = -0.3, .y = -1.7, .z = -0.3, .width = 0.6,.height = 1.8, .depth = 0.6};
 
 World* world;
 
@@ -49,8 +60,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     glViewport(0,0,width,height);
-    recalculateProjectionMatrix(&mainProgram, width, height);
-    recalculateProjectionMatrix(&skyboxProgram, width, height);
+    recalculateProjectionMatrix(&mainProgram, width, height, camFOV);
+    recalculateProjectionMatrix(&skyboxProgram, width, height, camFOV);
     //printf("%i %i\n",width,height);
 }
 
@@ -71,22 +82,44 @@ void cursor_position_callback(GLFWwindow* window, double mouseX, double mouseY)
     lastMouseY = mouseY;
 }
 
+static int selectedBlock = 1;
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     RaycastResult hit = raycastFromAngles(world,camX,camY,camZ,camAngleX,camAngleY,10);
-
+    
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && hit.hitBlock){
         setWorldBlock(world, hit.x, hit.y, hit.z, 0);
+
         Chunk* chunk = getChunkFromBlockPosition(world, hit.x, hit.z);
         regenerateChunkMesh(chunk);
+        chunk = getWorldChunk(world, chunk->worldX + 1, chunk->worldZ   ); regenerateChunkMesh(chunk);
+        chunk = getWorldChunk(world, chunk->worldX - 1, chunk->worldZ   ); regenerateChunkMesh(chunk);
+        chunk = getWorldChunk(world, chunk->worldX    , chunk->worldZ + 1); regenerateChunkMesh(chunk);
+        chunk = getWorldChunk(world, chunk->worldX    , chunk->worldZ - 1); regenerateChunkMesh(chunk);
+
     }
     else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hitBlock){
-        CollisionCheckResult result = worldCollides(world, hit.lastX, hit.lastY, hit.lastZ, 1);
+        CollisionCheckResult result = checkForPointCollision(world, hit.lastX, hit.lastY, hit.lastZ, 1);
 
-        setWorldBlock(world, result.x,  result.y,  result.z, 3);
+        setWorldBlock(world, result.x,  result.y,  result.z, selectedBlock);
+        if(
+            checkForRectangularCollision(world, camX,camY,camZ, &playerCollider).collision ||
+            checkForRectangularCollision(world, camX + accelX,camY + accelY,camZ + accelZ, &playerCollider).collision
+        ){
+            setWorldBlock(world,  result.x,  result.y,  result.z, 0);
+            return;
+        }
 
         Chunk* chunk = getChunkFromBlockPosition(world, result.x, result.z);
         regenerateChunkMesh(chunk);
+        chunk = getWorldChunk(world, chunk->worldX + 1, chunk->worldZ   ); regenerateChunkMesh(chunk);
+        chunk = getWorldChunk(world, chunk->worldX - 1, chunk->worldZ   ); regenerateChunkMesh(chunk);
+        chunk = getWorldChunk(world, chunk->worldX    , chunk->worldZ + 1); regenerateChunkMesh(chunk);
+        chunk = getWorldChunk(world, chunk->worldX    , chunk->worldZ - 1); regenerateChunkMesh(chunk);
+
+    }
+    else if(button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS){
+        selectedBlock = (selectedBlock + 1) % 5 + 1;
     }
 }
 
@@ -133,13 +166,13 @@ int main(void) {
     addVertexShader(&mainProgram, "shaders/vertex.vs");
     addFragmentShader(&mainProgram, "shaders/fragment.fs");
     compileShaderProgram(&mainProgram);
-    setupProjection(&mainProgram);
+    setupProjection(&mainProgram, camFOV);
 
     skyboxProgram = newShaderProgram();
     addVertexShader(&skyboxProgram, "shaders/skybox.vs");
     addFragmentShader(&skyboxProgram, "shaders/skybox.fs");
     compileShaderProgram(&skyboxProgram);
-    setupProjection(&skyboxProgram);
+    setupProjection(&skyboxProgram, camFOV);
 
     char* skyboxPaths[] = {
         "skybox/stars/right.png",
@@ -154,23 +187,14 @@ int main(void) {
 
     world = newWorld();
 
-    int renderDistance = 6;
-
-    float accelX = 0;
-    float accelZ = 0;
-    float accelY = 0;
-
-    float camSpeed = 0.01;
-    float M_PI_D180 = M_PI / 180;
-
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        if(boundKeys[0].isDown) accelY += camSpeed;
-        if(boundKeys[1].isDown) accelY -= camSpeed;
+        //if(boundKeys[0].isDown) accelY += 0.0006;
+        //if(boundKeys[1].isDown) accelY -= 0.0006;
 
         int iCamAngleY = (360 - camAngleY);
         if(boundKeys[2].isDown){
@@ -197,17 +221,19 @@ int main(void) {
 
         accelY -= 0.005;
 
-        if(worldCollides(world, camX + accelX,camY - playerHeight,camZ,0).collision){
+        if(checkForRectangularCollision(world, camX + accelX,camY,camZ, &playerCollider).collision){
             accelX = 0;
         }
         else camX += accelX; 
 
-        if(worldCollides(world, camX,camY + accelY - playerHeight,camZ,0).collision){
+        if(checkForRectangularCollision(world, camX,camY + accelY,camZ, &playerCollider).collision){
             accelY = 0;
+
+            if(boundKeys[0].isDown) accelY += 0.15;
         }
         else camY += accelY;
 
-        if(worldCollides(world, camX,camY - playerHeight,camZ + accelZ,0).collision){
+        if(checkForRectangularCollision(world, camX,camY,camZ + accelZ, &playerCollider).collision){
             accelZ = 0;
         }
         else camZ += accelZ;

@@ -51,7 +51,7 @@ Chunk* generateWorldChunk(World* world, int x, int z){
     Chunk* chunk = getFromHashMap(world->chunks, key);
 
     if(chunk == NULL){
-        printf("Generating chunk %i:%i %s\n", x, z, key);
+        //printf("Generating chunk %i:%i %s\n", x, z, key);
         //chunk = generatePlainChunk(1,2);
         chunk = generatePerlinChunk(world,x,z);
         chunk->worldX = x;
@@ -139,9 +139,9 @@ Chunk* getWorldChunkWithMesh(World* world, int x, int z){
    return chunk;
 }
 
-CollisionCheckResult worldCollides(World* world, float x, float y, float z, int includeAir){
+CollisionCheckResult checkForPointCollision(World* world, float x, float y, float z, int includeRectangularColliderLess){
     CollisionCheckResult result = {0};
-    int range = 4;
+    int range = 3;
 
     float blockWidth = 1;
 
@@ -155,7 +155,7 @@ CollisionCheckResult worldCollides(World* world, float x, float y, float z, int 
                 BlockIndex blocki = getWorldBlock(world, cx, cy, cz);
                 if(blocki >= 0){
                     BlockType block = predefinedBlocks[blocki];
-                    if(!block.solid && !(includeAir ? blocki == 0 : 0)) continue;
+                    if(block.colliderCount == 0 && !includeRectangularColliderLess) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
 
@@ -170,6 +170,61 @@ CollisionCheckResult worldCollides(World* world, float x, float y, float z, int 
                         result.y = cy;
                         result.z = cz;
                         return result;
+                    }
+                }
+                else{
+                    result.collidedBlock = blocki;
+                    result.collision = 1;
+                    result.x = cx;
+                    result.y = cy;
+                    result.z = cz;
+                    return result;
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+CollisionCheckResult checkForRectangularCollision(World* world, float x, float y, float z, RectangularCollider* collider){
+    CollisionCheckResult result = {0};
+    int range = 3;
+
+    for(int i = -range;i <= range;i++){
+        for(int j = -range;j <= range;j++){
+            for(int g = -range;g <= range;g++){
+                int cx = (int)floor(x + i);
+                int cy = (int)floor(y + j);
+                int cz = (int)floor(z + g);
+
+                BlockIndex blocki = getWorldBlock(world, cx, cy, cz);
+                if(blocki >= 0){
+                    BlockType block = predefinedBlocks[blocki];
+                    if(block.colliderCount == 0) continue;
+
+                    //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
+
+                    for(int colliderIndex = 0;colliderIndex < block.colliderCount;colliderIndex++){
+                        RectangularCollider* blockCollider = &block.colliders[colliderIndex];
+                        float colliderX = blockCollider->x + cx;
+                        float colliderY = blockCollider->y + cy;
+                        float colliderZ = blockCollider->z + cz;
+                        
+                        //printf("%f %f %f %f %f %f\n", colliderX, colliderY, colliderZ, blockCollider->width, blockCollider->height, blockCollider->depth);
+            
+                        if(
+                            x + collider->x + collider->width  >= colliderX && x + collider->x <= colliderX + blockCollider->width &&
+                            y + collider->y + collider->height >= colliderY && y + collider->y <= colliderY + blockCollider->height &&
+                            z + collider->z + collider->depth  >= colliderZ && z + collider->z <= colliderZ + blockCollider->depth 
+                        ){
+                            result.collidedBlock = blocki;
+                            result.collision = 1;
+                            result.x = cx;
+                            result.y = cy;
+                            result.z = cz;
+                            return result;
+                        }
                     }
                 }
                 else{
@@ -208,7 +263,7 @@ RaycastResult raycast(World* world, float fromX, float fromY, float fromZ, float
         y += dirY * step;
         z += dirZ * step;
 
-        check = worldCollides(world, x,y,z, 0);
+        check = checkForPointCollision(world, x,y,z, 0);
         if( check.collision){
             result.hit = 1;
             result.hitBlock = check.collidedBlock;
