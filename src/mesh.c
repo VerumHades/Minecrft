@@ -3,13 +3,13 @@
 Mesh* newMesh3D(){
     Mesh* mesh = calloc(1,sizeof(Mesh));
     
-    mesh->vertices = calloc(1000,sizeof(float));
+    mesh->vertices = calloc(5000,sizeof(float));
     mesh->vertices_count = 0;
-    mesh->vertices_size = 1000;
+    mesh->vertices_size = 5000;
 
-    mesh->indices = calloc(1000,sizeof(float));
+    mesh->indices = calloc(5000,sizeof(float));
     mesh->indices_count = 0;
-    mesh->indices_size = 1000;
+    mesh->indices_size = 5000;
 
     mesh->vertex_format = NULL;
     mesh->format_size = 0;
@@ -43,7 +43,6 @@ void destoryMesh(Mesh* mesh){
 static inline void requireVerticesSize(Mesh* mesh, size_t size){
     while(mesh->vertices_size <= mesh->vertices_count+size){ // Real array is too small, double the size
         mesh->vertices_size  *= 2;
-        //printf("Resized vertices array");
         mesh->vertices = realloc(mesh->vertices, mesh->vertices_size * sizeof(float));
     }
 }

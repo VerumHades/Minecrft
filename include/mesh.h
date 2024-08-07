@@ -2,6 +2,8 @@
 #define MESH_HEADER
 
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #define vertices_size(vertex) vertex->int_value
 
