@@ -40,7 +40,7 @@ void destoryMesh(Mesh* mesh){
     free(mesh);
 }
 
-void requireVerticesSize(Mesh* mesh, size_t size){
+static inline void requireVerticesSize(Mesh* mesh, size_t size){
     while(mesh->vertices_size <= mesh->vertices_count+size){ // Real array is too small, double the size
         mesh->vertices_size  *= 2;
         //printf("Resized vertices array");
@@ -48,7 +48,7 @@ void requireVerticesSize(Mesh* mesh, size_t size){
     }
 }
 
-void addIndexValueToMesh(Mesh* mesh, int value){
+static inline void addIndexValueToMesh(Mesh* mesh, int value){
     if(mesh->indices_size <= mesh->indices_count+1){ // Real array is too small, double the size
         mesh->indices_size  *= 2;
         mesh->indices = realloc(mesh->indices, mesh->indices_size * sizeof(unsigned int));
@@ -59,7 +59,7 @@ void addIndexValueToMesh(Mesh* mesh, int value){
 }
 
 // Return vertex index
-int getVertexFromMesh(Mesh* mesh, Vertex vertex){
+static inline int getVertexFromMesh(Mesh* mesh, Vertex vertex){
     if(vertex.size != mesh->vertex_size){
         printf("Mesh takes vertices of size %i, but a vertex of size %i was given.", mesh->vertex_size, vertex.size);
         return -1;

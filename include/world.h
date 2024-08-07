@@ -2,7 +2,8 @@
 #define WORLD_H
 
 #include <chunk.h>
-#include <hashmap.h>
+#include <posmap.h>
+#include <time.h>
 
 #ifdef _WIN32
 
@@ -26,7 +27,7 @@ typedef thrd_t thread_t;
 
 
 typedef struct World{
-    HashMap* chunks;
+    PositionMap* chunks;
 } World;
 
 typedef struct RaycastResult{

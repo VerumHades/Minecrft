@@ -1,10 +1,13 @@
 {
     "files.associations": {
+        "*.uwt": "uwt",
         "windows.h": "c",
         "algorithm": "c",
         "xutility": "c",
         "glfw3.h": "c",
         "buffer.h": "c",
-        "chunk.h": "c"
+        "chunk.h": "c",
+        "type_traits": "c",
+        "posmap.h": "c"
     }
 }

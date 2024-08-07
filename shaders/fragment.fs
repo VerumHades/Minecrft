@@ -4,6 +4,7 @@ precision highp float;
 
 in vec3 Normals;
 in vec2 TexCoords;
+in vec3 LightLevel;
 
 in vec3 crntPosition;
 
@@ -21,7 +22,7 @@ void main()
 
     float diffuse = max(dot(normal, lightDirection), 0.0);
 
-    FragColor = texture(texture1, TexCoords); //* diffuse;
+    FragColor = texture(texture1, TexCoords) * vec4(LightLevel,1); //* diffuse;
     //FragColor.a = 1.0;
     //FragColor = vec4(vec3(0.5,0.5,0.2) - Normals, 1);
 }

@@ -6,12 +6,9 @@ BlockType predefinedBlocks[] = {
         .untextured = 1,
     },
     { // grass
-        .textureTop = 0,
-        .textureBottom = 2,
-        .textureFront = 1,
-        .textureBack = 1,
-        .textureLeft = 1,
-        .textureRight = 1,
+        .textures = (unsigned char[]){0,2,1,1,1,1},
+        //.textures = (unsigned char[]){0},
+        //.repeatTexture = 1,
         .colliders = (RectangularCollider[]){
             {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
         },
@@ -19,7 +16,7 @@ BlockType predefinedBlocks[] = {
     },
     { // dirt
         .repeatTexture = 1,
-        .textureTop = 2,
+        .textures = (unsigned char[]){2},
         .colliders = (RectangularCollider[]){
             {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
         },
@@ -27,7 +24,7 @@ BlockType predefinedBlocks[] = {
     },
     { // stone
         .repeatTexture = 1,
-        .textureTop = 3,
+        .textures = (unsigned char[]){3},
         .colliders = (RectangularCollider[]){
             {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
         },
@@ -35,19 +32,14 @@ BlockType predefinedBlocks[] = {
     },
     { // leaf block
         .repeatTexture = 1,
-        .textureTop = 6,
+        .textures = (unsigned char[]){6},
         .colliders = (RectangularCollider[]){
             {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
         },
         .colliderCount = 1
     },
     { // oak log
-        .textureTop = 4,
-        .textureBottom = 4,
-        .textureFront = 5,
-        .textureBack = 5,
-        .textureLeft = 5,
-        .textureRight = 5,
+        .textures = (unsigned char[]){4,4,5,5,5,5},
         .colliders = (RectangularCollider[]){
             {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
         },
@@ -177,14 +169,26 @@ Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ){
 
     for(int x = 0;x < DEFAULT_CHUNK_SIZE;x++){
         for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
-            float value = perlin((float)(x + chunkX * DEFAULT_CHUNK_SIZE) / 100.0,(float)(z + chunkZ * DEFAULT_CHUNK_SIZE) / 100.0);
+            float rx = (float)(x + chunkX * DEFAULT_CHUNK_SIZE);
+            float rz = (float)(z + chunkZ * DEFAULT_CHUNK_SIZE);
+
+            float mountains_areas = perlin(rx / 500.0, rz / 500.0);
+            float mountains = perlin(rx / 200.0, rz / 200.0);
+            float main = perlin(rx / 300.0, rz / 300.0);
+
+            main *=   mountains_areas * pow(mountains*2,2);
+
+            //value *= perlin(rx / 20.0, rz / 20.0);
             //printf("%f %i %i\n", value,x,z);
-            int converted_value = floor(100 * value); 
+            int converted_value = floor(256 * main); 
 
             for(int y = 0;y < converted_value;y++){
                 BlockIndex block = 0;
 
-                if(y + 1 == converted_value){
+                if(y > 120){
+                    block = 3;
+                }
+                else if(y + 1 == converted_value){
                     block = 1;
                     if(rand() % 100 == 0) generateTree(chunk,x,converted_value,z);
                 }
@@ -199,10 +203,10 @@ Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ){
     return chunk;
 }
 
-Vertex createVertex(float x, float y, float z){
+static inline Vertex createVertex(float x, float y, float z){
     Vertex vertex = {0};
 
-    vertex.size = 8;
+    vertex.size = 11;
     vertex.values[0] = x;
     vertex.values[1] = y;
     vertex.values[2] = z;
@@ -210,41 +214,90 @@ Vertex createVertex(float x, float y, float z){
     return vertex;
 }
 
-void setVertexNormalData(Vertex* vertex, float normalX, float normalY, float normalZ){
+static inline void setVertexMetadata(
+    Vertex* vertex,
+    float normalX, float normalY, float normalZ,
+    float textureX, float textureY,
+    float lightR, float lightG, float lightB
+){
     vertex->values[3] = normalX;
     vertex->values[4] = normalY;
     vertex->values[5] = normalZ;
+    
+    vertex->values[6] = textureX;
+    vertex->values[7] = textureY;
+
+    vertex->values[8] = lightR;
+    vertex->values[9] = lightG;
+    vertex->values[10] = lightB;
 }
 
-void setVertexTextureCoordinates(Vertex* vertex, float x, float y){
-    vertex->values[6] = x;
-    vertex->values[7] = y;
+static inline void setFaceMetadata(
+    Vertex* a, Vertex* b, Vertex* c, Vertex* d,
+    float normalX, float normalY, float normalZ,
+    int textureNumber, float textureSize,
+    float lightR, float lightG, float lightB
+){
+    float textureX = (textureNumber % TEXTURES_TOTAL) * textureSize; 
+    float textureY = (textureNumber / TEXTURES_TOTAL) * textureSize; 
+    setVertexMetadata(a, normalX, normalY, normalZ, textureX, textureY, lightR, lightG, lightB); 
+    setVertexMetadata(b, normalX, normalY, normalZ, textureX + textureSize, textureY, lightR, lightG, lightB); 
+    setVertexMetadata(c, normalX, normalY, normalZ, textureX + textureSize, textureY + textureSize, lightR, lightG, lightB); 
+    setVertexMetadata(d, normalX, normalY, normalZ, textureX, textureY + textureSize, lightR, lightG, lightB); 
 }
-
-#define VERTEX4NORMAL(a,b,c,d, x,y,z) setVertexNormalData(&a, x,y,z);\
-                    setVertexNormalData(&b, x,y,z);\
-                    setVertexNormalData(&c, x,y,z);\
-                    setVertexNormalData(&d, x,y,z);\
-
-#define VERTEX4TEXCOORDS(a,b,c,d,textureNumber,textureSize) \
-    float textureX = (textureNumber % TEXTURES_TOTAL) * textureSize; \
-    float textureY = (textureNumber / TEXTURES_TOTAL) * textureSize; \
-    setVertexTextureCoordinates(&a, textureX, textureY); \
-    setVertexTextureCoordinates(&b, textureX + textureSize, textureY); \
-    setVertexTextureCoordinates(&c, textureX + textureSize, textureY + textureSize); \
-    setVertexTextureCoordinates(&d, textureX, textureY + textureSize); \
-
 
 
 #define TEX_SELECT(texture) (currentBlock.repeatTexture ? currentBlock.textureTop : texture)
-#define HAS_FACE(block) block <= 0;
+
+static inline int hasFace(BlockIndex index){
+    return index == 0;
+}
+
+static inline BlockIndex getBlock(Chunk* chunk, int ix, int iz, int x, int y, int z){
+    if(y < 0 || y >= DEFAULT_CHUNK_HEIGHT) return INVALID_COORDINATES;
+    BlockIndex block = getChunkBlock(chunk, ix, y, iz);
+    if(block == INVALID_COORDINATES) block = getWorldBlock(chunk->world, x, y, z);
+    return block;
+}
+
+static FaceDefinition faceDefinitions[] = {
+    {
+        .offsetX = 0, .offsetY = 1, .offsetZ = 0,
+        .vertexIndexes = (int[]){4,5,1,0},
+        .textureIndex = 0
+    },
+    {
+        .offsetX = 0, .offsetY = -1, .offsetZ = 0,
+        .vertexIndexes = (int[]){7,6,2,3},
+        .textureIndex = 1
+    },
+    {
+        .offsetX = -1, .offsetY = 0, .offsetZ = 0,
+        .vertexIndexes = (int[]){0,4,7,3},
+        .textureIndex = 2
+    },
+    {
+        .offsetX = 1, .offsetY = 0, .offsetZ = 0,
+        .vertexIndexes = (int[]){1,5,6,2},
+        .textureIndex = 3
+    },
+    {
+        .offsetX = 0, .offsetY = 0, .offsetZ = -1,
+        .vertexIndexes = (int[]){0,1,2,3},
+        .textureIndex = 4
+    },
+    {
+        .offsetX = 0, .offsetY = 0, .offsetZ = 1,
+        .vertexIndexes = (int[]){4,5,6,7},
+        .textureIndex = 5
+    }
+};
+
 void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
-    setVertexFormat(solid, (int[]){3,3,2}, 3);
-    setVertexFormat(transparent, (int[]){3,3,2}, 3);
+    setVertexFormat(solid, (int[]){3,3,2,3}, 4);
+    setVertexFormat(transparent, (int[]){3,3,2,3}, 4);
 
     float textureSize = 1.0 / TEXTURES_TOTAL;
-    //printf("texturesize: %f\n",textureSize);
-    //printf("%p\n",chunk);
     
     for(int y = 0;y < chunk->size_y;y++){
         ChunkLayer* layer = &chunk->layers[y];
@@ -261,94 +314,56 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
                 BlockType currentBlock = predefinedBlocks[index];
                 if(currentBlock.untextured) continue;
 
-                //float r = (float) x / chunk->size_x;
-                //float g = (float) y / chunk->size_y;
-                //float b = (float) z / chunk->size_z;
-
                 // Front vertices
-                Vertex v1 = createVertex(ix    ,y + 1,iz    );
-                Vertex v2 = createVertex(ix + 1,y + 1,iz    );
-                Vertex v3 = createVertex(ix + 1,y    ,iz    );
-                Vertex v4 = createVertex(ix    ,y    ,iz    );
+                Vertex vertices[] = {
+                    createVertex(ix    ,y + 1,iz    ),
+                    createVertex(ix + 1,y + 1,iz    ),
+                    createVertex(ix + 1,y    ,iz    ),
+                    createVertex(ix    ,y    ,iz    ),
 
-                // Back vertices
-                Vertex v5 = createVertex(ix    ,y + 1,iz + 1);
-                Vertex v6 = createVertex(ix + 1,y + 1,iz + 1);
-                Vertex v7 = createVertex(ix + 1,y    ,iz + 1);
-                Vertex v8 = createVertex(ix    ,y    ,iz + 1);
+                    createVertex(ix    ,y + 1,iz + 1),
+                    createVertex(ix + 1,y + 1,iz + 1),
+                    createVertex(ix + 1,y    ,iz + 1),
+                    createVertex(ix    ,y    ,iz + 1)
+                };
 
-                BlockIndex top_block = getWorldBlock(chunk->world, x, y + 1, z);
-                BlockIndex bottom_block = getWorldBlock(chunk->world, x, y - 1, z);
+                float lightR = 0.5;
+                float lightG = 0.5;
+                float lightB = 0.5;
 
-                int top    = HAS_FACE( top_block);
-                int bottom = HAS_FACE( bottom_block);
+                for(int i = 0;i < 6;i++){
+                    FaceDefinition* def = &faceDefinitions[i];
+                    if(!hasFace(getBlock(
+                        chunk,
+                        ix + def->offsetX,
+                        iz + def->offsetZ,
+                        x + def->offsetX,
+                        y + def->offsetY,
+                        z + def->offsetZ
+                    ))) continue;
 
-                BlockIndex left_block = getWorldBlock(chunk->world, x - 1, y, z);
-                BlockIndex right_block = getWorldBlock(chunk->world, x + 1, y, z);
 
-                int left   = HAS_FACE( left_block);
-                int right  = HAS_FACE( right_block);
-
-                BlockIndex front_block = getWorldBlock(chunk->world, x, y, z - 1);
-                BlockIndex back_block = getWorldBlock(chunk->world, x, y, z + 1);
-
-                int front  = HAS_FACE( front_block);
-                int back   = HAS_FACE( back_block);
-
-                //printf("%f %f %f\n",textureY,textureY,textureSize);
-
-                int textureTop = currentBlock.textureTop;
-                int textureBottom = TEX_SELECT(currentBlock.textureBottom);
-                int textureLeft = TEX_SELECT(currentBlock.textureLeft);
-                int textureRight = TEX_SELECT(currentBlock.textureRight);
-                int textureFront = TEX_SELECT(currentBlock.textureFront);
-                int textureBack = TEX_SELECT(currentBlock.textureBack);
-
-                if(top){
-                    VERTEX4NORMAL(v5, v6, v2, v1, 0, 1, 0);
-                    VERTEX4TEXCOORDS(v5, v6, v2, v1, textureTop, textureSize);
-
-                    if(currentBlock.transparent) addQuadFaceToMesh(transparent, v5, v6, v2, v1);
-                    else addQuadFaceToMesh(solid, v5, v6, v2, v1);
-                }
-                if(bottom){
-                    VERTEX4NORMAL(v8, v7, v3, v4, 0, -1, 0);
-                    VERTEX4TEXCOORDS(v8, v7, v3, v4, textureBottom, textureSize);
-
-                    if(currentBlock.transparent) addQuadFaceToMesh(transparent, v8, v7, v3, v4);
-                    else addQuadFaceToMesh(solid, v8, v7, v3, v4);
-                }
-
-                if(left){
-                    VERTEX4NORMAL(v1, v5, v8, v4, -1, 0, 0);
-                    VERTEX4TEXCOORDS(v1, v5, v8, v4, textureLeft, textureSize);
+                    int texture = currentBlock.repeatTexture ? currentBlock.textures[0] : currentBlock.textures[def->textureIndex];
                     
-                    if(currentBlock.transparent) addQuadFaceToMesh(transparent, v1, v5, v8, v4);
-                    else addQuadFaceToMesh(solid, v1, v5, v8, v4);
-                } 
-                if(right){
-                    VERTEX4NORMAL(v2, v6, v7, v3, 1, 0, 0);
-                    VERTEX4TEXCOORDS(v2, v6, v7, v3, textureRight, textureSize);
+                    setFaceMetadata(
+                        &vertices[def->vertexIndexes[0]],
+                        &vertices[def->vertexIndexes[1]],
+                        &vertices[def->vertexIndexes[2]],
+                        &vertices[def->vertexIndexes[3]],
+                        def->offsetX, def->offsetY, def->offsetZ,
+                        texture, textureSize, lightR, lightG, lightB);
 
-                    if(currentBlock.transparent) addQuadFaceToMesh(transparent, v2, v6, v7, v3);
-                    else addQuadFaceToMesh(solid, v2, v6, v7, v3);
-                }
-
-                if(front){
-                    VERTEX4NORMAL(v1, v2, v3, v4, 0, 0, -1);
-                    VERTEX4TEXCOORDS(v1, v2, v3, v4, textureFront, textureSize);
-
-                    if(currentBlock.transparent) addQuadFaceToMesh(transparent, v1, v2, v3, v4);
-                    else addQuadFaceToMesh(solid, v1, v2, v3, v4);
-                }
-                if(back){
-                    VERTEX4NORMAL(v5, v6, v7, v8, 0, 0, 1);
-                    VERTEX4TEXCOORDS(v5, v6, v7, v8, textureBack, textureSize);
-                    
-                    if(currentBlock.transparent) addQuadFaceToMesh(transparent, v5, v6, v7, v8);
-                    else addQuadFaceToMesh(solid, v5, v6, v7, v8);
+                    addQuadFaceToMesh(
+                        solid, 
+                        vertices[def->vertexIndexes[0]],
+                        vertices[def->vertexIndexes[1]],
+                        vertices[def->vertexIndexes[2]],
+                        vertices[def->vertexIndexes[3]]
+                    );
                 }
             }
         }    
     }
+
+    //printf("Solid: %i %i Transparent: %i %i", solid->vertices_count, solid->indices_count, transparent->vertices_count, transparent->indices_count);
 }

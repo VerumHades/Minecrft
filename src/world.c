@@ -1,14 +1,9 @@
 #include <world.h>
 
-char* keyFromPosition(int x, int y, int z){
-    FORMATED_STRING(out, "%ix%ix%i", x, y, z);
-    return out;
-}
-
 World* newWorld(){
     World* world = calloc(1,sizeof(World));
 
-    world->chunks = newHashMap();
+    world->chunks = newPositionMap();
 
     return world;  
 }
@@ -24,13 +19,21 @@ int generateChunkThread(void *arg) {
     chunk->transparentMesh = newMesh3D();
 
 
-    clock_t start = clock();
+    struct timespec start, end;
+
+    // Start timer
+    clock_gettime(CLOCK_REALTIME, &start);
 
     generateMeshForChunk(chunk->solidMesh,chunk->transparentMesh,chunk);
 
-    clock_t end = clock();
-    double seconds = (double)(end - start) / (double)CLOCKS_PER_SEC;
-    printf("Time generate chunk mesh: %f\n", seconds);
+    // End timer
+    clock_gettime(CLOCK_REALTIME, &end);
+
+    // Calculate time difference
+    double elapsed_time = (end.tv_sec - start.tv_sec) +
+                         (end.tv_nsec - start.tv_nsec) / 1e9;
+
+    printf("Time generate chunk mesh: %fs\n", elapsed_time);
 
     chunk->meshGenerating = 0;
     chunk->meshGenerated = 1;
@@ -47,8 +50,9 @@ void regenerateChunkMesh(Chunk* chunk){
 }
 
 Chunk* generateWorldChunk(World* world, int x, int z){
-    char* key = keyFromPosition(x,0,z);
-    Chunk* chunk = getFromHashMap(world->chunks, key);
+    Vec3 key = (Vec3){.x = x, .z = z};
+
+    Chunk* chunk = getFromPositionMap(world->chunks, key);
 
     if(chunk == NULL){
         //printf("Generating chunk %i:%i %s\n", x, z, key);
@@ -57,18 +61,16 @@ Chunk* generateWorldChunk(World* world, int x, int z){
         chunk->worldX = x;
         chunk->worldZ = z;
 
-        putIntoHashMap(chunk->world->chunks, key, chunk);
+        putIntoPositionMap(chunk->world->chunks, key, chunk);
     }
-    
-    free(key);
 
     return chunk;
 }
 
 Chunk* getWorldChunk(World* world, int x, int z){
-    char* key = keyFromPosition(x,0,z);
-    Chunk* chunk = getFromHashMap(world->chunks, key);
-    free(key);
+    Vec3 key = (Vec3){.x = x, .z = z};
+    Chunk* chunk = getFromPositionMap(world->chunks, key);
+
     return chunk;
 }
 
@@ -349,6 +351,6 @@ int setWorldBlock(World* world, int x, int y, int z, BlockIndex index){
 }
 
 void freeWorld(World* world){
-    freeHashMap(world->chunks);
+    freePositionMap(world->chunks);
     free(world);
 }

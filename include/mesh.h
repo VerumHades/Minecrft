@@ -1,7 +1,6 @@
 #ifndef MESH_HEADER
 #define MESH_HEADER
 
-#include <hashmap.h>
 #include <stdlib.h>
 
 #define vertices_size(vertex) vertex->int_value
@@ -29,9 +28,6 @@ Mesh* newMesh3D();
 void setVertexFormat(Mesh* mesh, int sizes[], int count);
 void destoryMesh(Mesh* mesh);
 
-void addVertexValueToMesh(Mesh* mesh, float value);
-void addIndexValueToMesh(Mesh* mesh, int value);
-int getVertexFromMesh(Mesh* mesh, Vertex vertex);
 void addQuadFaceToMesh(Mesh* mesh, Vertex vec1, Vertex vec2, Vertex vec3, Vertex vec4);
 void addTriangleFaceToMesh(Mesh* mesh, Vertex vec1, Vertex vec2, Vertex vec3);
 

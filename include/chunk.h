@@ -35,16 +35,14 @@ typedef struct RectangularCollider{
 
 typedef struct BlockType{
     // For rendering
-    unsigned char textureTop;
-    unsigned char textureBottom;
-    unsigned char textureLeft;
-    unsigned char textureRight;
-    unsigned char textureFront;
-    unsigned char textureBack; 
+    unsigned char* textures; // top > bottom > left > right > front > back
 
     unsigned transparent: 1;
     unsigned untextured: 1;
     unsigned repeatTexture: 1;
+    struct{
+        float r; float g; float b;  
+    } color;
     
     // For physics
     RectangularCollider* colliders;
@@ -81,9 +79,16 @@ typedef struct Chunk{
 
     GLBuffer solidBuffer;
     GLBuffer solidBackBuffer;
+
     GLBuffer transparentBuffer;
     GLBuffer transparentBackBuffer;
 } Chunk; 
+
+typedef struct FaceDefinition{
+    int offsetX; int offsetY; int offsetZ;
+    int* vertexIndexes;
+    int textureIndex;
+} FaceDefinition;
 
 typedef struct World World;
 extern BlockType predefinedBlocks[];
@@ -94,7 +99,6 @@ int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, 
 Chunk* generatePlainChunk(BlockIndex  top, BlockIndex  rest);
 Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ);
 
-Vertex createVertex(float x, float y, float z);
 void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk);
 
 #include <world.h>

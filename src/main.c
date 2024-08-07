@@ -32,7 +32,7 @@ float accelY = 0;
 float camSpeed = 0.002;
 float M_PI_D180 = M_PI / 180;
 
-float camFOV = 100;
+float camFOV = 90;
 
 RectangularCollider playerCollider = {.x = -0.3, .y = -1.7, .z = -0.3, .width = 0.6,.height = 1.8, .depth = 0.6};
 
@@ -187,7 +187,28 @@ int main(void) {
 
     world = newWorld();
 
+    clock_t last = clock();
+    clock_t current = clock();
+
+    int callsToExpand = 0;
+
+    double seconds;
     while (!glfwWindowShouldClose(window)) {
+        last = current;
+        current = clock();
+        seconds = (double)(current - last) / (double)CLOCKS_PER_SEC;
+
+        double fps = 1.0 / seconds;
+
+        if(fps >= 120) callsToExpand++;
+        else callsToExpand = 0;
+
+        if(callsToExpand > 10){
+            printf("Expanding render distance %i\n", renderDistance);
+            callsToExpand = 0;
+            renderDistance++;
+        }
+
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
