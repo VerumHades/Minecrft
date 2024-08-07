@@ -52,7 +52,7 @@ void regenerateChunkMesh(Chunk* chunk){
 Chunk* generateWorldChunk(World* world, int x, int z){
     Vec3 key = (Vec3){.x = x, .z = z};
 
-    Chunk* chunk = getFromPositionMap(world->chunks, key);
+    Chunk* chunk = getFromPositionMap(world->chunks, &key);
 
     if(chunk == NULL){
         //printf("Generating chunk %i:%i %s\n", x, z, key);
@@ -61,7 +61,7 @@ Chunk* generateWorldChunk(World* world, int x, int z){
         chunk->worldX = x;
         chunk->worldZ = z;
 
-        putIntoPositionMap(chunk->world->chunks, key, chunk);
+        putIntoPositionMap(chunk->world->chunks, &key, chunk);
     }
 
     return chunk;
@@ -69,7 +69,7 @@ Chunk* generateWorldChunk(World* world, int x, int z){
 
 Chunk* getWorldChunk(World* world, int x, int z){
     Vec3 key = (Vec3){.x = x, .z = z};
-    Chunk* chunk = getFromPositionMap(world->chunks, key);
+    Chunk* chunk = getFromPositionMap(world->chunks, &key);
 
     return chunk;
 }

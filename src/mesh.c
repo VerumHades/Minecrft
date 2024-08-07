@@ -2,6 +2,12 @@
 
 Mesh* newMesh3D(){
     Mesh* mesh = calloc(1,sizeof(Mesh));
+
+    mesh->vertexMap = newPositionMap();
+
+    mesh->faceCount = 0;
+    mesh->faceSize = 1;
+    mesh->faces = calloc(1,sizeof(MeshFace));
     
     mesh->vertices = calloc(5000,sizeof(float));
     mesh->vertices_count = 0;
@@ -34,6 +40,9 @@ void setVertexFormat(Mesh* mesh, int sizes[], int count){
 void destoryMesh(Mesh* mesh){
     free(mesh->vertices);
     free(mesh->indices);
+    free(mesh->faces);
+
+    freePositionMap(mesh->vertexMap);
 
     if(mesh->vertex_format != NULL) free(mesh->vertex_format);
 
@@ -74,41 +83,106 @@ static inline int getVertexFromMesh(Mesh* mesh, Vertex vertex){
     return index;
 }
 
-void addQuadFaceToMesh(Mesh* mesh, Vertex vec1, Vertex vec2, Vertex vec3, Vertex vec4){
-    int v1_index = getVertexFromMesh(mesh, vec1);
-    int v2_index = getVertexFromMesh(mesh, vec2);
-    int v3_index = getVertexFromMesh(mesh, vec3);
-    int v4_index = getVertexFromMesh(mesh, vec4);
-
-    /*
-        1---2
-        | / |
-        4---3
-
-        Two triangles clockwise
-    */
-    addIndexValueToMesh(mesh, v1_index);
-    addIndexValueToMesh(mesh, v2_index);
-    addIndexValueToMesh(mesh, v4_index);
-
-    addIndexValueToMesh(mesh, v2_index);
-    addIndexValueToMesh(mesh, v3_index);
-    addIndexValueToMesh(mesh, v4_index);
+static inline void normalVecOffset(Vec3* in, Vec3* offset){
+    in->x += 0.1 * offset->x;
+    in->y += 0.1 * offset->y;
+    in->z += 0.1 * offset->z;
 }
 
-void addTriangleFaceToMesh(Mesh* mesh, Vertex vec1, Vertex vec2, Vertex vec3){
-    int v1_index = getVertexFromMesh(mesh, vec1);
-    int v2_index = getVertexFromMesh(mesh, vec2);
-    int v3_index = getVertexFromMesh(mesh, vec3);
+static inline void normalVecDeOffset(Vec3* in, Vec3* offset){
+    in->x -= 0.1 * offset->x;
+    in->y -= 0.1 * offset->y;
+    in->z -= 0.1 * offset->z;
+}
 
-    /*
-        1---2
-        | / 
-        3
+static inline MeshFace* getNewFace(Mesh* mesh){
+    if(mesh->faceSize < mesh->faceCount + 1){
+        mesh->faceSize *= 2;
+        mesh->faces = realloc(mesh->faces, sizeof(MeshFace) * mesh->faceSize);
+    }
 
-        Triangle clockwise
-    */
-    addIndexValueToMesh(mesh, v1_index);
-    addIndexValueToMesh(mesh, v2_index);
-    addIndexValueToMesh(mesh, v3_index);
+    return &mesh->faces[mesh->faceCount++];
+}
+
+void addQuadFaceToMesh(Mesh* mesh, Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normals, Vertex metadata){
+    normalVecOffset(&a, &normals);
+    normalVecOffset(&b, &normals);
+    normalVecOffset(&c, &normals);
+    normalVecOffset(&d, &normals);
+    
+    Vec3 vertices[] = {a,b,c,d};
+    PositionMap* vMap = mesh->vertexMap;
+
+    for(int i = 0; i < 4; i++){
+        Vec3* v1 = &vertices[i];
+        Vec3* v2 = &vertices[(i + 1) % 4];
+
+        MeshFace* face1 = getFromPositionMap(vMap, v1);
+        MeshFace* face2 = getFromPositionMap(vMap, v2);
+
+        if(face1 == NULL || face2 == NULL) continue;
+        if(face1 != face2) continue;
+    }    
+
+    MeshFace* face = getNewFace(mesh);
+
+    face->normals = normals;
+    memcpy(face->vertices, vertices, sizeof(Vec3) * 4);
+    face->metadata = metadata;
+}   
+
+/*
+    textureX, textureY
+    textureX + textureSize, textureY,
+    textureX + textureSize, textureY + textureSize
+    textureX, textureY + textureSize
+*/
+
+void constructMesh(Mesh* mesh){
+    for(int i = 0;i < mesh->faceCount;i++){
+        MeshFace* face = &mesh->faces[i];
+        
+        int vecIndicies[4];
+
+        for(int i = 0;i < 4;i++){
+            Vec3 pos = face->vertices[i];
+            normalVecDeOffset(&pos, &face->normals);
+            
+            Vertex vertex = {0};
+            vertex.size = 11;
+            
+            vertex.values[0] = pos.x;
+            vertex.values[1] = pos.y;
+            vertex.values[2] = pos.z;
+
+            vertex.values[3] = face->normals.x;
+            vertex.values[4] = face->normals.y;
+            vertex.values[5] = face->normals.z;
+
+            float textureX = face->metadata.values[0];
+            float textureY = face->metadata.values[1];
+
+            float* textureCoodinates = (float[][2]){
+                {textureX, textureY},
+                {textureX + textureSize, textureY},
+                {textureX + textureSize, textureY + textureSize},
+                {textureX, textureY + textureSize},
+            }[i];
+            
+            vertex.values[6] = textureCoodinates[0];
+            vertex.values[7] = textureCoodinates[1];
+
+            memcpy(vertex.values + 8, face->metadata.values + 2, face->metadata.size * sizeof(float));
+
+            vecIndicies[i] = getVertexFromMesh(mesh, vertex);
+        }
+
+        addIndexValueToMesh(mesh, vecIndicies[0]);
+        addIndexValueToMesh(mesh, vecIndicies[1]);
+        addIndexValueToMesh(mesh, vecIndicies[3]);
+
+        addIndexValueToMesh(mesh, vecIndicies[1]);
+        addIndexValueToMesh(mesh, vecIndicies[2]);
+        addIndexValueToMesh(mesh, vecIndicies[3]);
+    }
 }

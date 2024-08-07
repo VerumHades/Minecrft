@@ -35,9 +35,9 @@ typedef struct PositionMap{
 PositionMap* newPositionMap();
 void freePositionMap(PositionMap* map);
 
-uint32_t hash3D(Vec3 vec);
-void putIntoPositionMap(PositionMap* map, Vec3 key, void* value);
-void* getFromPositionMap(PositionMap* map, Vec3 key);
+uint32_t hash3D(Vec3* vec);
+void putIntoPositionMap(PositionMap* map, Vec3* key, void* value);
+void* getFromPositionMap(PositionMap* map, Vec3* key);
 
 
 #endif

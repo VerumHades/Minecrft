@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <posmap.h>
 
 #define vertices_size(vertex) vertex->int_value
 
@@ -12,7 +13,21 @@ typedef struct Vertex{
     int size;
 } Vertex;
 
+typedef struct MeshFace{
+    Vec3 vertices[4];
+    Vec3 normals;
+    Vertex metadata;
+} MeshFace;
+
 typedef struct Mesh{
+    PositionMap* vertexMap;
+    
+    MeshFace* faces;
+    size_t faceCount;
+    size_t faceSize;
+
+    // Constructed mesh data
+    unsigned constructed: 1;
     float* vertices;
     int vertices_size;
     int vertices_count;
@@ -30,7 +45,9 @@ Mesh* newMesh3D();
 void setVertexFormat(Mesh* mesh, int sizes[], int count);
 void destoryMesh(Mesh* mesh);
 
-void addQuadFaceToMesh(Mesh* mesh, Vertex vec1, Vertex vec2, Vertex vec3, Vertex vec4);
-void addTriangleFaceToMesh(Mesh* mesh, Vertex vec1, Vertex vec2, Vertex vec3);
+void addQuadFaceToMesh(Mesh* mesh, Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normals, Vertex metadata);
+void constructMesh(Mesh* mesh);
+
+#include <chunk.h>
 
 #endif

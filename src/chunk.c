@@ -203,50 +203,6 @@ Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ){
     return chunk;
 }
 
-static inline Vertex createVertex(float x, float y, float z){
-    Vertex vertex = {0};
-
-    vertex.size = 11;
-    vertex.values[0] = x;
-    vertex.values[1] = y;
-    vertex.values[2] = z;
-
-    return vertex;
-}
-
-static inline void setVertexMetadata(
-    Vertex* vertex,
-    float normalX, float normalY, float normalZ,
-    float textureX, float textureY,
-    float lightR, float lightG, float lightB
-){
-    vertex->values[3] = normalX;
-    vertex->values[4] = normalY;
-    vertex->values[5] = normalZ;
-    
-    vertex->values[6] = textureX;
-    vertex->values[7] = textureY;
-
-    vertex->values[8] = lightR;
-    vertex->values[9] = lightG;
-    vertex->values[10] = lightB;
-}
-
-static inline void setFaceMetadata(
-    Vertex* a, Vertex* b, Vertex* c, Vertex* d,
-    float normalX, float normalY, float normalZ,
-    int textureNumber, float textureSize,
-    float lightR, float lightG, float lightB
-){
-    float textureX = (textureNumber % TEXTURES_TOTAL) * textureSize; 
-    float textureY = (textureNumber / TEXTURES_TOTAL) * textureSize; 
-    setVertexMetadata(a, normalX, normalY, normalZ, textureX, textureY, lightR, lightG, lightB); 
-    setVertexMetadata(b, normalX, normalY, normalZ, textureX + textureSize, textureY, lightR, lightG, lightB); 
-    setVertexMetadata(c, normalX, normalY, normalZ, textureX + textureSize, textureY + textureSize, lightR, lightG, lightB); 
-    setVertexMetadata(d, normalX, normalY, normalZ, textureX, textureY + textureSize, lightR, lightG, lightB); 
-}
-
-
 #define TEX_SELECT(texture) (currentBlock.repeatTexture ? currentBlock.textureTop : texture)
 
 static inline int hasFace(BlockIndex index){
@@ -259,6 +215,8 @@ static inline BlockIndex getBlock(Chunk* chunk, int ix, int iz, int x, int y, in
     if(block == INVALID_COORDINATES) block = getWorldBlock(chunk->world, x, y, z);
     return block;
 }
+
+float textureSize = 1.0 / TEXTURES_TOTAL;
 
 static FaceDefinition faceDefinitions[] = {
     {
@@ -297,8 +255,6 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
     setVertexFormat(solid, (int[]){3,3,2,3}, 4);
     setVertexFormat(transparent, (int[]){3,3,2,3}, 4);
 
-    float textureSize = 1.0 / TEXTURES_TOTAL;
-    
     for(int y = 0;y < chunk->size_y;y++){
         ChunkLayer* layer = &chunk->layers[y];
         if(layer->mode == LAYER_MODE_FILL && layer->block_index == 0) continue;
@@ -315,16 +271,16 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
                 if(currentBlock.untextured) continue;
 
                 // Front vertices
-                Vertex vertices[] = {
-                    createVertex(ix    ,y + 1,iz    ),
-                    createVertex(ix + 1,y + 1,iz    ),
-                    createVertex(ix + 1,y    ,iz    ),
-                    createVertex(ix    ,y    ,iz    ),
+                Vec3 vertices[] = {
+                    {.x = ix    , .y = y + 1,.z = iz    },
+                    {.x = ix + 1, .y = y + 1,.z = iz    },
+                    {.x = ix + 1, .y = y    ,.z = iz    },
+                    {.x = ix    , .y = y    ,.z = iz    },
 
-                    createVertex(ix    ,y + 1,iz + 1),
-                    createVertex(ix + 1,y + 1,iz + 1),
-                    createVertex(ix + 1,y    ,iz + 1),
-                    createVertex(ix    ,y    ,iz + 1)
+                    {.x = ix    , .y = y + 1,.z = iz + 1},
+                    {.x = ix + 1, .y = y + 1,.z = iz + 1},
+                    {.x = ix + 1, .y = y    ,.z = iz + 1},
+                    {.x = ix    , .y = y    ,.z = iz + 1}
                 };
 
                 float lightR = 0.5;
@@ -344,26 +300,37 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
 
 
                     int texture = currentBlock.repeatTexture ? currentBlock.textures[0] : currentBlock.textures[def->textureIndex];
-                    
-                    setFaceMetadata(
-                        &vertices[def->vertexIndexes[0]],
-                        &vertices[def->vertexIndexes[1]],
-                        &vertices[def->vertexIndexes[2]],
-                        &vertices[def->vertexIndexes[3]],
-                        def->offsetX, def->offsetY, def->offsetZ,
-                        texture, textureSize, lightR, lightG, lightB);
+
+                    float textureX = (texture % TEXTURES_TOTAL) * textureSize; 
+                    float textureY = (texture / TEXTURES_TOTAL) * textureSize; 
+
+                    //printf("textureX: %f textureY: %f", textureX, textureY);
+
+                    Vertex metadata = {0};
+                    metadata.size = 5;
+                    memcpy(metadata.values, (float[]){
+                        textureX, textureY, 
+                        lightR, lightG, lightB
+                    }, sizeof(float) * metadata.size);
+
+                    if(metadata.values[0] != textureX || metadata.values[1] != textureY){
+                        printf("This shouldnt happen!\n");
+                    }
 
                     addQuadFaceToMesh(
                         solid, 
                         vertices[def->vertexIndexes[0]],
                         vertices[def->vertexIndexes[1]],
                         vertices[def->vertexIndexes[2]],
-                        vertices[def->vertexIndexes[3]]
+                        vertices[def->vertexIndexes[3]],
+                        (Vec3){.x = def->offsetX, .y = def->offsetY, .z = def->offsetZ},
+                        metadata
                     );
                 }
             }
         }    
     }
-
+    constructMesh(solid);
+    constructMesh(transparent);
     //printf("Solid: %i %i Transparent: %i %i", solid->vertices_count, solid->indices_count, transparent->vertices_count, transparent->indices_count);
 }

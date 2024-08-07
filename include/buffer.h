@@ -3,7 +3,6 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <mesh.h>
 #include <stdio.h>
 
 void checkGLError(const char *file, int line);
@@ -17,6 +16,8 @@ typedef struct GLBuffer{
     unsigned int vertexCount;
     unsigned int indiciesCount;
 } GLBuffer;
+
+#include <mesh.h>
 
 GLBuffer newBuffer();
 void destroyBuffer(GLBuffer buffer);

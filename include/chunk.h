@@ -1,12 +1,12 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
-#include <mesh.h>
 #include <math.h>
 #include <time.h>
 #include <perlinNoise.h>
 
 #include <buffer.h>
+#include <mesh.h>
 
 #define LAYER_MODE_FILL 1
 #define LAYER_MODE_INDIVIDUAL 2
@@ -21,6 +21,7 @@
 
 #define TEXTURES_TOTAL 4
 
+extern float textureSize;
 typedef short BlockIndex;
 
 // A rectangular collider

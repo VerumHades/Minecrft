@@ -1,12 +1,12 @@
 #include <posmap.h>
 
-PositionMapNode* getNodeFromPositionMap(PositionMap* map, Vec3 key);
+PositionMapNode* getNodeFromPositionMap(PositionMap* map, Vec3* key);
 
-uint32_t hash3D(Vec3 vec) {
+uint32_t hash3D(Vec3* vec) {
     // Convert floats to integers
-    uint32_t xi = (uint32_t)(vec.x * 1000.0f);
-    uint32_t yi = (uint32_t)(vec.y * 1000.0f);
-    uint32_t zi = (uint32_t)(vec.z * 1000.0f);
+    uint32_t xi = (uint32_t)(vec->x * 1000.0f);
+    uint32_t yi = (uint32_t)(vec->y * 1000.0f);
+    uint32_t zi = (uint32_t)(vec->z * 1000.0f);
 
     // Perform bitwise operations to mix the bits
     xi ^= xi >> 16;
@@ -32,8 +32,8 @@ uint32_t hash3D(Vec3 vec) {
     return hash;
 }
 
-static inline int positionsEqual(Vec3 a, Vec3 b){
-    return (a.x == b.x) && (a.y == b.y) && (a.z == b.z);
+static inline int positionsEqual(Vec3* a, Vec3* b){
+    return (a->x == b->x) && (a->y == b->y) && (a->z == b->z);
 }
 
 PositionMap* newPositionMap(){
@@ -69,7 +69,7 @@ void freePositionMap(PositionMap* map){
     free(map);
 }
 
-void putIntoPositionMap(PositionMap* map, Vec3 key, void* value){
+void putIntoPositionMap(PositionMap* map, Vec3* key, void* value){
     uint32_t hash = hash3D(key);
     int index = hash % map->capacity;
     //printf("putting to [%i](%i)\n", hash,index);
@@ -81,14 +81,14 @@ void putIntoPositionMap(PositionMap* map, Vec3 key, void* value){
         newNode = node;
         addRegisteredNode(map, newNode);
     }
-    else if(!node->empty && positionsEqual(node->key,key)) newNode = node; 
+    else if(!node->empty && positionsEqual(&node->key,key)) newNode = node; 
     else{
         PositionMapNode* cNode = node;
 
         int nodeMissing = 1;
         while(cNode->next != NULL){
             cNode = cNode->next;
-            if(positionsEqual(cNode->key,key)){
+            if(positionsEqual(&cNode->key,key)){
                 newNode = cNode;
                 nodeMissing = 0;
                 break;
@@ -107,17 +107,17 @@ void putIntoPositionMap(PositionMap* map, Vec3 key, void* value){
     newNode->hash = hash;
     newNode->value = value;
     newNode->next = NULL;
-    newNode->key = key;
+    newNode->key = *key;
     newNode->keyIndex = map->nodesTotal - 1;
 }
 
-void* getFromPositionMap(PositionMap* map, Vec3 key){
+void* getFromPositionMap(PositionMap* map, Vec3* key){
     PositionMapNode* node = getNodeFromPositionMap(map, key);
     if(node == NULL) return node;
     return node->value;
 }
 
-PositionMapNode* getNodeFromPositionMap(PositionMap* map, Vec3 key){
+PositionMapNode* getNodeFromPositionMap(PositionMap* map, Vec3* key){
     uint32_t hash = hash3D(key);
     int index = hash % map->capacity;
     //printf("getting from [%i](%i)\n", hash,index);
@@ -128,7 +128,7 @@ PositionMapNode* getNodeFromPositionMap(PositionMap* map, Vec3 key){
     
     do{
         //printf("Looking at %s\n", node->name);
-        if(positionsEqual(node->key, key)){
+        if(positionsEqual(&node->key, key)){
             //printf("Found %s\n", node->name);
             return node;
         }
