@@ -10,16 +10,16 @@ typedef struct Vec3{
 } Vec3;
 
 typedef struct PositionMapNode{
-    unsigned empty: 1;
+    unsigned taken: 1;
     unsigned free: 1;
 
     void* value;
-    uint32_t hash; 
     Vec3 key;
-    int keyIndex;
+    //int keyIndex;
     unsigned hasNext: 1;
 
     struct PositionMapNode* next;
+    struct PositionMapNode* parent;
 } PositionMapNode;
 
 typedef struct PositionMap{
@@ -37,6 +37,7 @@ void freePositionMap(PositionMap* map);
 
 uint32_t hash3D(Vec3* vec);
 void putIntoPositionMap(PositionMap* map, Vec3* key, void* value);
+void removeFromPositionMap(PositionMap* map, Vec3* key);
 void* getFromPositionMap(PositionMap* map, Vec3* key);
 
 

@@ -95,13 +95,13 @@ static inline void normalVecDeOffset(Vec3* in, Vec3* offset){
     in->z -= 0.1 * offset->z;
 }
 
-static inline MeshFace* getNewFace(Mesh* mesh){
+static inline int getNewFace(Mesh* mesh){
     if(mesh->faceSize < mesh->faceCount + 1){
         mesh->faceSize *= 2;
         mesh->faces = realloc(mesh->faces, sizeof(MeshFace) * mesh->faceSize);
     }
 
-    return &mesh->faces[mesh->faceCount++];
+    return mesh->faceCount++;
 }
 
 void addQuadFaceToMesh(Mesh* mesh, Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normals, Vertex metadata){
@@ -117,18 +117,50 @@ void addQuadFaceToMesh(Mesh* mesh, Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normals,
         Vec3* v1 = &vertices[i];
         Vec3* v2 = &vertices[(i + 1) % 4];
 
-        MeshFace* face1 = getFromPositionMap(vMap, v1);
-        MeshFace* face2 = getFromPositionMap(vMap, v2);
+        void* vindex1 = getFromPositionMap(vMap, v1);
+        void* vindex2 = getFromPositionMap(vMap, v2);
 
-        if(face1 == NULL || face2 == NULL) continue;
-        if(face1 != face2) continue;
-    }    
+        if(vindex1 == NULL || vindex2 == NULL) continue;
+        
+        uintptr_t index1 = (uintptr_t) vindex1;
+        uintptr_t index2 = (uintptr_t) vindex2;
+        
+        if(index1 != index2) continue;
 
-    MeshFace* face = getNewFace(mesh);
+        MeshFace* face = &mesh->faces[index1];
+        if(face->metadata.values[0] != metadata.values[0] || face->metadata.values[1] != metadata.values[1]) continue;
 
+        // Accessing both for debugging
+        /*printf("%f %f\n", face1->vertices[(i + 3) % 4].x, vertices[(i + 3) % 4].x);
+        //face1->vertices[(i + 3) % 4].x = vertices[(i + 3) % 4].x;
+
+        */
+        removeFromPositionMap(vMap, &vertices[(i) % 4]);
+        removeFromPositionMap(vMap, &vertices[(i + 1) % 4]);
+
+        face->vertices[(i + 2) % 4] = vertices[(i + 2) % 4];
+        face->vertices[(i + 3) % 4] = vertices[(i + 3) % 4];
+        
+        //vertices[(i + 2) % 4] = face1->vertices[(i + 2) % 4];
+        //vertices[(i + 3) % 4] = face1->vertices[(i + 3) % 4];
+
+        putIntoPositionMap(vMap, &vertices[(i + 2) % 4], (void*) index1);
+        putIntoPositionMap(vMap, &vertices[(i + 3) % 4], (void*) index1);
+
+        return;
+    }   
+
+    uintptr_t index = getNewFace(mesh);
+    
+    MeshFace* face = &mesh->faces[index];
     face->normals = normals;
     memcpy(face->vertices, vertices, sizeof(Vec3) * 4);
     face->metadata = metadata;
+
+    putIntoPositionMap(vMap, &a, (void*) index);
+    putIntoPositionMap(vMap, &b, (void*) index);
+    putIntoPositionMap(vMap, &c, (void*) index); 
+    putIntoPositionMap(vMap, &d, (void*) index);
 }   
 
 /*

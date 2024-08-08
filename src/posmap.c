@@ -1,6 +1,6 @@
 #include <posmap.h>
 
-PositionMapNode* getNodeFromPositionMap(PositionMap* map, Vec3* key);
+static inline PositionMapNode* getNodeFromPositionMap(PositionMap* map, Vec3* key);
 
 uint32_t hash3D(Vec3* vec) {
     // Convert floats to integers
@@ -37,38 +37,41 @@ static inline int positionsEqual(Vec3* a, Vec3* b){
 }
 
 PositionMap* newPositionMap(){
-    PositionMap* map = (PositionMap*) malloc(sizeof(PositionMap));
+    PositionMap* map = (PositionMap*) calloc(1,sizeof(PositionMap));
     
     map->capacity = 1024;
     map->list = calloc(map->capacity,sizeof(PositionMapNode));
 
-    map->nodesTotal = 0;
-    map->nodesSize = 1;
-    map->nodes = calloc(map->nodesSize, sizeof(PositionMapNode*));
+    //map->nodesTotal = 0;
+    //map->nodesSize = 1;
+    //map->nodes = calloc(map->nodesSize, sizeof(PositionMapNode*));
 
     return map;
 }
 
-void addRegisteredNode(PositionMap* map, PositionMapNode* node){
+/*void addRegisteredNode(PositionMap* map, PositionMapNode* node){
     if(map->nodesSize < map->nodesTotal + 1){
         map->nodesSize *= 2;
         map->nodes = realloc(map->nodes, sizeof(PositionMapNode*) * map->nodesSize);
     }
 
     map->nodes[map->nodesTotal++] = node;
-}
+}*/
 
 void freePositionMapNode(PositionMapNode* node){
     if(node->hasNext) freePositionMapNode(node->next);
-    if(node->free) free(node);
+    free(node);
 }
 void freePositionMap(PositionMap* map){
-    for(int i = 0;i < map->nodesTotal;i++) freePositionMapNode(map->nodes[i]);
+    for(int i = 0;i < map->capacity;i++){
+        PositionMapNode* node = &map->list[i];
+        if(node->taken && node->hasNext) freePositionMapNode(node->next);
+    }
     free(map->list);
-    free(map->nodes);
     free(map);
 }
 
+PositionMapNode emptyNode = {0};
 void putIntoPositionMap(PositionMap* map, Vec3* key, void* value){
     uint32_t hash = hash3D(key);
     int index = hash % map->capacity;
@@ -77,38 +80,55 @@ void putIntoPositionMap(PositionMap* map, Vec3* key, void* value){
     PositionMapNode* newNode;
 
     PositionMapNode* node = &map->list[index];
-    if(node->empty){
-        newNode = node;
-        addRegisteredNode(map, newNode);
-    }
-    else if(!node->empty && positionsEqual(&node->key,key)) newNode = node; 
+    if(!node->taken) newNode = node;
+    else if(node->taken && positionsEqual(&node->key,key)) newNode = node; 
     else{
         PositionMapNode* cNode = node;
 
         int nodeMissing = 1;
-        while(cNode->next != NULL){
+        while(cNode->hasNext){
             cNode = cNode->next;
-            if(positionsEqual(&cNode->key,key)){
-                newNode = cNode;
-                nodeMissing = 0;
-                break;
-            }
+            if(!positionsEqual(&cNode->key,key)) continue;
+            
+            newNode = cNode;
+            nodeMissing = 0;
+            break;
         }
         
         if(nodeMissing){
-            newNode = malloc(sizeof(PositionMapNode));
-            addRegisteredNode(map, newNode);
+            newNode = calloc(1,sizeof(PositionMapNode));
+            //addRegisteredNode(map, newNode);
             cNode->hasNext = 1;
             cNode->next = newNode;
+            newNode->parent = cNode;
             newNode->free = 1;
         }
     }
 
-    newNode->hash = hash;
+    *newNode = emptyNode;
+
+    newNode->taken = 1;
     newNode->value = value;
     newNode->next = NULL;
     newNode->key = *key;
-    newNode->keyIndex = map->nodesTotal - 1;
+    //newNode->keyIndex = map->nodesTotal - 1;
+}
+
+void removeFromPositionMap(PositionMap* map, Vec3* key){
+    PositionMapNode* node = getNodeFromPositionMap(map, key);
+    if(node == NULL) return;
+
+    if(node->free){
+        node->parent->next = node->next;
+        free(node);
+        return;
+    }
+    
+    if(node->hasNext){
+        *node = *node->next;
+        node->free = 0;
+    }
+    else *node = emptyNode;
 }
 
 void* getFromPositionMap(PositionMap* map, Vec3* key){
@@ -117,14 +137,14 @@ void* getFromPositionMap(PositionMap* map, Vec3* key){
     return node->value;
 }
 
-PositionMapNode* getNodeFromPositionMap(PositionMap* map, Vec3* key){
+static inline PositionMapNode* getNodeFromPositionMap(PositionMap* map, Vec3* key){
     uint32_t hash = hash3D(key);
     int index = hash % map->capacity;
     //printf("getting from [%i](%i)\n", hash,index);
 
     PositionMapNode* node = &map->list[index];
 
-    if(node->empty) return NULL;
+    if(!node->taken) return NULL;
     
     do{
         //printf("Looking at %s\n", node->name);
