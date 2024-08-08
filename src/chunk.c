@@ -227,12 +227,14 @@ static FaceDefinition faceDefinitions[] = {
     {
         .offsetX = 0, .offsetY = -1, .offsetZ = 0,
         .vertexIndexes = (int[]){7,6,2,3},
-        .textureIndex = 1
+        .textureIndex = 1,
+        .clockwise = 1
     },
     {
         .offsetX = -1, .offsetY = 0, .offsetZ = 0,
         .vertexIndexes = (int[]){0,4,7,3},
-        .textureIndex = 2
+        .textureIndex = 2,
+        .clockwise = 1
     },
     {
         .offsetX = 1, .offsetY = 0, .offsetZ = 0,
@@ -247,7 +249,8 @@ static FaceDefinition faceDefinitions[] = {
     {
         .offsetX = 0, .offsetY = 0, .offsetZ = 1,
         .vertexIndexes = (int[]){4,5,6,7},
-        .textureIndex = 5
+        .textureIndex = 5,
+        .clockwise = 1
     }
 };
 
@@ -324,7 +327,8 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
                         vertices[def->vertexIndexes[2]],
                         vertices[def->vertexIndexes[3]],
                         (Vec3){.x = def->offsetX, .y = def->offsetY, .z = def->offsetZ},
-                        metadata
+                        metadata,
+                        def->clockwise
                     );
                 }
             }

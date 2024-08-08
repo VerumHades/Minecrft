@@ -19,6 +19,7 @@ typedef struct MeshFace{
     Vertex metadata;
     float width;
     float height;
+    int clockwise;
 } MeshFace;
 
 typedef struct Mesh{
@@ -47,7 +48,7 @@ Mesh* newMesh3D();
 void setVertexFormat(Mesh* mesh, int sizes[], int count);
 void destoryMesh(Mesh* mesh);
 
-void addQuadFaceToMesh(Mesh* mesh, Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normals, Vertex metadata);
+void addQuadFaceToMesh(Mesh* mesh, Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normals, Vertex metadata, int clockwise);
 void constructMesh(Mesh* mesh);
 
 #include <chunk.h>

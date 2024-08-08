@@ -157,9 +157,10 @@ int main(void) {
     glEnable(GL_DEPTH_TEST);
 
     glDepthFunc(GL_LEQUAL);
-    //glEnable(GL_CULL_FACE);  // Enable backface culling
-    //glCullFace(GL_BACK);     // Cull back faces
-    //glFrontFace(GL_CW);     // Set counterclockwise winding order as front
+    
+    glEnable(GL_CULL_FACE);  // Enable backface culling
+    glCullFace(GL_BACK);     // Cull back faces
+    glFrontFace(GL_CW);     // Set counterclockwise winding order as front
 
     //glDepthMask(GL_FALSE);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

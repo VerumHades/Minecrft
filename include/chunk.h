@@ -89,6 +89,7 @@ typedef struct FaceDefinition{
     int offsetX; int offsetY; int offsetZ;
     int* vertexIndexes;
     int textureIndex;
+    int clockwise;
 } FaceDefinition;
 
 typedef struct World World;

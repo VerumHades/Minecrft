@@ -104,7 +104,7 @@ static inline int getNewFace(Mesh* mesh){
     return mesh->faceCount++;
 }
 
-void addQuadFaceToMesh(Mesh* mesh, Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normals, Vertex metadata){
+void addQuadFaceToMesh(Mesh* mesh, Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normals, Vertex metadata, int clockwise){
     normalVecOffset(&a, &normals);
     normalVecOffset(&b, &normals);
     normalVecOffset(&c, &normals);
@@ -153,6 +153,7 @@ void addQuadFaceToMesh(Mesh* mesh, Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normals,
     face->metadata = metadata;
     face->width = 1.0;
     face->height = 1.0;
+    face->clockwise = clockwise;
 
     putIntoPositionMap(vMap, &a, (void*) index);
     putIntoPositionMap(vMap, &b, (void*) index);
@@ -209,12 +210,23 @@ void constructMesh(Mesh* mesh){
             vecIndicies[i] = getVertexFromMesh(mesh, vertex);
         }
 
-        addIndexValueToMesh(mesh, vecIndicies[0]);
-        addIndexValueToMesh(mesh, vecIndicies[1]);
-        addIndexValueToMesh(mesh, vecIndicies[3]);
+        if(face->clockwise){
+            addIndexValueToMesh(mesh, vecIndicies[0]);
+            addIndexValueToMesh(mesh, vecIndicies[1]);
+            addIndexValueToMesh(mesh, vecIndicies[3]);
 
-        addIndexValueToMesh(mesh, vecIndicies[1]);
-        addIndexValueToMesh(mesh, vecIndicies[2]);
-        addIndexValueToMesh(mesh, vecIndicies[3]);
+            addIndexValueToMesh(mesh, vecIndicies[1]);
+            addIndexValueToMesh(mesh, vecIndicies[2]);
+            addIndexValueToMesh(mesh, vecIndicies[3]);
+        }
+        else{
+            addIndexValueToMesh(mesh, vecIndicies[3]);
+            addIndexValueToMesh(mesh, vecIndicies[1]);
+            addIndexValueToMesh(mesh, vecIndicies[0]);
+
+            addIndexValueToMesh(mesh, vecIndicies[3]);
+            addIndexValueToMesh(mesh, vecIndicies[2]);
+            addIndexValueToMesh(mesh, vecIndicies[1]);
+        }
     }
 }
