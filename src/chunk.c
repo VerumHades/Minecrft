@@ -44,6 +44,21 @@ BlockType predefinedBlocks[] = {
             {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
         },
         .colliderCount = 1
+    },
+    { // birch leaf block
+        .repeatTexture = 1,
+        .textures = (unsigned char[]){7},
+        .colliders = (RectangularCollider[]){
+            {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
+        },
+        .colliderCount = 1
+    },
+    { // birch log
+        .textures = (unsigned char[]){9,9,8,8,8,8},
+        .colliders = (RectangularCollider[]){
+            {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
+        },
+        .colliderCount = 1
     }
 };
 
@@ -135,11 +150,9 @@ Chunk* generateEmptyChunk(World* world){
 }
 
 void generateTree(Chunk* chunk, int x, int y, int z){
-    int trunkHeight = 4;
-    BlockIndex trunkBlock = 5;
-    BlockIndex leafBlock = 4;
-
-    for(int i = 0; i < trunkHeight;i++) setChunkBlock(chunk,x,y+i,z, trunkBlock);
+    int trunkHeight = rand() % 5 + 5;
+    BlockIndex trunkBlock = 7;
+    BlockIndex leafBlock = 6;
 
     for(int g = 0;g < 2;g++){
         for(int i = -2; i <= 2;i++){
@@ -162,6 +175,8 @@ void generateTree(Chunk* chunk, int x, int y, int z){
             setChunkBlock(chunk,x+i,y+trunkHeight+2,z+j,leafBlock);       
         }
     }
+
+    for(int i = 0; i < trunkHeight;i++) setChunkBlock(chunk,x,y+i,z, trunkBlock);
 }
 
 Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ){

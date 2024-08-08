@@ -197,9 +197,12 @@ int main(void) {
         "textures/stone.png",
         "textures/oak_log_top.png",
         "textures/oak_log.png",
-        "textures/oak_leaves.png"
+        "textures/oak_leaves.png",
+        "textures/birch_leaves.png",
+        "textures/birch_log.png",
+        "textures/birch_log_top.png"
     };
-    GLTextureArray tilemap = createTextureArray(&mainProgram,texturePaths,7,160,160);
+    GLTextureArray tilemap = createTextureArray(&mainProgram,texturePaths,10,160,160);
 
     world = newWorld();
 
@@ -281,7 +284,7 @@ int main(void) {
         drawSkybox(&skybox);
 
         useShaderProgram(&mainProgram);
-        //bindTextureArray(&tilemap);
+        bindTextureArray(&tilemap);
 
         int camWorldX = camX / DEFAULT_CHUNK_SIZE;
         int camWorldZ = camZ / DEFAULT_CHUNK_SIZE;
