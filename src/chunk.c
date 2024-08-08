@@ -252,8 +252,8 @@ static FaceDefinition faceDefinitions[] = {
 };
 
 void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
-    setVertexFormat(solid, (int[]){3,3,2,3}, 4);
-    setVertexFormat(transparent, (int[]){3,3,2,3}, 4);
+    setVertexFormat(solid, (int[]){3,3,2,1,3}, 5);
+    setVertexFormat(transparent, (int[]){3,3,2,1,3}, 5);
 
     for(int y = 0;y < chunk->size_y;y++){
         ChunkLayer* layer = &chunk->layers[y];
@@ -301,21 +301,21 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
 
                     int texture = currentBlock.repeatTexture ? currentBlock.textures[0] : currentBlock.textures[def->textureIndex];
 
-                    float textureX = (texture % TEXTURES_TOTAL) * textureSize; 
-                    float textureY = (texture / TEXTURES_TOTAL) * textureSize; 
+                    //float textureX = (texture % TEXTURES_TOTAL) * textureSize; 
+                    //float textureY = (texture / TEXTURES_TOTAL) * textureSize; 
 
                     //printf("textureX: %f textureY: %f", textureX, textureY);
 
                     Vertex metadata = {0};
-                    metadata.size = 5;
+                    metadata.size = 6;
                     memcpy(metadata.values, (float[]){
-                        textureX, textureY, 
+                        1.0, 1.0, texture,
                         lightR, lightG, lightB
                     }, sizeof(float) * metadata.size);
 
-                    if(metadata.values[0] != textureX || metadata.values[1] != textureY){
+                    /*if(metadata.values[0] != textureX || metadata.values[1] != textureY){
                         printf("This shouldnt happen!\n");
-                    }
+                    }*/
 
                     addQuadFaceToMesh(
                         solid, 

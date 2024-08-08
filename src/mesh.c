@@ -128,21 +128,16 @@ void addQuadFaceToMesh(Mesh* mesh, Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normals,
         if(index1 != index2) continue;
 
         MeshFace* face = &mesh->faces[index1];
-        if(face->metadata.values[0] != metadata.values[0] || face->metadata.values[1] != metadata.values[1]) continue;
+        if(face->metadata.values[2] != metadata.values[2]) continue;
 
-        // Accessing both for debugging
-        /*printf("%f %f\n", face1->vertices[(i + 3) % 4].x, vertices[(i + 3) % 4].x);
-        //face1->vertices[(i + 3) % 4].x = vertices[(i + 3) % 4].x;
-
-        */
         removeFromPositionMap(vMap, &vertices[(i) % 4]);
         removeFromPositionMap(vMap, &vertices[(i + 1) % 4]);
 
         face->vertices[(i + 2) % 4] = vertices[(i + 2) % 4];
         face->vertices[(i + 3) % 4] = vertices[(i + 3) % 4];
-        
-        //vertices[(i + 2) % 4] = face1->vertices[(i + 2) % 4];
-        //vertices[(i + 3) % 4] = face1->vertices[(i + 3) % 4];
+
+        if(i == 0 || i == 2) face->height++;
+        else face->width++;
 
         putIntoPositionMap(vMap, &vertices[(i + 2) % 4], (void*) index1);
         putIntoPositionMap(vMap, &vertices[(i + 3) % 4], (void*) index1);
@@ -156,6 +151,8 @@ void addQuadFaceToMesh(Mesh* mesh, Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normals,
     face->normals = normals;
     memcpy(face->vertices, vertices, sizeof(Vec3) * 4);
     face->metadata = metadata;
+    face->width = 1.0;
+    face->height = 1.0;
 
     putIntoPositionMap(vMap, &a, (void*) index);
     putIntoPositionMap(vMap, &b, (void*) index);
@@ -175,13 +172,16 @@ void constructMesh(Mesh* mesh){
         MeshFace* face = &mesh->faces[i];
         
         int vecIndicies[4];
+        normalVecDeOffset(&face->vertices[0], &face->normals);
+        normalVecDeOffset(&face->vertices[1], &face->normals);
+        normalVecDeOffset(&face->vertices[2], &face->normals);
+        normalVecDeOffset(&face->vertices[3], &face->normals);
 
         for(int i = 0;i < 4;i++){
             Vec3 pos = face->vertices[i];
-            normalVecDeOffset(&pos, &face->normals);
-            
+
             Vertex vertex = {0};
-            vertex.size = 11;
+            vertex.size = 12;
             
             vertex.values[0] = pos.x;
             vertex.values[1] = pos.y;
@@ -196,9 +196,9 @@ void constructMesh(Mesh* mesh){
 
             float* textureCoodinates = (float[][2]){
                 {textureX, textureY},
-                {textureX + textureSize, textureY},
-                {textureX + textureSize, textureY + textureSize},
-                {textureX, textureY + textureSize},
+                {textureX + face->width, textureY},
+                {textureX + face->width, textureY + face->height},
+                {textureX, textureY + face->height},
             }[i];
             
             vertex.values[6] = textureCoodinates[0];

@@ -155,7 +155,12 @@ int main(void) {
     }
 
     glEnable(GL_DEPTH_TEST);
+
     glDepthFunc(GL_LEQUAL);
+    //glEnable(GL_CULL_FACE);  // Enable backface culling
+    //glCullFace(GL_BACK);     // Cull back faces
+    //glFrontFace(GL_CW);     // Set counterclockwise winding order as front
+
     //glDepthMask(GL_FALSE);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -183,7 +188,17 @@ int main(void) {
         "skybox/stars/back.png"
     };
     GLSkybox skybox = createSkybox(skyboxPaths, 6);
-    GLTexture tilemap = createTexture(&mainProgram,"textures/tilemap.png");
+    
+    char* texturePaths[] = {
+        "textures/grass_top.png",
+        "textures/grass_side.png",
+        "textures/dirt.png",
+        "textures/stone.png",
+        "textures/oak_log_top.png",
+        "textures/oak_log.png",
+        "textures/oak_leaves.png"
+    };
+    GLTextureArray tilemap = createTextureArray(&mainProgram,texturePaths,7,160,160);
 
     world = newWorld();
 
@@ -199,6 +214,8 @@ int main(void) {
         seconds = (double)(current - last) / (double)CLOCKS_PER_SEC;
 
         double fps = 1.0 / seconds;
+        //printf("FPS: %f\n",fps);
+
 
         if(fps >= 120) callsToExpand++;
         else callsToExpand = 0;
@@ -263,7 +280,7 @@ int main(void) {
         drawSkybox(&skybox);
 
         useShaderProgram(&mainProgram);
-        bindTexture(&tilemap);
+        //bindTextureArray(&tilemap);
 
         int camWorldX = camX / DEFAULT_CHUNK_SIZE;
         int camWorldZ = camZ / DEFAULT_CHUNK_SIZE;
@@ -289,6 +306,7 @@ int main(void) {
     }
 
     destroySkybox(&skybox);
+    destroyTextureArray(&tilemap);
 
     glfwDestroyWindow(window);
     glfwTerminate();

@@ -9,6 +9,10 @@ typedef struct GLTexture{
     unsigned int texture;
 } GLTexture;
 
+typedef struct GLTextureArray{
+    unsigned int textureArray;
+} GLTextureArray;
+
 typedef struct GLSkybox{
     unsigned int texture;
     unsigned int vertexBuffer;
@@ -18,6 +22,10 @@ typedef struct GLSkybox{
 GLTexture createTexture(ShaderProgram* program, char* filename);
 void bindTexture(GLTexture* texture);
 void destroyTexture(GLTexture texture);
+
+GLTextureArray createTextureArray(ShaderProgram* program, char* layers[], int layerCount, int layerWidth, int layerHeight);
+void bindTextureArray(GLTextureArray* array);
+void destroyTextureArray(GLTextureArray* array);
 
 GLSkybox createSkybox(char* faces[], int facesTotal);
 void drawSkybox(GLSkybox* skybox);

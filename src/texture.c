@@ -71,6 +71,78 @@ void destroyTexture(GLTexture texture){
     glDeleteTextures(1, &texture.texture);
 }
 
+GLTextureArray createTextureArray(ShaderProgram* program, char* layers[], int layerCount, int layerWidth, int layerHeight){
+    GLTextureArray tex = {0}; 
+
+    GLuint textureArray;
+    glGenTextures(1, &textureArray);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, textureArray);
+
+    int mipLevels = floor(log2(fmax(layerWidth, layerHeight))) + 1;
+
+    printf("Mipmap levels: %i\n", mipLevels);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, GL_RGB8, layerWidth, layerHeight, layerCount);
+
+    int width, height, nrChannels;
+    unsigned char *data;  
+    for(unsigned int i = 0; i < layerCount; i++)
+    {
+        data = stbi_load(layers[i], &width, &height, &nrChannels, 0);
+
+        if (!data) {
+            fprintf(stderr, "Failed to load texture '%s'\n", layers[i]);
+            return tex;
+        }
+
+        if(nrChannels == 3){
+            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, layerWidth, layerHeight, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+        else if(nrChannels == 4){
+            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, layerWidth, layerHeight, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+        else{
+            printf("Invalid number of channels: '%i' in texture image '%s' (4 required).\n",nrChannels, layers[i]);
+            stbi_image_free(data);
+            return tex;
+        }
+    }
+
+    CHECK_GL_ERROR();
+
+    // Set texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT);
+
+    CHECK_GL_ERROR();
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
+    CHECK_GL_ERROR();
+
+    //glActiveTexture(GL_TEXTURE0);
+    //glBindTexture(GL_TEXTURE_2D, texture);
+    unsigned int shaderProgram = program->program;
+    glUniform1i(glGetUniformLocation(shaderProgram, "textureArray"), 0);
+
+    tex.textureArray = textureArray;
+    return tex;
+}
+void bindTextureArray(GLTextureArray* array){
+    glBindTexture(GL_TEXTURE_2D_ARRAY, array->textureArray);
+
+    CHECK_GL_ERROR();
+}
+void destroyTextureArray(GLTextureArray* array){
+    glDeleteTextures(1, &array->textureArray);
+}
+
 float skyboxVertices[] = {
     // positions          
     -1.0f,  1.0f, -1.0f,

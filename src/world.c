@@ -19,19 +19,19 @@ int generateChunkThread(void *arg) {
     chunk->transparentMesh = newMesh3D();
 
 
-    struct timespec start, end;
+   // struct timespec start, end;
 
     // Start timer
-    clock_gettime(CLOCK_REALTIME, &start);
+    //clock_gettime(CLOCK_REALTIME, &start);
 
     generateMeshForChunk(chunk->solidMesh,chunk->transparentMesh,chunk);
 
     // End timer
-    clock_gettime(CLOCK_REALTIME, &end);
+    //clock_gettime(CLOCK_REALTIME, &end);
 
     // Calculate time difference
-    double elapsed_time = (end.tv_sec - start.tv_sec) +
-                         (end.tv_nsec - start.tv_nsec) / 1e9;
+    //double elapsed_time = (end.tv_sec - start.tv_sec) +
+    //                     (end.tv_nsec - start.tv_nsec) / 1e9;
 
     //printf("Time generate chunk mesh: %fs\n", elapsed_time);
 

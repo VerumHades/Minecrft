@@ -17,6 +17,8 @@ typedef struct MeshFace{
     Vec3 vertices[4];
     Vec3 normals;
     Vertex metadata;
+    float width;
+    float height;
 } MeshFace;
 
 typedef struct Mesh{
