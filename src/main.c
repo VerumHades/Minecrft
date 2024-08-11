@@ -160,7 +160,7 @@ int main(void) {
     
     glEnable(GL_CULL_FACE);  // Enable backface culling
     glCullFace(GL_BACK);     // Cull back faces
-    glFrontFace(GL_CW);     // Set counterclockwise winding order as front
+    glFrontFace(GL_CW);     // Set counterclockwise winding order as front*/
 
     //glDepthMask(GL_FALSE);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

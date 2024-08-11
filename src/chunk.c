@@ -218,8 +218,6 @@ Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ){
     return chunk;
 }
 
-#define TEX_SELECT(texture) (currentBlock.repeatTexture ? currentBlock.textureTop : texture)
-
 static inline int hasFace(BlockIndex index){
     return index == 0;
 }
@@ -229,6 +227,32 @@ static inline BlockIndex getBlock(Chunk* chunk, int ix, int iz, int x, int y, in
     BlockIndex block = getChunkBlock(chunk, ix, y, iz);
     if(block == INVALID_COORDINATES) block = getWorldBlock(chunk->world, x, y, z);
     return block;
+}
+
+static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int z, int offset_ix, int offset_y, int offset_iz, FaceDefinition* def, int* coordinates, BlockIndex source){
+    BlockIndex temp = getBlock(
+        chunk,
+        ix + def->offsetX + coordinates[0],
+        iz + def->offsetZ + coordinates[2],
+        x + def->offsetX + coordinates[0],
+        y + def->offsetY + coordinates[1],
+        z + def->offsetZ + coordinates[2]
+    );
+
+    BlockIndex tempSolid = getChunkBlock(
+        chunk,
+        offset_ix,
+        offset_y,
+        offset_iz                         
+    );
+
+    if(tempSolid <= 0 || temp < 0) return 0;
+    if(predefinedBlocks[tempSolid].untextured) return 0;
+
+    //printf("A %i\n",temp);
+    if(!hasFace(temp)) return 0;
+    if(tempSolid != source) return 0;
+    return 1;
 }
 
 float textureSize = 1.0 / TEXTURES_TOTAL;
@@ -273,6 +297,10 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
     setVertexFormat(solid, (int[]){3,3,2,1,3}, 5);
     setVertexFormat(transparent, (int[]){3,3,2,1,3}, 5);
 
+    unsigned char checked[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][6];
+
+    memset(checked, 0, sizeof checked);
+
     for(int y = 0;y < chunk->size_y;y++){
         ChunkLayer* layer = &chunk->layers[y];
         if(layer->mode == LAYER_MODE_FILL && layer->block_index == 0) continue;
@@ -288,24 +316,13 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
                 BlockType currentBlock = predefinedBlocks[index];
                 if(currentBlock.untextured) continue;
 
-                // Front vertices
-                Vec3 vertices[] = {
-                    {.x = ix    , .y = y + 1,.z = iz    },
-                    {.x = ix + 1, .y = y + 1,.z = iz    },
-                    {.x = ix + 1, .y = y    ,.z = iz    },
-                    {.x = ix    , .y = y    ,.z = iz    },
-
-                    {.x = ix    , .y = y + 1,.z = iz + 1},
-                    {.x = ix + 1, .y = y + 1,.z = iz + 1},
-                    {.x = ix + 1, .y = y    ,.z = iz + 1},
-                    {.x = ix    , .y = y    ,.z = iz + 1}
-                };
-
                 float lightR = 0.5;
                 float lightG = 0.5;
                 float lightB = 0.5;
 
                 for(int i = 0;i < 6;i++){
+                    if(checked[ix][y][iz][i]) continue;
+
                     FaceDefinition* def = &faceDefinitions[i];
                     if(!hasFace(getBlock(
                         chunk,
@@ -316,22 +333,98 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
                         z + def->offsetZ
                     ))) continue;
 
-                    int offsetX = 0;
-                    int offsetY = 0;
-                    int offsetZ = 0;
+                    int coordinates[] = {0,0,0};
+                    
+                    int offsetAxis = 0;
+                    int nonOffsetAxis[] = {0,0};
 
-                    for(int i = 0;i < 10;i++) for(int j = 0;j < 10;j++){
-                        offsetX = def->offsetX == 0 ? i : 0;
-                        offsetY = def->offsetY == 0 ? (def->offsetZ != 0 ? j : i) : 0;
-                        offsetZ = def->offsetZ == 0 ? j : 0;
+                    int width = 0;
+                    int height = 1;
+
+                    if(def->offsetX != 0){
+                        nonOffsetAxis[0] = 1;
+                        nonOffsetAxis[1] = 2;
                     }
+                    else if(def->offsetY != 0){
+                        offsetAxis = 1;
+                        nonOffsetAxis[0] = 0;
+                        nonOffsetAxis[1] = 2;
+                    }
+                    else if(def->offsetZ != 0){
+                        offsetAxis = 2;
+                        nonOffsetAxis[0] = 0;
+                        nonOffsetAxis[1] = 1;
+                    }
+
+                    int max_height = 17;
+                    while(1){
+                        int offset_ix = ix + coordinates[0];
+                        int offset_iz = iz + coordinates[2]; 
+                        int offset_y = y + coordinates[1];
+
+                        coordinates[nonOffsetAxis[1]] = 0;
+                        while(1){
+                            offset_ix = ix + coordinates[0];
+                            offset_iz = iz + coordinates[2]; 
+                            offset_y = y + coordinates[1];
+
+                            if(!hasGreedyFace(chunk,ix,iz,x,y,z,offset_ix,offset_y,offset_iz,def,coordinates,index)) break;
+                            if(checked[offset_ix][offset_y][offset_iz][i]) break;
+
+                            coordinates[nonOffsetAxis[1]] += 1;
+                        }
+
+                        if(coordinates[nonOffsetAxis[1]] != 0) max_height = coordinates[nonOffsetAxis[1]] < max_height ? coordinates[nonOffsetAxis[1]] : max_height;
+                        coordinates[nonOffsetAxis[1]] = 0;
+
+                        offset_ix = ix + coordinates[0];
+                        offset_iz = iz + coordinates[2]; 
+                        offset_y = y + coordinates[1];
+
+                        if(!hasGreedyFace(chunk,ix,iz,x,y,z,offset_ix,offset_y,offset_iz,def,coordinates,index)) break;
+                        if(checked[offset_ix][offset_y][offset_iz][i]) break;
+
+                        coordinates[nonOffsetAxis[0]] += 1;
+                        width++;
+                        checked[offset_ix][offset_y][offset_iz][i] = 1;
+                    }  
+                    //if(max_height == 0) printf("%i\n", max_height);
+                    for(int padderH = 0;padderH < max_height;padderH++){
+                        coordinates[nonOffsetAxis[1]] = padderH;
+                        for(int padderW = 0;padderW < width;padderW++){
+                            coordinates[nonOffsetAxis[0]] = padderW;
+                            int offset_ix = ix + coordinates[0];
+                            int offset_iz = iz + coordinates[2]; 
+                            int offset_y = y + coordinates[1];
+
+                            checked[offset_ix][offset_y][offset_iz][i] = 1;
+                        }
+                    } 
+
+                    coordinates[nonOffsetAxis[0]] = width;
+                    coordinates[nonOffsetAxis[1]] = max_height;
+
+                    height = max_height;
+                    coordinates[offsetAxis] = 1;
+                    //printf("%i %i %i\n", coordinates[0], coordinates[1], coordinates[2]);
+
+                    // Front vertices
+                    Vec3 vertices[] = {
+                        {.x = ix                 , .y = y + coordinates[1],.z = iz    },
+                        {.x = ix + coordinates[0], .y = y + coordinates[1],.z = iz    },
+                        {.x = ix + coordinates[0], .y = y                 ,.z = iz    },
+                        {.x = ix                 , .y = y                 ,.z = iz    },
+
+                        {.x = ix                 , .y = y + coordinates[1],.z = iz + coordinates[2]},
+                        {.x = ix + coordinates[0], .y = y + coordinates[1],.z = iz + coordinates[2]},
+                        {.x = ix + coordinates[0], .y = y                 ,.z = iz + coordinates[2]},
+                        {.x = ix                 , .y = y                 ,.z = iz + coordinates[2]}
+                    };
+
+                    //printf("%i %i %i\n", coordinates[0], coordinates[1], coordinates[2]);
+                    
                     
                     int texture = currentBlock.repeatTexture ? currentBlock.textures[0] : currentBlock.textures[def->textureIndex];
-
-                    //float textureX = (texture % TEXTURES_TOTAL) * textureSize; 
-                    //float textureY = (texture / TEXTURES_TOTAL) * textureSize; 
-
-                    //printf("textureX: %f textureY: %f", textureX, textureY);
 
                     Vertex metadata = {0};
                     metadata.size = 6;
@@ -343,22 +436,27 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
                     /*if(metadata.values[0] != textureX || metadata.values[1] != textureY){
                         printf("This shouldnt happen!\n");
                     }*/
-
+                    if(def->offsetX != 0){
+                        int temp = width;
+                        width = height;
+                        height = temp;
+                    }
                     addQuadFaceToMesh(
                         solid, 
-                        vertices[def->vertexIndexes[0]],
-                        vertices[def->vertexIndexes[1]],
-                        vertices[def->vertexIndexes[2]],
-                        vertices[def->vertexIndexes[3]],
+                        (Vec3[]){
+                            vertices[def->vertexIndexes[0]],
+                            vertices[def->vertexIndexes[1]],
+                            vertices[def->vertexIndexes[2]],
+                            vertices[def->vertexIndexes[3]],
+                        },
                         (Vec3){.x = def->offsetX, .y = def->offsetY, .z = def->offsetZ},
                         metadata,
-                        def->clockwise
+                        def->clockwise,
+                        width,height
                     );
                 }
             }
         }    
     }
-    constructMesh(solid);
-    constructMesh(transparent);
     //printf("Solid: %i %i Transparent: %i %i", solid->vertices_count, solid->indices_count, transparent->vertices_count, transparent->indices_count);
 }
