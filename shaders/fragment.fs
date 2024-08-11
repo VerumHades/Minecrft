@@ -25,7 +25,7 @@ void main()
 
     //FragColor = texture(texture1, TexCoords) * vec4(LightLevel,1); //* diffuse;
     
-    FragColor = texture(textureArray, vec3(TexCoords, TexIndex));
+    FragColor = texture(textureArray, vec3(TexCoords, TexIndex)) * vec4(LightLevel,1);
     //FragColor.a = 1.0;
     //FragColor = vec4(vec3(0.5,0.5,0.2) - Normals, 1);
 }

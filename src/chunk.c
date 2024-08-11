@@ -316,7 +316,16 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
                         z + def->offsetZ
                     ))) continue;
 
+                    int offsetX = 0;
+                    int offsetY = 0;
+                    int offsetZ = 0;
 
+                    for(int i = 0;i < 10;i++) for(int j = 0;j < 10;j++){
+                        offsetX = def->offsetX == 0 ? i : 0;
+                        offsetY = def->offsetY == 0 ? (def->offsetZ != 0 ? j : i) : 0;
+                        offsetZ = def->offsetZ == 0 ? j : 0;
+                    }
+                    
                     int texture = currentBlock.repeatTexture ? currentBlock.textures[0] : currentBlock.textures[def->textureIndex];
 
                     //float textureX = (texture % TEXTURES_TOTAL) * textureSize; 

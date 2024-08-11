@@ -279,9 +279,10 @@ int main(void) {
         else camZ += accelZ;
 
         //printf("x:%f y:%f z:%f ax:%f ay:%f az:%f\n",camX,camY,camZ,accelX,accelY,accelZ);
-
+        glDisable(GL_CULL_FACE);  
         useShaderProgram(&skyboxProgram);
         drawSkybox(&skybox);
+        glEnable(GL_CULL_FACE);  
 
         useShaderProgram(&mainProgram);
         bindTextureArray(&tilemap);
