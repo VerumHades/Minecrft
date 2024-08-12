@@ -131,9 +131,8 @@ Chunk* generatePlainChunk(World* world, Block top, Block rest){
 
         layer->mode = LAYER_MODE_FILL;
 
-        if(i < 60) layer->block.typeIndex = 1;
-        else if(i == 60) layer->block.typeIndex = 2;
-        else layer->block.typeIndex = 3;
+        if(i < 60) layer->block = rest;
+        else if(i == 60) layer->block = top;
     }
 
     return chunk;

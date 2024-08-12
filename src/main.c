@@ -23,7 +23,7 @@ float camX = 0;
 float camY = 150;
 float camZ = 0;
 
-int renderDistance = 32;
+int renderDistance = 16;
 
 float accelX = 0;
 float accelZ = 0;
@@ -284,17 +284,22 @@ int main(void) {
         int camWorldX = camX / DEFAULT_CHUNK_SIZE;
         int camWorldZ = camZ / DEFAULT_CHUNK_SIZE;
 
-        int total = 0;
+        float offsetCamX = camX - cos(M_PI_D180 * (camAngleY - 90)) * 32;
+        float offsetCamZ = camZ - sin(M_PI_D180 * (camAngleY - 90)) * 32;
+
         for(int x = -renderDistance; x <= renderDistance; x++){
             for(int z = -renderDistance; z <= renderDistance; z++){
                 int chunkX = x + camWorldX;
                 int chunkZ = z + camWorldZ;
 
-                float angle = clampAngle(atan2(camZ - chunkZ * DEFAULT_CHUNK_SIZE, camX - chunkX * DEFAULT_CHUNK_SIZE) * 180 / M_PI - 90);
+                int realChunkX = chunkX * DEFAULT_CHUNK_SIZE + DEFAULT_CHUNK_SIZE/2;
+                int realChunkZ = chunkZ * DEFAULT_CHUNK_SIZE + DEFAULT_CHUNK_SIZE/2;
+
+                float angle = clampAngle(atan2(offsetCamZ - realChunkZ, offsetCamX - realChunkX) * 180 / M_PI - 90);
                 float difference = abs(angle - camAngleY);
                 difference = fmin(difference, 360 - difference);
 
-                if(difference > halfCamFov && !(abs(x) < 2 && abs(z) < 2)) continue; 
+                if(difference > halfCamFov) continue; 
 
                 Chunk* chunk = getWorldChunkWithMesh(world, chunkX, chunkZ, &mainProgram);
                 if(chunk == NULL) chunk = generateWorldChunk(world, chunkX, chunkZ);
@@ -304,10 +309,9 @@ int main(void) {
                 
                 //bindTexture3D(&chunk->lightTexture);
                 drawBuffer(&chunk->solidBuffer);
-                total++;
             }
         }
-        printf("Chunks drawn: %i\n", total);
+        //printf("Chunks drawn: %i\n", total);
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 

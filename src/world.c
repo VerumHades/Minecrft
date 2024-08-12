@@ -56,7 +56,7 @@ Chunk* generateWorldChunk(World* world, int x, int z){
 
     if(chunk == NULL){
         //printf("Generating chunk %i:%i %s\n", x, z, key);
-        //chunk = generatePlainChunk(1,2);
+        //chunk = generatePlainChunk(world, (Block){.typeIndex=1},(Block){.typeIndex = 2});
         chunk = generatePerlinChunk(world,x,z);
         chunk->worldX = x;
         chunk->worldZ = z;
