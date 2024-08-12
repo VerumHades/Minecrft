@@ -23,7 +23,7 @@ float camX = 0;
 float camY = 150;
 float camZ = 0;
 
-int renderDistance = 6;
+int renderDistance = 32;
 
 float accelX = 0;
 float accelZ = 0;
@@ -33,6 +33,8 @@ float camSpeed = 0.002;
 float M_PI_D180 = M_PI / 180;
 
 float camFOV = 90;
+float halfCamFov = 70;
+
 
 RectangularCollider playerCollider = {.x = -0.3, .y = -1.7, .z = -0.3, .width = 0.6,.height = 1.8, .depth = 0.6};
 
@@ -202,7 +204,8 @@ int main(void) {
         "textures/birch_log.png",
         "textures/birch_log_top.png"
     };
-    GLTextureArray tilemap = createTextureArray(&mainProgram,texturePaths,10,160,160);
+    GLTextureArray tilemap = createTextureArray(&mainProgram);
+    loadTextureArrayFromFiles(&tilemap, texturePaths,10,160,160);
 
     world = newWorld();
 
@@ -218,17 +221,8 @@ int main(void) {
         seconds = (double)(current - last) / (double)CLOCKS_PER_SEC;
 
         double fps = 1.0 / seconds;
-        //printf("FPS: %f\n",fps);
+        printf("FPS: %f\n",fps);
 
-
-        if(fps >= 120) callsToExpand++;
-        else callsToExpand = 0;
-
-        if(callsToExpand > 10){
-            printf("Expanding render distance %i\n", renderDistance);
-            callsToExpand = 0;
-            renderDistance++;
-        }
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -290,19 +284,30 @@ int main(void) {
         int camWorldX = camX / DEFAULT_CHUNK_SIZE;
         int camWorldZ = camZ / DEFAULT_CHUNK_SIZE;
 
+        int total = 0;
         for(int x = -renderDistance; x <= renderDistance; x++){
             for(int z = -renderDistance; z <= renderDistance; z++){
-                int rx = x + camWorldX;
-                int rz = z + camWorldZ;
+                int chunkX = x + camWorldX;
+                int chunkZ = z + camWorldZ;
 
-                Chunk* chunk = getWorldChunkWithMesh(world, rx, rz);
-                if(chunk == NULL) chunk = generateWorldChunk(world, rx, rz);
+                float angle = clampAngle(atan2(camZ - chunkZ * DEFAULT_CHUNK_SIZE, camX - chunkX * DEFAULT_CHUNK_SIZE) * 180 / M_PI - 90);
+                float difference = abs(angle - camAngleY);
+                difference = fmin(difference, 360 - difference);
+
+                if(difference > halfCamFov && !(abs(x) < 2 && abs(z) < 2)) continue; 
+
+                Chunk* chunk = getWorldChunkWithMesh(world, chunkX, chunkZ, &mainProgram);
+                if(chunk == NULL) chunk = generateWorldChunk(world, chunkX, chunkZ);
                 if(!chunk->isDrawn) continue;
 
-                setViewOffset(&mainProgram, -camX + rx * DEFAULT_CHUNK_SIZE, -camY, -camZ + rz * DEFAULT_CHUNK_SIZE);
+                setViewOffset(&mainProgram, -camX + chunkX * DEFAULT_CHUNK_SIZE, -camY, -camZ + chunkZ * DEFAULT_CHUNK_SIZE);
+                
+                //bindTexture3D(&chunk->lightTexture);
                 drawBuffer(&chunk->solidBuffer);
+                total++;
             }
         }
+        printf("Chunks drawn: %i\n", total);
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 

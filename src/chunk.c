@@ -63,22 +63,22 @@ BlockType predefinedBlocks[] = {
 };
 
 Block* getChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z){
-    if(x >= chunk->size_x) return NULL;
-    if(y >= chunk->size_y) return NULL;
-    if(z >= chunk->size_z) return NULL;
+    if(x >= DEFAULT_CHUNK_SIZE) return NULL;
+    if(y >= DEFAULT_CHUNK_HEIGHT) return NULL;
+    if(z >= DEFAULT_CHUNK_SIZE) return NULL;
 
     ChunkLayer* layer = &chunk->layers[y];
     
     if(layer->mode == LAYER_MODE_FILL) return &layer->block;
-    else if(layer->mode == LAYER_MODE_INDIVIDUAL) return &layer->data[x + z * chunk->size_z];
+    else if(layer->mode == LAYER_MODE_INDIVIDUAL) return &layer->data[x + z * DEFAULT_CHUNK_SIZE];
 
     return NULL;
 }
 
 int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, Block value){
-    if(x >= chunk->size_x) return INVALID_COORDINATES;
-    if(y >= chunk->size_y) return INVALID_COORDINATES;
-    if(z >= chunk->size_z) return INVALID_COORDINATES;
+    if(x >= DEFAULT_CHUNK_SIZE) return INVALID_COORDINATES;
+    if(y >= DEFAULT_CHUNK_HEIGHT) return INVALID_COORDINATES;
+    if(z >= DEFAULT_CHUNK_SIZE) return INVALID_COORDINATES;
 
     ChunkLayer* layer = &chunk->layers[y];
 
@@ -89,10 +89,10 @@ int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, 
         for(int i = 0;i < DEFAULT_CHUNK_AREA;i++) layer->data[i] = layer->block;
     }
 
-    layer->data[x + z * chunk->size_z] = value;
+    layer->data[x + z * DEFAULT_CHUNK_SIZE] = value;
 
     int compress = 1;
-    for(int i = 0; i < chunk->size_x * chunk->size_z;i++){
+    for(int i = 0; i < DEFAULT_CHUNK_SIZE * DEFAULT_CHUNK_SIZE;i++){
         if(memcmp(&layer->data[i], &value, sizeof(Block))) continue;
         compress = 0;
         break;
@@ -107,14 +107,24 @@ int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, 
     return OK;
 }
 
-Chunk* generatePlainChunk(Block top, Block rest){
+Chunk* generateEmptyChunk(World* world){
     Chunk* chunk = calloc(1, sizeof(Chunk));
-
-    chunk->size_x = DEFAULT_CHUNK_SIZE;
-    chunk->size_z = DEFAULT_CHUNK_SIZE;
-    chunk->size_y = DEFAULT_CHUNK_HEIGHT;
-
+    chunk->world = world;
+    
     chunk->layers = calloc(DEFAULT_CHUNK_HEIGHT, sizeof(ChunkLayer));
+
+    for(int i = 0;i < DEFAULT_CHUNK_HEIGHT;i++){
+        ChunkLayer* layer = &chunk->layers[i];
+
+        layer->mode = LAYER_MODE_FILL;
+        layer->block.typeIndex = 0;
+    }
+
+    return chunk;
+}
+
+Chunk* generatePlainChunk(World* world, Block top, Block rest){
+    Chunk* chunk = generateEmptyChunk(world);
 
     for(int i = 0;i < DEFAULT_CHUNK_HEIGHT;i++){
         ChunkLayer* layer = &chunk->layers[i];
@@ -124,26 +134,6 @@ Chunk* generatePlainChunk(Block top, Block rest){
         if(i < 60) layer->block.typeIndex = 1;
         else if(i == 60) layer->block.typeIndex = 2;
         else layer->block.typeIndex = 3;
-    }
-
-    return chunk;
-}
-
-Chunk* generateEmptyChunk(World* world){
-    Chunk* chunk = calloc(1, sizeof(Chunk));
-    chunk->world = world;
-
-    chunk->size_x = DEFAULT_CHUNK_SIZE;
-    chunk->size_z = DEFAULT_CHUNK_SIZE;
-    chunk->size_y = DEFAULT_CHUNK_HEIGHT;
-
-    chunk->layers = calloc(DEFAULT_CHUNK_HEIGHT, sizeof(ChunkLayer));
-
-    for(int i = 0;i < DEFAULT_CHUNK_HEIGHT;i++){
-        ChunkLayer* layer = &chunk->layers[i];
-
-        layer->mode = LAYER_MODE_FILL;
-        layer->block.typeIndex = 0;
     }
 
     return chunk;
@@ -304,12 +294,12 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
 
     memset(checked, 0, sizeof checked);
 
-    for(int y = 0;y < chunk->size_y;y++){
+    for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++){
         ChunkLayer* layer = &chunk->layers[y];
         if(layer->mode == LAYER_MODE_FILL && layer->block.typeIndex== 0) continue;
 
-        for(int iz = 0;iz < chunk->size_z;iz++){
-            for(int ix = 0;ix < chunk->size_x;ix++){
+        for(int iz = 0;iz < DEFAULT_CHUNK_SIZE;iz++){
+            for(int ix = 0;ix < DEFAULT_CHUNK_SIZE;ix++){
                 int x = ix + chunk->worldX * DEFAULT_CHUNK_SIZE;
                 int z = iz + chunk->worldZ * DEFAULT_CHUNK_SIZE;
 

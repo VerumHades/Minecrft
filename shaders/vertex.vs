@@ -16,10 +16,12 @@ out float TexIndex;
 out vec3 LightLevel;
 
 out vec3 crntPosition;
+out vec3 pos;
 
 void main()
 {
     crntPosition = vec3(model * vec4(aPos, 1.0));
+    pos = aPos;
 
     gl_Position = projection * view * vec4(crntPosition,1.0);
     Normals = aNormals;

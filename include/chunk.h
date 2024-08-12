@@ -5,6 +5,7 @@
 #include <time.h>
 #include <perlinNoise.h>
 
+#include <rendering/texture.h>
 #include <rendering/buffer.h>
 #include <rendering/mesh.h>
 
@@ -59,15 +60,12 @@ typedef struct ChunkLayer{
 } ChunkLayer;
 
 typedef struct Chunk{
-    unsigned int size_x;
-    unsigned int size_y;
-    unsigned int size_z;
-
     int worldX;
     int worldZ;
     struct World* world;
 
     struct ChunkLayer* layers;
+    //unsigned char lightArray[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][3];
 
     unsigned meshGenerating: 1;
     unsigned meshGenerated: 1;
@@ -79,6 +77,9 @@ typedef struct Chunk{
     
     Mesh* solidMesh;
     Mesh* transparentMesh;
+
+    //unsigned lightTextureLoaded: 1;
+    //GLTexture3D lightTexture;
 
     GLBuffer solidBuffer;
     GLBuffer solidBackBuffer;
@@ -100,7 +101,7 @@ extern BlockType predefinedBlocks[];
 Block* getChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z);
 int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, Block  value);
 
-Chunk* generatePlainChunk(Block  top, Block  rest);
+Chunk* generatePlainChunk(World* world, Block  top, Block  rest);
 Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ);
 
 void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk);

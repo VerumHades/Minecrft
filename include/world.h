@@ -58,7 +58,7 @@ int setWorldBlock(World* world,int x, int y, int z, Block index);
 
 Chunk* generateWorldChunk(World* world, int x, int z);
 Chunk* getWorldChunk(World* world, int x, int z);
-Chunk* getWorldChunkWithMesh(World* world, int x, int z);
+Chunk* getWorldChunkWithMesh(World* world, int x, int z, ShaderProgram* program);
 Chunk* getChunkFromBlockPosition(World* world, int x, int z);
 void regenerateChunkMesh(Chunk* chunk);
 

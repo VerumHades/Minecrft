@@ -19,21 +19,21 @@ int generateChunkThread(void *arg) {
     chunk->transparentMesh = newMesh3D();
 
 
-    struct timespec start, end;
+    //struct timespec start, end;
 
      //Start timer
-    clock_gettime(CLOCK_REALTIME, &start);
+    //clock_gettime(CLOCK_REALTIME, &start);
 
     generateMeshForChunk(chunk->solidMesh,chunk->transparentMesh,chunk);
 
     // End timer
-    clock_gettime(CLOCK_REALTIME, &end);
+    //clock_gettime(CLOCK_REALTIME, &end);
 
     // Calculate time difference
-    double elapsed_time = (end.tv_sec - start.tv_sec) +
-                         (end.tv_nsec - start.tv_nsec) / 1e9;
+    //double elapsed_time = (end.tv_sec - start.tv_sec) +
+    //                     (end.tv_nsec - start.tv_nsec) / 1e9;
 
-    printf("Time generate chunk mesh: %fs\n", elapsed_time);
+    //printf("Time generate chunk mesh: %fs\n", elapsed_time);
 
     chunk->meshGenerating = 0;
     chunk->meshGenerated = 1;
@@ -74,10 +74,16 @@ Chunk* getWorldChunk(World* world, int x, int z){
     return chunk;
 }
 
-Chunk* getWorldChunkWithMesh(World* world, int x, int z){
+Chunk* getWorldChunkWithMesh(World* world, int x, int z, ShaderProgram* program){
     Chunk* chunk = getWorldChunk(world, x, z);
     if(chunk == NULL) return NULL;
 
+    /*if(!chunk->lightTextureLoaded){
+        chunk->lightTexture = createTexture3D(program);
+        chunk->lightTextureLoaded = 1;
+        memset(chunk->lightArray, 255, sizeof(unsigned char) * DEFAULT_CHUNK_HEIGHT * DEFAULT_CHUNK_AREA);
+        loadTexture3DRGB(&chunk->lightTexture, chunk->lightArray, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_HEIGHT, DEFAULT_CHUNK_SIZE);
+    }*/
 
     if(!chunk->meshGenerated && !chunk->meshGenerating){
         chunk->meshGenerating = 1;

@@ -71,16 +71,20 @@ void destroyTexture(GLTexture texture){
     glDeleteTextures(1, &texture.texture);
 }
 
-GLTextureArray createTextureArray(ShaderProgram* program, char* layers[], int layerCount, int layerWidth, int layerHeight){
+GLTextureArray createTextureArray(ShaderProgram* program){
     GLTextureArray tex = {0}; 
 
     GLuint textureArray;
     glGenTextures(1, &textureArray);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, textureArray);
+
+    tex.program = program->program;
+    tex.textureArray = textureArray;
+    return tex;
+}
+void loadTextureArrayFromFiles(GLTextureArray* tex, char* layers[], int layerCount, int layerWidth, int layerHeight){
+    glBindTexture(GL_TEXTURE_2D_ARRAY, tex->textureArray);
 
     int mipLevels = floor(log2(fmax(layerWidth, layerHeight))) + 1;
-
-    printf("Mipmap levels: %i\n", mipLevels);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, GL_RGB8, layerWidth, layerHeight, layerCount);
 
     int width, height, nrChannels;
@@ -91,7 +95,7 @@ GLTextureArray createTextureArray(ShaderProgram* program, char* layers[], int la
 
         if (!data) {
             fprintf(stderr, "Failed to load texture '%s'\n", layers[i]);
-            return tex;
+            return;
         }
 
         if(nrChannels == 3){
@@ -105,7 +109,7 @@ GLTextureArray createTextureArray(ShaderProgram* program, char* layers[], int la
         else{
             printf("Invalid number of channels: '%i' in texture image '%s' (4 required).\n",nrChannels, layers[i]);
             stbi_image_free(data);
-            return tex;
+            return;
         }
     }
 
@@ -126,14 +130,60 @@ GLTextureArray createTextureArray(ShaderProgram* program, char* layers[], int la
 
     CHECK_GL_ERROR();
 
-    //glActiveTexture(GL_TEXTURE0);
-    //glBindTexture(GL_TEXTURE_2D, texture);
-    unsigned int shaderProgram = program->program;
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, tex->textureArray);
+    unsigned int shaderProgram = tex->program;
     glUniform1i(glGetUniformLocation(shaderProgram, "textureArray"), 0);
+}
 
-    tex.textureArray = textureArray;
+GLTexture3D createTexture3D(ShaderProgram* program){
+    GLTexture3D tex = {0}; 
+
+    GLuint texture;
+    glGenTextures(1, &texture);
+
+    tex.program = program->program;
+    tex.texture = texture;
+
     return tex;
 }
+void loadTexture3DRGB(GLTexture3D* tex, unsigned char data[], int layerWidth, int layerHeight, int layerCount){
+    glBindTexture(GL_TEXTURE_3D, tex->texture);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, layerWidth, layerCount, layerHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    CHECK_GL_ERROR();
+
+    // Set texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    CHECK_GL_ERROR();
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_3D, tex->texture);
+    unsigned int shaderProgram = tex->program;
+    glUniform1i(glGetUniformLocation(shaderProgram, "lightArray"), 1);
+}
+
+void updateTexture3DRGB(GLTextureArray* tex, unsigned char data[], int layerWidth, int layerHeight, int layerCount){
+    glBindTexture(GL_TEXTURE_3D, tex->textureArray);
+
+    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, layerWidth, layerCount, layerHeight, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    CHECK_GL_ERROR();
+}
+void bindTexture3D(GLTexture3D* array){
+    glBindTexture(GL_TEXTURE_3D, array->texture);
+
+    CHECK_GL_ERROR();
+}
+void destroyTexture3D(GLTexture3D* array){
+    glDeleteTextures(1, &array->texture);
+}
+
 void bindTextureArray(GLTextureArray* array){
     glBindTexture(GL_TEXTURE_2D_ARRAY, array->textureArray);
 
