@@ -1,4 +1,4 @@
-#include <shaders.h>
+#include <rendering/shaders.h>
 
 unsigned int compileShader(const char* source, int type){
     unsigned int shader = glCreateShader(type);

@@ -8,6 +8,6 @@
         "buffer.h": "c",
         "chunk.h": "c",
         "type_traits": "c",
-        "posmap.h": "c"
+        "structures/posmap.h": "c"
     }
 }

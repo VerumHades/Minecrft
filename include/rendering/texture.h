@@ -2,8 +2,8 @@
 #define TEXTURE_3D_H
 
 #include <glad/glad.h>
-#include <shaders.h>
-#include <buffer.h>
+#include <rendering/shaders.h>
+#include <rendering/buffer.h>
 
 typedef struct GLTexture{
     unsigned int texture;

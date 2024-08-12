@@ -1,6 +1,6 @@
 # Linux settings
 CC = gcc
-CFLAGS = -Wall -Iinclude
+CFLAGS = -Wall -Iinclude -g
 LDFLAGS = -lglfw -lGL -lm
 MKDIR = mkdir -p
 RM = rm -f
@@ -19,7 +19,7 @@ HEADER_DIR = header
 OBJ_DIR = obj
 
 # Source and object files
-SRCS = $(wildcard $(SRC_DIR)/*.c)
+SRCS = $(shell find $(SRC_DIR) -name '*.c')
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
 
 # Target executable
@@ -34,6 +34,7 @@ $(TARGET): $(OBJS)
 
 # Rule to build object files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	$(MKDIR) $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Create obj directory if it doesn't exist
@@ -43,7 +44,7 @@ $(OBJ_DIR):
 # Clean target to remove generated files
 clean:
 	$(RM) $(OBJ_DIR)/*.o $(TARGET)
-	rmdir $(OBJ_DIR)
+	find $(OBJ_DIR) -type d -empty -delete
 
 # Phony targets
 .PHONY: all clean

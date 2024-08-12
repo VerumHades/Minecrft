@@ -1,4 +1,4 @@
-#include <buffer.h>
+#include <rendering/buffer.h>
 
 void checkGLError(const char *file, int line){
     GLenum error;

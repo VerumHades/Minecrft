@@ -1,4 +1,4 @@
-#include <hashmap.h>
+#include <structures/hashmap.h>
 
 HashMapNode* getFromHashMapNode(HashMap* map, char* key);
 

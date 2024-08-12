@@ -2,7 +2,7 @@
 #define WORLD_H
 
 #include <chunk.h>
-#include <posmap.h>
+#include <structures/posmap.h>
 #include <time.h>
 
 #ifdef _WIN32
@@ -31,7 +31,7 @@ typedef struct World{
 } World;
 
 typedef struct RaycastResult{
-    BlockIndex hitBlock;
+    Block* hitBlock;
     unsigned hit: 1;
     int x;
     int y;
@@ -43,7 +43,7 @@ typedef struct RaycastResult{
 } RaycastResult;
 
 typedef struct CollisionCheckResult{
-    BlockIndex collidedBlock;
+    Block* collidedBlock;
     unsigned collision: 1;
     int x;
     int y;
@@ -53,8 +53,8 @@ typedef struct CollisionCheckResult{
 World* newWorld();
 void freeWorld(World* world);
 
-BlockIndex getWorldBlock(World* world,int x, int y, int z);
-int setWorldBlock(World* world,int x, int y, int z, BlockIndex index);
+Block* getWorldBlock(World* world,int x, int y, int z);
+int setWorldBlock(World* world,int x, int y, int z, Block index);
 
 Chunk* generateWorldChunk(World* world, int x, int z);
 Chunk* getWorldChunk(World* world, int x, int z);

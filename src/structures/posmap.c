@@ -1,4 +1,4 @@
-#include <posmap.h>
+#include <structures/posmap.h>
 
 static inline PositionMapNode* getNodeFromPositionMap(PositionMap* map, Vec3* key);
 

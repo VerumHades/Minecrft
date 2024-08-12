@@ -17,7 +17,7 @@ typedef struct GLBuffer{
     unsigned int indiciesCount;
 } GLBuffer;
 
-#include <mesh.h>
+#include <rendering/mesh.h>
 
 GLBuffer newBuffer();
 void destroyBuffer(GLBuffer buffer);

@@ -62,20 +62,20 @@ BlockType predefinedBlocks[] = {
     }
 };
 
-BlockIndex getChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z){
-    if(x >= chunk->size_x) return INVALID_COORDINATES;
-    if(y >= chunk->size_y) return INVALID_COORDINATES;
-    if(z >= chunk->size_z) return INVALID_COORDINATES;
+Block* getChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z){
+    if(x >= chunk->size_x) return NULL;
+    if(y >= chunk->size_y) return NULL;
+    if(z >= chunk->size_z) return NULL;
 
     ChunkLayer* layer = &chunk->layers[y];
     
-    if(layer->mode == LAYER_MODE_FILL) return layer->block_index;
-    else if(layer->mode == LAYER_MODE_INDIVIDUAL) return layer->data[x + z * chunk->size_z];
+    if(layer->mode == LAYER_MODE_FILL) return &layer->block;
+    else if(layer->mode == LAYER_MODE_INDIVIDUAL) return &layer->data[x + z * chunk->size_z];
 
-    return LAYER_CORRUPTED;
+    return NULL;
 }
 
-int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, BlockIndex value){
+int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, Block value){
     if(x >= chunk->size_x) return INVALID_COORDINATES;
     if(y >= chunk->size_y) return INVALID_COORDINATES;
     if(z >= chunk->size_z) return INVALID_COORDINATES;
@@ -84,30 +84,30 @@ int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, 
 
     if(layer->mode == LAYER_MODE_FILL){
         layer->mode = LAYER_MODE_INDIVIDUAL;
-        layer->data = calloc(DEFAULT_CHUNK_AREA, sizeof(BlockType));
+        layer->data = calloc(DEFAULT_CHUNK_AREA, sizeof(Block));
 
-        for(int i = 0;i < DEFAULT_CHUNK_AREA;i++) layer->data[i] = layer->block_index;
+        for(int i = 0;i < DEFAULT_CHUNK_AREA;i++) layer->data[i] = layer->block;
     }
 
     layer->data[x + z * chunk->size_z] = value;
 
     int compress = 1;
     for(int i = 0; i < chunk->size_x * chunk->size_z;i++){
-        if(layer->data[i] == value) continue;
+        if(memcmp(&layer->data[i], &value, sizeof(Block))) continue;
         compress = 0;
         break;
     }
 
     if(compress){
         layer->mode = LAYER_MODE_FILL;
-        layer->block_index = value;
+        layer->block = value;
         free(layer->data);
     }
 
     return OK;
 }
 
-Chunk* generatePlainChunk(BlockIndex top, BlockIndex rest){
+Chunk* generatePlainChunk(Block top, Block rest){
     Chunk* chunk = calloc(1, sizeof(Chunk));
 
     chunk->size_x = DEFAULT_CHUNK_SIZE;
@@ -121,9 +121,9 @@ Chunk* generatePlainChunk(BlockIndex top, BlockIndex rest){
 
         layer->mode = LAYER_MODE_FILL;
 
-        if(i < 60) layer->block_index = 1;
-        else if(i == 60) layer->block_index = 2;
-        else layer->block_index = 3;
+        if(i < 60) layer->block.typeIndex = 1;
+        else if(i == 60) layer->block.typeIndex = 2;
+        else layer->block.typeIndex = 3;
     }
 
     return chunk;
@@ -143,7 +143,7 @@ Chunk* generateEmptyChunk(World* world){
         ChunkLayer* layer = &chunk->layers[i];
 
         layer->mode = LAYER_MODE_FILL;
-        layer->block_index = 0;
+        layer->block.typeIndex = 0;
     }
 
     return chunk;
@@ -151,8 +151,10 @@ Chunk* generateEmptyChunk(World* world){
 
 void generateTree(Chunk* chunk, int x, int y, int z){
     int trunkHeight = rand() % 5 + 5;
-    BlockIndex trunkBlock = 7;
-    BlockIndex leafBlock = 6;
+    Block trunkBlock;
+    trunkBlock.typeIndex = 7;
+    Block leafBlock;
+    leafBlock.typeIndex = 6;
 
     for(int g = 0;g < 2;g++){
         for(int i = -2; i <= 2;i++){
@@ -198,17 +200,18 @@ Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ){
             int converted_value = floor(256 * main); 
 
             for(int y = 0;y < converted_value;y++){
-                BlockIndex block = 0;
+                Block block;
+                block.typeIndex = 0;
 
                 if(y > 120){
-                    block = 3;
+                    block.typeIndex = 3;
                 }
                 else if(y + 1 == converted_value){
-                    block = 1;
+                    block.typeIndex = 1;
                     if(rand() % 100 == 0) generateTree(chunk,x,converted_value,z);
                 }
-                else if(y + 3 >= converted_value) block = 2;
-                else block = 3;
+                else if(y + 3 >= converted_value) block.typeIndex = 2;
+                else block.typeIndex = 3;
 
                 setChunkBlock(chunk,x,y,z, block);
             }
@@ -218,19 +221,19 @@ Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ){
     return chunk;
 }
 
-static inline int hasFace(BlockIndex index){
-    return index == 0;
+static inline int hasFace(Block* index){
+    return index != NULL && predefinedBlocks[index->typeIndex].untextured;
 }
 
-static inline BlockIndex getBlock(Chunk* chunk, int ix, int iz, int x, int y, int z){
-    if(y < 0 || y >= DEFAULT_CHUNK_HEIGHT) return INVALID_COORDINATES;
-    BlockIndex block = getChunkBlock(chunk, ix, y, iz);
-    if(block == INVALID_COORDINATES) block = getWorldBlock(chunk->world, x, y, z);
+static inline Block* getBlock(Chunk* chunk, int ix, int iz, int x, int y, int z){
+    if(y < 0 || y >= DEFAULT_CHUNK_HEIGHT) return NULL;
+    Block* block = getChunkBlock(chunk, ix, y, iz);
+    if(block == NULL) block = getWorldBlock(chunk->world, x, y, z);
     return block;
 }
 
-static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int z, int offset_ix, int offset_y, int offset_iz, FaceDefinition* def, int* coordinates, BlockIndex source){
-    BlockIndex temp = getBlock(
+static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int z, int offset_ix, int offset_y, int offset_iz, FaceDefinition* def, int* coordinates, Block* source){
+    Block* temp = getBlock(
         chunk,
         ix + def->offsetX + coordinates[0],
         iz + def->offsetZ + coordinates[2],
@@ -239,19 +242,19 @@ static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int 
         z + def->offsetZ + coordinates[2]
     );
 
-    BlockIndex tempSolid = getChunkBlock(
+    Block* tempSolid = getChunkBlock(
         chunk,
         offset_ix,
         offset_y,
         offset_iz                         
     );
 
-    if(tempSolid <= 0 || temp < 0) return 0;
-    if(predefinedBlocks[tempSolid].untextured) return 0;
+    if(tempSolid == NULL || temp == NULL) return 0;
+    if(predefinedBlocks[tempSolid->typeIndex].untextured) return 0;
 
-    //printf("A %i\n",temp);
+    //printf("A %i\n",temp->typeIndex);
     if(!hasFace(temp)) return 0;
-    if(tempSolid != source) return 0;
+    if(tempSolid->typeIndex != source->typeIndex) return 0;
     return 1;
 }
 
@@ -303,7 +306,7 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
 
     for(int y = 0;y < chunk->size_y;y++){
         ChunkLayer* layer = &chunk->layers[y];
-        if(layer->mode == LAYER_MODE_FILL && layer->block_index == 0) continue;
+        if(layer->mode == LAYER_MODE_FILL && layer->block.typeIndex== 0) continue;
 
         for(int iz = 0;iz < chunk->size_z;iz++){
             for(int ix = 0;ix < chunk->size_x;ix++){
@@ -311,9 +314,9 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
                 int z = iz + chunk->worldZ * DEFAULT_CHUNK_SIZE;
 
                 //printf("%ix%ix%i\n", x, y, z);
-                int index = getChunkBlock(chunk, ix, y ,iz);
-                if(index <= 0) continue; // error or air
-                BlockType currentBlock = predefinedBlocks[index];
+                Block* index = getChunkBlock(chunk, ix, y ,iz);
+                if(index == NULL || index->typeIndex == 0) continue; // error or air
+                BlockType currentBlock = predefinedBlocks[index->typeIndex];
                 if(currentBlock.untextured) continue;
 
                 float lightR = 0.5;

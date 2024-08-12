@@ -4,10 +4,10 @@
 #include <math.h>
 
 #include <world.h>
-#include <buffer.h>
-#include <shaders.h>
-#include <view.h>
-#include <texture.h>
+#include <rendering/buffer.h>
+#include <rendering/shaders.h>
+#include <rendering/view.h>
+#include <rendering/texture.h>
 #include <standard.h>
 
 ShaderProgram mainProgram;
@@ -88,7 +88,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     RaycastResult hit = raycastFromAngles(world,camX,camY,camZ,camAngleX,camAngleY,10);
     
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && hit.hitBlock){
-        setWorldBlock(world, hit.x, hit.y, hit.z, 0);
+        setWorldBlock(world, hit.x, hit.y, hit.z, (Block){.typeIndex = 0});
 
         Chunk* chunk = getChunkFromBlockPosition(world, hit.x, hit.z);
         regenerateChunkMesh(chunk);
@@ -101,12 +101,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hitBlock){
         CollisionCheckResult result = checkForPointCollision(world, hit.lastX, hit.lastY, hit.lastZ, 1);
 
-        setWorldBlock(world, result.x,  result.y,  result.z, selectedBlock);
+        setWorldBlock(world, result.x,  result.y,  result.z, (Block){.typeIndex = selectedBlock});
         if(
             checkForRectangularCollision(world, camX,camY,camZ, &playerCollider).collision ||
             checkForRectangularCollision(world, camX + accelX,camY + accelY,camZ + accelZ, &playerCollider).collision
         ){
-            setWorldBlock(world,  result.x,  result.y,  result.z, 0);
+            setWorldBlock(world,  result.x,  result.y,  result.z, (Block){.typeIndex = 0});
             return;
         }
 
@@ -134,9 +134,10 @@ int main(void) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+    
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640, 480, "Hello World", glfwGetPrimaryMonitor(), NULL);
+    window = glfwCreateWindow(1920, 1080, "Hello World", NULL, NULL);
+
     if (!window) {
         glfwTerminate();
         return -1;
@@ -155,7 +156,6 @@ int main(void) {
     }
 
     glEnable(GL_DEPTH_TEST);
-
     glDepthFunc(GL_LEQUAL);
     
     glEnable(GL_CULL_FACE);  // Enable backface culling

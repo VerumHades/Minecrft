@@ -154,9 +154,9 @@ CollisionCheckResult checkForPointCollision(World* world, float x, float y, floa
                 int cy = y + j;
                 int cz = z + g;
 
-                BlockIndex blocki = getWorldBlock(world, cx, cy, cz);
+                Block* blocki = getWorldBlock(world, cx, cy, cz);
                 if(blocki >= 0){
-                    BlockType block = predefinedBlocks[blocki];
+                    BlockType block = predefinedBlocks[blocki->typeIndex];
                     if(block.colliderCount == 0 && !includeRectangularColliderLess) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
@@ -200,9 +200,9 @@ CollisionCheckResult checkForRectangularCollision(World* world, float x, float y
                 int cy = (int)floor(y + j);
                 int cz = (int)floor(z + g);
 
-                BlockIndex blocki = getWorldBlock(world, cx, cy, cz);
+                Block* blocki = getWorldBlock(world, cx, cy, cz);
                 if(blocki >= 0){
-                    BlockType block = predefinedBlocks[blocki];
+                    BlockType block = predefinedBlocks[blocki->typeIndex];
                     if(block.colliderCount == 0) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
@@ -304,8 +304,8 @@ RaycastResult raycastFromAngles(World* world, float fromX, float fromY, float fr
     return raycast(world,fromX,fromY,fromZ,x,y,z,10);
 }
 
-BlockIndex getWorldBlock(World* world,int x, int y, int z){
-    if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return INVALID_COORDINATES;
+Block* getWorldBlock(World* world,int x, int y, int z){
+    if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return NULL;
     
     int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
     int chunkZ = floor((double)z / (double)DEFAULT_CHUNK_SIZE);
@@ -330,7 +330,7 @@ Chunk* getChunkFromBlockPosition(World* world, int x, int z){
     return getWorldChunk(world, cx, cz);
 }
 
-int setWorldBlock(World* world, int x, int y, int z, BlockIndex index){
+int setWorldBlock(World* world, int x, int y, int z, Block index){
     if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return INVALID_COORDINATES;
     
     int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
@@ -340,12 +340,12 @@ int setWorldBlock(World* world, int x, int y, int z, BlockIndex index){
     int iz = abs(z - chunkZ * DEFAULT_CHUNK_SIZE);
     //printf("Chunk coords: %ix%i Block coords: %ix%ix%i\n", chunkX, chunkZ, ix,y,iz);
 
-    //BlockIndex i = getWorldBlock(world, ix, y, iz);
+    //Block* i = getWorldBlock(world, ix, y, iz);
 
     Chunk* chunk = getWorldChunk(world, chunkX,chunkZ);
     if(chunk == NULL) chunk = generateWorldChunk(world, chunkX, chunkZ);
 
-    setChunkBlock(chunk, ix, y, iz,index);
+    setChunkBlock(chunk, ix, y, iz, index);
 
     return OK;
 }

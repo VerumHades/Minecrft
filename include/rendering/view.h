@@ -2,7 +2,7 @@
 #define VIEW_H
 
 #include <standard.h>
-#include <shaders.h>
+#include <rendering/shaders.h>
 
 void setupProjection(ShaderProgram* program, float FOV);
 void recalculateProjectionMatrix(ShaderProgram* program, int width, int height, float FOV);

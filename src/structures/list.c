@@ -1,4 +1,4 @@
-#include <list.h>
+#include <structures/list.h>
 
 #define arrayLen(array) sizeof(array)/sizeof(array[0])
 

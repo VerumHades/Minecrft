@@ -13,7 +13,7 @@
 #include <sys/stat.h>
 #include <string.h>
 
-#include <list.h>
+#include <structures/list.h>
 
 #include <math.h>
 #ifndef M_PI

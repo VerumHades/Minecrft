@@ -1,4 +1,4 @@
-#include <view.h>
+#include <rendering/view.h>
 
 
 void multiplyMatrices(float result[16], float mat1[16], float mat2[16]) {

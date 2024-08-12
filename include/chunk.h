@@ -5,8 +5,8 @@
 #include <time.h>
 #include <perlinNoise.h>
 
-#include <buffer.h>
-#include <mesh.h>
+#include <rendering/buffer.h>
+#include <rendering/mesh.h>
 
 #define LAYER_MODE_FILL 1
 #define LAYER_MODE_INDIVIDUAL 2
@@ -22,7 +22,9 @@
 #define TEXTURES_TOTAL 4
 
 extern float textureSize;
-typedef short BlockIndex;
+typedef struct Block{
+    int typeIndex: 8;
+} Block;
 
 // A rectangular collider
 typedef struct RectangularCollider{
@@ -52,8 +54,8 @@ typedef struct BlockType{
 
 typedef struct ChunkLayer{
     unsigned int mode;
-    BlockIndex* data;
-    BlockIndex block_index;
+    Block* data;
+    Block block;
 } ChunkLayer;
 
 typedef struct Chunk{
@@ -95,10 +97,10 @@ typedef struct FaceDefinition{
 typedef struct World World;
 extern BlockType predefinedBlocks[];
 
-BlockIndex getChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z);
-int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, BlockIndex  value);
+Block* getChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z);
+int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, Block  value);
 
-Chunk* generatePlainChunk(BlockIndex  top, BlockIndex  rest);
+Chunk* generatePlainChunk(Block  top, Block  rest);
 Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ);
 
 void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk);

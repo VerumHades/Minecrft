@@ -1,4 +1,4 @@
-#include <mesh.h>
+#include <rendering/mesh.h>
 
 Mesh* newMesh3D(){
     Mesh* mesh = calloc(1,sizeof(Mesh));

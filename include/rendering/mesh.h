@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <posmap.h>
+#include <structures/posmap.h>
 
 typedef struct Vertex{
     float values[16];
