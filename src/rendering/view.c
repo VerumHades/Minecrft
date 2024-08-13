@@ -44,11 +44,7 @@ void setArray(float* dest, float* source, int size){
     for(int i = 0; i < size;i++) dest[i] = source[i];
 }
 void setupProjection(ShaderProgram* program, float FOV){
-    /*glEnable(GL_CULL_FACE);
-    // Specify which faces to cull (back faces)
-    glCullFace(GL_BACK);
-        // Define the winding order of front faces (default is GL_CCW - counter-clockwise)
-    glFrontFace(GL_CCW);*/
+    useShaderProgram(program);
 
     setArray(program->projectionMatrix, (float[]){
         1, 0, 0, 0,
