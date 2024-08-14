@@ -23,7 +23,7 @@ float camX = 0;
 float camY = 150;
 float camZ = 0;
 
-int renderDistance = 16;
+int renderDistance = 24;
 
 float accelX = 0;
 float accelZ = 0;
@@ -33,7 +33,7 @@ float camSpeed = 0.002;
 float M_PI_D180 = M_PI / 180;
 
 float camFOV = 90;
-float halfCamFov = 70;
+float halfCamFov = 50;
 
 
 RectangularCollider playerCollider = {.x = -0.3, .y = -1.7, .z = -0.3, .width = 0.6,.height = 1.8, .depth = 0.6};
@@ -75,7 +75,7 @@ void cursor_position_callback(GLFWwindow* window, double mouseX, double mouseY)
     camAngleY = clampAngle(camAngleY + mouseXDelta);
     camAngleX = clampAngle(camAngleX + mouseYDelta);
     if(camAngleX > 270) camAngleX = 270;
-    if(camAngleX < 110) camAngleX = 110;
+    if(camAngleX < 90) camAngleX = 90;
 
     setViewRotation(&mainProgram, camAngleX + 180, camAngleY,0);
     setViewRotation(&skyboxProgram, camAngleX + 180, camAngleY,0);
@@ -207,7 +207,7 @@ int main(void) {
     GLTextureArray tilemap = createTextureArray(&mainProgram);
     loadTextureArrayFromFiles(&tilemap, texturePaths,10,160,160);
 
-    world = newWorld();
+    world = newWorld("world.bin");
 
     clock_t last = clock();
     clock_t current = clock();
@@ -221,7 +221,7 @@ int main(void) {
         seconds = (double)(current - last) / (double)CLOCKS_PER_SEC;
 
         double fps = 1.0 / seconds;
-        printf("FPS: %f\n",fps);
+        //printf("FPS: %f\n",fps);
 
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -261,9 +261,8 @@ int main(void) {
         else camX += accelX; 
 
         if(checkForRectangularCollision(world, camX,camY + accelY,camZ, &playerCollider).collision){
-            accelY = 0;
-
-            if(boundKeys[0].isDown) accelY += 0.15;
+            if(boundKeys[0].isDown && accelY <= 0.0) accelY = 0.15;
+            else accelY = 0;
         }
         else camY += accelY;
 
@@ -284,8 +283,8 @@ int main(void) {
         int camWorldX = camX / DEFAULT_CHUNK_SIZE;
         int camWorldZ = camZ / DEFAULT_CHUNK_SIZE;
 
-        float offsetCamX = camX - cos(M_PI_D180 * (camAngleY - 90)) * 32;
-        float offsetCamZ = camZ - sin(M_PI_D180 * (camAngleY - 90)) * 32;
+        float offsetCamX = camX - cos(M_PI_D180 * (camAngleY - 90)) * (camAngleX - 90);
+        float offsetCamZ = camZ - sin(M_PI_D180 * (camAngleY - 90)) * (camAngleX - 90);
 
         for(int x = -renderDistance; x <= renderDistance; x++){
             for(int z = -renderDistance; z <= renderDistance; z++){
@@ -311,6 +310,12 @@ int main(void) {
                 drawBuffer(&chunk->solidBuffer);
             }
         }
+
+        for(int x = -renderDistance; x <= renderDistance; x++){
+            for(int z = -renderDistance; z <= renderDistance; z++){
+                
+            }
+        }
         //printf("Chunks drawn: %i\n", total);
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -322,6 +327,7 @@ int main(void) {
     destroySkybox(&skybox);
     destroyTextureArray(&tilemap);
 
+    saveWorld(world);
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;

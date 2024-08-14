@@ -84,6 +84,7 @@ void setupProjection(ShaderProgram* program, float FOV){
 
 void recalculateProjectionMatrix(ShaderProgram* program, int width, int height, float FOV){
     createPerspectiveMatrix(program->projectionMatrix, (M_PI / 180.0f) * FOV, (double)width / (double)height, 0.1f, 1000.0f);
+    useShaderProgram(program);
     glUniformMatrix4fv(program->projLoc, 1, GL_FALSE, program->projectionMatrix);
 }
 

@@ -31,7 +31,7 @@ void setVertexFormat(Mesh* mesh, int sizes[], int count){
     mesh->vertex_size = total;
 }
 
-void destoryMesh(Mesh* mesh){
+void destroyMesh(Mesh* mesh){
     free(mesh->vertices);
     free(mesh->indices);
 

@@ -27,7 +27,7 @@ typedef struct Mesh{
 
 Mesh* newMesh3D();
 void setVertexFormat(Mesh* mesh, int sizes[], int count);
-void destoryMesh(Mesh* mesh);
+void destroyMesh(Mesh* mesh);
 
 void addQuadFaceToMesh(Mesh* mesh, Vec3 vertices[4], Vec3 normals, Vertex metadata, int clockwise, int width, int height);
 #include <chunk.h>

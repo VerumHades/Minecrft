@@ -137,6 +137,21 @@ void* getFromPositionMap(PositionMap* map, Vec3* key){
     return node->value;
 }
 
+void forEachPositionInMap(PositionMap* map, void(*callback)(void*)){
+    for(int i = 0;i < map->capacity;i++){
+
+        PositionMapNode* node = &map->list[i];
+
+        if(!node->taken) continue;
+       
+        do{
+            callback(node->value);
+
+            node = node->next;
+        }while(node != NULL);
+    }
+}
+
 static inline PositionMapNode* getNodeFromPositionMap(PositionMap* map, Vec3* key){
     uint32_t hash = hash3D(key);
     int index = hash % map->capacity;

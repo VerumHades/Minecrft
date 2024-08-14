@@ -39,6 +39,7 @@ uint32_t hash3D(Vec3* vec);
 void putIntoPositionMap(PositionMap* map, Vec3* key, void* value);
 void removeFromPositionMap(PositionMap* map, Vec3* key);
 void* getFromPositionMap(PositionMap* map, Vec3* key);
+void forEachPositionInMap(PositionMap* map, void(*callback)(void*));
 
 
 #endif

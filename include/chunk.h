@@ -9,9 +9,6 @@
 #include <rendering/buffer.h>
 #include <rendering/mesh.h>
 
-#define LAYER_MODE_FILL 1
-#define LAYER_MODE_INDIVIDUAL 2
-
 #define OK -1
 #define INVALID_COORDINATES -2
 #define LAYER_CORRUPTED -3
@@ -24,8 +21,8 @@
 
 extern float textureSize;
 typedef struct Block{
-    int typeIndex: 8;
-} Block;
+    unsigned int typeIndex: 5;
+} __attribute__((packed)) Block;
 
 // A rectangular collider
 typedef struct RectangularCollider{
@@ -53,18 +50,13 @@ typedef struct BlockType{
     unsigned int colliderCount;
 } BlockType;
 
-typedef struct ChunkLayer{
-    unsigned int mode;
-    Block* data;
-    Block block;
-} ChunkLayer;
-
 typedef struct Chunk{
     int worldX;
     int worldZ;
     struct World* world;
+    unsigned stored: 1; // If chunks is stored in world file
 
-    struct ChunkLayer* layers;
+    Block blocks[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE];
     //unsigned char lightArray[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][3];
 
     unsigned meshGenerating: 1;
@@ -98,9 +90,12 @@ typedef struct FaceDefinition{
 typedef struct World World;
 extern BlockType predefinedBlocks[];
 
+void destroyChunk(Chunk* chunk);
+
 Block* getChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z);
 int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, Block  value);
 
+Chunk* generateEmptyChunk(World* world);
 Chunk* generatePlainChunk(World* world, Block  top, Block  rest);
 Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ);
 

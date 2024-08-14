@@ -26,8 +26,24 @@ typedef thrd_t thread_t;
         sprintf(output, source, __VA_ARGS__);
 
 
+typedef struct StoredChunk{
+    int worldX;
+    int worldZ;
+    Block blocks[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE];
+} StoredChunk;
+
+typedef struct StoredWorldMetadata{
+    char head[6];
+    int storedChunksTotal;
+} StoredWorldMetadata;
+
 typedef struct World{
+    char* storageFilename;
+    FILE* file;
+    StoredWorldMetadata metadata;
+
     PositionMap* chunks;
+    PositionMap* storedIndices;
 } World;
 
 typedef struct RaycastResult{
@@ -50,8 +66,10 @@ typedef struct CollisionCheckResult{
     int z;
 } CollisionCheckResult;
 
-World* newWorld();
+World* newWorld(char* storageFilename);
 void freeWorld(World* world);
+void updateWorldStorageRegistry(World* world);
+void saveWorld(World* world);
 
 Block* getWorldBlock(World* world,int x, int y, int z);
 int setWorldBlock(World* world,int x, int y, int z, Block index);

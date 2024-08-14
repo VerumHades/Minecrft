@@ -62,17 +62,18 @@ BlockType predefinedBlocks[] = {
     }
 };
 
+static inline void fillChunkLevel(Chunk* chunk, unsigned int y, Block value){
+    for(int x = 0; x < DEFAULT_CHUNK_SIZE;x++) for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
+        setChunkBlock(chunk, x,y,z, value);
+    }
+}
+
 Block* getChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z){
     if(x >= DEFAULT_CHUNK_SIZE) return NULL;
     if(y >= DEFAULT_CHUNK_HEIGHT) return NULL;
     if(z >= DEFAULT_CHUNK_SIZE) return NULL;
-
-    ChunkLayer* layer = &chunk->layers[y];
     
-    if(layer->mode == LAYER_MODE_FILL) return &layer->block;
-    else if(layer->mode == LAYER_MODE_INDIVIDUAL) return &layer->data[x + z * DEFAULT_CHUNK_SIZE];
-
-    return NULL;
+    return &chunk->blocks[x][y][z];
 }
 
 int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, Block value){
@@ -80,29 +81,7 @@ int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, 
     if(y >= DEFAULT_CHUNK_HEIGHT) return INVALID_COORDINATES;
     if(z >= DEFAULT_CHUNK_SIZE) return INVALID_COORDINATES;
 
-    ChunkLayer* layer = &chunk->layers[y];
-
-    if(layer->mode == LAYER_MODE_FILL){
-        layer->mode = LAYER_MODE_INDIVIDUAL;
-        layer->data = calloc(DEFAULT_CHUNK_AREA, sizeof(Block));
-
-        for(int i = 0;i < DEFAULT_CHUNK_AREA;i++) layer->data[i] = layer->block;
-    }
-
-    layer->data[x + z * DEFAULT_CHUNK_SIZE] = value;
-
-    int compress = 1;
-    for(int i = 0; i < DEFAULT_CHUNK_SIZE * DEFAULT_CHUNK_SIZE;i++){
-        if(memcmp(&layer->data[i], &value, sizeof(Block))) continue;
-        compress = 0;
-        break;
-    }
-
-    if(compress){
-        layer->mode = LAYER_MODE_FILL;
-        layer->block = value;
-        free(layer->data);
-    }
+    chunk->blocks[x][y][z] = value;
 
     return OK;
 }
@@ -110,29 +89,39 @@ int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, 
 Chunk* generateEmptyChunk(World* world){
     Chunk* chunk = calloc(1, sizeof(Chunk));
     chunk->world = world;
-    
-    chunk->layers = calloc(DEFAULT_CHUNK_HEIGHT, sizeof(ChunkLayer));
 
-    for(int i = 0;i < DEFAULT_CHUNK_HEIGHT;i++){
-        ChunkLayer* layer = &chunk->layers[i];
-
-        layer->mode = LAYER_MODE_FILL;
-        layer->block.typeIndex = 0;
-    }
+    //memset(chunk->blocks, 0, sizeof(Block) * DEFAULT_CHUNK_AREA * DEFAULT_CHUNK_HEIGHT);
 
     return chunk;
 }
+
+void destroyChunk(Chunk* chunk){
+    if(chunk->buffersAsigned){
+        destroyBuffer(chunk->solidBuffer);
+        destroyBuffer(chunk->solidBackBuffer);
+        destroyBuffer(chunk->transparentBuffer);
+        destroyBuffer(chunk->transparentBackBuffer);
+    }
+
+    if(chunk->meshGenerated){
+        destroyMesh(chunk->solidMesh);
+        destroyMesh(chunk->transparentMesh);
+    }
+
+    Vec3 key = (Vec3){.x = chunk->worldX, .z = chunk->worldZ};
+    removeFromPositionMap(chunk->world->chunks, &key);
+
+    free(chunk);
+}
+
 
 Chunk* generatePlainChunk(World* world, Block top, Block rest){
     Chunk* chunk = generateEmptyChunk(world);
 
     for(int i = 0;i < DEFAULT_CHUNK_HEIGHT;i++){
-        ChunkLayer* layer = &chunk->layers[i];
-
-        layer->mode = LAYER_MODE_FILL;
-
-        if(i < 60) layer->block = rest;
-        else if(i == 60) layer->block = top;
+        
+        if(i < 60) fillChunkLevel(chunk, i, rest);
+        else if(i == 60) fillChunkLevel(chunk, i, top);
     }
 
     return chunk;
@@ -294,9 +283,6 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
     memset(checked, 0, sizeof checked);
 
     for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++){
-        ChunkLayer* layer = &chunk->layers[y];
-        if(layer->mode == LAYER_MODE_FILL && layer->block.typeIndex== 0) continue;
-
         for(int iz = 0;iz < DEFAULT_CHUNK_SIZE;iz++){
             for(int ix = 0;ix < DEFAULT_CHUNK_SIZE;ix++){
                 int x = ix + chunk->worldX * DEFAULT_CHUNK_SIZE;
@@ -305,6 +291,7 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
                 //printf("%ix%ix%i\n", x, y, z);
                 Block* index = getChunkBlock(chunk, ix, y ,iz);
                 if(index == NULL || index->typeIndex == 0) continue; // error or air
+                //printf("%i\n",index->typeIndex);
                 BlockType currentBlock = predefinedBlocks[index->typeIndex];
                 if(currentBlock.untextured) continue;
 
