@@ -254,15 +254,15 @@ int main(void) {
         }
 
         accelY -= 0.005;
+        if(boundKeys[0].isDown && accelY < 1.0) accelY += 0.01;
 
         if(checkForRectangularCollision(world, camX + accelX,camY,camZ, &playerCollider).collision){
             accelX = 0;
         }
         else camX += accelX; 
-
+        
         if(checkForRectangularCollision(world, camX,camY + accelY,camZ, &playerCollider).collision){
-            if(boundKeys[0].isDown && accelY <= 0.0) accelY = 0.15;
-            else accelY = 0;
+            accelY = 0;
         }
         else camY += accelY;
 
@@ -310,12 +310,6 @@ int main(void) {
                 drawBuffer(&chunk->solidBuffer);
             }
         }
-
-        for(int x = -renderDistance; x <= renderDistance; x++){
-            for(int z = -renderDistance; z <= renderDistance; z++){
-                
-            }
-        }
         //printf("Chunks drawn: %i\n", total);
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -328,6 +322,7 @@ int main(void) {
     destroyTextureArray(&tilemap);
 
     saveWorld(world);
+    freeWorld(world);
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;

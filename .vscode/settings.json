@@ -9,6 +9,7 @@
         "chunk.h": "c",
         "type_traits": "c",
         "structures/posmap.h": "c",
-        "glad.h": "c"
+        "glad.h": "c",
+        "cmath": "c"
     }
 }

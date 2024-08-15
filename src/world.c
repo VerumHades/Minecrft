@@ -6,10 +6,15 @@ World* newWorld(char* storageFilename){
     world->chunks = newPositionMap();
     world->storedIndices = newPositionMap();
     world->storageFilename = storageFilename;
+    
+    if(mtx_init(&world->threadlock, mtx_plain) != thrd_success) {
+        printf("Mutex broken!");
+        exit(1);
+    }
 
     world->file = fopen(storageFilename, "rb+");
     if (world->file == NULL) {
-        world->file = fopen(storageFilename, "a+");
+        world->file = fopen(storageFilename, "wb+");
 
         if(world->file == NULL){
             fprintf(stderr, "Failed to open world file: '%s'\n", storageFilename);
@@ -18,25 +23,41 @@ World* newWorld(char* storageFilename){
 
         fclose(world->file);
         world->file = fopen(storageFilename, "rb+");
+
+        if(world->file == NULL){
+            fprintf(stderr, "Failed to open world file: '%s'\n", storageFilename);
+            exit(1);
+        }
     }
 
     fseek(world->file, 0L, SEEK_END);
     int file_size = ftell(world->file);
-    rewind(world->file);
+    fseek(world->file, 0, SEEK_SET);
 
     if(file_size >= sizeof(StoredWorldMetadata)){
         printf("Loaded world from: '%s'\n", storageFilename);
-        fread(&world->metadata, sizeof(StoredWorldMetadata), 1, world->file);
-
+        size_t read = fread(&world->metadata, sizeof(StoredWorldMetadata), 1, world->file);
+        
         if(strcmp(world->metadata.head,"MWORLD") != 0){
             fprintf(stderr, "Invalid world file format: '%s'\n", storageFilename);
             exit(1);
         }
+
+        if(read != 1){
+            perror("Failed to read metadata");
+            exit(1);
+        }
+
+        //world->metadata.storedChunksTotal = (file_size - sizeof(StoredWorldMetadata)) / sizeof(StoredChunk);
     }
     else{
         strcpy(world->metadata.head,"MWORLD");
         world->metadata.storedChunksTotal = 0;
-        fwrite(&world->metadata, sizeof(StoredWorldMetadata), 1, world->file);
+        if(writeWorldMetadata(world) < 0){
+            perror("Failed initial metadata world save.");
+            exit(1);
+        }
+        fflush(world->file);
     }
 
     updateWorldStorageRegistry(world);
@@ -52,19 +73,24 @@ void updateWorldStorageRegistry(World* world){
         return;
     }
 
-    printf("Loading chunks: %i\n", totalStored);
-
-    StoredChunk chunk;
-    for(int i = 0; i <= totalStored;i++){
-        fread(&chunk, sizeof(StoredChunk), 1, world->file);
+    StoredChunk chunk = {0};
+    //printf("%i\n", totalStored);
+    for(int i = 0; i < totalStored;i++){
+        size_t read = fread(&chunk, sizeof(StoredChunk), 1, world->file);
+        if(read != 1){
+            printf("Failed to read chunk.\n");
+            return;
+        }
 
         Vec3 key = (Vec3){.x = chunk.worldX, .z = chunk.worldZ};
 
         void* registered = getFromPositionMap(world->storedIndices, &key);
-        if(registered != NULL) continue;
+        //if(registered != NULL) continue;
 
-        uintptr_t index = i;
-        putIntoPositionMap(world->storedIndices, &key, (void*)index);
+        printf("Loading chunk (%f %f).\n", key.x, key.z);
+
+        uintptr_t offset = sizeof(StoredWorldMetadata) + sizeof(StoredChunk) * i;
+        putIntoPositionMap(world->storedIndices, &key, (void*)offset);
     }   
 }
 
@@ -72,6 +98,7 @@ void freeWorld(World* world){
     freePositionMap(world->chunks);
     freePositionMap(world->storedIndices);
     fclose(world->file);
+    mtx_destroy(&world->threadlock);
     free(world);
 }
 
@@ -87,23 +114,31 @@ Chunk* getStoredWorldChunk(World* world, int x, int z){
     Vec3 key = (Vec3){.x = x, .z = z};
 
     void* registered = getFromPositionMap(world->storedIndices, &key);
-    if(registered == NULL) return NULL;
+    if(registered == NULL){
+        printf("Chunk not found %i %i\n", x,z);
+        return NULL;
+    }
 
-    if(fseek(world->file, sizeof(StoredWorldMetadata), SEEK_SET) != 0){
+    uintptr_t offset = (uintptr_t) registered;
+
+    if(fseek(world->file, offset, SEEK_SET) != 0){
         printf("Failed to move cursor\n");
         return NULL;
     }
 
-    if(fseek(world->file, sizeof(StoredChunk) * (uintptr_t) registered, SEEK_CUR) != 0){
-        printf("Failed to move cursor\n");
-        return NULL;
-    }
-
-    StoredChunk chunk;
+    StoredChunk chunk = {0};
     fread(&chunk, sizeof(StoredChunk), 1, world->file);
 
     Chunk* loadedChunk = generateEmptyChunk(world);
-    memcpy(loadedChunk->blocks, chunk.blocks, sizeof(Block) * DEFAULT_CHUNK_AREA * DEFAULT_CHUNK_HEIGHT);
+    
+    for(int x = 0; x < DEFAULT_CHUNK_SIZE;x++) for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++) for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
+        loadedChunk->blocks[x][y][z] = chunk.blocks[x][y][z];
+        if(chunk.blocks[x][y][z].typeIndex > 7){
+            printf("Corrupted chunk read? (%i %i) [%lu].\n",x,z, offset);
+            return NULL;
+        }
+    }
+
     loadedChunk->worldX = x;
     loadedChunk->worldZ = z;
     loadedChunk->stored = 1;
@@ -113,20 +148,25 @@ Chunk* getStoredWorldChunk(World* world, int x, int z){
     return loadedChunk;
 }
 
-int writeWorldMetadata(World* world){
-    int cursorPosition = ftell(world->file);
-    
+int writeWorldMetadata(World* world){ 
     if(fseek(world->file, 0, SEEK_SET) != 0){
+        perror("fseek failed");
         printf("Failed to move cursor to start of file.\n");
         return -1;
     }
 
-    fwrite(&world->metadata, sizeof(StoredWorldMetadata), 1, world->file);
-
-    if(fseek(world->file, cursorPosition, SEEK_SET) != 0){
-        printf("Failed to return cursor to initial position.\n");
+    long pos = ftell(world->file);
+    if(pos == -1L || pos != 0){
+        printf("Failed to write metadata to the start. %li\n", pos);
         return -1;
     }
+
+    size_t written = fwrite(&world->metadata, sizeof(StoredWorldMetadata), 1, world->file);
+    if(written != 1){
+        return -1;
+    }
+
+    //fflush(world->file);
 
     return 0;
 }
@@ -139,28 +179,32 @@ int storeWorldChunk(Chunk* chunk){
     void* registered = getFromPositionMap(chunk->world->storedIndices, &key);
     if(registered != NULL) return 0;
 
-    if(fseek(chunk->world->file, 0, SEEK_END) != 0){
-        printf("Failed to move to end of file.\n");
-        return -1;
-    }
-    
-    chunk->world->metadata.storedChunksTotal++;
-    if(writeWorldMetadata(chunk->world) < 0){
-        chunk->world->metadata.storedChunksTotal--;
-        printf("Failed to write metadata.\n");
-        return -1;
-    }
-
     StoredChunk storedChunk = {0};
     storedChunk.worldX = chunk->worldX;
     storedChunk.worldZ = chunk->worldZ;
 
-    memcpy(storedChunk.blocks, chunk->blocks, sizeof(Block) * DEFAULT_CHUNK_AREA * DEFAULT_CHUNK_HEIGHT);
+    for(int x = 0; x < DEFAULT_CHUNK_SIZE;x++) for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++) for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
+        storedChunk.blocks[x][y][z] = chunk->blocks[x][y][z];
+    }
+
+    if(fseek(chunk->world->file, 0, SEEK_END) != 0){
+        printf("Failed to move to end of file.\n");
+        return -1;
+    }
+
+    long pos = ftell(chunk->world->file);
+    printf("Storing chunk (%i %i), %lu at %li\n", storedChunk.worldX, storedChunk.worldZ, sizeof(StoredChunk), pos / sizeof(StoredChunk));
 
     fwrite(&storedChunk, sizeof(StoredChunk), 1, chunk->world->file);
+    putIntoPositionMap(chunk->world->storedIndices, &key, (void*) (uintptr_t) pos);
 
-    uintptr_t index = chunk->world->metadata.storedChunksTotal - 1;
-    putIntoPositionMap(chunk->world->storedIndices, &key, (void*)index);
+    chunk->world->metadata.storedChunksTotal++;
+    if(writeWorldMetadata(chunk->world) < 0){
+        chunk->world->metadata.storedChunksTotal--;
+        printf("Failed to write metadata.\n");
+        exit(1);
+        return -1;
+    }
 
     return 0;
 }
@@ -170,14 +214,12 @@ int updateStoredWorldChunk(Chunk* chunk){
     
     Vec3 key = (Vec3){.x = chunk->worldX, .z = chunk->worldZ};
     void* registered = getFromPositionMap(chunk->world->storedIndices, &key);
-    if(registered == NULL) return -1;
-
-    if(fseek(chunk->world->file, sizeof(StoredWorldMetadata), SEEK_SET) != 0){
-        printf("Failed to move cursor\n");
+    if(registered == NULL){
+        printf("Cannot update chunk that isnt stored.\n");
         return -1;
     }
 
-    if(fseek(chunk->world->file, sizeof(StoredChunk) * (uintptr_t) registered, SEEK_CUR) != 0){
+    if(fseek(chunk->world->file, (uintptr_t) registered, SEEK_SET) != 0){
         printf("Failed to move to end of file.\n");
         return -1;
     }
@@ -186,9 +228,12 @@ int updateStoredWorldChunk(Chunk* chunk){
     storedChunk.worldX = chunk->worldX;
     storedChunk.worldZ = chunk->worldZ;
 
-    memcpy(storedChunk.blocks, chunk->blocks, sizeof(Block) * DEFAULT_CHUNK_AREA * DEFAULT_CHUNK_HEIGHT);
+    for(int x = 0; x < DEFAULT_CHUNK_SIZE;x++) for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++) for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
+        storedChunk.blocks[x][y][z] = chunk->blocks[x][y][z];
+    }
 
     fwrite(&storedChunk, sizeof(StoredChunk), 1, chunk->world->file);
+    //fflush(chunk->world->file);
 
     return 0;
 }
@@ -203,25 +248,54 @@ void saveWorld(World* world){
     forEachPositionInMap(world->chunks, &saveChunk);
 }
 
+
 Chunk* generateWorldChunk(World* world, int x, int z){
     Vec3 key = (Vec3){.x = x, .z = z};
-
+    
     Chunk* chunk = getFromPositionMap(world->chunks, &key);
-
+    
     if(chunk == NULL){
         //printf("Generating chunk %i:%i %s\n", x, z, key);
         //chunk = generatePlainChunk(world, (Block){.typeIndex=1},(Block){.typeIndex = 2});
 
+        #ifdef _WIN32
+
+        #else
+        mtx_lock(&world->threadlock);
+        #endif
+
         chunk = getStoredWorldChunk(world,x,z);
+        
+        #ifdef _WIN32
+
+        #else
+        mtx_unlock(&world->threadlock);
+        #endif
+        
         if(chunk != NULL) return chunk;
 
         chunk = generatePerlinChunk(world,x,z);
         //chunk = generatePlainChunk(world, (Block){.typeIndex=1},(Block){.typeIndex = 2});
         chunk->worldX = x;
         chunk->worldZ = z;
-
+        
         putIntoPositionMap(chunk->world->chunks, &key, chunk);
-        storeWorldChunk(chunk);
+
+        #ifdef _WIN32
+
+        #else
+        mtx_lock(&world->threadlock);
+        #endif
+
+        if(storeWorldChunk(chunk) != 0){
+            printf("Faild to store chunk: %i %i\n",x,z);
+        };
+
+        #ifdef _WIN32
+
+        #else
+        mtx_unlock(&world->threadlock);
+        #endif
     }
 
     return chunk;
@@ -355,7 +429,7 @@ CollisionCheckResult checkForPointCollision(World* world, float x, float y, floa
                 int cz = z + g;
 
                 Block* blocki = getWorldBlock(world, cx, cy, cz);
-                if(blocki >= 0){
+                if(blocki != NULL){
                     BlockType block = predefinedBlocks[blocki->typeIndex];
                     if(block.colliderCount == 0 && !includeRectangularColliderLess) continue;
 
@@ -401,7 +475,7 @@ CollisionCheckResult checkForRectangularCollision(World* world, float x, float y
                 int cz = (int)floor(z + g);
 
                 Block* blocki = getWorldBlock(world, cx, cy, cz);
-                if(blocki >= 0){
+                if(blocki != NULL){
                     BlockType block = predefinedBlocks[blocki->typeIndex];
                     if(block.colliderCount == 0) continue;
 

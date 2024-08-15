@@ -2,33 +2,24 @@
 
 static inline PositionMapNode* getNodeFromPositionMap(PositionMap* map, Vec3* key);
 
-uint32_t hash3D(Vec3* vec) {
-    // Convert floats to integers
-    uint32_t xi = (uint32_t)(vec->x * 1000.0f);
-    uint32_t yi = (uint32_t)(vec->y * 1000.0f);
-    uint32_t zi = (uint32_t)(vec->z * 1000.0f);
+// Hashing function for combining the hash values
+uint32_t hashCombine(uint32_t hash, int32_t value) {
+    value += 0x9e3779b9 + (hash << 6) + (hash >> 2);
+    return hash ^ value;
+}
 
-    // Perform bitwise operations to mix the bits
-    xi ^= xi >> 16;
-    xi *= 0x85ebca6b;
-    xi ^= xi >> 13;
-    xi *= 0xc2b2ae35;
-    xi ^= xi >> 16;
+uint32_t hash3D(Vec3* key) {
+    // Convert floats to integers with rounding
+    int32_t xi = (int32_t)roundf(key->x * 1000.0f);
+    int32_t yi = (int32_t)roundf(key->y * 1000.0f);
+    int32_t zi = (int32_t)roundf(key->z * 1000.0f);
 
-    yi ^= yi >> 16;
-    yi *= 0x85ebca6b;
-    yi ^= yi >> 13;
-    yi *= 0xc2b2ae35;
-    yi ^= yi >> 16;
+    // Combine all three coordinates into a single hash
+    uint32_t hash = 0;
+    hash = hashCombine(hash, xi);
+    hash = hashCombine(hash, yi);
+    hash = hashCombine(hash, zi);
 
-    zi ^= zi >> 16;
-    zi *= 0x85ebca6b;
-    zi ^= zi >> 13;
-    zi *= 0xc2b2ae35;
-    zi ^= zi >> 16;
-
-    // Combine the hashes
-    uint32_t hash = xi ^ yi ^ zi;
     return hash;
 }
 
@@ -39,7 +30,7 @@ static inline int positionsEqual(Vec3* a, Vec3* b){
 PositionMap* newPositionMap(){
     PositionMap* map = (PositionMap*) calloc(1,sizeof(PositionMap));
     
-    map->capacity = 1024;
+    map->capacity = 1024 * 4;
     map->list = calloc(map->capacity,sizeof(PositionMapNode));
 
     //map->nodesTotal = 0;

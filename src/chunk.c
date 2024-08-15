@@ -1,9 +1,11 @@
 #include <chunk.h>
+#define FNL_IMPL
+#include <FastNoiseLite.h>
 
 BlockType predefinedBlocks[] = {
     { // air
         .transparent = 1,
-        .untextured = 1,
+        .untextured = 1
     },
     { // grass
         .textures = (unsigned char[]){0,2,1,1,1,1},
@@ -162,19 +164,20 @@ void generateTree(Chunk* chunk, int x, int y, int z){
 Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ){
     Chunk* chunk = generateEmptyChunk(world);
 
+    // Create and configure noise state
+    fnl_state noise = fnlCreateState();
+    noise.noise_type = FNL_NOISE_PERLIN;
+    noise.octaves = 3;
+    //noise.frequency = 100;
+
     for(int x = 0;x < DEFAULT_CHUNK_SIZE;x++){
         for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
             float rx = (float)(x + chunkX * DEFAULT_CHUNK_SIZE);
             float rz = (float)(z + chunkZ * DEFAULT_CHUNK_SIZE);
 
-            float mountains_areas = perlin(rx / 500.0, rz / 500.0);
-            float mountains = perlin(rx / 200.0, rz / 200.0);
-            float main = perlin(rx / 300.0, rz / 300.0);
-
-            main *=   mountains_areas * pow(mountains*2,2);
-
+            float main = (fnlGetNoise2D(&noise, rx, rz) + 1) / 2;
+            main = pow(main,4);
             //value *= perlin(rx / 20.0, rz / 20.0);
-            //printf("%f %i %i\n", value,x,z);
             int converted_value = floor(256 * main); 
 
             for(int y = 0;y < converted_value;y++){
@@ -291,9 +294,13 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
                 //printf("%ix%ix%i\n", x, y, z);
                 Block* index = getChunkBlock(chunk, ix, y ,iz);
                 if(index == NULL || index->typeIndex == 0) continue; // error or air
-                //printf("%i\n",index->typeIndex);
-                BlockType currentBlock = predefinedBlocks[index->typeIndex];
-                if(currentBlock.untextured) continue;
+                if(index->typeIndex > 7) {
+                    printf("Chunk mesh generation stopped, corrupted data (%i %i).\n", chunk->worldX, chunk->worldZ);
+                    return;
+                }
+                BlockType* currentBlock = &predefinedBlocks[index->typeIndex];
+                //printf("%i %i\n",index->typeIndex, currentBlock.untextured);
+                if(currentBlock->untextured) continue;
 
                 float lightR = 0.5;
                 float lightG = 0.5;
@@ -403,7 +410,8 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
                     //printf("%i %i %i\n", coordinates[0], coordinates[1], coordinates[2]);
                     
                     
-                    int texture = currentBlock.repeatTexture ? currentBlock.textures[0] : currentBlock.textures[def->textureIndex];
+                    //if(currentBlock->repeatTexture) printf("Index: %i\n", def->textureIndex);
+                    int texture = currentBlock->repeatTexture ? currentBlock->textures[0] : currentBlock->textures[def->textureIndex];
 
                     Vertex metadata = {0};
                     metadata.size = 6;

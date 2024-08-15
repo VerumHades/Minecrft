@@ -1,6 +1,6 @@
 # Linux settings
 CC = gcc
-CFLAGS = -Wall -Iinclude -g
+CFLAGS = -Wall -Iinclude -g 
 LDFLAGS = -lglfw -lGL -lm
 MKDIR = mkdir -p
 RM = rm -f

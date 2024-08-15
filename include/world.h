@@ -42,6 +42,12 @@ typedef struct World{
     FILE* file;
     StoredWorldMetadata metadata;
 
+    #ifdef _WIN32
+
+    #else
+    mtx_t threadlock;
+    #endif
+
     PositionMap* chunks;
     PositionMap* storedIndices;
 } World;
@@ -70,6 +76,7 @@ World* newWorld(char* storageFilename);
 void freeWorld(World* world);
 void updateWorldStorageRegistry(World* world);
 void saveWorld(World* world);
+int writeWorldMetadata(World* world);
 
 Block* getWorldBlock(World* world,int x, int y, int z);
 int setWorldBlock(World* world,int x, int y, int z, Block index);

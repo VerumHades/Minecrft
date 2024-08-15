@@ -3,7 +3,6 @@
 
 #include <math.h>
 #include <time.h>
-#include <perlinNoise.h>
 
 #include <rendering/texture.h>
 #include <rendering/buffer.h>

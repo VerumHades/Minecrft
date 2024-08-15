@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 typedef struct Vec3{
     float x; float y; float z;
