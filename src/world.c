@@ -87,7 +87,7 @@ void updateWorldStorageRegistry(World* world){
         void* registered = getFromPositionMap(world->storedIndices, &key);
         //if(registered != NULL) continue;
 
-        printf("Loading chunk (%f %f).\n", key.x, key.z);
+        //printf("Loading chunk (%f %f).\n", key.x, key.z);
 
         uintptr_t offset = sizeof(StoredWorldMetadata) + sizeof(StoredChunk) * i;
         putIntoPositionMap(world->storedIndices, &key, (void*)offset);
@@ -115,7 +115,7 @@ Chunk* getStoredWorldChunk(World* world, int x, int z){
 
     void* registered = getFromPositionMap(world->storedIndices, &key);
     if(registered == NULL){
-        printf("Chunk not found %i %i\n", x,z);
+        //printf("Chunk not found %i %i\n", x,z);
         return NULL;
     }
 
@@ -133,7 +133,7 @@ Chunk* getStoredWorldChunk(World* world, int x, int z){
     
     for(int x = 0; x < DEFAULT_CHUNK_SIZE;x++) for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++) for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
         loadedChunk->blocks[x][y][z] = chunk.blocks[x][y][z];
-        if(chunk.blocks[x][y][z].typeIndex > 7){
+        if(chunk.blocks[x][y][z].typeIndex > predefinedBlocksTotal){
             printf("Corrupted chunk read? (%i %i) [%lu].\n",x,z, offset);
             return NULL;
         }
@@ -193,7 +193,7 @@ int storeWorldChunk(Chunk* chunk){
     }
 
     long pos = ftell(chunk->world->file);
-    printf("Storing chunk (%i %i), %lu at %li\n", storedChunk.worldX, storedChunk.worldZ, sizeof(StoredChunk), pos / sizeof(StoredChunk));
+    //printf("Storing chunk (%i %i), %lu at %li\n", storedChunk.worldX, storedChunk.worldZ, sizeof(StoredChunk), pos / sizeof(StoredChunk));
 
     fwrite(&storedChunk, sizeof(StoredChunk), 1, chunk->world->file);
     putIntoPositionMap(chunk->world->storedIndices, &key, (void*) (uintptr_t) pos);
@@ -274,7 +274,7 @@ Chunk* generateWorldChunk(World* world, int x, int z){
         
         if(chunk != NULL) return chunk;
 
-        chunk = generatePerlinChunk(world,x,z);
+        chunk = generateTerrainChunk(world,x,z);
         //chunk = generatePlainChunk(world, (Block){.typeIndex=1},(Block){.typeIndex = 2});
         chunk->worldX = x;
         chunk->worldZ = z;

@@ -4,6 +4,7 @@
 #include <chunk.h>
 #include <structures/posmap.h>
 #include <time.h>
+#include <worldgen/worldgen.h>
 
 #ifdef _WIN32
 
@@ -71,6 +72,8 @@ typedef struct CollisionCheckResult{
     int y;
     int z;
 } CollisionCheckResult;
+
+extern size_t predefinedBlocksTotal;
 
 World* newWorld(char* storageFilename);
 void freeWorld(World* world);

@@ -202,10 +202,12 @@ int main(void) {
         "textures/oak_leaves.png",
         "textures/birch_leaves.png",
         "textures/birch_log.png",
-        "textures/birch_log_top.png"
+        "textures/birch_log_top.png",
+        "textures/blue_wool.png",
+        "textures/sand.png"
     };
     GLTextureArray tilemap = createTextureArray(&mainProgram);
-    loadTextureArrayFromFiles(&tilemap, texturePaths,10,160,160);
+    loadTextureArrayFromFiles(&tilemap, texturePaths,arrayLen(texturePaths),160,160);
 
     world = newWorld("world.bin");
 
@@ -283,8 +285,8 @@ int main(void) {
         int camWorldX = camX / DEFAULT_CHUNK_SIZE;
         int camWorldZ = camZ / DEFAULT_CHUNK_SIZE;
 
-        float offsetCamX = camX - cos(M_PI_D180 * (camAngleY - 90)) * (camAngleX - 90);
-        float offsetCamZ = camZ - sin(M_PI_D180 * (camAngleY - 90)) * (camAngleX - 90);
+        float offsetCamX = camX - cos(M_PI_D180 * (camAngleY - 90)) * (camAngleX - 90 + camY);
+        float offsetCamZ = camZ - sin(M_PI_D180 * (camAngleY - 90)) * (camAngleX - 90 + camY);
 
         for(int x = -renderDistance; x <= renderDistance; x++){
             for(int z = -renderDistance; z <= renderDistance; z++){

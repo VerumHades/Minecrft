@@ -1,6 +1,4 @@
 #include <chunk.h>
-#define FNL_IMPL
-#include <FastNoiseLite.h>
 
 BlockType predefinedBlocks[] = {
     { // air
@@ -61,8 +59,26 @@ BlockType predefinedBlocks[] = {
             {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
         },
         .colliderCount = 1
+    },
+    { // blue wool
+        .repeatTexture = 1,
+        .textures = (unsigned char[]){10},
+        .colliders = (RectangularCollider[]){
+            {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
+        },
+        .colliderCount = 1
+    },
+    { // sand
+        .repeatTexture = 1,
+        .textures = (unsigned char[]){11},
+        .colliders = (RectangularCollider[]){
+            {.x = 0, .y = 0, .z = 0, .width = 1.0,.height = 1.0, .depth = 1.0}
+        },
+        .colliderCount = 1
     }
 };
+
+size_t predefinedBlocksTotal = arrayLen(predefinedBlocks);
 
 static inline void fillChunkLevel(Chunk* chunk, unsigned int y, Block value){
     for(int x = 0; x < DEFAULT_CHUNK_SIZE;x++) for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
@@ -126,79 +142,6 @@ Chunk* generatePlainChunk(World* world, Block top, Block rest){
         else if(i == 60) fillChunkLevel(chunk, i, top);
     }
 
-    return chunk;
-}
-
-void generateTree(Chunk* chunk, int x, int y, int z){
-    int trunkHeight = rand() % 5 + 5;
-    Block trunkBlock;
-    trunkBlock.typeIndex = 7;
-    Block leafBlock;
-    leafBlock.typeIndex = 6;
-
-    for(int g = 0;g < 2;g++){
-        for(int i = -2; i <= 2;i++){
-            for(int j = -2;j <= 2;j++){
-                if(j == 0 && i == 0 && g == 0) continue;
-                setChunkBlock(chunk,x+i,y+trunkHeight-1+g,z+j,leafBlock);       
-            }
-        }
-    }
-
-    for(int i = -1; i <= 1;i++){
-        for(int j = -1;j <= 1;j++){
-            setChunkBlock(chunk,x+i,y+trunkHeight+1,z+j,leafBlock);       
-        }
-    }
-
-    for(int i = -1; i <= 1;i++){
-        for(int j = -1;j <= 1;j++){
-            if(i != 0 && j != 0) continue;
-            setChunkBlock(chunk,x+i,y+trunkHeight+2,z+j,leafBlock);       
-        }
-    }
-
-    for(int i = 0; i < trunkHeight;i++) setChunkBlock(chunk,x,y+i,z, trunkBlock);
-}
-
-Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ){
-    Chunk* chunk = generateEmptyChunk(world);
-
-    // Create and configure noise state
-    fnl_state noise = fnlCreateState();
-    noise.noise_type = FNL_NOISE_PERLIN;
-    noise.octaves = 3;
-    //noise.frequency = 100;
-
-    for(int x = 0;x < DEFAULT_CHUNK_SIZE;x++){
-        for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
-            float rx = (float)(x + chunkX * DEFAULT_CHUNK_SIZE);
-            float rz = (float)(z + chunkZ * DEFAULT_CHUNK_SIZE);
-
-            float main = (fnlGetNoise2D(&noise, rx, rz) + 1) / 2;
-            main = pow(main,4);
-            //value *= perlin(rx / 20.0, rz / 20.0);
-            int converted_value = floor(256 * main); 
-
-            for(int y = 0;y < converted_value;y++){
-                Block block;
-                block.typeIndex = 0;
-
-                if(y > 120){
-                    block.typeIndex = 3;
-                }
-                else if(y + 1 == converted_value){
-                    block.typeIndex = 1;
-                    if(rand() % 100 == 0) generateTree(chunk,x,converted_value,z);
-                }
-                else if(y + 3 >= converted_value) block.typeIndex = 2;
-                else block.typeIndex = 3;
-
-                setChunkBlock(chunk,x,y,z, block);
-            }
-        }
-    }
-    
     return chunk;
 }
 
@@ -294,7 +237,7 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
                 //printf("%ix%ix%i\n", x, y, z);
                 Block* index = getChunkBlock(chunk, ix, y ,iz);
                 if(index == NULL || index->typeIndex == 0) continue; // error or air
-                if(index->typeIndex > 7) {
+                if(index->typeIndex > predefinedBlocksTotal) {
                     printf("Chunk mesh generation stopped, corrupted data (%i %i).\n", chunk->worldX, chunk->worldZ);
                     return;
                 }
