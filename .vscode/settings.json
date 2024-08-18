@@ -11,6 +11,7 @@
         "structures/posmap.h": "c",
         "glad.h": "c",
         "cmath": "c",
-        "worldgen.h": "c"
+        "worldgen.h": "c",
+        "cstdlib": "cpp"
     }
 }
