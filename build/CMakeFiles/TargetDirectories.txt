@@ -1,0 +1,3 @@
+/home/hades/projects/c/Minecrft/build/CMakeFiles/main.dir
+/home/hades/projects/c/Minecrft/build/CMakeFiles/edit_cache.dir
+/home/hades/projects/c/Minecrft/build/CMakeFiles/rebuild_cache.dir
