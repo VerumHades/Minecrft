@@ -13,13 +13,19 @@ in vec3 pos;
 out vec4 FragColor;
 
 uniform sampler2DArray textureArray;
+uniform vec3 camPos;
 //uniform sampler3D lightArray;
 
 void main()
 {
     //FragColor = texture(texture1, TexCoords) * vec4(LightLevel,1); //* diffuse;
     
-    FragColor = texture(textureArray, vec3(TexCoords, TexIndex));// * texture(lightArray, pos / vec3(64,256,64));
+    vec4 texColor = texture(textureArray, vec3(TexCoords, TexIndex));
+
+    float intensity = 1.0 - distance(camPos, crntPosition) / 1000;
+    //intensity = normalize(intensity);
+
+    FragColor = (texColor + vec4(Normals / 10,1.0)) * vec4(intensity, intensity, intensity, 1);// * texture(lightArray, pos / vec3(64,256,64));
     //FragColor.a = 1.0;
     //FragColor = vec4(vec3(0.5,0.5,0.2) - Normals, 1);
 }

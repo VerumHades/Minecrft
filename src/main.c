@@ -211,6 +211,8 @@ int main(void) {
 
     world = newWorld("world.bin");
 
+    unsigned int camPosLoc = glGetUniformLocation(mainProgram.program,"camPos");
+
     clock_t last = clock();
     clock_t current = clock();
 
@@ -273,6 +275,7 @@ int main(void) {
         }
         else camZ += accelZ;
 
+        glUniform3f(camPosLoc, -camX, -camY, -camZ);
         //printf("x:%f y:%f z:%f ax:%f ay:%f az:%f\n",camX,camY,camZ,accelX,accelY,accelZ);
         glDisable(GL_CULL_FACE);  
         useShaderProgram(&skyboxProgram);
