@@ -294,12 +294,6 @@ OPENGL_glu_LIBRARY:STRING=glu32
 //Use MSVC runtime library DLL
 USE_MSVC_RUNTIME_LIBRARY_DLL:BOOL=ON
 
-//The directory containing a CMake configuration file for glfw3.
-glfw3_DIR:PATH=glfw3_DIR-NOTFOUND
-
-//The directory containing a CMake configuration file for glm.
-glm_DIR:PATH=glm_DIR-NOTFOUND
-
 //Value Computed by CMake
 main_BINARY_DIR:STATIC=C:/Users/filah/Documents/projects/c/Minecrft/build
 
