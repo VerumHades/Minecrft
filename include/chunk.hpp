@@ -105,7 +105,7 @@ class Chunk{
 
         bool isDrawn;
 
-        Chunk(World& world, glm::vec2 pos);
+        Chunk(World& world, const glm::vec2& pos);
 
         const Block& getBlock(unsigned int x, unsigned int y, unsigned int z);
         void setBlock(unsigned int x, unsigned int y, unsigned int z, Block value);

@@ -12,7 +12,7 @@ struct Biome {
     float temperatureLower;
     float temperatureUpper;
 
-    using GenerateTreeFunc = void (*)(Chunk*, int, int, int);
+    using GenerateTreeFunc = void (*)(Chunk&, int, int, int);
 
     Biome(BlockTypeEnum top, BlockTypeEnum secondaryTop, BlockTypeEnum underground,
           float tempLower, float tempUpper,
@@ -23,6 +23,6 @@ struct Biome {
     GenerateTreeFunc generateTree;
 };
 
-Chunk* generateTerrainChunk(World* world, int x, int z);
+Chunk generateTerrainChunk(World& world, int x, int z);
 
 #endif

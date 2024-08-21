@@ -34,7 +34,7 @@ class ShaderProgram{
         void setupProjection(int width, int height, float FOV);
 
     public:
-        ShaderProgram();
+        void initialize();
         ~ShaderProgram();
 
         glm::vec3& getCameraDirection();
@@ -45,7 +45,7 @@ class ShaderProgram{
 
         void recalculateProjection(int width, int height, float FOV);
         void setCameraPosition(float x, float y, float z);
-        void setCameraRotation(int pitch, int yaw);
+        void setCameraRotation(float pitch, float yaw);
 
 };
 #endif

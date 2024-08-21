@@ -45,7 +45,7 @@ void ShaderProgram::setCameraPosition(float x, float y, float z){
     glUniformMatrix4fv(this->modelLoc, 1, GL_FALSE, glm::value_ptr(this->modelMatrix));
 }
 
-void ShaderProgram::setCameraRotation(int pitch, int yaw){
+void ShaderProgram::setCameraRotation(float pitch, float yaw){
     this->use();
 
     glm::vec3 front;

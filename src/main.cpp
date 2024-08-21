@@ -135,11 +135,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     }*/
 }
 
-int main(void) {
+int main() {
     GLFWwindow* window;
 
     /* Initialize the library */
     if (!glfwInit()) {
+        std::cout << "Failed to initialize glfw!" << std::endl;
         return -1;
     }
 
@@ -151,6 +152,7 @@ int main(void) {
     window = glfwCreateWindow(1920, 1080, "Hello World", NULL, NULL);
 
     if (!window) {
+        std::cout << "Failed to initialize glfw window!" << std::endl;
         glfwTerminate();
         return -1;
     }
@@ -164,6 +166,7 @@ int main(void) {
     
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
+        std::cout << "Failed to initialize glad!" << std::endl;
         return -1;
     }
 
@@ -173,17 +176,18 @@ int main(void) {
     glEnable(GL_CULL_FACE);  // Enable backface culling
     glCullFace(GL_BACK);     // Cull back faces
     glFrontFace(GL_CW);     // Set counterclockwise winding order as front*/
-
     //glDepthMask(GL_FALSE);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     //glEnable(GL_BLEND);
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
- 
+    
+    mainProgram.initialize();
     mainProgram.addShader("shaders/vertex.vs", GL_VERTEX_SHADER);
     mainProgram.addShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
     mainProgram.compile();
 
+    skyboxProgram.initialize();
     skyboxProgram.addShader("shaders/skybox.vs", GL_VERTEX_SHADER);
     skyboxProgram.addShader("shaders/skybox.fs", GL_FRAGMENT_SHADER);
     skyboxProgram.compile();

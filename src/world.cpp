@@ -2,21 +2,35 @@
 Chunk& World::generateChunk(int x, int z){
     glm::vec2 key = glm::vec2(x,z);
 
-    if(this->chunks.count(key) != 0){
-        return this->chunks[glm::vec2(x,z)];
-    }
-    else{
-        this->chunks.emplace(glm::vec2(x,z), Chunk(*this, glm::vec2(x,z)));
-        return this->chunks[glm::vec2(x,z)];
+    auto it = this->chunks.find(key);
+    if (it != this->chunks.end()) {
+        return it->second;
+    } else {
+        auto [iter, success] = this->chunks.emplace(key, Chunk(*this, key));
+        return iter->second;
     }
 }
 
 std::optional<std::reference_wrapper<Chunk>> World::getChunk(int x, int z){
-    if(this->chunks.count(glm::vec2(x,z)) != 0){
-        return this->chunks[glm::vec2(x,z)];
+    glm::vec2 key = glm::vec2(x,z);
+    
+    auto it = this->chunks.find(key);
+    if (it != this->chunks.end()) {
+        return it->second;
     }
 
     return std::nullopt;
+}
+
+std::size_t Vec2Hash::operator()(const glm::vec2& v) const noexcept{
+    std::size_t h1 = std::hash<float>{}(v.x);
+    std::size_t h2 = std::hash<float>{}(v.y);
+    // Combine the hash values
+    return h1 ^ (h2 << 1);
+}
+
+bool Vec2Equal::operator()(const glm::vec2& lhs, const glm::vec2& rhs) const noexcept {
+    return lhs.x == rhs.x && lhs.y == rhs.y;
 }
 
 

@@ -19,7 +19,7 @@ static inline void fillChunkLevel(Chunk& chunk, unsigned int y, Block value){
     }
 }
 
-Chunk::Chunk(World& world, glm::vec2 pos): world(world), worldPosition(pos) {
+Chunk::Chunk(World& world, const glm::vec2& pos): world(world), worldPosition(pos) {
 
 }
 

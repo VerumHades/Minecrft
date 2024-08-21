@@ -10,6 +10,16 @@
 #include <optional>
 #include <functional>
 
+
+struct Vec2Hash {
+    std::size_t operator()(const glm::vec2& v) const noexcept;
+};
+
+struct Vec2Equal {
+    bool operator()(const glm::vec2& lhs, const glm::vec2& rhs) const noexcept;
+};
+
+
 typedef struct RaycastResult{
     std::optional<std::reference_wrapper<const Block>> hitBlock;
     bool hit;
@@ -32,7 +42,7 @@ typedef struct CollisionCheckResult{
 
 class World{
     private:
-        std::unordered_map<glm::vec2, Chunk> chunks;
+        std::unordered_map<glm::vec2, Chunk, Vec2Hash, Vec2Equal> chunks;
 
     public:
         std::optional<std::reference_wrapper<const Block>> getBlock(int x, int y, int z);

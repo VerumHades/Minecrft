@@ -1,6 +1,4 @@
-# Minimum CMake version
-cmake_minimum_required(VERSION 3.10)
-
+cmake_minimum_required(VERSION 3.14)  # FetchContent is fully supported from CMake 3.14 onwards
 # Project name
 project(main CXX)
 
@@ -8,25 +6,33 @@ project(main CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)
-include_directories(${CMAKE_SOURCE_DIR}/header)
+include_directories(${CMAKE_SOURCE_DIR}/libs)
 
-# Find GLM package
-#find_package(glm CONFIG REQUIRED)
+include(FetchContent)
 
-set(GLM_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libs")
-include_directories(${GLM_INCLUDE_DIRS})
+# Fetch GLFW
+FetchContent_Declare(
+  glfw
+  GIT_REPOSITORY https://github.com/glfw/glfw.git
+)
+FetchContent_MakeAvailable(glfw)
 
-# Find OpenGL and GLFW
+# Fetch GLM
+FetchContent_Declare(
+  glm
+  GIT_REPOSITORY https://github.com/g-truc/glm.git
+)
+FetchContent_MakeAvailable(glm)
+
+
 find_package(OpenGL REQUIRED)
-#find_package(glfw3 REQUIRED)
-
-add_subdirectory(libs/glm)
-add_subdirectory(libs/glfw3)
 
 # Source files
-file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp ${CMAKE_SOURCE_DIR}/src/*.c)
 
 # Add executable target
 add_executable(main ${SOURCES})

@@ -28,7 +28,8 @@ unsigned int compileShader(const char* source, int type){
     return shader;
 }
 
-ShaderProgram::ShaderProgram(){
+
+void ShaderProgram::initialize(){
     this->program = glCreateProgram();
 }
 ShaderProgram::~ShaderProgram(){

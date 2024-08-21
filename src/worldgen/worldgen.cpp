@@ -48,7 +48,7 @@ void generateOakTree(Chunk& chunk, int x, int y, int z){
     generateTree(chunk, x,y,z,trunkBlock,leafBlock);
 }
 
-void generateNoTree(Chunk* chunk, int x, int y, int z){}
+void generateNoTree(Chunk& chunk, int x, int y, int z){}
 
 
 std::vector<Biome> biomes = {
@@ -74,7 +74,7 @@ float lerp(float a, float b, float f)
 }
 
 Chunk generateTerrainChunk(World& world, int chunkX, int chunkY){
-    Chunk chunk(world, glm::vec2(chunkX, chunkY));
+    Chunk chunk = world.generateChunk(chunkX,chunkY);
 
     // Create and configure noise state
     fnl_state noise = fnlCreateState();
