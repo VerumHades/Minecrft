@@ -39,7 +39,7 @@ class ShaderProgram{
 
         glm::vec3& getCameraDirection();
 
-        void ShaderProgram::addShader(char* filename, int type);
+        void addShader(char* filename, int type);
         void compile();
         void use();
 

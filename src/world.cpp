@@ -66,7 +66,7 @@ std::optional<std::reference_wrapper<Chunk>> World::getChunkWithMesh(int x, int 
     Chunk& chunk = chunkOpt.value();
 
     if(!chunk.meshGenerated && !chunk.meshGenerating){
-        std::thread t1(generateChunkMeshThread, chunk);
+        std::thread t1(generateChunkMeshThread, std::ref(chunk));
 
         return std::nullopt;
     }

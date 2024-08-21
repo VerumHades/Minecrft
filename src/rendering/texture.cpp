@@ -82,7 +82,7 @@ void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layer
         data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 0);
 
         if (!data) {
-            throw std::exception("Failed to load texture '%s'\n");
+            throw std::runtime_error("Failed to load texture '%s'\n");
         }
 
         if(nrChannels == 3){
@@ -94,7 +94,7 @@ void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layer
             stbi_image_free(data);
         }
         else{
-            throw std::exception("Invalid number of channels: '%i' in texture image '%s' (4 required).\n");
+            throw std::runtime_error("Invalid number of channels: '%i' in texture image '%s' (4 required).\n");
         }
     }
 
@@ -179,7 +179,7 @@ GLSkybox::GLSkybox(std::array<std::string, 6> filenames){
         data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 0);
 
         if (!data) {
-            throw std::exception("Failed to load texture when creating skybox.");
+            throw std::runtime_error("Failed to load texture when creating skybox.");
         }
 
 
@@ -198,7 +198,7 @@ GLSkybox::GLSkybox(std::array<std::string, 6> filenames){
             stbi_image_free(data);
         }
         else{
-            throw std::exception("Invalid number of channels in texture image.\n");
+            throw std::runtime_error("Invalid number of channels in texture image.\n");
         }
     }
 
