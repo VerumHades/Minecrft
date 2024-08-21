@@ -5,27 +5,47 @@
 #include <iostream>
 #include <cstdlib>
 #include <standard.hpp>
+#include <vector>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp> 
+#include <glm/gtc/type_ptr.hpp>  
 
 #define MAX_SHADERS 16
 
-typedef struct ShaderProgram{
-    unsigned int program;
-    unsigned int shaders[MAX_SHADERS];
-    unsigned int shaderCount;
+class ShaderProgram{
+    private:
+        unsigned int program;
+        std::vector<unsigned int> shaders;
 
-    float projectionMatrix[16];
-    float viewMatrix[16];
-    float modelMatrix[16];
+        glm::mat4 projectionMatrix;
+        glm::mat4 viewMatrix;
+        glm::mat4 modelMatrix;
 
-    unsigned int projLoc;
-    unsigned int viewLoc;
-    unsigned int modelLoc;
-} ShaderProgram;
+        glm::vec3 cameraPosition;
+        glm::vec3 cameraDirection;
+        glm::vec3 cameraUp;
 
-ShaderProgram newShaderProgram();
-void addVertexShader(ShaderProgram* program, char* filename);
-void addFragmentShader(ShaderProgram* program, char* filename);
-void compileShaderProgram(ShaderProgram* program);
-void useShaderProgram(ShaderProgram* program);
+        unsigned int projLoc = -1;
+        unsigned int viewLoc = -1;
+        unsigned int modelLoc = -1;
 
+        bool projectionSetup = false;
+
+        void setupProjection(int width, int height, float FOV);
+
+    public:
+        ShaderProgram();
+        ~ShaderProgram();
+
+        glm::vec3& getCameraDirection();
+
+        void ShaderProgram::addShader(char* filename, int type);
+        void compile();
+        void use();
+
+        void recalculateProjection(int width, int height, float FOV);
+        void setCameraPosition(float x, float y, float z);
+        void setCameraRotation(int pitch, int yaw);
+
+};
 #endif

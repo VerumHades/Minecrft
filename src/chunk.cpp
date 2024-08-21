@@ -1,228 +1,114 @@
 #include <chunk.hpp>
 
-BlockType predefinedBlocks[] = {
-    { // air
-        .transparent = 1,
-        .untextured = 1
-    },
-    { // grass
-        .textures = (unsigned char[]){0,2,1,1,1,1},
-        //.textures = (unsigned char[]){0},
-        //.repeatTexture = 1,
-        .colliders = (RectangularCollider[]){
-            {.x = 0, .y = 0, .z = 0, .width = 1.0,.hppeight = 1.0, .depth = 1.0}
-        },
-        .colliderCount = 1
-    },
-    { // dirt
-        .repeatTexture = 1,
-        .textures = (unsigned char[]){2},
-        .colliders = (RectangularCollider[]){
-            {.x = 0, .y = 0, .z = 0, .width = 1.0,.hppeight = 1.0, .depth = 1.0}
-        },
-        .colliderCount = 1
-    },
-    { // stone
-        .repeatTexture = 1,
-        .textures = (unsigned char[]){3},
-        .colliders = (RectangularCollider[]){
-            {.x = 0, .y = 0, .z = 0, .width = 1.0,.hppeight = 1.0, .depth = 1.0}
-        },
-        .colliderCount = 1
-    },
-    { // leaf block
-        .repeatTexture = 1,
-        .textures = (unsigned char[]){6},
-        .colliders = (RectangularCollider[]){
-            {.x = 0, .y = 0, .z = 0, .width = 1.0,.hppeight = 1.0, .depth = 1.0}
-        },
-        .colliderCount = 1
-    },
-    { // oak log
-        .textures = (unsigned char[]){4,4,5,5,5,5},
-        .colliders = (RectangularCollider[]){
-            {.x = 0, .y = 0, .z = 0, .width = 1.0,.hppeight = 1.0, .depth = 1.0}
-        },
-        .colliderCount = 1
-    },
-    { // birch leaf block
-        .repeatTexture = 1,
-        .textures = (unsigned char[]){7},
-        .colliders = (RectangularCollider[]){
-            {.x = 0, .y = 0, .z = 0, .width = 1.0,.hppeight = 1.0, .depth = 1.0}
-        },
-        .colliderCount = 1
-    },
-    { // birch log
-        .textures = (unsigned char[]){9,9,8,8,8,8},
-        .colliders = (RectangularCollider[]){
-            {.x = 0, .y = 0, .z = 0, .width = 1.0,.hppeight = 1.0, .depth = 1.0}
-        },
-        .colliderCount = 1
-    },
-    { // blue wool
-        .repeatTexture = 1,
-        .textures = (unsigned char[]){10},
-        .colliders = (RectangularCollider[]){
-            {.x = 0, .y = 0, .z = 0, .width = 1.0,.hppeight = 1.0, .depth = 1.0}
-        },
-        .colliderCount = 1
-    },
-    { // sand
-        .repeatTexture = 1,
-        .textures = (unsigned char[]){11},
-        .colliders = (RectangularCollider[]){
-            {.x = 0, .y = 0, .z = 0, .width = 1.0,.hppeight = 1.0, .depth = 1.0}
-        },
-        .colliderCount = 1
-    }
+std::map<BlockTypeEnum, BlockType> predefinedBlocks = {
+    {BlockTypeEnum::Air, BlockType(true, true)}, // Air
+    {BlockTypeEnum::Grass, BlockType(false, false, false, {0, 2, 1, 1, 1, 1}, {{0, 0, 0, 1.0f, 1.0f, 1.0f}})}, // Grass
+    {BlockTypeEnum::Dirt, BlockType(false, false, true, {2}, {{0, 0, 0, 1.0f, 1.0f, 1.0f}})}, // Dirt
+    {BlockTypeEnum::Stone, BlockType(false, false, true, {3}, {{0, 0, 0, 1.0f, 1.0f, 1.0f}})}, // Stone
+    {BlockTypeEnum::LeafBlock, BlockType(false, false, true, {6}, {{0, 0, 0, 1.0f, 1.0f, 1.0f}})}, // Leaf Block
+    {BlockTypeEnum::OakLog, BlockType(false, false, false, {4, 4, 5, 5, 5, 5}, {{0, 0, 0, 1.0f, 1.0f, 1.0f}})}, // Oak Log
+    {BlockTypeEnum::BirchLeafBlock, BlockType(false, false, true, {7}, {{0, 0, 0, 1.0f, 1.0f, 1.0f}})}, // Birch Leaf Block
+    {BlockTypeEnum::BirchLog, BlockType(false, false, false, {9, 9, 8, 8, 8, 8}, {{0, 0, 0, 1.0f, 1.0f, 1.0f}})}, // Birch Log
+    {BlockTypeEnum::BlueWool, BlockType(false, false, true, {10}, {{0, 0, 0, 1.0f, 1.0f, 1.0f}})}, // Blue Wool
+    {BlockTypeEnum::Sand, BlockType(false, false, true, {11}, {{0, 0, 0, 1.0f, 1.0f, 1.0f}})} // Sand
 };
 
-size_t predefinedBlocksTotal = arrayLen(predefinedBlocks);
-
-static inline void fillChunkLevel(Chunk* chunk, unsigned int y, Block value){
+static inline void fillChunkLevel(Chunk& chunk, unsigned int y, Block value){
     for(int x = 0; x < DEFAULT_CHUNK_SIZE;x++) for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
-        setChunkBlock(chunk, x,y,z, value);
+        chunk.setBlock(x,y,z, value);
     }
 }
 
-Block* getChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z){
-    if(x >= DEFAULT_CHUNK_SIZE) return NULL;
-    if(y >= DEFAULT_CHUNK_HEIGHT) return NULL;
-    if(z >= DEFAULT_CHUNK_SIZE) return NULL;
+Chunk::Chunk(World& world, glm::vec2 pos): world(world), worldPosition(pos) {
+
+}
+
+World& Chunk::getWorld(){
+    return this->world;
+}
+
+void Chunk::regenerateMesh(){
+    if(!this->buffersLoaded) return;
+
+    this->meshGenerated = 0;
+    this->meshGenerating = 0;
+    this->buffersLoaded = 0;
+}
+
+
+const Block& Chunk::getBlock(unsigned int x, unsigned int y, unsigned int z){
+    if(x >= DEFAULT_CHUNK_SIZE) throw std::invalid_argument("Invalid coordinates");
+    if(y >= DEFAULT_CHUNK_HEIGHT) throw std::invalid_argument("Invalid coordinates");
+    if(z >= DEFAULT_CHUNK_SIZE) throw std::invalid_argument("Invalid coordinates");
     
-    return &chunk->blocks[x][y][z];
+    return this->blocks[x][y][z];
 }
 
-int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, Block value){
-    if(x >= DEFAULT_CHUNK_SIZE) return INVALID_COORDINATES;
-    if(y >= DEFAULT_CHUNK_HEIGHT) return INVALID_COORDINATES;
-    if(z >= DEFAULT_CHUNK_SIZE) return INVALID_COORDINATES;
+void Chunk::setBlock(unsigned int x, unsigned int y, unsigned int z, Block value){
+    if(x >= DEFAULT_CHUNK_SIZE) throw std::invalid_argument("Invalid coordinates");
+    if(y >= DEFAULT_CHUNK_HEIGHT) throw std::invalid_argument("Invalid coordinates");
+    if(z >= DEFAULT_CHUNK_SIZE) throw std::invalid_argument("Invalid coordinates");
 
-    chunk->blocks[x][y][z] = value;
-
-    return OK;
+    this->blocks[x][y][z] = value;
 }
 
-Chunk* generateEmptyChunk(World* world){
-    Chunk* chunk = calloc(1, sizeof(Chunk));
-    chunk->world = world;
+static inline const Block& getWorldBlockFast(Chunk* chunk, int ix, int iz, int x, int y, int z){
+    if(y < 0 || y >= DEFAULT_CHUNK_HEIGHT) throw std::invalid_argument("Invalid coordinates");
 
-    //memset(chunk->blocks, 0, sizeof(Block) * DEFAULT_CHUNK_AREA * DEFAULT_CHUNK_HEIGHT);
-
-    return chunk;
-}
-
-void destroyChunk(Chunk* chunk){
-    if(chunk->buffersAsigned){
-        destroyBuffer(chunk->solidBuffer);
-        destroyBuffer(chunk->solidBackBuffer);
-        destroyBuffer(chunk->transparentBuffer);
-        destroyBuffer(chunk->transparentBackBuffer);
+    try{
+        return chunk->getBlock(ix, y, iz);
     }
-
-    if(chunk->meshGenerated){
-        destroyMesh(chunk->solidMesh);
-        destroyMesh(chunk->transparentMesh);
+    catch(const std::exception& err){
+        return chunk->getWorld().getBlock(x, y, z).value();
     }
-
-    Vec3 key = (Vec3){.x = chunk->worldX, .z = chunk->worldZ};
-    removeFromPositionMap(chunk->world->chunks, &key);
-
-    free(chunk);
 }
 
+static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int z, int offset_ix, int offset_y, int offset_iz, const FaceDefinition& def, int* coordinates, const Block& source){
+    try{
+        const Block& temp = getWorldBlockFast(
+            chunk,
+            ix + def.offsetX + coordinates[0],
+            iz + def.offsetZ + coordinates[2],
+            x + def.offsetX + coordinates[0],
+            y + def.offsetY + coordinates[1],
+            z + def.offsetZ + coordinates[2]
+        );
 
-Chunk* generatePlainChunk(World* world, Block top, Block rest){
-    Chunk* chunk = generateEmptyChunk(world);
+        const Block& tempSolid = chunk->getBlock(
+            offset_ix,
+            offset_y,
+            offset_iz                         
+        );
 
-    for(int i = 0;i < DEFAULT_CHUNK_HEIGHT;i++){
+        if(predefinedBlocks[tempSolid.type].untextured) return 0;
+        if(!predefinedBlocks[temp.type].untextured) return 0;
         
-        if(i < 60) fillChunkLevel(chunk, i, rest);
-        else if(i == 60) fillChunkLevel(chunk, i, top);
+        if(tempSolid.type != source.type) return 0;
+
+        return 1;   
     }
-
-    return chunk;
-}
-
-static inline int hasFace(Block* index){
-    return index != NULL && predefinedBlocks[index->typeIndex].untextured;
-}
-
-static inline Block* getBlock(Chunk* chunk, int ix, int iz, int x, int y, int z){
-    if(y < 0 || y >= DEFAULT_CHUNK_HEIGHT) return NULL;
-    Block* block = getChunkBlock(chunk, ix, y, iz);
-    if(block == NULL) block = getWorldBlock(chunk->world, x, y, z);
-    return block;
-}
-
-static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int z, int offset_ix, int offset_y, int offset_iz, FaceDefinition* def, int* coordinates, Block* source){
-    Block* temp = getBlock(
-        chunk,
-        ix + def->offsetX + coordinates[0],
-        iz + def->offsetZ + coordinates[2],
-        x + def->offsetX + coordinates[0],
-        y + def->offsetY + coordinates[1],
-        z + def->offsetZ + coordinates[2]
-    );
-
-    Block* tempSolid = getChunkBlock(
-        chunk,
-        offset_ix,
-        offset_y,
-        offset_iz                         
-    );
-
-    if(tempSolid == NULL || temp == NULL) return 0;
-    if(predefinedBlocks[tempSolid->typeIndex].untextured) return 0;
-
-    //printf("A %i\n",temp->typeIndex);
-    if(!hasFace(temp)) return 0;
-    if(tempSolid->typeIndex != source->typeIndex) return 0;
-    return 1;
+    catch(const std::exception& err){
+        return 0;
+    }
 }
 
 float textureSize = 1.0 / TEXTURES_TOTAL;
 
-static FaceDefinition faceDefinitions[] = {
-    {
-        .offsetX = 0, .offsetY = 1, .offsetZ = 0,
-        .vertexIndexes = (int[]){4,5,1,0},
-        .textureIndex = 0
-    },
-    {
-        .offsetX = 0, .offsetY = -1, .offsetZ = 0,
-        .vertexIndexes = (int[]){7,6,2,3},
-        .textureIndex = 1,
-        .clockwise = 1
-    },
-    {
-        .offsetX = -1, .offsetY = 0, .offsetZ = 0,
-        .vertexIndexes = (int[]){0,4,7,3},
-        .textureIndex = 2,
-        .clockwise = 1
-    },
-    {
-        .offsetX = 1, .offsetY = 0, .offsetZ = 0,
-        .vertexIndexes = (int[]){1,5,6,2},
-        .textureIndex = 3
-    },
-    {
-        .offsetX = 0, .offsetY = 0, .offsetZ = -1,
-        .vertexIndexes = (int[]){0,1,2,3},
-        .textureIndex = 4
-    },
-    {
-        .offsetX = 0, .offsetY = 0, .offsetZ = 1,
-        .vertexIndexes = (int[]){4,5,6,7},
-        .textureIndex = 5,
-        .clockwise = 1
-    }
+static std::vector<FaceDefinition> faceDefinitions = {
+    FaceDefinition(0, 1, 0, {4, 5, 1, 0}, 0),              // Top face
+    FaceDefinition(0, -1, 0, {7, 6, 2, 3}, 1, true),       // Bottom face
+    FaceDefinition(-1, 0, 0, {0, 4, 7, 3}, 2, true),       // Left face
+    FaceDefinition(1, 0, 0, {1, 5, 6, 2}, 3),              // Right face
+    FaceDefinition(0, 0, -1, {0, 1, 2, 3}, 4),             // Front face
+    FaceDefinition(0, 0, 1, {4, 5, 6, 7}, 5, true)         // Back face
 };
 
-void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
-    setVertexFormat(solid, (int[]){3,3,2,1,3}, 5);
-    setVertexFormat(transparent, (int[]){3,3,2,1,3}, 5);
+void Chunk::generateMeshes(){
+    this->solidMesh = Mesh();
+    this->transparentMesh = Mesh();
+
+    this->solidMesh.value().setVertexFormat({3,3,2,1,3});
+    this->transparentMesh.value().setVertexFormat({3,3,2,1,3});
 
     unsigned char checked[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][6];
 
@@ -231,159 +117,160 @@ void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk){
     for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++){
         for(int iz = 0;iz < DEFAULT_CHUNK_SIZE;iz++){
             for(int ix = 0;ix < DEFAULT_CHUNK_SIZE;ix++){
-                int x = ix + chunk->worldX * DEFAULT_CHUNK_SIZE;
-                int z = iz + chunk->worldZ * DEFAULT_CHUNK_SIZE;
+                int x = ix + this->getWorldPosition().x * DEFAULT_CHUNK_SIZE;
+                int z = iz + this->getWorldPosition().y * DEFAULT_CHUNK_SIZE;
 
                 //printf("%ix%ix%i\n", x, y, z);
-                Block* index = getChunkBlock(chunk, ix, y ,iz);
-                if(index == NULL || index->typeIndex == 0) continue; // error or air
-                if(index->typeIndex > predefinedBlocksTotal) {
-                    printf("Chunk mesh generation stopped, corrupted data (%i %i).\n", chunk->worldX, chunk->worldZ);
-                    return;
-                }
-                BlockType* currentBlock = &predefinedBlocks[index->typeIndex];
-                //printf("%i %i\n",index->typeIndex, currentBlock.untextured);
-                if(currentBlock->untextured) continue;
+                try{
+                    const Block& index = this->getBlock(ix, y ,iz);
 
-                float lightR = 0.5;
-                float lightG = 0.5;
-                float lightB = 0.5;
+                    if(index.type == BlockTypeEnum::Air) continue; // error or air
+                    const BlockType& currentBlock = predefinedBlocks[index.type];
+                    //printf("%i %i\n",index->typeIndex, currentBlock.untextured);
+                    if(currentBlock.untextured) continue;
 
-                for(int i = 0;i < 6;i++){
-                    if(checked[ix][y][iz][i]) continue;
+                    float lightR = 0.5;
+                    float lightG = 0.5;
+                    float lightB = 0.5;
 
-                    FaceDefinition* def = &faceDefinitions[i];
-                    if(!hasFace(getBlock(
-                        chunk,
-                        ix + def->offsetX,
-                        iz + def->offsetZ,
-                        x + def->offsetX,
-                        y + def->offsetY,
-                        z + def->offsetZ
-                    ))) continue;
+                    for(int i = 0;i < 6;i++){
+                        if(checked[ix][y][iz][i]) continue;
 
-                    int coordinates[] = {0,0,0};
-                    
-                    int offsetAxis = 0;
-                    int nonOffsetAxis[] = {0,0};
+                        const FaceDefinition& def = faceDefinitions[i];
+                        if(predefinedBlocks[getWorldBlockFast(
+                            this,
+                            ix + def.offsetX,
+                            iz + def.offsetZ,
+                            x + def.offsetX,
+                            y + def.offsetY,
+                            z + def.offsetZ
+                        ).type].untextured) continue;
 
-                    int width = 0;
-                    int height = 1;
+                        int coordinates[] = {0,0,0};
+                        
+                        int offsetAxis = 0;
+                        int nonOffsetAxis[] = {0,0};
 
-                    if(def->offsetX != 0){
-                        nonOffsetAxis[0] = 1;
-                        nonOffsetAxis[1] = 2;
-                    }
-                    else if(def->offsetY != 0){
-                        offsetAxis = 1;
-                        nonOffsetAxis[0] = 0;
-                        nonOffsetAxis[1] = 2;
-                    }
-                    else if(def->offsetZ != 0){
-                        offsetAxis = 2;
-                        nonOffsetAxis[0] = 0;
-                        nonOffsetAxis[1] = 1;
-                    }
+                        int width = 0;
+                        int height = 1;
 
-                    int max_height = 17;
-                    while(1){
-                        int offset_ix = ix + coordinates[0];
-                        int offset_iz = iz + coordinates[2]; 
-                        int offset_y = y + coordinates[1];
-
-                        coordinates[nonOffsetAxis[1]] = 0;
-                        while(1){
-                            offset_ix = ix + coordinates[0];
-                            offset_iz = iz + coordinates[2]; 
-                            offset_y = y + coordinates[1];
-
-                            if(!hasGreedyFace(chunk,ix,iz,x,y,z,offset_ix,offset_y,offset_iz,def,coordinates,index)) break;
-                            if(checked[offset_ix][offset_y][offset_iz][i]) break;
-
-                            coordinates[nonOffsetAxis[1]] += 1;
+                        if(def.offsetX != 0){
+                            nonOffsetAxis[0] = 1;
+                            nonOffsetAxis[1] = 2;
+                        }
+                        else if(def.offsetY != 0){
+                            offsetAxis = 1;
+                            nonOffsetAxis[0] = 0;
+                            nonOffsetAxis[1] = 2;
+                        }
+                        else if(def.offsetZ != 0){
+                            offsetAxis = 2;
+                            nonOffsetAxis[0] = 0;
+                            nonOffsetAxis[1] = 1;
                         }
 
-                        if(coordinates[nonOffsetAxis[1]] != 0) max_height = coordinates[nonOffsetAxis[1]] < max_height ? coordinates[nonOffsetAxis[1]] : max_height;
-                        coordinates[nonOffsetAxis[1]] = 0;
-
-                        offset_ix = ix + coordinates[0];
-                        offset_iz = iz + coordinates[2]; 
-                        offset_y = y + coordinates[1];
-
-                        if(!hasGreedyFace(chunk,ix,iz,x,y,z,offset_ix,offset_y,offset_iz,def,coordinates,index)) break;
-                        if(checked[offset_ix][offset_y][offset_iz][i]) break;
-
-                        coordinates[nonOffsetAxis[0]] += 1;
-                        width++;
-                        checked[offset_ix][offset_y][offset_iz][i] = 1;
-                    }  
-                    //if(max_height == 0) printf("%i\n", max_height);
-                    for(int padderH = 0;padderH < max_height;padderH++){
-                        coordinates[nonOffsetAxis[1]] = padderH;
-                        for(int padderW = 0;padderW < width;padderW++){
-                            coordinates[nonOffsetAxis[0]] = padderW;
+                        int max_height = 17;
+                        while(1){
                             int offset_ix = ix + coordinates[0];
                             int offset_iz = iz + coordinates[2]; 
                             int offset_y = y + coordinates[1];
 
+                            coordinates[nonOffsetAxis[1]] = 0;
+                            while(1){
+                                offset_ix = ix + coordinates[0];
+                                offset_iz = iz + coordinates[2]; 
+                                offset_y = y + coordinates[1];
+
+                                if(!hasGreedyFace(this,ix,iz,x,y,z,offset_ix,offset_y,offset_iz,def,coordinates,index)) break;
+                                if(checked[offset_ix][offset_y][offset_iz][i]) break;
+
+                                coordinates[nonOffsetAxis[1]] += 1;
+                            }
+
+                            if(coordinates[nonOffsetAxis[1]] != 0) max_height = coordinates[nonOffsetAxis[1]] < max_height ? coordinates[nonOffsetAxis[1]] : max_height;
+                            coordinates[nonOffsetAxis[1]] = 0;
+
+                            offset_ix = ix + coordinates[0];
+                            offset_iz = iz + coordinates[2]; 
+                            offset_y = y + coordinates[1];
+
+                            if(!hasGreedyFace(this,ix,iz,x,y,z,offset_ix,offset_y,offset_iz,def,coordinates,index)) break;
+                            if(checked[offset_ix][offset_y][offset_iz][i]) break;
+
+                            coordinates[nonOffsetAxis[0]] += 1;
+                            width++;
                             checked[offset_ix][offset_y][offset_iz][i] = 1;
+                        }  
+                        //if(max_height == 0) printf("%i\n", max_height);
+                        for(int padderH = 0;padderH < max_height;padderH++){
+                            coordinates[nonOffsetAxis[1]] = padderH;
+                            for(int padderW = 0;padderW < width;padderW++){
+                                coordinates[nonOffsetAxis[0]] = padderW;
+                                int offset_ix = ix + coordinates[0];
+                                int offset_iz = iz + coordinates[2]; 
+                                int offset_y = y + coordinates[1];
+
+                                checked[offset_ix][offset_y][offset_iz][i] = 1;
+                            }
+                        } 
+
+                        coordinates[nonOffsetAxis[0]] = width;
+                        coordinates[nonOffsetAxis[1]] = max_height;
+
+                        height = max_height;
+                        coordinates[offsetAxis] = 1;
+                        //printf("%i %i %i\n", coordinates[0], coordinates[1], coordinates[2]);
+
+                        // Front vertices
+                        std::vector<glm::vec3> vertices = {
+                            {ix                 , y + coordinates[1], iz    },
+                            {ix + coordinates[0], y + coordinates[1], iz    },
+                            {ix + coordinates[0], y                 , iz    },
+                            {ix                 , y                 , iz    },
+                            {ix                 , y + coordinates[1], iz + coordinates[2]},
+                            {ix + coordinates[0], y + coordinates[1], iz + coordinates[2]},
+                            {ix + coordinates[0], y                 , iz + coordinates[2]},
+                            {ix                 , y                 , iz + coordinates[2]}
+                        };
+
+                        //printf("%i %i %i\n", coordinates[0], coordinates[1], coordinates[2]);
+                        
+                        
+                        //if(currentBlock->repeatTexture) printf("Index: %i\n", def->textureIndex);
+                        int texture = currentBlock.repeatTexture ? currentBlock.textures[0] : currentBlock.textures[def.textureIndex];
+
+                        std::vector<float> metadata = {
+                            1.0, 1.0, (float) texture,
+                            lightR, lightG, lightB
+                        };
+
+                        /*if(metadata.values[0] != textureX || metadata.values[1] != textureY){
+                            printf("This shouldnt happen!\n");
+                        }*/
+                        if(def.offsetX != 0){
+                            int temp = width;
+                            width = height;
+                            height = temp;
                         }
-                    } 
 
-                    coordinates[nonOffsetAxis[0]] = width;
-                    coordinates[nonOffsetAxis[1]] = max_height;
+                        glm::vec3 vertexArray[4] = {
+                            vertices[def.vertexIndexes[0]],
+                            vertices[def.vertexIndexes[1]],
+                            vertices[def.vertexIndexes[2]],
+                            vertices[def.vertexIndexes[3]]
+                        };
 
-                    height = max_height;
-                    coordinates[offsetAxis] = 1;
-                    //printf("%i %i %i\n", coordinates[0], coordinates[1], coordinates[2]);
-
-                    // Front vertices
-                    Vec3 vertices[] = {
-                        {.x = ix                 , .y = y + coordinates[1],.z = iz    },
-                        {.x = ix + coordinates[0], .y = y + coordinates[1],.z = iz    },
-                        {.x = ix + coordinates[0], .y = y                 ,.z = iz    },
-                        {.x = ix                 , .y = y                 ,.z = iz    },
-
-                        {.x = ix                 , .y = y + coordinates[1],.z = iz + coordinates[2]},
-                        {.x = ix + coordinates[0], .y = y + coordinates[1],.z = iz + coordinates[2]},
-                        {.x = ix + coordinates[0], .y = y                 ,.z = iz + coordinates[2]},
-                        {.x = ix                 , .y = y                 ,.z = iz + coordinates[2]}
-                    };
-
-                    //printf("%i %i %i\n", coordinates[0], coordinates[1], coordinates[2]);
-                    
-                    
-                    //if(currentBlock->repeatTexture) printf("Index: %i\n", def->textureIndex);
-                    int texture = currentBlock->repeatTexture ? currentBlock->textures[0] : currentBlock->textures[def->textureIndex];
-
-                    Vertex metadata = {0};
-                    metadata.size = 6;
-                    memcpy(metadata.values, (float[]){
-                        1.0, 1.0, texture,
-                        lightR, lightG, lightB
-                    }, sizeof(float) * metadata.size);
-
-                    /*if(metadata.values[0] != textureX || metadata.values[1] != textureY){
-                        printf("This shouldnt happen!\n");
-                    }*/
-                    if(def->offsetX != 0){
-                        int temp = width;
-                        width = height;
-                        height = temp;
+                        this->solidMesh.value().addQuadFace(
+                            vertexArray,
+                            glm::vec3(def.offsetX, def.offsetY,  def.offsetZ),
+                            metadata,
+                            def.clockwise,
+                            width,height
+                        );
                     }
-                    addQuadFaceToMesh(
-                        solid, 
-                        (Vec3[]){
-                            vertices[def->vertexIndexes[0]],
-                            vertices[def->vertexIndexes[1]],
-                            vertices[def->vertexIndexes[2]],
-                            vertices[def->vertexIndexes[3]],
-                        },
-                        (Vec3){.x = def->offsetX, .y = def->offsetY, .z = def->offsetZ},
-                        metadata,
-                        def->clockwise,
-                        width,height
-                    );
+                }
+                catch(...){
+
                 }
             }
         }    

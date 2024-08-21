@@ -9,7 +9,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/ext/scalar_int_sized.hpp>
 #include <glm/ext/scalar_uint_sized.hpp>
-#include <glm/glm.hpp>
+#include <glm.hpp>
 
 namespace glm
 {

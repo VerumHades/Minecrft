@@ -1,22 +1,19 @@
 #include <rendering/texture.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.hpp>
+#include <stb_image.h>
 
 
-GLTexture createTexture(ShaderProgram* program, char* filename){
-    GLTexture tex = {0}; 
-
+GLTexture::GLTexture(char* filename){
     int width, height, nrChannels;
     unsigned char *data = stbi_load(filename, &width, &height, &nrChannels, 0);
     if (!data) {
         fprintf(stderr, "Failed to load texture: '%s'.\n", filename);
-        return tex;
+        return;
     }
 
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glGenTextures(1, &this->texture);
+    glBindTexture(GL_TEXTURE_2D, this->texture);
 
     CHECK_GL_ERROR();
 
@@ -41,7 +38,7 @@ GLTexture createTexture(ShaderProgram* program, char* filename){
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     } else{
         printf("Invalid number of channels: '%i' in texture image '%s'",nrChannels, filename);
-        return tex;
+        return;
     }
 
     CHECK_GL_ERROR();
@@ -54,48 +51,38 @@ GLTexture createTexture(ShaderProgram* program, char* filename){
 
     //glActiveTexture(GL_TEXTURE0);
     //glBindTexture(GL_TEXTURE_2D, texture);
-
-    unsigned int shaderProgram = program->program;
-    glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0);
-
-    tex.texture = texture;
-    return tex;
 }
-void bindTexture(GLTexture* texture){
+void GLTexture::bind(){
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture->texture);
+    glBindTexture(GL_TEXTURE_2D, this->texture);
 
     CHECK_GL_ERROR();
 }
-void destroyTexture(GLTexture texture){
-    glDeleteTextures(1, &texture.texture);
+GLTexture::~GLTexture(){
+    glDeleteTextures(1, &this->texture);
 }
 
-GLTextureArray createTextureArray(ShaderProgram* program){
-    GLTextureArray tex = {0}; 
-
-    GLuint textureArray;
-    glGenTextures(1, &textureArray);
-
-    tex.program = program->program;
-    tex.textureArray = textureArray;
-    return tex;
+GLTextureArray::GLTextureArray(){
+    glGenTextures(1, &this->textureArray);
 }
-void loadTextureArrayFromFiles(GLTextureArray* tex, char* layers[], int layerCount, int layerWidth, int layerHeight){
-    glBindTexture(GL_TEXTURE_2D_ARRAY, tex->textureArray);
+GLTextureArray::~GLTextureArray(){
+    glDeleteTextures(1, &this->textureArray);
+}
+
+void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layerWidth, int layerHeight){
+    glBindTexture(GL_TEXTURE_2D_ARRAY, this->textureArray);
 
     int mipLevels = floor(log2(fmax(layerWidth, layerHeight))) + 1;
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, GL_RGB8, layerWidth, layerHeight, layerCount);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, GL_RGB8, layerWidth, layerHeight, filenames.size());
 
     int width, height, nrChannels;
     unsigned char *data;  
-    for(unsigned int i = 0; i < layerCount; i++)
+    for(unsigned int i = 0; i <  filenames.size(); i++)
     {
-        data = stbi_load(layers[i], &width, &height, &nrChannels, 0);
+        data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 0);
 
         if (!data) {
-            fprintf(stderr, "Failed to load texture '%s'\n", layers[i]);
-            return;
+            throw std::exception("Failed to load texture '%s'\n");
         }
 
         if(nrChannels == 3){
@@ -107,9 +94,7 @@ void loadTextureArrayFromFiles(GLTextureArray* tex, char* layers[], int layerCou
             stbi_image_free(data);
         }
         else{
-            printf("Invalid number of channels: '%i' in texture image '%s' (4 required).\n",nrChannels, layers[i]);
-            stbi_image_free(data);
-            return;
+            throw std::exception("Invalid number of channels: '%i' in texture image '%s' (4 required).\n");
         }
     }
 
@@ -129,69 +114,14 @@ void loadTextureArrayFromFiles(GLTextureArray* tex, char* layers[], int layerCou
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
     CHECK_GL_ERROR();
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, tex->textureArray);
-    unsigned int shaderProgram = tex->program;
-    glUniform1i(glGetUniformLocation(shaderProgram, "textureArray"), 0);
 }
 
-GLTexture3D createTexture3D(ShaderProgram* program){
-    GLTexture3D tex = {0}; 
-
-    GLuint texture;
-    glGenTextures(1, &texture);
-
-    tex.program = program->program;
-    tex.texture = texture;
-
-    return tex;
-}
-void loadTexture3DRGB(GLTexture3D* tex, unsigned char data[], int layerWidth, int layerHeight, int layerCount){
-    glBindTexture(GL_TEXTURE_3D, tex->texture);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, layerWidth, layerCount, layerHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-
-    CHECK_GL_ERROR();
-
-    // Set texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    CHECK_GL_ERROR();
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_3D, tex->texture);
-    unsigned int shaderProgram = tex->program;
-    glUniform1i(glGetUniformLocation(shaderProgram, "lightArray"), 1);
-}
-
-void updateTexture3DRGB(GLTextureArray* tex, unsigned char data[], int layerWidth, int layerHeight, int layerCount){
-    glBindTexture(GL_TEXTURE_3D, tex->textureArray);
-
-    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, layerWidth, layerCount, layerHeight, GL_RGB, GL_UNSIGNED_BYTE, data);
+void GLTextureArray::bind(){
+    glBindTexture(GL_TEXTURE_2D_ARRAY, this->textureArray);
 
     CHECK_GL_ERROR();
 }
-void bindTexture3D(GLTexture3D* array){
-    glBindTexture(GL_TEXTURE_3D, array->texture);
 
-    CHECK_GL_ERROR();
-}
-void destroyTexture3D(GLTexture3D* array){
-    glDeleteTextures(1, &array->texture);
-}
-
-void bindTextureArray(GLTextureArray* array){
-    glBindTexture(GL_TEXTURE_2D_ARRAY, array->textureArray);
-
-    CHECK_GL_ERROR();
-}
-void destroyTextureArray(GLTextureArray* array){
-    glDeleteTextures(1, &array->textureArray);
-}
 
 float skyboxVertices[] = {
     // positions          
@@ -238,24 +168,18 @@ float skyboxVertices[] = {
      1.0f, -1.0f,  1.0f
 };
 
-GLSkybox createSkybox(char* faces[], int facesTotal){
-    GLSkybox skybox = {0};
-
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-
-    skybox.texture = textureID;
+GLSkybox::GLSkybox(std::array<std::string, 6> filenames){
+    glGenTextures(1, &this->texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, this->texture);
 
     int width, height, nrChannels;
     unsigned char *data;  
-    for(unsigned int i = 0; i < facesTotal; i++)
+    for(unsigned int i = 0; i < 6; i++)
     {
-        data = stbi_load(faces[i], &width, &height, &nrChannels, 0);
+        data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 0);
 
         if (!data) {
-            fprintf(stderr, "Failed to load texture '%s'\n", faces[i]);
-            return skybox;
+            throw std::exception("Failed to load texture when creating skybox.");
         }
 
 
@@ -274,9 +198,7 @@ GLSkybox createSkybox(char* faces[], int facesTotal){
             stbi_image_free(data);
         }
         else{
-            printf("Invalid number of channels: '%i' in texture image '%s'.\n",nrChannels, faces[i]);
-            stbi_image_free(data);
-            return skybox;
+            throw std::exception("Invalid number of channels in texture image.\n");
         }
     }
 
@@ -304,20 +226,18 @@ GLSkybox createSkybox(char* faces[], int facesTotal){
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    skybox.vertexBuffer = VBO;
-    skybox.vao = vao;
-
-    return skybox;
+    this->vertexBuffer = VBO;
+    this->vao = vao;
 }
-void drawSkybox(GLSkybox* skybox){
+void GLSkybox::draw(){
     glDepthMask(GL_FALSE);
-    glBindVertexArray(skybox->vao);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox->texture);
+    glBindVertexArray(this->vao);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, this->texture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glDepthMask(GL_TRUE);
 }
-void destroySkybox(GLSkybox* skybox){
-    glDeleteTextures(1, &skybox->texture);
-    glDeleteBuffers(1 , &skybox->vertexBuffer);
-    glDeleteVertexArrays(1, &skybox->vao);
+GLSkybox::~GLSkybox(){
+    glDeleteTextures(1, &this->texture);
+    glDeleteBuffers(1 , &this->vertexBuffer);
+    glDeleteVertexArrays(1, &this->vao);
 }

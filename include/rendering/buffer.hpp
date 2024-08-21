@@ -7,21 +7,23 @@
 
 void checkGLError(const char *file, int line);
 #define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
+class Mesh;
 
-typedef struct GLBuffer{
-    unsigned int data;
-    unsigned int index;
-    unsigned int vao;
+class GLBuffer{
+    private:
+        unsigned int data;
+        unsigned int index;
+        unsigned int vao;
 
-    unsigned int vertexCount;
-    unsigned int indiciesCount;
-} GLBuffer;
+        unsigned int vertexCount;
+        unsigned int indiciesCount;
+    public:
+        GLBuffer();
+        ~GLBuffer();
+        void loadMesh(Mesh& mesh);
+        void draw();
+};
 
 #include <rendering/mesh.hpp>
-
-GLBuffer newBuffer();
-void destroyBuffer(GLBuffer buffer);
-void loadMeshToBuffer(Mesh* mesh, GLBuffer* glbuffer);
-void drawBuffer(GLBuffer* glbuffer);
 
 #endif

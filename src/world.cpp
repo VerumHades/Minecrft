@@ -1,331 +1,36 @@
 #include <world.hpp>
+Chunk& World::generateChunk(int x, int z){
+    glm::vec2 key = glm::vec2(x,z);
 
-World* newWorld(char* storageFilename){
-    World* world = calloc(1,sizeof(World));
-
-    world->chunks = newPositionMap();
-    world->storedIndices = newPositionMap();
-    world->storageFilename = storageFilename;
-    
-    if(mtx_init(&world->threadlock, mtx_plain) != thrd_success) {
-        printf("Mutex broken!");
-        exit(1);
-    }
-
-    world->file = fopen(storageFilename, "rb+");
-    if (world->file == NULL) {
-        world->file = fopen(storageFilename, "wb+");
-
-        if(world->file == NULL){
-            fprintf(stderr, "Failed to open world file: '%s'\n", storageFilename);
-            exit(1);
-        }
-
-        fclose(world->file);
-        world->file = fopen(storageFilename, "rb+");
-
-        if(world->file == NULL){
-            fprintf(stderr, "Failed to open world file: '%s'\n", storageFilename);
-            exit(1);
-        }
-    }
-
-    fseek(world->file, 0L, SEEK_END);
-    int file_size = ftell(world->file);
-    fseek(world->file, 0, SEEK_SET);
-
-    if(file_size >= sizeof(StoredWorldMetadata)){
-        printf("Loaded world from: '%s'\n", storageFilename);
-        size_t read = fread(&world->metadata, sizeof(StoredWorldMetadata), 1, world->file);
-        
-        if(strcmp(world->metadata.hppead,"MWORLD") != 0){
-            fprintf(stderr, "Invalid world file format: '%s'\n", storageFilename);
-            exit(1);
-        }
-
-        if(read != 1){
-            perror("Failed to read metadata");
-            exit(1);
-        }
-
-        //world->metadata.storedChunksTotal = (file_size - sizeof(StoredWorldMetadata)) / sizeof(StoredChunk);
+    if(this->chunks.count(key) != 0){
+        return this->chunks[glm::vec2(x,z)];
     }
     else{
-        strcpy(world->metadata.hppead,"MWORLD");
-        world->metadata.storedChunksTotal = 0;
-        if(writeWorldMetadata(world) < 0){
-            perror("Failed initial metadata world save.");
-            exit(1);
-        }
-        fflush(world->file);
-    }
-
-    updateWorldStorageRegistry(world);
- 
-    return world;  
-}
-
-void updateWorldStorageRegistry(World* world){
-    int totalStored = world->metadata.storedChunksTotal;
-
-    if(fseek(world->file, sizeof(StoredWorldMetadata), SEEK_SET) != 0){
-        printf("Failed to move cursor\n");
-        return;
-    }
-
-    StoredChunk chunk = {0};
-    //printf("%i\n", totalStored);
-    for(int i = 0; i < totalStored;i++){
-        size_t read = fread(&chunk, sizeof(StoredChunk), 1, world->file);
-        if(read != 1){
-            printf("Failed to read chunk.\n");
-            return;
-        }
-
-        Vec3 key = (Vec3){.x = chunk.worldX, .z = chunk.worldZ};
-
-        void* registered = getFromPositionMap(world->storedIndices, &key);
-        //if(registered != NULL) continue;
-
-        //printf("Loading chunk (%f %f).\n", key.x, key.z);
-
-        uintptr_t offset = sizeof(StoredWorldMetadata) + sizeof(StoredChunk) * i;
-        putIntoPositionMap(world->storedIndices, &key, (void*)offset);
-    }   
-}
-
-void freeWorld(World* world){
-    freePositionMap(world->chunks);
-    freePositionMap(world->storedIndices);
-    fclose(world->file);
-    mtx_destroy(&world->threadlock);
-    free(world);
-}
-
-void regenerateChunkMesh(Chunk* chunk){
-    if(!chunk->buffersLoaded) return;
-
-    chunk->meshGenerated = 0;
-    chunk->meshGenerating = 0;
-    chunk->buffersLoaded = 0;
-}
-
-Chunk* getStoredWorldChunk(World* world, int x, int z){
-    Vec3 key = (Vec3){.x = x, .z = z};
-
-    void* registered = getFromPositionMap(world->storedIndices, &key);
-    if(registered == NULL){
-        //printf("Chunk not found %i %i\n", x,z);
-        return NULL;
-    }
-
-    uintptr_t offset = (uintptr_t) registered;
-
-    if(fseek(world->file, offset, SEEK_SET) != 0){
-        printf("Failed to move cursor\n");
-        return NULL;
-    }
-
-    StoredChunk chunk = {0};
-    fread(&chunk, sizeof(StoredChunk), 1, world->file);
-
-    Chunk* loadedChunk = generateEmptyChunk(world);
-    
-    for(int x = 0; x < DEFAULT_CHUNK_SIZE;x++) for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++) for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
-        loadedChunk->blocks[x][y][z] = chunk.blocks[x][y][z];
-        if(chunk.blocks[x][y][z].typeIndex > predefinedBlocksTotal){
-            printf("Corrupted chunk read? (%i %i) [%lu].\n",x,z, offset);
-            return NULL;
-        }
-    }
-
-    loadedChunk->worldX = x;
-    loadedChunk->worldZ = z;
-    loadedChunk->stored = 1;
-
-    putIntoPositionMap(world->chunks, &key, loadedChunk);
-
-    return loadedChunk;
-}
-
-int writeWorldMetadata(World* world){ 
-    if(fseek(world->file, 0, SEEK_SET) != 0){
-        perror("fseek failed");
-        printf("Failed to move cursor to start of file.\n");
-        return -1;
-    }
-
-    long pos = ftell(world->file);
-    if(pos == -1L || pos != 0){
-        printf("Failed to write metadata to the start. %li\n", pos);
-        return -1;
-    }
-
-    size_t written = fwrite(&world->metadata, sizeof(StoredWorldMetadata), 1, world->file);
-    if(written != 1){
-        return -1;
-    }
-
-    //fflush(world->file);
-
-    return 0;
-}
-
-int storeWorldChunk(Chunk* chunk){
-    if(chunk == NULL) return 0;
-    if(chunk->stored) return 0;
-    
-    Vec3 key = (Vec3){.x = chunk->worldX, .z = chunk->worldZ};
-    void* registered = getFromPositionMap(chunk->world->storedIndices, &key);
-    if(registered != NULL) return 0;
-
-    StoredChunk storedChunk = {0};
-    storedChunk.worldX = chunk->worldX;
-    storedChunk.worldZ = chunk->worldZ;
-
-    for(int x = 0; x < DEFAULT_CHUNK_SIZE;x++) for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++) for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
-        storedChunk.blocks[x][y][z] = chunk->blocks[x][y][z];
-    }
-
-    if(fseek(chunk->world->file, 0, SEEK_END) != 0){
-        printf("Failed to move to end of file.\n");
-        return -1;
-    }
-
-    long pos = ftell(chunk->world->file);
-    //printf("Storing chunk (%i %i), %lu at %li\n", storedChunk.worldX, storedChunk.worldZ, sizeof(StoredChunk), pos / sizeof(StoredChunk));
-
-    fwrite(&storedChunk, sizeof(StoredChunk), 1, chunk->world->file);
-    putIntoPositionMap(chunk->world->storedIndices, &key, (void*) (uintptr_t) pos);
-
-    chunk->world->metadata.storedChunksTotal++;
-    if(writeWorldMetadata(chunk->world) < 0){
-        chunk->world->metadata.storedChunksTotal--;
-        printf("Failed to write metadata.\n");
-        exit(1);
-        return -1;
-    }
-
-    return 0;
-}
-
-int updateStoredWorldChunk(Chunk* chunk){
-    if(chunk == NULL) return -1;
-    
-    Vec3 key = (Vec3){.x = chunk->worldX, .z = chunk->worldZ};
-    void* registered = getFromPositionMap(chunk->world->storedIndices, &key);
-    if(registered == NULL){
-        printf("Cannot update chunk that isnt stored.\n");
-        return -1;
-    }
-
-    if(fseek(chunk->world->file, (uintptr_t) registered, SEEK_SET) != 0){
-        printf("Failed to move to end of file.\n");
-        return -1;
-    }
-
-    StoredChunk storedChunk = {0};
-    storedChunk.worldX = chunk->worldX;
-    storedChunk.worldZ = chunk->worldZ;
-
-    for(int x = 0; x < DEFAULT_CHUNK_SIZE;x++) for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++) for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
-        storedChunk.blocks[x][y][z] = chunk->blocks[x][y][z];
-    }
-
-    fwrite(&storedChunk, sizeof(StoredChunk), 1, chunk->world->file);
-    //fflush(chunk->world->file);
-
-    return 0;
-}
-
-static void saveChunk(void* vchunk){
-    if(updateStoredWorldChunk((Chunk*) vchunk) < 0){
-        printf("Failed to save chunk: %i %i\n", ((Chunk*) vchunk)->worldX, ((Chunk*) vchunk)->worldZ);
+        this->chunks.emplace(glm::vec2(x,z), Chunk(*this, glm::vec2(x,z)));
+        return this->chunks[glm::vec2(x,z)];
     }
 }
 
-void saveWorld(World* world){
-    forEachPositionInMap(world->chunks, &saveChunk);
-}
-
-
-Chunk* generateWorldChunk(World* world, int x, int z){
-    Vec3 key = (Vec3){.x = x, .z = z};
-    
-    Chunk* chunk = getFromPositionMap(world->chunks, &key);
-    
-    if(chunk == NULL){
-        //printf("Generating chunk %i:%i %s\n", x, z, key);
-        //chunk = generatePlainChunk(world, (Block){.typeIndex=1},(Block){.typeIndex = 2});
-
-        #ifdef _WIN32
-
-        #else
-        mtx_lock(&world->threadlock);
-        #endif
-
-        chunk = getStoredWorldChunk(world,x,z);
-        
-        #ifdef _WIN32
-
-        #else
-        mtx_unlock(&world->threadlock);
-        #endif
-        
-        if(chunk != NULL) return chunk;
-
-        chunk = generateTerrainChunk(world,x,z);
-        //chunk = generatePlainChunk(world, (Block){.typeIndex=1},(Block){.typeIndex = 2});
-        chunk->worldX = x;
-        chunk->worldZ = z;
-        
-        putIntoPositionMap(chunk->world->chunks, &key, chunk);
-
-        #ifdef _WIN32
-
-        #else
-        mtx_lock(&world->threadlock);
-        #endif
-
-        if(storeWorldChunk(chunk) != 0){
-            printf("Faild to store chunk: %i %i\n",x,z);
-        };
-
-        #ifdef _WIN32
-
-        #else
-        mtx_unlock(&world->threadlock);
-        #endif
+std::optional<std::reference_wrapper<Chunk>> World::getChunk(int x, int z){
+    if(this->chunks.count(glm::vec2(x,z)) != 0){
+        return this->chunks[glm::vec2(x,z)];
     }
 
-    return chunk;
-}
-
-Chunk* getWorldChunk(World* world, int x, int z){
-    Vec3 key = (Vec3){.x = x, .z = z};
-    Chunk* chunk = getFromPositionMap(world->chunks, &key);
-
-    return chunk;
+    return std::nullopt;
 }
 
 
-#ifdef _WIN32
-DWORD WINAPI generateChunkThread(LPVOID arg) {
-#else
-int generateChunkThread(void *arg) {
-#endif
-    Chunk* chunk = arg;
 
-    chunk->solidMesh = newMesh3D();
-    chunk->transparentMesh = newMesh3D();
-
+void generateChunkMeshThread(Chunk& chunk){
+    chunk.meshGenerating = 1;
+    chunk.meshGenerated = 0;
 
     //struct timespec start, end;
-
+    
      //Start timer
     //clock_gettime(CLOCK_REALTIME, &start);
 
-    generateMeshForChunk(chunk->solidMesh,chunk->transparentMesh,chunk);
+    chunk.generateMeshes();
 
     // End timer
     //clock_gettime(CLOCK_REALTIME, &end);
@@ -336,87 +41,58 @@ int generateChunkThread(void *arg) {
 
     //printf("Time generate chunk mesh: %fs\n", elapsed_time);
 
-    chunk->meshGenerating = 0;
-    chunk->meshGenerated = 1;
-
-    return 0;
+    chunk.meshGenerating = 0;
+    chunk.meshGenerated = 1;
 }
 
-Chunk* getWorldChunkWithMesh(World* world, int x, int z, ShaderProgram* program){
-    Chunk* chunk = getWorldChunk(world, x, z);
-    if(chunk == NULL) return NULL;
+std::optional<std::reference_wrapper<Chunk>> World::getChunkWithMesh(int x, int y){
+    auto chunkOpt = this->getChunk(x, y);
+    if(!chunkOpt) return std::nullopt;
 
-    /*if(!chunk->lightTextureLoaded){
-        chunk->lightTexture = createTexture3D(program);
-        chunk->lightTextureLoaded = 1;
-        memset(chunk->lightArray, 255, sizeof(unsigned char) * DEFAULT_CHUNK_HEIGHT * DEFAULT_CHUNK_AREA);
-        loadTexture3DRGB(&chunk->lightTexture, chunk->lightArray, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_HEIGHT, DEFAULT_CHUNK_SIZE);
-    }*/
+    Chunk& chunk = chunkOpt.value();
 
-    if(!chunk->meshGenerated && !chunk->meshGenerating){
-        chunk->meshGenerating = 1;
+    if(!chunk.meshGenerated && !chunk.meshGenerating){
+        std::thread t1(generateChunkMeshThread, chunk);
 
-        #ifdef _WIN32
-        thread_t thread = CreateThread(
-            NULL,                // default security attributes
-            0,                   // default stack size
-            generateChunkThread, // thread function
-            chunk,               // argument to thread function
-            0,                   // default creation flags
-            NULL);               // receive thread identifier
-
-        if (thread == THREAD_ERROR) {
-            fprintf(stderr, "Error creating thread\n");
-            return NULL;
-        }
-        #else
-        thrd_t thread;
-
-        if (thrd_create(&thread, generateChunkThread, chunk) != THREAD_SUCCESS) {
-            fprintf(stderr, "Error creating thread\n");
-            return NULL;
-        }
-        #endif
-
-        return NULL;
+        return std::nullopt;
     }
 
-    if(!chunk->buffersLoaded && chunk->meshGenerated){
-        if(!chunk->buffersAsigned){
-            chunk->solidBuffer = newBuffer();
-            chunk->solidBackBuffer = newBuffer();
+    if(!chunk.buffersLoaded && chunk.meshGenerated){
+        if(!chunk.buffersAsigned){
+            chunk.solidBuffer = GLBuffer();
+            chunk.solidBackBuffer = GLBuffer();
 
-            chunk->transparentBuffer = newBuffer();
-            chunk->transparentBackBuffer = newBuffer();
-            chunk->buffersAsigned = 1;
+            chunk.transparentBuffer = GLBuffer();
+            chunk.transparentBackBuffer = GLBuffer();
+            chunk.buffersAsigned = 1;
         }
         //printf("Loading meshes %2i:%2i (%i)...\n",x,z,chunk->buffersLoaded);
 
         //printf("Vertices:%i Indices:%i\n", chunk->solidMesh->vertices_count, chunk->solidMesh->indices_count);
-        loadMeshToBuffer(chunk->solidMesh,&chunk->solidBackBuffer);
-        loadMeshToBuffer(chunk->transparentMesh,&chunk->transparentBackBuffer);
+        chunk.solidBackBuffer.loadMesh(chunk.solidMesh.value());
+        chunk.transparentBackBuffer.loadMesh(chunk.transparentMesh.value());
 
-        destroyMesh(chunk->solidMesh);
-        destroyMesh(chunk->transparentMesh);
+        chunk.solidMesh.reset();
+        chunk.transparentMesh.reset();
         
-        GLBuffer tempSolid = chunk->solidBuffer;
-        GLBuffer tempTransparent = chunk->transparentBuffer;
+        GLBuffer tempSolid = chunk.solidBuffer;
+        GLBuffer tempTransparent = chunk.transparentBuffer;
 
-        chunk->solidBuffer = chunk->solidBackBuffer;
-        chunk->transparentBuffer =  chunk->transparentBackBuffer;
+        chunk.solidBuffer = chunk.solidBackBuffer;
+        chunk.transparentBuffer =  chunk.transparentBackBuffer;
 
-        chunk->solidBackBuffer = tempSolid;
-        chunk->transparentBackBuffer = tempTransparent;
+        chunk.solidBackBuffer = tempSolid;
+        chunk.transparentBackBuffer = tempTransparent;
 
-        chunk->buffersLoaded = 1;
-        chunk->isDrawn = 1;
+        chunk.buffersLoaded = 1;
+        chunk.isDrawn = 1;
     }
 
    return chunk;
 }
 
-CollisionCheckResult checkForPointCollision(World* world, float x, float y, float z, int includeRectangularColliderLess){
-    CollisionCheckResult result = {0};
+CollisionCheckResult World::checkForPointCollision(float x, float y, float z, int includeRectangularColliderLess){
+    CollisionCheckResult result = {std::nullopt, false, 0,0,0};
     int range = 3;
 
     float blockWidth = 1;
@@ -428,10 +104,12 @@ CollisionCheckResult checkForPointCollision(World* world, float x, float y, floa
                 int cy = y + j;
                 int cz = z + g;
 
-                Block* blocki = getWorldBlock(world, cx, cy, cz);
-                if(blocki != NULL){
-                    BlockType block = predefinedBlocks[blocki->typeIndex];
-                    if(block.colliderCount == 0 && !includeRectangularColliderLess) continue;
+                auto blockOpt = this->getBlock(cx, cy, cz);
+                if(blockOpt){
+                    const Block& blocki = blockOpt.value();
+
+                    BlockType block = predefinedBlocks[blocki.type];
+                    if(block.colliders.size() == 0 && !includeRectangularColliderLess) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
 
@@ -449,7 +127,6 @@ CollisionCheckResult checkForPointCollision(World* world, float x, float y, floa
                     }
                 }
                 else{
-                    result.collidedBlock = blocki;
                     result.collision = 1;
                     result.x = cx;
                     result.y = cy;
@@ -463,8 +140,8 @@ CollisionCheckResult checkForPointCollision(World* world, float x, float y, floa
     return result;
 }
 
-CollisionCheckResult checkForRectangularCollision(World* world, float x, float y, float z, RectangularCollider* collider){
-    CollisionCheckResult result = {0};
+CollisionCheckResult World::checkForRectangularCollision(float x, float y, float z, RectangularCollider* collider){
+    CollisionCheckResult result = {std::nullopt, false, 0,0,0};
     int range = 3;
 
     for(int i = -range;i <= range;i++){
@@ -474,14 +151,16 @@ CollisionCheckResult checkForRectangularCollision(World* world, float x, float y
                 int cy = (int)floor(y + j);
                 int cz = (int)floor(z + g);
 
-                Block* blocki = getWorldBlock(world, cx, cy, cz);
-                if(blocki != NULL){
-                    BlockType block = predefinedBlocks[blocki->typeIndex];
-                    if(block.colliderCount == 0) continue;
+                auto blockOpt = this->getBlock(cx, cy, cz);
+                if(blockOpt){
+                    const Block& blocki = blockOpt.value();
+
+                    BlockType block = predefinedBlocks[blocki.type];
+                    if(block.colliders.size() == 0) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
 
-                    for(int colliderIndex = 0;colliderIndex < block.colliderCount;colliderIndex++){
+                    for(int colliderIndex = 0;colliderIndex < block.colliders.size(); colliderIndex++){
                         RectangularCollider* blockCollider = &block.colliders[colliderIndex];
                         float colliderX = blockCollider->x + cx;
                         float colliderY = blockCollider->y + cy;
@@ -504,7 +183,6 @@ CollisionCheckResult checkForRectangularCollision(World* world, float x, float y
                     }
                 }
                 else{
-                    result.collidedBlock = blocki;
                     result.collision = 1;
                     result.x = cx;
                     result.y = cy;
@@ -518,8 +196,8 @@ CollisionCheckResult checkForRectangularCollision(World* world, float x, float y
     return result;
 }
 
-RaycastResult raycast(World* world, float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance){
-    RaycastResult result = {0};
+RaycastResult World::raycast(float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance){
+    RaycastResult result = {{},false,0,0,0,0,0,0};
     
     float step = 0.5;
     float distance = 0;
@@ -527,8 +205,6 @@ RaycastResult raycast(World* world, float fromX, float fromY, float fromZ, float
     float x = fromX;
     float y = fromY;
     float z = fromZ;
-
-    CollisionCheckResult check;
 
     while(distance < maxDistance){
         result.lastX = x;
@@ -539,10 +215,10 @@ RaycastResult raycast(World* world, float fromX, float fromY, float fromZ, float
         y += dirY * step;
         z += dirZ * step;
 
-        check = checkForPointCollision(world, x,y,z, 0);
+        CollisionCheckResult check = this->checkForPointCollision(x,y,z, 0);
         if( check.collision){
-            result.hppit = 1;
-            result.hppitBlock = check.collidedBlock;
+            result.hit = 1;
+            result.hitBlock = check.collidedBlock;
             
             result.x = check.x;
             result.y = check.y;
@@ -557,29 +233,8 @@ RaycastResult raycast(World* world, float fromX, float fromY, float fromZ, float
     return result;
 }
 
-const float DEG_TO_RAD = M_PI / 180.0f;
-RaycastResult raycastFromAngles(World* world, float fromX, float fromY, float fromZ, int angleX, int angleY, float maxDistance){
-    float camAngleYRad = clampAngle(clampAngle(360 - angleY) + 180) * DEG_TO_RAD;
-    float camAngleXRad = clampAngle(clampAngle(360 - angleX) + 180) * DEG_TO_RAD;
-
-    // Compute direction vector components
-    float x = cos(camAngleXRad) * sin(camAngleYRad);
-    float y = sin(camAngleXRad);
-    float z = cos(camAngleXRad) * cos(camAngleYRad);
-
-    float magnitude = sqrt(x * x + y * y + z * z);
-
-    if (magnitude > 0.0f) {
-        x /= magnitude;
-        y /= magnitude;
-        z /= magnitude;
-    }
-
-    return raycast(world,fromX,fromY,fromZ,x,y,z,10);
-}
-
-Block* getWorldBlock(World* world,int x, int y, int z){
-    if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return NULL;
+std::optional<std::reference_wrapper<const Block>> World::getBlock(int x, int y, int z){
+    if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return std::nullopt;
     
     int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
     int chunkZ = floor((double)z / (double)DEFAULT_CHUNK_SIZE);
@@ -588,23 +243,23 @@ Block* getWorldBlock(World* world,int x, int y, int z){
     int iz = abs(z - chunkZ * DEFAULT_CHUNK_SIZE);
     //printf("Chunk coords: %ix%i Block coords: %i(%i)x%ix%i(%i)\n", chunkX, chunkZ, ix,y,iz);
 
-    Chunk* chunk = getWorldChunk(world, chunkX,chunkZ);
-    if(chunk == NULL) chunk = generateWorldChunk(world, chunkX, chunkZ);
+    auto chunkOpt = this->getChunk(chunkX, chunkZ);
+    if(!chunkOpt) return this->generateChunk(chunkX, chunkZ).getBlock(ix,y,iz);
 
-    return getChunkBlock(chunk, ix, y, iz);
+    return chunkOpt.value().get().getBlock(ix, y, iz);
 }
 
-Chunk* getChunkFromBlockPosition(World* world, int x, int z){
+std::optional<std::reference_wrapper<Chunk>> World::getChunkFromBlockPosition(int x, int z){
     int cx,cz;
     if(x >= 0) cx = x / DEFAULT_CHUNK_SIZE;
     else cx = x / DEFAULT_CHUNK_SIZE - 1;
     if(z >= 0) cz = z / DEFAULT_CHUNK_SIZE;
     else cz = z / DEFAULT_CHUNK_SIZE - 1;
 
-    return getWorldChunk(world, cx, cz);
+    return this->getChunk(cx, cz);
 }
 
-int setWorldBlock(World* world, int x, int y, int z, Block index){
+int World::setBlock(int x, int y, int z, Block index){
     if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return INVALID_COORDINATES;
     
     int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
@@ -616,10 +271,10 @@ int setWorldBlock(World* world, int x, int y, int z, Block index){
 
     //Block* i = getWorldBlock(world, ix, y, iz);
 
-    Chunk* chunk = getWorldChunk(world, chunkX,chunkZ);
-    if(chunk == NULL) chunk = generateWorldChunk(world, chunkX, chunkZ);
+    auto chunkOpt = this->getChunk(chunkX, chunkZ);
+    if(!chunkOpt) this->generateChunk(chunkX, chunkZ).setBlock(ix,y,iz,index);
 
-    setChunkBlock(chunk, ix, y, iz, index);
+    chunkOpt.value().get().setBlock(ix, y, iz, index);
 
     return OK;
 }

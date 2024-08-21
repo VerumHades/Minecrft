@@ -1,131 +1,78 @@
 #include <rendering/mesh.hpp>
 
-Mesh* newMesh3D(){
-    Mesh* mesh = calloc(1,sizeof(Mesh));
-
-    mesh->vertices = calloc(5000,sizeof(float));
-    mesh->vertices_count = 0;
-    mesh->vertices_size = 5000;
-
-    mesh->indices = calloc(5000,sizeof(float));
-    mesh->indices_count = 0;
-    mesh->indices_size = 5000;
-
-    mesh->vertex_format = NULL;
-    mesh->format_size = 0;
-
-    return mesh;
+Mesh::Mesh(){
+    this->vertices.reserve(5000);
+    this->indices.reserve(5000);
+}
+const std::vector<float>& Mesh::getVertices(){
+    return this->vertices;
+}
+const std::vector<unsigned int>& Mesh::getIndices(){
+    return this->indices;
+}
+const std::vector<int>& Mesh::getFormat(){
+    return this->format;
 }
 
-void setVertexFormat(Mesh* mesh, int sizes[], int count){
-    mesh->format_size = count;
-    mesh->vertex_format = calloc(mesh->format_size, sizeof(int));
+void Mesh::setVertexFormat(const std::vector<int>& format){
+    this->format = format;
+    this->formatSet = true;
 
-    int total = 0;
-
-    for(int i = 0;i < count;i++){
-        mesh->vertex_format[i] = sizes[i];
-        total += sizes[i];
-    }
-
-    mesh->vertex_size = total;
+    this->vertexSize = 0; 
+    for(const int& i: this->format) this->vertexSize += i;
 }
 
-void destroyMesh(Mesh* mesh){
-    free(mesh->vertices);
-    free(mesh->indices);
-
-    if(mesh->vertex_format != NULL) free(mesh->vertex_format);
-
-    free(mesh);
-}
-
-static inline void requireVerticesSize(Mesh* mesh, size_t size){
-    while(mesh->vertices_size <= mesh->vertices_count+size){ // Real array is too small, double the size
-        mesh->vertices_size  *= 2;
-        mesh->vertices = realloc(mesh->vertices, mesh->vertices_size * sizeof(float));
-    }
-}
-
-static inline void addIndexValueToMesh(Mesh* mesh, int value){
-    if(mesh->indices_size <= mesh->indices_count+1){ // Real array is too small, double the size
-        mesh->indices_size  *= 2;
-        mesh->indices = realloc(mesh->indices, mesh->indices_size * sizeof(unsigned int));
-    }
-
-    mesh->indices[mesh->indices_count] = value;
-    mesh->indices_count++;
-}
-
-// Return vertex index
-static inline int getVertexFromMesh(Mesh* mesh, Vertex vertex){
-    if(vertex.size != mesh->vertex_size){
-        printf("Mesh takes vertices of size %i, but a vertex of size %i was given.", mesh->vertex_size, vertex.size);
-        return -1;
-    }
-
-    int index = mesh->vertices_count / mesh->vertex_size;
-
-    requireVerticesSize(mesh, vertex.size);
-    memcpy(mesh->vertices + mesh->vertices_count, vertex.values, sizeof(float) * vertex.size);
-    mesh->vertices_count += vertex.size;
-    //addVertexValueToMesh(mesh, vertex.values[i]);
-    
-    return index;
-}
-
-void addQuadFaceToMesh(Mesh* mesh, Vec3 vertices[4], Vec3 normals, Vertex metadata, int clockwise, int width, int height){
+void Mesh::addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, std::vector<float> metadata, int clockwise, int width, int height){
     int vecIndicies[4];
         
     for(int i = 0;i < 4;i++){
-        Vec3 pos = vertices[i];
+        glm::vec3 pos = vertices[i];
 
-        Vertex vertex = {0};
-        vertex.size = 12;
+        std::vector<float> vertex(this->vertexSize, 0.0f);
         
-        vertex.values[0] = pos.x;
-        vertex.values[1] = pos.y;
-        vertex.values[2] = pos.z;
+        vertex[0] = pos.x;
+        vertex[1] = pos.y;
+        vertex[2] = pos.z;
 
-        vertex.values[3] = normals.x;
-        vertex.values[4] = normals.y;
-        vertex.values[5] = normals.z;
+        vertex[3] = normals.x;
+        vertex[4] = normals.y;
+        vertex[5] = normals.z;
 
-        float textureX = metadata.values[0];
-        float textureY = metadata.values[1];
+        float textureX = metadata[0];
+        float textureY = metadata[1];
 
-        float* textureCoodinates = (float[][2]){
+        std::vector<std::vector<float>> textureCoordinates = {
             {textureX, textureY},
             {textureX + width, textureY},
             {textureX + width, textureY + height},
             {textureX, textureY + height},
-        }[i];
-        
-        vertex.values[6] = textureCoodinates[0];
-        vertex.values[7] = textureCoodinates[1];
+        };
+        vertex[6] = textureCoordinates[i][0];
+        vertex[7] = textureCoordinates[i][1];
 
-        memcpy(vertex.values + 8, metadata.values + 2, (metadata.size - 2) * sizeof(float));
+        vertex.insert(vertex.begin() + 8, metadata.begin() + 2, metadata.end());
 
-        vecIndicies[i] = getVertexFromMesh(mesh, vertex);
+        vecIndicies[i] = this->vertices.size() / this->vertexSize;
+        this->vertices.insert(this->vertices.begin() + this->vertices.size(), vertex.begin(), vertex.end());
     }
 
     if(clockwise){
-        addIndexValueToMesh(mesh, vecIndicies[0]);
-        addIndexValueToMesh(mesh, vecIndicies[1]);
-        addIndexValueToMesh(mesh, vecIndicies[3]);
+        this->indices.push_back(vecIndicies[0]);
+        this->indices.push_back(vecIndicies[1]);
+        this->indices.push_back(vecIndicies[3]);
 
-        addIndexValueToMesh(mesh, vecIndicies[1]);
-        addIndexValueToMesh(mesh, vecIndicies[2]);
-        addIndexValueToMesh(mesh, vecIndicies[3]);
+        this->indices.push_back(vecIndicies[1]);
+        this->indices.push_back(vecIndicies[2]);
+        this->indices.push_back(vecIndicies[3]);
     }
     else{
-        addIndexValueToMesh(mesh, vecIndicies[3]);
-        addIndexValueToMesh(mesh, vecIndicies[1]);
-        addIndexValueToMesh(mesh, vecIndicies[0]);
+        this->indices.push_back(vecIndicies[3]);
+        this->indices.push_back(vecIndicies[1]);
+        this->indices.push_back(vecIndicies[0]);
 
-        addIndexValueToMesh(mesh, vecIndicies[3]);
-        addIndexValueToMesh(mesh, vecIndicies[2]);
-        addIndexValueToMesh(mesh, vecIndicies[1]);
+        this->indices.push_back(vecIndicies[3]);
+        this->indices.push_back(vecIndicies[2]);
+        this->indices.push_back(vecIndicies[1]);
     }
 }   
 

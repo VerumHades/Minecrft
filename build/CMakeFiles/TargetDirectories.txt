@@ -1,3 +1,12 @@
-/home/hades/projects/c/Minecrft/build/CMakeFiles/main.dir
-/home/hades/projects/c/Minecrft/build/CMakeFiles/edit_cache.dir
-/home/hades/projects/c/Minecrft/build/CMakeFiles/rebuild_cache.dir
+C:/Users/filah/Documents/projects/c/Minecrft/build/CMakeFiles/main.dir
+C:/Users/filah/Documents/projects/c/Minecrft/build/CMakeFiles/INSTALL.dir
+C:/Users/filah/Documents/projects/c/Minecrft/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/filah/Documents/projects/c/Minecrft/build/CMakeFiles/ZERO_CHECK.dir
+C:/Users/filah/Documents/projects/c/Minecrft/build/libs/glm/CMakeFiles/INSTALL.dir
+C:/Users/filah/Documents/projects/c/Minecrft/build/libs/glfw3/CMakeFiles/uninstall.dir
+C:/Users/filah/Documents/projects/c/Minecrft/build/libs/glfw3/CMakeFiles/INSTALL.dir
+C:/Users/filah/Documents/projects/c/Minecrft/build/libs/glfw3/CMakeFiles/ALL_BUILD.dir
+C:/Users/filah/Documents/projects/c/Minecrft/build/libs/glfw3/src/CMakeFiles/glfw.dir
+C:/Users/filah/Documents/projects/c/Minecrft/build/libs/glfw3/src/CMakeFiles/update_mappings.dir
+C:/Users/filah/Documents/projects/c/Minecrft/build/libs/glfw3/src/CMakeFiles/INSTALL.dir
+C:/Users/filah/Documents/projects/c/Minecrft/build/libs/glfw3/docs/CMakeFiles/INSTALL.dir

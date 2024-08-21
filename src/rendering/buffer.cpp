@@ -8,8 +8,8 @@ void checkGLError(const char *file, int line){
             case GL_INVALID_ENUM:                  errorString = "GL_INVALID_ENUM"; break;
             case GL_INVALID_VALUE:                 errorString = "GL_INVALID_VALUE"; break;
             case GL_INVALID_OPERATION:             errorString = "GL_INVALID_OPERATION"; break;
-            case GL_STACK_OVERFLOW:                errorString = "GL_STACK_OVERFLOW"; break;
-            case GL_STACK_UNDERFLOW:               errorString = "GL_STACK_UNDERFLOW"; break;
+            //case GL_STACK_OVERFLOW:                errorString = "GL_STACK_OVERFLOW"; break;
+            //case GL_STACK_UNDERFLOW:               errorString = "GL_STACK_UNDERFLOW"; break;
             case GL_OUT_OF_MEMORY:                 errorString = "GL_OUT_OF_MEMORY"; break;
             case GL_INVALID_FRAMEBUFFER_OPERATION: errorString = "GL_INVALID_FRAMEBUFFER_OPERATION"; break;
             default:                               errorString = "Unknown error"; break;
@@ -18,26 +18,21 @@ void checkGLError(const char *file, int line){
     }
 }
 
-GLBuffer newBuffer(){
-    GLBuffer buffer;
-
-    glGenBuffers(1, &buffer.data);
-    glGenBuffers(1, &buffer.index);
-    glGenVertexArrays(1, &buffer.vao);
-
-    return buffer;
+GLBuffer::GLBuffer() {
+    glGenBuffers(1, &this->data);
+    glGenBuffers(1, &this->index);
+    glGenVertexArrays(1, &this->vao);
+}
+GLBuffer::~GLBuffer(){
+    glDeleteBuffers(1 , &this->data);
+    glDeleteBuffers(1 , &this->index);
+    glDeleteVertexArrays(1, &this->vao);
 }
 
-void destroyBuffer(GLBuffer buffer){
-    glDeleteBuffers(1 , &buffer.data);
-    glDeleteBuffers(1 , &buffer.index);
-    glDeleteVertexArrays(1, &buffer.vao);
-}
-
-void loadMeshToBuffer(Mesh* mesh, GLBuffer* glbuffer){
-    unsigned int buffer = glbuffer->data;
-    unsigned int index_buffer = glbuffer->index;
-    unsigned int vao = glbuffer->vao;
+void GLBuffer::loadMesh(Mesh& mesh){
+    unsigned int buffer = this->data;
+    unsigned int index_buffer = this->index;
+    unsigned int vao = this->vao;
 
     //printf("%u %u %u\n", buffer, index_buffer, vao);
     //printf("Loading data into buffer: %i index buffer: %i\n", buffer, index_buffer);
@@ -45,20 +40,20 @@ void loadMeshToBuffer(Mesh* mesh, GLBuffer* glbuffer){
     glBindVertexArray(vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, mesh->vertices_count * sizeof(float), mesh->vertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mesh.getVertices().size() * sizeof(float), mesh.getVertices().data(), GL_DYNAMIC_DRAW);
     
     CHECK_GL_ERROR();
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indices_count * sizeof(unsigned int), mesh->indices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.getIndices().size() * sizeof(unsigned int),mesh.getIndices().data(), GL_DYNAMIC_DRAW);
     
     CHECK_GL_ERROR();
 
-    size_t stride =  mesh->vertex_size * sizeof(float);
+    size_t stride =  mesh.vertexSize * sizeof(float);
 
     int size_to_now = 0;
-    for(int i = 0;i < mesh->format_size;i++){
-        size_t current_size = mesh->vertex_format[i];
+    for(int i = 0;i < mesh.getFormat().size();i++){
+        size_t current_size = mesh.getFormat()[i];
         
         uintptr_t pointer = size_to_now * sizeof(float);
 
@@ -75,14 +70,14 @@ void loadMeshToBuffer(Mesh* mesh, GLBuffer* glbuffer){
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    glbuffer->vertexCount = mesh->vertices_count;
-    glbuffer->indiciesCount = mesh->indices_count;
+    this->vertexCount   = mesh.getVertices().size();
+    this->indiciesCount = mesh.getIndices().size();
 }
 
-void drawBuffer(GLBuffer* glbuffer){
-    unsigned int buffer = glbuffer->data;
-    unsigned int index_buffer = glbuffer->index;
-    unsigned int vao = glbuffer->vao;
+void GLBuffer::draw(){
+    unsigned int buffer = this->data;
+    unsigned int index_buffer =this->index;
+    unsigned int vao = this->vao;
 
     //printf("%u %u %u\n", buffer, index_buffer, vao);
 
@@ -91,10 +86,9 @@ void drawBuffer(GLBuffer* glbuffer){
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
 
-    // Draw the triangles !
     glDrawElements(
         GL_TRIANGLES,      // mode
-        glbuffer->indiciesCount,    // count
+        this->indiciesCount,    // count
         GL_UNSIGNED_INT,   // type
         (void*)0           // element array buffer offset
     );
@@ -103,4 +97,8 @@ void drawBuffer(GLBuffer* glbuffer){
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+}
+
+const glm::vec2& Chunk::getWorldPosition(){
+    return this->worldPosition;
 }

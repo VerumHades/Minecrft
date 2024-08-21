@@ -1,94 +1,71 @@
 #include <worldgen/worldgen.hpp>
 #define FNL_IMPL
-#include <FastNoiseLite.hpp>
+#include <FastNoiseLite.h>
 
-static inline void generateTree(Chunk* chunk, int x, int y, int z, Block trunkBlock, Block leafBlock){
+static inline void generateTree(Chunk& chunk, int x, int y, int z, Block trunkBlock, Block leafBlock){
     int trunkHeight = rand() % 5 + 5;
 
     for(int g = 0;g < 2;g++){
         for(int i = -2; i <= 2;i++){
             for(int j = -2;j <= 2;j++){
                 if(j == 0 && i == 0 && g == 0) continue;
-                setChunkBlock(chunk,x+i,y+trunkHeight-1+g,z+j,leafBlock);       
+                chunk.setBlock(x+i,y+trunkHeight-1+g,z+j,leafBlock);       
             }
         }
     }
 
     for(int i = -1; i <= 1;i++){
         for(int j = -1;j <= 1;j++){
-            setChunkBlock(chunk,x+i,y+trunkHeight+1,z+j,leafBlock);       
+            chunk.setBlock(x+i,y+trunkHeight+1,z+j,leafBlock);       
         }
     }
 
     for(int i = -1; i <= 1;i++){
         for(int j = -1;j <= 1;j++){
             if(i != 0 && j != 0) continue;
-            setChunkBlock(chunk,x+i,y+trunkHeight+2,z+j,leafBlock);       
+            chunk.setBlock(x+i,y+trunkHeight+2,z+j,leafBlock);       
         }
     }
 
-    for(int i = 0; i < trunkHeight;i++) setChunkBlock(chunk,x,y+i,z, trunkBlock);
+    for(int i = 0; i < trunkHeight;i++) chunk.setBlock(x,y+i,z, trunkBlock);
 }
 
-void generateBirchTree(Chunk* chunk, int x, int y, int z){
+void generateBirchTree(Chunk& chunk, int x, int y, int z){
     Block trunkBlock;
-    trunkBlock.typeIndex = 7;
+    trunkBlock.type = BlockTypeEnum::BirchLog;
     Block leafBlock;
-    leafBlock.typeIndex = 6;
+    leafBlock.type = BlockTypeEnum::BirchLeafBlock;
 
     generateTree(chunk,x,y,z,trunkBlock,leafBlock);
 }
 
-void generateOakTree(Chunk* chunk, int x, int y, int z){
+void generateOakTree(Chunk& chunk, int x, int y, int z){
     Block trunkBlock;
-    trunkBlock.typeIndex = 5;
+    trunkBlock.type = BlockTypeEnum::OakLog;
     Block leafBlock;
-    leafBlock.typeIndex = 4;
+    leafBlock.type = BlockTypeEnum::LeafBlock;
 
-    generateTree(chunk,x,y,z,trunkBlock,leafBlock);
+    generateTree(chunk, x,y,z,trunkBlock,leafBlock);
 }
 
 void generateNoTree(Chunk* chunk, int x, int y, int z){}
 
 
-Biome biomes[] = {
-    {
-        .generateTree = generateNoTree,
-        .topBlock = 9,
-        .secondaryTopBlock = 9,
-        .undergroundBlock = 3,
-        .temperature_lower = 0.8,
-        .temperature_upper = 1.0
-    },
-    {
-        .generateTree = generateOakTree,
-        .topBlock = 1,
-        .secondaryTopBlock = 2,
-        .undergroundBlock = 3,
-        .temperature_lower = 0.4,
-        .temperature_upper = 0.8
-    },
-    {
-        .generateTree = generateNoTree,
-        .topBlock = 3,
-        .secondaryTopBlock = 3,
-        .undergroundBlock = 3,
-        .temperature_lower = 0.0,
-        .temperature_upper = 0.4
-    },
+std::vector<Biome> biomes = {
+    Biome(BlockTypeEnum::Sand, BlockTypeEnum::Sand, BlockTypeEnum::Stone, 0.8f, 1.0f, generateNoTree),
+    Biome(BlockTypeEnum::Grass, BlockTypeEnum::Dirt, BlockTypeEnum::Stone, 0.4f, 0.8f, generateOakTree),
+    Biome(BlockTypeEnum::Stone, BlockTypeEnum::Stone, BlockTypeEnum::Stone, 0.0f, 0.4f, generateNoTree)
 };
 
-size_t biomesTotal = arrayLen(biomes);
-
-Biome* getBiome(float temperature){
-    for(int i = 0;i < biomesTotal;i++){
-        Biome* biome = &biomes[i];
-        if(temperature < biome->temperature_lower || temperature > biome->temperature_upper) continue;
+const Biome& getBiome(float temperature){
+    for(int i = 0;i < biomes.size();i++){
+        Biome& biome = biomes[i];
+        if(temperature < biome.temperatureLower || temperature > biome.temperatureUpper) continue;
 
         return biome;
     }
 
-    return NULL;
+    return biomes[0];
 }
 
 float lerp(float a, float b, float f)
@@ -96,8 +73,8 @@ float lerp(float a, float b, float f)
     return a * (1.0 - f) + (b * f);
 }
 
-Chunk* generateTerrainChunk(World* world, int chunkX, int chunkZ){
-    Chunk* chunk = generateEmptyChunk(world);
+Chunk generateTerrainChunk(World& world, int chunkX, int chunkY){
+    Chunk chunk(world, glm::vec2(chunkX, chunkY));
 
     // Create and configure noise state
     fnl_state noise = fnlCreateState();
@@ -121,49 +98,48 @@ Chunk* generateTerrainChunk(World* world, int chunkX, int chunkZ){
     for(int x = 0;x < DEFAULT_CHUNK_SIZE;x++){
         for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
             float rx = (float)(x + chunkX * DEFAULT_CHUNK_SIZE);
-            float rz = (float)(z + chunkZ * DEFAULT_CHUNK_SIZE);
+            float ry = (float)(z + chunkY * DEFAULT_CHUNK_SIZE);
 
-            float main = (fnlGetNoise2D(&noise, rx, rz) + 1) / 2;
-            float secondary = (fnlGetNoise2D(&noise2, rx, rz) + 1) / 2;
-            //float mountains = (fnlGetNoise2D(&mountain_areas, rx, rz) + 1) / 2;
+            float main = (fnlGetNoise2D(&noise, rx, ry) + 1) / 2;
+            float secondary = (fnlGetNoise2D(&noise2, rx, ry) + 1) / 2;
+            //float mountains = (fnlGetNoise2D(&mountain_areas, rx, ry) + 1) / 2;
 
 
-            float temperature = (fnlGetNoise2D(&temperatureNoise, rx, rz) + 1) / 2;
+            float temperature = (fnlGetNoise2D(&temperatureNoise, rx, ry) + 1) / 2;
             temperature =  1.0 - lerp(main,temperature,0.1);
 
             main = lerp(main, secondary, pow(main,7));
-            //value *= perlin(rx / 20.0, rz / 20.0);
+            //value *= perlin(rx / 20.0, ry / 20.0);
         
             int height = floor(256 * main); 
 
-            Biome* biome = getBiome(temperature);
-            if(biome == NULL) biome = &biomes[0];
+            const Biome& biome = getBiome(temperature);
 
             for(int y = 0;y < height;y++){
                 Block block;
-                block.typeIndex = 0;
+                block.type = BlockTypeEnum::Air;
 
                 if(y + 1 == height && height <= waterLevel){
-                    block.typeIndex = 9;
+                    block.type = BlockTypeEnum::Sand;
                 }
                 else if(y >= waterLevel && y <= waterLevel + 3){
-                    block.typeIndex = 9;
+                    block.type = BlockTypeEnum::Sand;
                 }
                 else if(y + 1 == height && height > waterLevel){
-                    block.typeIndex = biome->topBlock;
-                    if(rand() % 50 == 0) biome->generateTree(chunk,x,height,z);
+                    block.type = biome.topBlock;
+                    if(rand() % 50 == 0) biome.generateTree(chunk,x,height,z);
                 }
-                else if(y + 3 >= height) block.typeIndex = biome->secondaryTopBlock;
-                else block.typeIndex = biome->undergroundBlock;
+                else if(y + 3 >= height) block.type = biome.secondaryTopBlock;
+                else block.type = biome.undergroundBlock;
 
-                setChunkBlock(chunk,x,y,z, block);
+                chunk.setBlock(x,y,z, block);
             }
 
             for(int y = height; y < waterLevel;y++){
                 Block block;
-                block.typeIndex = 8;
+                block.type = BlockTypeEnum::BlueWool;
 
-                setChunkBlock(chunk,x,y,z, block);
+                chunk.setBlock(x,y,z, block);
             }
         }
     }

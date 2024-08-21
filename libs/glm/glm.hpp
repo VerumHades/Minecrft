@@ -1,5 +1,5 @@
 /// @ref core
-/// @file glm/glm.hpp
+/// @file glm.hpp
 ///
 /// @mainpage OpenGL Mathematics (GLM)
 /// - Website: <a href="https://glm.g-truc.net">glm.g-truc.net</a>
@@ -17,7 +17,7 @@
 /// <a href="http://www.opengl.org/registry/doc/GLSLangSpec.4.20.8.clean.pdf">version 4.2
 /// (pdf file)</a>.
 ///
-/// GLM core functionalities require <glm/glm.hpp> to be included to be used.
+/// GLM core functionalities require <glm.hpp> to be included to be used.
 ///
 ///
 /// @defgroup core_vector Vector types

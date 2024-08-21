@@ -13,7 +13,7 @@ unsigned int compileShader(const char* source, int type){
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
 
         // The maxLength includes the NULL character
-        char* errorLog = calloc(maxLength, sizeof(char));
+        char* errorLog = (char*) calloc(maxLength, sizeof(char));
         glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]);
 
         printf("Error when compiling shader:\n%s", errorLog);
@@ -28,16 +28,18 @@ unsigned int compileShader(const char* source, int type){
     return shader;
 }
 
-ShaderProgram newShaderProgram(){
-    ShaderProgram program;
-
-    program.program = glCreateProgram();
-    program.shaderCount = 0;
-
-    return program;
+ShaderProgram::ShaderProgram(){
+    this->program = glCreateProgram();
+}
+ShaderProgram::~ShaderProgram(){
+    glDeleteProgram(this->program);
 }
 
-void addVertexShader(ShaderProgram* program, char* filename){
+glm::vec3& ShaderProgram::getCameraDirection(){
+    return this->cameraDirection;
+}
+
+void ShaderProgram::addShader(char* filename, int type){
     char* source = readFilename(filename);
     if(source == NULL){
         printf("Failed to read shader source file '%s'\n", filename);
@@ -45,35 +47,24 @@ void addVertexShader(ShaderProgram* program, char* filename){
         return;
     }
 
-    unsigned int shader = compileShader(source, GL_VERTEX_SHADER);
-    program->shaders[program->shaderCount++] = shader;
-}
-void addFragmentShader(ShaderProgram* program, char* filename){
-    char* source = readFilename(filename);
-    if(source == NULL){
-        printf("Failed to read shader source file '%s'\n", filename);
-        exit(-1);
-        return;
-    }
-
-    unsigned int shader = compileShader(source, GL_FRAGMENT_SHADER);
-    program->shaders[program->shaderCount++] = shader;
+    unsigned int shader = compileShader(source, type);
+    this->shaders.push_back(shader);
 }
 
-void compileShaderProgram(ShaderProgram* program){
-    for(int i = 0;i < program->shaderCount;i++){
-        glAttachShader(program->program, program->shaders[i]);
+void ShaderProgram::compile(){
+    for(int i = 0;i < this->shaders.size();i++){
+        glAttachShader(this->program, this->shaders[i]);
     }
 
-    glLinkProgram(program->program);
-    glUseProgram(program->program);
+    glLinkProgram(this->program);
+    glUseProgram(this->program);
     
-    for(int i = 0;i < program->shaderCount;i++){
-        glDeleteShader(program->shaders[i]);
+    for(int i = 0;i < this->shaders.size();i++){
+        glDeleteShader(this->shaders[i]);
     }
 }
 
-void useShaderProgram(ShaderProgram* program){
-    glUseProgram(program->program);
+void ShaderProgram::use(){
+    glUseProgram(this->program);
 }
 

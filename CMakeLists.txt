@@ -13,11 +13,17 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/header)
 
 # Find GLM package
-find_package(glm CONFIG REQUIRED)
+#find_package(glm CONFIG REQUIRED)
+
+set(GLM_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libs")
+include_directories(${GLM_INCLUDE_DIRS})
 
 # Find OpenGL and GLFW
 find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
+#find_package(glfw3 REQUIRED)
+
+add_subdirectory(libs/glm)
+add_subdirectory(libs/glfw3)
 
 # Source files
 file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp)

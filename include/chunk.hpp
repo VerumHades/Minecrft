@@ -7,6 +7,10 @@
 #include <rendering/texture.hpp>
 #include <rendering/buffer.hpp>
 #include <rendering/mesh.hpp>
+#include <glm/glm.hpp>
+#include <map>
+#include <optional>
+#include <functional>
 
 #define OK -1
 #define INVALID_COORDINATES -2
@@ -19,86 +23,100 @@
 #define TEXTURES_TOTAL 4
 
 extern float textureSize;
+
+struct RectangularCollider {
+    float x, y, z;
+    float width, height, depth;
+};
+
+enum class BlockTypeEnum {
+    Air,
+    Grass,
+    Dirt,
+    Stone,
+    LeafBlock,
+    OakLog,
+    BirchLeafBlock,
+    BirchLog,
+    BlueWool,
+    Sand
+};
+
 typedef struct Block{
-    unsigned int typeIndex: 5;
-} __attribute__((packed)) Block;
+    BlockTypeEnum type;
+} Block;
 
-// A rectangular collider
-typedef struct RectangularCollider{
-    float x; // Positional offsets
-    float y;
-    float z;
-    float width;
-    float height; //Size
-    float depth;
-} RectangularCollider;
+struct BlockType {
+    bool transparent = false;
+    bool untextured = false;
+    bool repeatTexture = false;
+    std::vector<unsigned char> textures = {};
+    std::vector<RectangularCollider> colliders;
 
-typedef struct BlockType{
-    // For rendering
-    unsigned char* textures; // top > bottom > left > right > front > back
+    // Constructor for convenience
+    BlockType(bool transparent = false, bool untextured = false, bool repeatTexture = false,
+              std::vector<unsigned char> textures = {}, std::vector<RectangularCollider> colliders = {})
+        : transparent(transparent), untextured(untextured), repeatTexture(repeatTexture),
+          textures(std::move(textures)), colliders(std::move(colliders)) {}
+};
 
-    unsigned transparent: 1;
-    unsigned untextured: 1;
-    unsigned repeatTexture: 1;
-    struct{
-        float r; float g; float b;  
-    } color;
-    
-    // For physics
-    RectangularCollider* colliders;
-    unsigned int colliderCount;
-} BlockType;
+struct FaceDefinition {
+    int offsetX = 0;
+    int offsetY = 0;
+    int offsetZ = 0;
+    std::vector<int> vertexIndexes;
+    int textureIndex = 0;
+    bool clockwise = false;
 
-typedef struct Chunk{
-    int worldX;
-    int worldZ;
-    struct World* world;
-    unsigned stored: 1; // If chunks is stored in world file
+    FaceDefinition(int offsetX, int offsetY, int offsetZ, 
+                   std::vector<int> vertexIndexes, int textureIndex, 
+                   bool clockwise = false)
+        : offsetX(offsetX), offsetY(offsetY), offsetZ(offsetZ),
+          vertexIndexes(std::move(vertexIndexes)), textureIndex(textureIndex),
+          clockwise(clockwise) {}
+};
 
-    Block blocks[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE];
-    //unsigned char lightArray[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][3];
 
-    unsigned meshGenerating: 1;
-    unsigned meshGenerated: 1;
+class World;
 
-    unsigned buffersLoaded: 1;
-    unsigned buffersAsigned: 1;
+class Chunk{
+    private:
+        glm::vec2 worldPosition;
+        World& world;
 
-    unsigned isDrawn: 1;
-    
-    Mesh* solidMesh;
-    Mesh* transparentMesh;
+        Block blocks[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE];
+        //unsigned char lightArray[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][3];
+        
+    public:
+        bool meshGenerating;
+        bool meshGenerated;
 
-    //unsigned lightTextureLoaded: 1;
-    //GLTexture3D lightTexture;
+        bool buffersLoaded;
+        bool buffersAsigned;
 
-    GLBuffer solidBuffer;
-    GLBuffer solidBackBuffer;
+        GLBuffer solidBuffer;
+        GLBuffer solidBackBuffer;
 
-    GLBuffer transparentBuffer;
-    GLBuffer transparentBackBuffer;
-} Chunk; 
+        GLBuffer transparentBuffer;
+        GLBuffer transparentBackBuffer;
 
-typedef struct FaceDefinition{
-    int offsetX; int offsetY; int offsetZ;
-    int* vertexIndexes;
-    int textureIndex;
-    int clockwise;
-} FaceDefinition;
+        std::optional<Mesh> solidMesh;
+        std::optional<Mesh> transparentMesh;
 
-typedef struct World World;
-extern BlockType predefinedBlocks[];
+        bool isDrawn;
 
-void destroyChunk(Chunk* chunk);
+        Chunk(World& world, glm::vec2 pos);
 
-Block* getChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z);
-int setChunkBlock(Chunk* chunk, unsigned int x, unsigned int y, unsigned int z, Block  value);
+        const Block& getBlock(unsigned int x, unsigned int y, unsigned int z);
+        void setBlock(unsigned int x, unsigned int y, unsigned int z, Block value);
 
-Chunk* generateEmptyChunk(World* world);
-Chunk* generatePlainChunk(World* world, Block  top, Block  rest);
-Chunk* generatePerlinChunk(World* world, int chunkX, int chunkZ);
+        void generateMeshes();
+        void regenerateMesh();
 
-void generateMeshForChunk(Mesh* solid, Mesh* transparent, Chunk* chunk);
+        const glm::vec2& getWorldPosition();
+        World& getWorld();
+}; 
+extern std::map<BlockTypeEnum, BlockType> predefinedBlocks;
 
 #include <world.hpp>
 

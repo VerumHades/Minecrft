@@ -2,17 +2,26 @@
 #define WORLDGEN_H
 
 #include <chunk.hpp>
+#include <optional>
 
-typedef struct Biome{
-    int topBlock;
-    int secondaryTopBlock;
-    int undergroundBlock;
+struct Biome {
+     BlockTypeEnum topBlock;
+    BlockTypeEnum secondaryTopBlock;
+    BlockTypeEnum undergroundBlock;
 
-    float temperature_lower;
-    float temperature_upper;
+    float temperatureLower;
+    float temperatureUpper;
 
-    void (*generateTree)(Chunk* chunk, int x, int y, int z);
-} Biome;
+    using GenerateTreeFunc = void (*)(Chunk*, int, int, int);
+
+    Biome(BlockTypeEnum top, BlockTypeEnum secondaryTop, BlockTypeEnum underground,
+          float tempLower, float tempUpper,
+          GenerateTreeFunc treeGen)
+        : topBlock(top), secondaryTopBlock(secondaryTop), undergroundBlock(underground),
+          temperatureLower(tempLower), temperatureUpper(tempUpper), generateTree(treeGen) {}
+
+    GenerateTreeFunc generateTree;
+};
 
 Chunk* generateTerrainChunk(World* world, int x, int z);
 
