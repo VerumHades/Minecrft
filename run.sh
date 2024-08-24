@@ -7,4 +7,5 @@ cd build
 # cmake ..
 cmake --build .
 cd ..
+#./build/main
 gdb -ex run ./build/main

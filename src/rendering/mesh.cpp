@@ -23,8 +23,8 @@ void Mesh::setVertexFormat(const std::vector<int>& format){
 }
 
 void Mesh::addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, std::vector<float> metadata, int clockwise, int width, int height){
-    int vecIndicies[4];
-        
+    unsigned int vecIndices[4];
+    
     for(int i = 0;i < 4;i++){
         glm::vec3 pos = vertices[i];
 
@@ -42,37 +42,26 @@ void Mesh::addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, std::vector<flo
         float textureY = metadata[1];
 
         std::vector<std::vector<float>> textureCoordinates = {
-            {textureX, textureY},
-            {textureX + width, textureY},
+            {textureX        , textureY         },
+            {textureX + width, textureY         },
             {textureX + width, textureY + height},
-            {textureX, textureY + height},
+            {textureX        , textureY + height}
         };
         vertex[6] = textureCoordinates[i][0];
         vertex[7] = textureCoordinates[i][1];
 
-        vertex.insert(vertex.begin() + 8, metadata.begin() + 2, metadata.end());
+        vertex[8] = metadata[2];
 
-        vecIndicies[i] = this->vertices.size() / this->vertexSize;
-        this->vertices.insert(this->vertices.begin() + this->vertices.size(), vertex.begin(), vertex.end());
+        vecIndices[i] = this->vertices.size() / this->vertexSize;
+        this->vertices.insert(this->vertices.end(), vertex.begin(), vertex.end());
     }
 
-    if(clockwise){
-        this->indices.push_back(vecIndicies[0]);
-        this->indices.push_back(vecIndicies[1]);
-        this->indices.push_back(vecIndicies[3]);
-
-        this->indices.push_back(vecIndicies[1]);
-        this->indices.push_back(vecIndicies[2]);
-        this->indices.push_back(vecIndicies[3]);
-    }
-    else{
-        this->indices.push_back(vecIndicies[3]);
-        this->indices.push_back(vecIndicies[1]);
-        this->indices.push_back(vecIndicies[0]);
-
-        this->indices.push_back(vecIndicies[3]);
-        this->indices.push_back(vecIndicies[2]);
-        this->indices.push_back(vecIndicies[1]);
+    if (clockwise) {
+        this->indices.insert(this->indices.end(), {vecIndices[0], vecIndices[1], vecIndices[3]});
+        this->indices.insert(this->indices.end(), {vecIndices[1], vecIndices[2], vecIndices[3]});
+    } else {
+        this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[1], vecIndices[0]});
+        this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[2], vecIndices[1]});
     }
 }   
 

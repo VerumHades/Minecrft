@@ -37,7 +37,8 @@ GLTexture::GLTexture(char* filename){
     } else if (nrChannels == 4) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     } else{
-        printf("Invalid number of channels: '%i' in texture image '%s'",nrChannels, filename);
+        std::cout << "Invalid number of channels: " << nrChannels << " in texture image: " << filename << std::endl;
+        std::terminate();
         return;
     }
 

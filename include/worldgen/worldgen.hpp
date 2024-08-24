@@ -5,16 +5,16 @@
 #include <optional>
 
 struct Biome {
-     BlockTypeEnum topBlock;
-    BlockTypeEnum secondaryTopBlock;
-    BlockTypeEnum undergroundBlock;
+     BlockTypes topBlock;
+    BlockTypes secondaryTopBlock;
+    BlockTypes undergroundBlock;
 
     float temperatureLower;
     float temperatureUpper;
 
     using GenerateTreeFunc = void (*)(Chunk&, int, int, int);
 
-    Biome(BlockTypeEnum top, BlockTypeEnum secondaryTop, BlockTypeEnum underground,
+    Biome(BlockTypes top, BlockTypes secondaryTop, BlockTypes underground,
           float tempLower, float tempUpper,
           GenerateTreeFunc treeGen)
         : topBlock(top), secondaryTopBlock(secondaryTop), undergroundBlock(underground),

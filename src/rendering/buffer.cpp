@@ -14,30 +14,34 @@ void checkGLError(const char *file, int line){
             case GL_INVALID_FRAMEBUFFER_OPERATION: errorString = "GL_INVALID_FRAMEBUFFER_OPERATION"; break;
             default:                               errorString = "Unknown error"; break;
         }
-        fprintf(stderr, "OpenGL error in file %s at line %d: %s\n", file, line, errorString);
+        std::cerr << "OpenGL error in file " << file << " at line " << line << " " << errorString << std::endl;
+        throw std::runtime_error("Opengl error.");
     }
 }
 
 GLBuffer::GLBuffer() {
+    glGenVertexArrays(1, &this->vao);
     glGenBuffers(1, &this->data);
     glGenBuffers(1, &this->index);
-    glGenVertexArrays(1, &this->vao);
+
+    //std::cerr << "GLBuffer constructor called for object at " << this << std::endl;
 }
 GLBuffer::~GLBuffer(){
     glDeleteBuffers(1 , &this->data);
     glDeleteBuffers(1 , &this->index);
     glDeleteVertexArrays(1, &this->vao);
+
+    //std::cerr << "GLBuffer destructor called for object at " << this << std::endl;
 }
 
 void GLBuffer::loadMesh(Mesh& mesh){
     unsigned int buffer = this->data;
     unsigned int index_buffer = this->index;
     unsigned int vao = this->vao;
-
-    //printf("%u %u %u\n", buffer, index_buffer, vao);
-    //printf("Loading data into buffer: %i index buffer: %i\n", buffer, index_buffer);
-
+    
     glBindVertexArray(vao);
+
+    CHECK_GL_ERROR();
 
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, mesh.getVertices().size() * sizeof(float), mesh.getVertices().data(), GL_DYNAMIC_DRAW);
@@ -72,6 +76,8 @@ void GLBuffer::loadMesh(Mesh& mesh){
 
     this->vertexCount   = mesh.getVertices().size();
     this->indiciesCount = mesh.getIndices().size();
+
+    this->dataLoaded = true;
 }
 
 void GLBuffer::draw(){
@@ -101,4 +107,14 @@ void GLBuffer::draw(){
 
 const glm::vec2& Chunk::getWorldPosition(){
     return this->worldPosition;
+}
+
+void GLDoubleBuffer::swap(){
+    this->current = !this->current;
+}
+GLBuffer& GLDoubleBuffer::getBuffer(){
+    return this->buffers[this->current];
+}
+GLBuffer& GLDoubleBuffer::getBackBuffer(){
+    return this->buffers[!this->current];
 }

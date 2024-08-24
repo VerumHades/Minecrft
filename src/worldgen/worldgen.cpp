@@ -32,18 +32,18 @@ static inline void generateTree(Chunk& chunk, int x, int y, int z, Block trunkBl
 
 void generateBirchTree(Chunk& chunk, int x, int y, int z){
     Block trunkBlock;
-    trunkBlock.type = BlockTypeEnum::BirchLog;
+    trunkBlock.type = BlockTypes::BirchLog;
     Block leafBlock;
-    leafBlock.type = BlockTypeEnum::BirchLeafBlock;
+    leafBlock.type = BlockTypes::BirchLeafBlock;
 
     generateTree(chunk,x,y,z,trunkBlock,leafBlock);
 }
 
 void generateOakTree(Chunk& chunk, int x, int y, int z){
     Block trunkBlock;
-    trunkBlock.type = BlockTypeEnum::OakLog;
+    trunkBlock.type = BlockTypes::OakLog;
     Block leafBlock;
-    leafBlock.type = BlockTypeEnum::LeafBlock;
+    leafBlock.type = BlockTypes::LeafBlock;
 
     generateTree(chunk, x,y,z,trunkBlock,leafBlock);
 }
@@ -52,9 +52,9 @@ void generateNoTree(Chunk& chunk, int x, int y, int z){}
 
 
 std::vector<Biome> biomes = {
-    Biome(BlockTypeEnum::Sand, BlockTypeEnum::Sand, BlockTypeEnum::Stone, 0.8f, 1.0f, generateNoTree),
-    Biome(BlockTypeEnum::Grass, BlockTypeEnum::Dirt, BlockTypeEnum::Stone, 0.4f, 0.8f, generateOakTree),
-    Biome(BlockTypeEnum::Stone, BlockTypeEnum::Stone, BlockTypeEnum::Stone, 0.0f, 0.4f, generateNoTree)
+    Biome(BlockTypes::Sand, BlockTypes::Sand, BlockTypes::Stone, 0.8f, 1.0f, generateNoTree),
+    Biome(BlockTypes::Grass, BlockTypes::Dirt, BlockTypes::Stone, 0.4f, 0.8f, generateOakTree),
+    Biome(BlockTypes::Stone, BlockTypes::Stone, BlockTypes::Stone, 0.0f, 0.4f, generateNoTree)
 };
 
 const Biome& getBiome(float temperature){
@@ -74,7 +74,7 @@ float lerp(float a, float b, float f)
 }
 
 Chunk generateTerrainChunk(World& world, int chunkX, int chunkY){
-    Chunk chunk = world.generateChunk(chunkX,chunkY);
+    Chunk chunk = Chunk(world, glm::vec2(chunkX, chunkY));
 
     // Create and configure noise state
     fnl_state noise = fnlCreateState();
@@ -117,13 +117,13 @@ Chunk generateTerrainChunk(World& world, int chunkX, int chunkY){
 
             for(int y = 0;y < height;y++){
                 Block block;
-                block.type = BlockTypeEnum::Air;
+                block.type = BlockTypes::Air;
 
                 if(y + 1 == height && height <= waterLevel){
-                    block.type = BlockTypeEnum::Sand;
+                    block.type = BlockTypes::Sand;
                 }
                 else if(y >= waterLevel && y <= waterLevel + 3){
-                    block.type = BlockTypeEnum::Sand;
+                    block.type = BlockTypes::Sand;
                 }
                 else if(y + 1 == height && height > waterLevel){
                     block.type = biome.topBlock;
@@ -137,7 +137,7 @@ Chunk generateTerrainChunk(World& world, int chunkX, int chunkY){
 
             for(int y = height; y < waterLevel;y++){
                 Block block;
-                block.type = BlockTypeEnum::BlueWool;
+                block.type = BlockTypes::BlueWool;
 
                 chunk.setBlock(x,y,z, block);
             }

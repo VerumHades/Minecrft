@@ -15,13 +15,25 @@ class GLBuffer{
         unsigned int index;
         unsigned int vao;
 
-        unsigned int vertexCount;
-        unsigned int indiciesCount;
+        unsigned int vertexCount = 0;
+        unsigned int indiciesCount = 0;
+
+        bool dataLoaded = false;
     public:
         GLBuffer();
         ~GLBuffer();
         void loadMesh(Mesh& mesh);
         void draw();
+};
+
+class GLDoubleBuffer{
+    private:
+        GLBuffer buffers[2];
+        int current = 0;
+    public:
+        void swap();
+        GLBuffer& getBuffer();
+        GLBuffer& getBackBuffer();
 };
 
 #include <rendering/mesh.hpp>

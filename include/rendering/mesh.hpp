@@ -14,10 +14,10 @@ class Mesh{
         std::vector<unsigned int> indices;
         std::vector<int> format;
 
-        bool formatSet;
+        bool formatSet = false;
 
     public:
-        size_t vertexSize;
+        size_t vertexSize = 0;
 
         Mesh();
 

@@ -16,7 +16,7 @@ unsigned int compileShader(const char* source, int type){
         char* errorLog = (char*) calloc(maxLength, sizeof(char));
         glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]);
 
-        printf("Error when compiling shader:\n%s", errorLog);
+        std::cout << "Error when compiling shader:" << errorLog << std::endl;
         free(errorLog);
 
         // Provide the infolog in whatever manor you deem best.
@@ -67,5 +67,9 @@ void ShaderProgram::compile(){
 
 void ShaderProgram::use(){
     glUseProgram(this->program);
+}
+
+void ShaderProgram::makeSkybox(){
+    this->isSkybox = true;
 }
 

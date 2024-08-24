@@ -23,7 +23,7 @@ float camX = 0;
 float camY = 150;
 float camZ = 0;
 
-int renderDistance = 24;
+int renderDistance = 32;
 
 float accelX = 0;
 float accelZ = 0;
@@ -68,7 +68,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height){
 void cursor_position_callback(GLFWwindow* window, double mouseX, double mouseY)
 {
     float xoffset = mouseX - lastMouseX;
-    float yoffset = lastMouseY - mouseX; // Reversed since y-coordinates go from bottom to top
+    float yoffset = lastMouseY - mouseY; // Reversed since y-coordinates go from bottom to top
     lastMouseX = mouseX;
     lastMouseY = mouseY;
 
@@ -78,14 +78,16 @@ void cursor_position_callback(GLFWwindow* window, double mouseX, double mouseY)
     camYaw += xoffset;
     camPitch += yoffset;
 
-    // Constrain the pitch
+    camYaw = std::fmod((camYaw + xoffset), (GLfloat)360.0f);
+
+    // Constrain the pitch to avoid gimbal lock
     if (camPitch > 89.0f)
         camPitch = 89.0f;
     if (camPitch < -89.0f)
         camPitch = -89.0f;
 
-    mainProgram.setCameraRotation(camPitch,camYaw);
-    skyboxProgram.setCameraRotation(camPitch,camYaw);
+    mainProgram.setCameraRotation(camPitch, camYaw);
+    skyboxProgram.setCameraRotation(camPitch, camYaw);
 }
 
 //static int selectedBlock = 1;
@@ -96,12 +98,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     RaycastResult hit = world.raycast(camX,camY,camZ,camDirection.x, camDirection.y, camDirection.z,10);
     
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && hit.hit){
-        world.setBlock(hit.x, hit.y, hit.z, {BlockTypeEnum::Air});
+        world.setBlock(hit.x, hit.y, hit.z, {BlockTypes::Air});
 
-        auto chunkOpt = world.getChunkFromBlockPosition(hit.x, hit.z);
-        if(!chunkOpt) return;
-        Chunk& chunk = chunkOpt.value();
-        chunk.regenerateMesh();
+        auto chunk = world.getChunkFromBlockPosition(hit.x, hit.z);
+        if(!chunk) return;
+        chunk->regenerateMesh();
         
         /*chunk = getWorldChunk(chunk.worldX + 1, chunk.worldZ   ); regenerateChunkMesh(chunk);
         chunk = getWorldChunk(chunk.worldX - 1, chunk.worldZ   ); regenerateChunkMesh(chunk);
@@ -111,19 +112,18 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hit){
         CollisionCheckResult result = world.checkForPointCollision(hit.lastX, hit.lastY, hit.lastZ, 1);
 
-        world.setBlock(result.x,  result.y,  result.z, {BlockTypeEnum::BlueWool});
+        world.setBlock(result.x,  result.y,  result.z, {BlockTypes::BlueWool});
         if(
             world.checkForRectangularCollision(camX,camY,camZ, &playerCollider).collision ||
             world.checkForRectangularCollision(camX + accelX,camY + accelY,camZ + accelZ, &playerCollider).collision
         ){
-            world.setBlock(result.x,  result.y,  result.z, {BlockTypeEnum::Air});
+            world.setBlock(result.x,  result.y,  result.z, {BlockTypes::Air});
             return;
         }
 
-        auto chunkOpt = world.getChunkFromBlockPosition(result.x, result.z);
-        if(!chunkOpt) return;
-        Chunk& chunk = chunkOpt.value();
-        chunk.regenerateMesh();
+        auto chunk = world.getChunkFromBlockPosition(result.x, result.z);
+        if(!chunk) return;
+        chunk->regenerateMesh();
         /*chunk = getWorldChunk(world, chunk.worldX + 1, chunk.worldZ   ); regenerateChunkMesh(chunk);
         chunk = getWorldChunk(world, chunk.worldX - 1, chunk.worldZ   ); regenerateChunkMesh(chunk);
         chunk = getWorldChunk(world, chunk.worldX    , chunk.worldZ + 1); regenerateChunkMesh(chunk);
@@ -133,6 +133,27 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     /*else if(button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS){
         selectedBlock = (selectedBlock + 1) % 5 + 1;
     }*/
+}
+
+void GLAPIENTRY debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
+    std::cerr << "OpenGL Debug Message: " << message << std::endl;
+    // You can add more detailed processing based on the parameters
+}
+
+bool isGLDebugSupported() {
+    return glad_glDebugMessageCallback != nullptr;
+}
+
+void setupDebugCallback() {
+    if (isGLDebugSupported()) {
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+
+        glDebugMessageCallback(debugCallback, nullptr);
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+    } else {
+        std::cerr << "GL_KHR_debug not supported!" << std::endl;
+    }
 }
 
 int main() {
@@ -170,6 +191,8 @@ int main() {
         return -1;
     }
 
+    setupDebugCallback();
+
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     
@@ -186,11 +209,14 @@ int main() {
     mainProgram.addShader("shaders/vertex.vs", GL_VERTEX_SHADER);
     mainProgram.addShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
     mainProgram.compile();
+    mainProgram.recalculateProjection(1920,1080,camFOV);
 
     skyboxProgram.initialize();
     skyboxProgram.addShader("shaders/skybox.vs", GL_VERTEX_SHADER);
     skyboxProgram.addShader("shaders/skybox.fs", GL_FRAGMENT_SHADER);
     skyboxProgram.compile();
+    skyboxProgram.makeSkybox();
+    mainProgram.recalculateProjection(1920,1080,camFOV);
 
     std::array<std::string,6> skyboxPaths = {
         "skybox/stars/right.png",
@@ -242,20 +268,20 @@ int main() {
         //if(boundKeys[0].isDown) accelY += 0.0006;
         //if(boundKeys[1].isDown) accelY -= 0.0006;
 
-        int iCamAngleY = (360 - camYaw);
-        if(boundKeys[2].isDown){
+        int iCamAngleY = clampAngle(360 - camYaw);
+        if(boundKeys[4].isDown){
             accelZ -= cos(M_PI_D180 * iCamAngleY) * camSpeed;
             accelX -= sin(M_PI_D180 * iCamAngleY) * camSpeed;
         }
-        if(boundKeys[3].isDown){
+        if(boundKeys[5].isDown){
             accelZ += cos(M_PI_D180 * iCamAngleY) * camSpeed;
             accelX += sin(M_PI_D180 * iCamAngleY) * camSpeed;
         }
-        if(boundKeys[4].isDown){
+        if(boundKeys[3].isDown){
             accelZ += cos(M_PI_D180 * clampAngle(iCamAngleY - 90)) * camSpeed;
             accelX += sin(M_PI_D180 * clampAngle(iCamAngleY - 90)) * camSpeed;
         }
-        if(boundKeys[5].isDown){
+        if(boundKeys[2].isDown){
             accelZ -= cos(M_PI_D180 * clampAngle(iCamAngleY - 90)) * camSpeed;
             accelX -= sin(M_PI_D180 * clampAngle(iCamAngleY - 90)) * camSpeed;
         }
@@ -285,10 +311,12 @@ int main() {
 
         //glUniform3f(camPosLoc, -camX, -camY, -camZ);
         //printf("x:%f y:%f z:%f ax:%f ay:%f az:%f\n",camX,camY,camZ,accelX,accelY,accelZ);
-        glDisable(GL_CULL_FACE);  
+        mainProgram.setCameraPosition(camX, camY, camZ);
+
+        glDisable(GL_CULL_FACE);
         skyboxProgram.use();
         skybox.draw();
-        glEnable(GL_CULL_FACE);  
+        glEnable(GL_CULL_FACE);
 
         mainProgram.use();
         tilemap.bind();
@@ -296,8 +324,8 @@ int main() {
         int camWorldX = camX / DEFAULT_CHUNK_SIZE;
         int camWorldZ = camZ / DEFAULT_CHUNK_SIZE;
 
-        float offsetCamX = camX - cos(M_PI_D180 * (camYaw - 90)) * (camPitch - 90 + camY);
-        float offsetCamZ = camZ - sin(M_PI_D180 * (camYaw - 90)) * (camPitch - 90 + camY);
+        float offsetCamX = camX - cos(M_PI_D180 * camYaw) * (-camPitch - 90 + camY);
+        float offsetCamZ = camZ - sin(M_PI_D180 * camYaw) * (-camPitch - 90 + camY);
 
         for(int x = -renderDistance; x <= renderDistance; x++){
             for(int z = -renderDistance; z <= renderDistance; z++){
@@ -308,24 +336,25 @@ int main() {
                 int realChunkZ = chunkZ * DEFAULT_CHUNK_SIZE + DEFAULT_CHUNK_SIZE/2;
 
                 float angle = clampAngle(atan2(offsetCamZ - realChunkZ, offsetCamX - realChunkX) * 180 / M_PI - 90);
-                float difference = abs(angle - camYaw);
+                float difference = abs(angle - (camYaw + 90));
                 difference = fmin(difference, 360 - difference);
 
                 if(difference > halfCamFov) continue; 
 
-                auto chunkOpt = world.getChunkWithMesh(chunkX, chunkZ);
-                if(!chunkOpt) chunkOpt.emplace(world.generateChunk(chunkX, chunkZ));
+                Chunk* chunk = world.getChunkWithMesh(chunkX, chunkZ);
+                if(!chunk){
+                    if(!world.getChunk(chunkX, chunkZ)) world.generateAndGetChunk(chunkX, chunkZ);
+                    continue;
+                }
+            
                 
-                Chunk& chunk = chunkOpt.value();
-                if(!chunk.isDrawn) continue;
+                if(!chunk->isDrawn) continue;
 
-                mainProgram.setCameraPosition(-camX + chunkX * DEFAULT_CHUNK_SIZE, -camY, -camZ + chunkZ * DEFAULT_CHUNK_SIZE);
-                
-                //bindTexture3D(&chunk.lightTexture);
-                chunk.solidBuffer.draw();
+                mainProgram.setModelPosition(chunkX * DEFAULT_CHUNK_SIZE,0,chunkZ * DEFAULT_CHUNK_SIZE);
+
+                chunk->solidBuffer->getBuffer().draw();
             }
         }
-        //printf("Chunks drawn: %i\n", total);
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 

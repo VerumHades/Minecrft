@@ -31,7 +31,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
-
 find_package(OpenGL REQUIRED)
 
 # Source files

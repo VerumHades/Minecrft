@@ -1,25 +1,41 @@
 #include <world.hpp>
-Chunk& World::generateChunk(int x, int z){
-    glm::vec2 key = glm::vec2(x,z);
 
-    auto it = this->chunks.find(key);
-    if (it != this->chunks.end()) {
-        return it->second;
-    } else {
-        auto [iter, success] = this->chunks.emplace(key, Chunk(*this, key));
-        return iter->second;
+std::shared_mutex chunkGenLock;
+
+Chunk* World::generateAndGetChunk(int x, int z){
+    const glm::vec2 key = glm::vec2(x,z);
+
+    {
+        std::shared_lock lock(chunkGenLock);
+        auto it = this->chunks.find(key);
+        if (it != this->chunks.end()) {
+            return &it->second;
+        } 
     }
+    
+    
+    Chunk chunk = generateTerrainChunk(*this,x,z);
+    std::unique_lock lock(chunkGenLock);
+    auto [iter, success] = this->chunks.emplace(
+        std::piecewise_construct,
+        std::forward_as_tuple(key),
+        std::forward_as_tuple(std::move(chunk))
+    );
+
+    return &iter->second;
 }
 
-std::optional<std::reference_wrapper<Chunk>> World::getChunk(int x, int z){
-    glm::vec2 key = glm::vec2(x,z);
+Chunk* World::getChunk(int x, int z){
+    const glm::vec2 key = glm::vec2(x,z);
     
+    std::shared_lock lock(chunkGenLock);
+
     auto it = this->chunks.find(key);
     if (it != this->chunks.end()) {
-        return it->second;
+        return &it->second;
     }
 
-    return std::nullopt;
+    return nullptr;
 }
 
 std::size_t Vec2Hash::operator()(const glm::vec2& v) const noexcept{
@@ -35,17 +51,15 @@ bool Vec2Equal::operator()(const glm::vec2& lhs, const glm::vec2& rhs) const noe
 
 
 
-void generateChunkMeshThread(Chunk& chunk){
-    chunk.meshGenerating = 1;
-    chunk.meshGenerated = 0;
+static int threadsTotal = 0;
+void generateChunkMeshThread(Chunk* chunk){
 
     //struct timespec start, end;
     
      //Start timer
     //clock_gettime(CLOCK_REALTIME, &start);
 
-    chunk.generateMeshes();
-
+    chunk->generateMeshes();
     // End timer
     //clock_gettime(CLOCK_REALTIME, &end);
 
@@ -55,58 +69,51 @@ void generateChunkMeshThread(Chunk& chunk){
 
     //printf("Time generate chunk mesh: %fs\n", elapsed_time);
 
-    chunk.meshGenerating = 0;
-    chunk.meshGenerated = 1;
+    chunk->meshGenerating = false;
+    chunk->meshGenerated = true;
+    threadsTotal--;
 }
 
-std::optional<std::reference_wrapper<Chunk>> World::getChunkWithMesh(int x, int y){
-    auto chunkOpt = this->getChunk(x, y);
-    if(!chunkOpt) return std::nullopt;
+Chunk* World::getChunkWithMesh(int x, int y){
+    Chunk* chunk = this->getChunk(x, y);
+    if(!chunk) return nullptr;
 
-    Chunk& chunk = chunkOpt.value();
+    if(!chunk->meshGenerated && !chunk->meshGenerating && threadsTotal < 128){
+        threadsTotal++;
+        std::thread t1(generateChunkMeshThread, chunk);
+        chunk->meshGenerating = true;
 
-    if(!chunk.meshGenerated && !chunk.meshGenerating){
-        std::thread t1(generateChunkMeshThread, std::ref(chunk));
         t1.detach();
-        return std::nullopt;
+        return nullptr;
     }
 
-    if(!chunk.buffersLoaded && chunk.meshGenerated){
-        if(!chunk.buffersAsigned){
-            chunk.solidBuffer = GLBuffer();
-            chunk.solidBackBuffer = GLBuffer();
-
-            chunk.transparentBuffer = GLBuffer();
-            chunk.transparentBackBuffer = GLBuffer();
-            chunk.buffersAsigned = 1;
+    if(!chunk->buffersLoaded && chunk->meshGenerated){
+        if(!chunk->solidBuffer){
+            chunk->solidBuffer = std::make_unique<GLDoubleBuffer>();
         }
         //printf("Loading meshes %2i:%2i (%i)...\n",x,z,chunk->buffersLoaded);
-
+        if (chunk->solidBuffer && chunk->solidMesh.has_value()) {
+            GLDoubleBuffer& dbuffer = *chunk->solidBuffer;
+            dbuffer.getBackBuffer().loadMesh(chunk->solidMesh.value());
+            chunk->solidMesh.reset();
+            dbuffer.swap();
+     
+            chunk->buffersLoaded = true;
+            chunk->isDrawn = true;
+        }
+        else{
+            std::cerr << "NAH FAM" << std::endl;
+        }
         //printf("Vertices:%i Indices:%i\n", chunk->solidMesh->vertices_count, chunk->solidMesh->indices_count);
-        chunk.solidBackBuffer.loadMesh(chunk.solidMesh.value());
-        chunk.transparentBackBuffer.loadMesh(chunk.transparentMesh.value());
-
-        chunk.solidMesh.reset();
-        chunk.transparentMesh.reset();
         
-        GLBuffer tempSolid = chunk.solidBuffer;
-        GLBuffer tempTransparent = chunk.transparentBuffer;
-
-        chunk.solidBuffer = chunk.solidBackBuffer;
-        chunk.transparentBuffer =  chunk.transparentBackBuffer;
-
-        chunk.solidBackBuffer = tempSolid;
-        chunk.transparentBackBuffer = tempTransparent;
-
-        chunk.buffersLoaded = 1;
-        chunk.isDrawn = 1;
+        return nullptr;
     }
 
    return chunk;
 }
 
-CollisionCheckResult World::checkForPointCollision(float x, float y, float z, int includeRectangularColliderLess){
-    CollisionCheckResult result = {std::nullopt, false, 0,0,0};
+CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bool includeRectangularColliderLess){
+    CollisionCheckResult result = {nullptr, false, 0,0,0};
     int range = 3;
 
     float blockWidth = 1;
@@ -118,11 +125,9 @@ CollisionCheckResult World::checkForPointCollision(float x, float y, float z, in
                 int cy = y + j;
                 int cz = z + g;
 
-                auto blockOpt = this->getBlock(cx, cy, cz);
-                if(blockOpt){
-                    const Block& blocki = blockOpt.value();
-
-                    BlockType block = predefinedBlocks[blocki.type];
+                Block* blocki = this->getBlock(cx, cy, cz);
+                if(blocki){
+                    BlockType block = getBlockType(blocki);
                     if(block.colliders.size() == 0 && !includeRectangularColliderLess) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
@@ -155,7 +160,7 @@ CollisionCheckResult World::checkForPointCollision(float x, float y, float z, in
 }
 
 CollisionCheckResult World::checkForRectangularCollision(float x, float y, float z, RectangularCollider* collider){
-    CollisionCheckResult result = {std::nullopt, false, 0,0,0};
+    CollisionCheckResult result = {nullptr, false, 0,0,0};
     int range = 3;
 
     for(int i = -range;i <= range;i++){
@@ -165,12 +170,10 @@ CollisionCheckResult World::checkForRectangularCollision(float x, float y, float
                 int cy = (int)floor(y + j);
                 int cz = (int)floor(z + g);
 
-                auto blockOpt = this->getBlock(cx, cy, cz);
-                if(blockOpt){
-                    const Block& blocki = blockOpt.value();
-
-                    BlockType block = predefinedBlocks[blocki.type];
-                    if(block.colliders.size() == 0) continue;
+                Block* blocki = this->getBlock(cx, cy, cz);
+                if(blocki){
+                    BlockType block = getBlockType(blocki);
+                    if(block.colliders.size() == 0 || blocki->type == BlockTypes::Air) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
 
@@ -247,8 +250,8 @@ RaycastResult World::raycast(float fromX, float fromY, float fromZ, float dirX, 
     return result;
 }
 
-std::optional<std::reference_wrapper<const Block>> World::getBlock(int x, int y, int z){
-    if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return std::nullopt;
+Block* World::getBlock(int x, int y, int z){
+    if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return nullptr;
     
     int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
     int chunkZ = floor((double)z / (double)DEFAULT_CHUNK_SIZE);
@@ -257,13 +260,13 @@ std::optional<std::reference_wrapper<const Block>> World::getBlock(int x, int y,
     int iz = abs(z - chunkZ * DEFAULT_CHUNK_SIZE);
     //printf("Chunk coords: %ix%i Block coords: %i(%i)x%ix%i(%i)\n", chunkX, chunkZ, ix,y,iz);
 
-    auto chunkOpt = this->getChunk(chunkX, chunkZ);
-    if(!chunkOpt) return this->generateChunk(chunkX, chunkZ).getBlock(ix,y,iz);
+    Chunk* chunk = this->getChunk(chunkX, chunkZ);
+    if(!chunk) return this->generateAndGetChunk(chunkX, chunkZ)->getBlock(ix,y,iz);
 
-    return chunkOpt.value().get().getBlock(ix, y, iz);
+    return chunk->getBlock(ix, y, iz);
 }
 
-std::optional<std::reference_wrapper<Chunk>> World::getChunkFromBlockPosition(int x, int z){
+Chunk* World::getChunkFromBlockPosition(int x, int z){
     int cx,cz;
     if(x >= 0) cx = x / DEFAULT_CHUNK_SIZE;
     else cx = x / DEFAULT_CHUNK_SIZE - 1;
@@ -273,8 +276,8 @@ std::optional<std::reference_wrapper<Chunk>> World::getChunkFromBlockPosition(in
     return this->getChunk(cx, cz);
 }
 
-int World::setBlock(int x, int y, int z, Block index){
-    if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return INVALID_COORDINATES;
+bool World::setBlock(int x, int y, int z, Block index){
+    if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return false;
     
     int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
     int chunkZ = floor((double)z / (double)DEFAULT_CHUNK_SIZE);
@@ -285,10 +288,9 @@ int World::setBlock(int x, int y, int z, Block index){
 
     //Block* i = getWorldBlock(world, ix, y, iz);
 
-    auto chunkOpt = this->getChunk(chunkX, chunkZ);
-    if(!chunkOpt) this->generateChunk(chunkX, chunkZ).setBlock(ix,y,iz,index);
+    Chunk* chunk = this->getChunk(chunkX, chunkZ);
+    if(!chunk) this->generateAndGetChunk(chunkX, chunkZ)->setBlock(ix,y,iz,index);
+    else chunk->setBlock(ix, y, iz, index);
 
-    chunkOpt.value().get().setBlock(ix, y, iz, index);
-
-    return OK;
+    return true;
 }

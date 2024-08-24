@@ -11,6 +11,8 @@
 #include <map>
 #include <optional>
 #include <functional>
+#include <mutex>
+#include <memory>
 
 #define OK -1
 #define INVALID_COORDINATES -2
@@ -29,7 +31,7 @@ struct RectangularCollider {
     float width, height, depth;
 };
 
-enum class BlockTypeEnum {
+enum class BlockTypes {
     Air,
     Grass,
     Dirt,
@@ -43,7 +45,10 @@ enum class BlockTypeEnum {
 };
 
 typedef struct Block{
-    BlockTypeEnum type;
+    BlockTypes type;
+
+    Block();
+    Block(BlockTypes type);
 } Block;
 
 struct BlockType {
@@ -51,13 +56,13 @@ struct BlockType {
     bool untextured = false;
     bool repeatTexture = false;
     std::vector<unsigned char> textures = {};
-    std::vector<RectangularCollider> colliders;
+    std::vector<RectangularCollider> colliders = {{0, 0, 0, 1.0f, 1.0f, 1.0f}};
 
     // Constructor for convenience
     BlockType(bool transparent = false, bool untextured = false, bool repeatTexture = false,
               std::vector<unsigned char> textures = {}, std::vector<RectangularCollider> colliders = {})
         : transparent(transparent), untextured(untextured), repeatTexture(repeatTexture),
-          textures(std::move(textures)), colliders(std::move(colliders)) {}
+          textures(std::move(textures)) {}
 };
 
 struct FaceDefinition {
@@ -81,34 +86,28 @@ class World;
 
 class Chunk{
     private:
-        glm::vec2 worldPosition;
+        glm::vec2 worldPosition = glm::vec2(0,0);
         World& world;
 
-        Block blocks[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE];
+        Block blocks[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE] = {};
         //unsigned char lightArray[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][3];
         
     public:
-        bool meshGenerating;
-        bool meshGenerated;
+        bool meshGenerating = false;
+        bool meshGenerated = false;
 
-        bool buffersLoaded;
-        bool buffersAsigned;
-
-        GLBuffer solidBuffer;
-        GLBuffer solidBackBuffer;
-
-        GLBuffer transparentBuffer;
-        GLBuffer transparentBackBuffer;
-
+        bool buffersLoaded = false;
+        
+        std::unique_ptr<GLDoubleBuffer> solidBuffer;
         std::optional<Mesh> solidMesh;
-        std::optional<Mesh> transparentMesh;
+        //std::optional<Mesh> transparentMesh;
 
         bool isDrawn;
 
         Chunk(World& world, const glm::vec2& pos);
 
-        const Block& getBlock(unsigned int x, unsigned int y, unsigned int z);
-        void setBlock(unsigned int x, unsigned int y, unsigned int z, Block value);
+        Block* getBlock(unsigned int x, unsigned int y, unsigned int z);
+        bool setBlock(unsigned int x, unsigned int y, unsigned int z, Block value);
 
         void generateMeshes();
         void regenerateMesh();
@@ -116,7 +115,18 @@ class Chunk{
         const glm::vec2& getWorldPosition();
         World& getWorld();
 }; 
-extern std::map<BlockTypeEnum, BlockType> predefinedBlocks;
+extern std::unordered_map<BlockTypes, BlockType> predefinedBlocks;
+extern std::mutex predefinedBlockMutex;
+
+inline const BlockType& getBlockType(Block* block){
+    if (block->type < BlockTypes::Air || block->type > BlockTypes::Sand) {
+        std::cerr << "Error: Invalid BlockTypes value: " << static_cast<int>(block->type) << std::endl;
+        std::terminate(); // Or handle the error appropriately
+    }
+    
+    //std::lock_guard<std::mutex> lock(predefinedBlockMutex);
+    return predefinedBlocks[block->type];
+}
 
 #include <world.hpp>
 
