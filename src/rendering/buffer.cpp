@@ -15,7 +15,7 @@ void checkGLError(const char *file, int line){
             default:                               errorString = "Unknown error"; break;
         }
         std::cerr << "OpenGL error in file " << file << " at line " << line << " " << errorString << std::endl;
-        throw std::runtime_error("Opengl error.");
+        //throw std::runtime_error("Opengl error.");
     }
 }
 

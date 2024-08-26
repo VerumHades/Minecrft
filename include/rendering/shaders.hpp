@@ -4,53 +4,44 @@
 #include <glad/glad.h>
 #include <iostream>
 #include <cstdlib>
-#include <standard.hpp>
 #include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp> 
 #include <glm/gtc/type_ptr.hpp>  
 #include <rendering/buffer.hpp>
+#include <fstream>
+#include <sstream>
 
 #define MAX_SHADERS 16
 
 class ShaderProgram{
     private:
-        unsigned int program;
-        std::vector<unsigned int> shaders;
+        int program;
+        std::vector<int> shaders;
 
-        glm::mat4 projectionMatrix;
-        glm::mat4 viewMatrix;
-        glm::mat4 modelMatrix;
+        int projLoc = -1;
+        int viewLoc = -1;
+        int modelLoc = -1;
 
-        glm::vec3 cameraPosition = glm::vec3(0,0,0);
-        glm::vec3 cameraDirection = glm::vec3(0,0,0);
-        glm::vec3 cameraUp = glm::vec3(0,1,0);
-
-        unsigned int projLoc = -1;
-        unsigned int viewLoc = -1;
-        unsigned int modelLoc = -1;
-
-        bool projectionSetup = false;
-        bool isSkybox = false;
-
-        void setupProjection(int width, int height, float FOV);
-        void updateViewMatrix();
-
+        bool isSkybox_ = false;
     public:
         void initialize();
         ~ShaderProgram();
 
-        glm::vec3& getCameraDirection();
-
-        void addShader(char* filename, int type);
+        void addShader(std::string filename, int type);
         void compile();
-        void use();
+        void use(){
+            glUseProgram(this->program);
+            CHECK_GL_ERROR();
+        }
 
-        void recalculateProjection(int width, int height, float FOV);
-        void setModelPosition(float x, float y, float z);
-        void setCameraPosition(float x, float y, float z);
-        void setCameraRotation(float pitch, float yaw);
-        void makeSkybox();
+        int getProjLoc() {return projLoc;};
+        int getViewLoc() {return viewLoc;};
+        int getModelLoc() {return modelLoc;};
 
+        bool isSkybox(){return isSkybox_; }; 
+        void makeSkybox(){this->isSkybox_ = true;};
+
+        int getID() {return program;};
 };
 #endif

@@ -36,19 +36,21 @@ ShaderProgram::~ShaderProgram(){
     glDeleteProgram(this->program);
 }
 
-glm::vec3& ShaderProgram::getCameraDirection(){
-    return this->cameraDirection;
-}
-
-void ShaderProgram::addShader(char* filename, int type){
-    char* source = readFilename(filename);
-    if(source == NULL){
-        printf("Failed to read shader source file '%s'\n", filename);
-        exit(-1);
+void ShaderProgram::addShader(std::string filename, int type){
+    std::ifstream file(filename);  // Open the file
+    if (!file.is_open()) {              // Check if the file is open
+        std::cerr << "Failed to open shader file: " << filename << std::endl;
         return;
     }
 
-    unsigned int shader = compileShader(source, type);
+    std::stringstream buffer;
+    buffer << file.rdbuf();             
+
+    std::string source = buffer.str();
+
+    file.close();  // Close the file
+
+    unsigned int shader = compileShader(source.c_str(), type);
     this->shaders.push_back(shader);
 }
 
@@ -63,13 +65,9 @@ void ShaderProgram::compile(){
     for(int i = 0;i < this->shaders.size();i++){
         glDeleteShader(this->shaders[i]);
     }
-}
 
-void ShaderProgram::use(){
-    glUseProgram(this->program);
-}
-
-void ShaderProgram::makeSkybox(){
-    this->isSkybox = true;
+    this->projLoc = glGetUniformLocation(this->program, "projection");
+    this->viewLoc = glGetUniformLocation(this->program, "view");
+    this->modelLoc = glGetUniformLocation(this->program, "model");
 }
 

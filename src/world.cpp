@@ -78,7 +78,7 @@ Chunk* World::getChunkWithMesh(int x, int y){
     Chunk* chunk = this->getChunk(x, y);
     if(!chunk) return nullptr;
 
-    if(!chunk->meshGenerated && !chunk->meshGenerating && threadsTotal < 128){
+    if(!chunk->meshGenerated && !chunk->meshGenerating && threadsTotal < 16){
         threadsTotal++;
         std::thread t1(generateChunkMeshThread, chunk);
         chunk->meshGenerating = true;
@@ -97,7 +97,7 @@ Chunk* World::getChunkWithMesh(int x, int y){
             dbuffer.getBackBuffer().loadMesh(chunk->solidMesh.value());
             chunk->solidMesh.reset();
             dbuffer.swap();
-     
+            
             chunk->buffersLoaded = true;
             chunk->isDrawn = true;
         }
@@ -128,7 +128,7 @@ CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bo
                 Block* blocki = this->getBlock(cx, cy, cz);
                 if(blocki){
                     BlockType block = getBlockType(blocki);
-                    if(block.colliders.size() == 0 && !includeRectangularColliderLess) continue;
+                    if((block.colliders.size() == 0 || blocki->type == BlockTypes::Air) && !includeRectangularColliderLess) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
 

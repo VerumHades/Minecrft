@@ -19,7 +19,11 @@ uniform vec3 camPos;
 void main()
 {
     //FragColor = texture(texture1, TexCoords) * vec4(LightLevel,1); //* diffuse;
-    FragColor = (texture(textureArray, vec3(TexCoords, TexIndex)) + vec4(Normals / 10,1.0));// * texture(lightArray, pos / vec3(64,256,64));
+
+    float dst = normalize((1000 - distance(camPos, crntPosition)) / 100);
+    vec4 color = texture(textureArray, vec3(TexCoords, TexIndex)) * dst + vec4(Normals / 10,1.0);
+
+    FragColor = color * dst;// * texture(lightArray, pos / vec3(64,256,64));
     //FragColor.a = 1.0;
     //FragColor = vec4(vec3(0.5,0.5,0.2) - Normals, 1);
 }

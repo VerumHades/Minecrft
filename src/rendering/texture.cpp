@@ -169,7 +169,8 @@ float skyboxVertices[] = {
      1.0f, -1.0f,  1.0f
 };
 
-GLSkybox::GLSkybox(std::array<std::string, 6> filenames){
+GLSkybox::GLSkybox(std::array<std::string, 6> filenames, ShaderProgram& program){
+    program.use();
     glGenTextures(1, &this->texture);
     glBindTexture(GL_TEXTURE_CUBE_MAP, this->texture);
 
@@ -183,24 +184,13 @@ GLSkybox::GLSkybox(std::array<std::string, 6> filenames){
             throw std::runtime_error("Failed to load texture when creating skybox.");
         }
 
+        if(nrChannels != 4 && nrChannels != 3){
+            throw std::runtime_error("Invalid channels in skybox texture.");
+        }
 
-        if(nrChannels == 3){
-            glTexImage2D(
-                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 
-                0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
-            );
-            stbi_image_free(data);
-        }
-        else if(nrChannels == 4){
-            glTexImage2D(
-                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 
-                0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data
-            );
-            stbi_image_free(data);
-        }
-        else{
-            throw std::runtime_error("Invalid number of channels in texture image.\n");
-        }
+        GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        stbi_image_free(data);
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -227,14 +217,25 @@ GLSkybox::GLSkybox(std::array<std::string, 6> filenames){
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
+    CHECK_GL_ERROR();
+
     this->vertexBuffer = VBO;
     this->vao = vao;
 }
 void GLSkybox::draw(){
     glDepthMask(GL_FALSE);
     glBindVertexArray(this->vao);
+    
+    CHECK_GL_ERROR();
+    
     glBindTexture(GL_TEXTURE_CUBE_MAP, this->texture);
+    
+    CHECK_GL_ERROR();
+
     glDrawArrays(GL_TRIANGLES, 0, 36);
+    
+    CHECK_GL_ERROR();
+    glBindVertexArray(0);
     glDepthMask(GL_TRUE);
 }
 GLSkybox::~GLSkybox(){

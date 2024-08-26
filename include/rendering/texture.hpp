@@ -26,6 +26,7 @@ class GLTextureArray{
         void loadFromFiles(std::vector<std::string> filenames, int layerWidth, int layerHeight);
         void bind();
 };
+class ShaderProgram;
 
 class GLSkybox{
     private:
@@ -33,7 +34,7 @@ class GLSkybox{
         unsigned int vertexBuffer;
         unsigned int vao;
     public:
-        GLSkybox(std::array<std::string, 6> filenames);
+        GLSkybox(std::array<std::string, 6> filenames, ShaderProgram& program);
         ~GLSkybox();
 
         void draw();

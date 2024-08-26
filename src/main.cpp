@@ -7,10 +7,9 @@
 #include <rendering/buffer.hpp>
 #include <rendering/shaders.hpp>
 #include <rendering/texture.hpp>
-#include <standard.hpp>
+#include <rendering/camera.hpp>
 
-ShaderProgram mainProgram;
-ShaderProgram skyboxProgram;
+Camera camera;
 
 int lastMouseX = 0;
 int lastMouseY = 0;
@@ -23,7 +22,7 @@ float camX = 0;
 float camY = 150;
 float camZ = 0;
 
-int renderDistance = 32;
+int renderDistance = 8;
 
 float accelX = 0;
 float accelZ = 0;
@@ -49,19 +48,27 @@ struct BoundKey{
     {GLFW_KEY_A},
     {GLFW_KEY_D}
 };
-int boundKeysCount = arrayLen(boundKeys);
+int boundKeysCount = sizeof(boundKeys) / sizeof(boundKeys[0]);
+
+static bool lineMode = false;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
     for(int i = 0; i < boundKeysCount;i++){
         if(key == boundKeys[i].key && action == GLFW_PRESS) boundKeys[i].isDown = true; 
         else if(key == boundKeys[i].key && action == GLFW_RELEASE) boundKeys[i].isDown = false; 
     }
+
+    if(key == GLFW_KEY_M && action == GLFW_PRESS){
+        lineMode = !lineMode;
+        if(!lineMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     glViewport(0,0,width,height);
-    mainProgram.recalculateProjection(width, height, camFOV);
-    skyboxProgram.recalculateProjection(width, height, camFOV);
+    camera.resizeScreen(width, height, camFOV);
+    camera.updateUniforms();
     //printf("%i %i\n",width,height);
 }
 
@@ -86,14 +93,13 @@ void cursor_position_callback(GLFWwindow* window, double mouseX, double mouseY)
     if (camPitch < -89.0f)
         camPitch = -89.0f;
 
-    mainProgram.setCameraRotation(camPitch, camYaw);
-    skyboxProgram.setCameraRotation(camPitch, camYaw);
+    camera.setRotation(camPitch, camYaw);
 }
 
 //static int selectedBlock = 1;
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-    glm::vec3& camDirection = mainProgram.getCameraDirection();
+    glm::vec3& camDirection = camera.getDirection();
 
     RaycastResult hit = world.raycast(camX,camY,camZ,camDirection.x, camDirection.y, camDirection.z,10);
     
@@ -135,25 +141,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     }*/
 }
 
-void GLAPIENTRY debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
-    std::cerr << "OpenGL Debug Message: " << message << std::endl;
-    // You can add more detailed processing based on the parameters
-}
-
-bool isGLDebugSupported() {
-    return glad_glDebugMessageCallback != nullptr;
-}
-
-void setupDebugCallback() {
-    if (isGLDebugSupported()) {
-        glEnable(GL_DEBUG_OUTPUT);
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-
-        glDebugMessageCallback(debugCallback, nullptr);
-        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-    } else {
-        std::cerr << "GL_KHR_debug not supported!" << std::endl;
-    }
+int clampAngle(int angle) {
+    return (angle % 360 + 360) % 360;
 }
 
 int main() {
@@ -191,8 +180,6 @@ int main() {
         return -1;
     }
 
-    setupDebugCallback();
-
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     
@@ -200,24 +187,11 @@ int main() {
     glCullFace(GL_BACK);     // Cull back faces
     glFrontFace(GL_CW);     // Set counterclockwise winding order as front*/
     //glDepthMask(GL_FALSE);
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     //glEnable(GL_BLEND);
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    mainProgram.initialize();
-    mainProgram.addShader("shaders/vertex.vs", GL_VERTEX_SHADER);
-    mainProgram.addShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
-    mainProgram.compile();
-    mainProgram.recalculateProjection(1920,1080,camFOV);
 
-    skyboxProgram.initialize();
-    skyboxProgram.addShader("shaders/skybox.vs", GL_VERTEX_SHADER);
-    skyboxProgram.addShader("shaders/skybox.fs", GL_FRAGMENT_SHADER);
-    skyboxProgram.compile();
-    skyboxProgram.makeSkybox();
-    mainProgram.recalculateProjection(1920,1080,camFOV);
-
+    camera.addShader("main", "shaders/vertex.vs","shaders/fragment.fs");
     std::array<std::string,6> skyboxPaths = {
         "skybox/stars/right.png",
         "skybox/stars/left.png",
@@ -226,8 +200,10 @@ int main() {
         "skybox/stars/front.png",
         "skybox/stars/back.png"
     };
-    GLSkybox skybox = GLSkybox(skyboxPaths);
-    
+
+    camera.addSkybox("shaders/skybox.vs","shaders/skybox.fs", skyboxPaths);
+   // GLSkybox skybox = GLSkybox(skyboxPaths);
+
     std::vector<std::string> texturePaths = {
         "textures/grass_top.png",
         "textures/grass_side.png",
@@ -242,10 +218,12 @@ int main() {
         "textures/blue_wool.png",
         "textures/sand.png"
     };
+
+    camera.getProgram("main").use();
     GLTextureArray tilemap = GLTextureArray();
     tilemap.loadFromFiles(texturePaths,160,160);
 
-    //unsigned int camPosLoc = glGetUniformLocation(mainProgram.program,"camPos");
+    int camPosLoc = glGetUniformLocation(camera.getProgram("main").getID(),"camPos");
 
     clock_t last = clock();
     clock_t current = clock();
@@ -309,16 +287,14 @@ int main() {
         }
         else camZ += accelZ;
 
-        //glUniform3f(camPosLoc, -camX, -camY, -camZ);
+
         //printf("x:%f y:%f z:%f ax:%f ay:%f az:%f\n",camX,camY,camZ,accelX,accelY,accelZ);
-        mainProgram.setCameraPosition(camX, camY, camZ);
+        camera.setPosition(camX, camY, camZ);
+        camera.updateUniforms();
+        camera.drawSkybox();
 
-        glDisable(GL_CULL_FACE);
-        skyboxProgram.use();
-        skybox.draw();
-        glEnable(GL_CULL_FACE);
-
-        mainProgram.use();
+        camera.getProgram("main").use();
+        glUniform3f(camPosLoc, camX, camY, camZ);
         tilemap.bind();
 
         int camWorldX = camX / DEFAULT_CHUNK_SIZE;
@@ -350,7 +326,9 @@ int main() {
                 
                 if(!chunk->isDrawn) continue;
 
-                mainProgram.setModelPosition(chunkX * DEFAULT_CHUNK_SIZE,0,chunkZ * DEFAULT_CHUNK_SIZE);
+                camera.setModelPosition(chunkX * DEFAULT_CHUNK_SIZE,0,chunkZ * DEFAULT_CHUNK_SIZE);
+                camera.updateUniforms();
+                camera.getProgram("main").use();
 
                 chunk->solidBuffer->getBuffer().draw();
             }
