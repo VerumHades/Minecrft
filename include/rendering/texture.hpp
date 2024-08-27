@@ -34,7 +34,7 @@ class GLSkybox{
         unsigned int vertexBuffer;
         unsigned int vao;
     public:
-        GLSkybox(std::array<std::string, 6> filenames, ShaderProgram& program);
+        GLSkybox(std::array<std::string, 6> filenames);
         ~GLSkybox();
 
         void draw();

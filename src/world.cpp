@@ -84,29 +84,28 @@ Chunk* World::getChunkWithMesh(int x, int y){
         chunk->meshGenerating = true;
 
         t1.detach();
+        if(chunk->isDrawn) return chunk;
         return nullptr;
-    }
+    } 
 
     if(!chunk->buffersLoaded && chunk->meshGenerated){
         if(!chunk->solidBuffer){
             chunk->solidBuffer = std::make_unique<GLDoubleBuffer>();
         }
         //printf("Loading meshes %2i:%2i (%i)...\n",x,z,chunk->buffersLoaded);
-        if (chunk->solidBuffer && chunk->solidMesh.has_value()) {
+        if (chunk->solidBuffer && chunk->solidMesh) {
             GLDoubleBuffer& dbuffer = *chunk->solidBuffer;
-            dbuffer.getBackBuffer().loadMesh(chunk->solidMesh.value());
-            chunk->solidMesh.reset();
-            dbuffer.swap();
             
+            dbuffer.getBackBuffer().loadMesh(*chunk->solidMesh);
+            dbuffer.swap();
+            chunk->solidMesh = nullptr;
+
             chunk->buffersLoaded = true;
             chunk->isDrawn = true;
         }
-        else{
-            std::cerr << "NAH FAM" << std::endl;
-        }
         //printf("Vertices:%i Indices:%i\n", chunk->solidMesh->vertices_count, chunk->solidMesh->indices_count);
         
-        return nullptr;
+        if(chunk->isDrawn) return chunk;
     }
 
    return chunk;
@@ -267,13 +266,20 @@ Block* World::getBlock(int x, int y, int z){
 }
 
 Chunk* World::getChunkFromBlockPosition(int x, int z){
-    int cx,cz;
-    if(x >= 0) cx = x / DEFAULT_CHUNK_SIZE;
-    else cx = x / DEFAULT_CHUNK_SIZE - 1;
-    if(z >= 0) cz = z / DEFAULT_CHUNK_SIZE;
-    else cz = z / DEFAULT_CHUNK_SIZE - 1;
+    int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
+    int chunkZ = floor((double)z / (double)DEFAULT_CHUNK_SIZE);
 
-    return this->getChunk(cx, cz);
+    return this->getChunk(chunkX, chunkZ);
+}
+
+glm::vec2 World::getBlockInChunkPosition(int x, int z){
+    int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
+    int chunkZ = floor((double)z / (double)DEFAULT_CHUNK_SIZE);
+
+    int ix = abs(x - chunkX * DEFAULT_CHUNK_SIZE);
+    int iz = abs(z - chunkZ * DEFAULT_CHUNK_SIZE);
+
+    return glm::vec2(ix,iz);
 }
 
 bool World::setBlock(int x, int y, int z, Block index){

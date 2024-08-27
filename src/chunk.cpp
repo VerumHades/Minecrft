@@ -55,12 +55,27 @@ World& Chunk::getWorld(){
 
 void Chunk::regenerateMesh(){
     if(!this->buffersLoaded) return;
+    if(!this->isDrawn) return;
+    if(this->meshGenerating) return;
 
     this->meshGenerated = 0;
     this->meshGenerating = 0;
     this->buffersLoaded = 0;
 }
 
+#define regenMesh(x,z) { \
+    Chunk* temp = this->world.getChunk(x, z);\
+    if(temp) temp->regenerateMesh();\
+}
+void Chunk::regenerateMesh(glm::vec2 blockCoords){
+    this->regenerateMesh();
+    if(blockCoords.x == 0) regenMesh(this->worldPosition.x - 1, this->worldPosition.y);
+    if(blockCoords.x == DEFAULT_CHUNK_SIZE - 1) regenMesh(this->worldPosition.x + 1, this->worldPosition.y);
+
+    if(blockCoords.y == 0) regenMesh(this->worldPosition.x, this->worldPosition.y - 1);
+    if(blockCoords.y == DEFAULT_CHUNK_SIZE - 1) regenMesh(this->worldPosition.x, this->worldPosition.y + 1);
+}
+#undef regenMesh
 
 Block* Chunk::getBlock(unsigned int x, unsigned int y, unsigned int z){
     if(x >= DEFAULT_CHUNK_SIZE) return nullptr;
@@ -125,11 +140,8 @@ static std::vector<FaceDefinition> faceDefinitions = {
 };
 
 void Chunk::generateMeshes(){
-    this->solidMesh = Mesh();
-    //this->transparentMesh = Mesh();
-
-    this->solidMesh.value().setVertexFormat({3,3,2,1,3});
-    //this->transparentMesh.value().setVertexFormat({3,3,2,1,3});
+    this->solidMesh = std::make_unique<Mesh>();
+    this->solidMesh->setVertexFormat({3,3,2,1,3});
 
     bool checked[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][6] = {};
 
@@ -280,7 +292,7 @@ void Chunk::generateMeshes(){
                         vertices[def.vertexIndexes[3]]
                     };
 
-                    this->solidMesh.value().addQuadFace(
+                    this->solidMesh->addQuadFace(
                         vertexArray,
                         glm::vec3(def.offsetX, def.offsetY,  def.offsetZ),
                         metadata,

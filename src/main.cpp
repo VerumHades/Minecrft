@@ -22,7 +22,7 @@ float camX = 0;
 float camY = 150;
 float camZ = 0;
 
-int renderDistance = 8;
+int renderDistance = 16;
 
 float accelX = 0;
 float accelZ = 0;
@@ -32,7 +32,11 @@ float camSpeed = 0.002;
 float M_PI_D180 = M_PI / 180;
 
 float camFOV = 90;
+float maxFOV = 90;
+float minFOV = 10;
+
 float halfCamFov = 50;
+
 
 RectangularCollider playerCollider = {-0.3,-1.7, -0.3, 0.6, 1.8, 0.6};
 World world;
@@ -80,7 +84,7 @@ void cursor_position_callback(GLFWwindow* window, double mouseX, double mouseY)
     lastMouseY = mouseY;
 
     xoffset *= sensitivity;
-    yoffset *= sensitivity;
+    yoffset *= sensitivity * 2;
 
     camYaw += xoffset;
     camPitch += yoffset;
@@ -108,12 +112,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
         auto chunk = world.getChunkFromBlockPosition(hit.x, hit.z);
         if(!chunk) return;
-        chunk->regenerateMesh();
+        chunk->regenerateMesh(world.getBlockInChunkPosition(hit.x, hit.z));
         
-        /*chunk = getWorldChunk(chunk.worldX + 1, chunk.worldZ   ); regenerateChunkMesh(chunk);
-        chunk = getWorldChunk(chunk.worldX - 1, chunk.worldZ   ); regenerateChunkMesh(chunk);
-        chunk = getWorldChunk(chunk.worldX    , chunk.worldZ + 1); regenerateChunkMesh(chunk);
-        chunk = getWorldChunk(chunk.worldX    , chunk.worldZ - 1); regenerateChunkMesh(chunk);*/
     }
     else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hit){
         CollisionCheckResult result = world.checkForPointCollision(hit.lastX, hit.lastY, hit.lastZ, 1);
@@ -129,16 +129,21 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
         auto chunk = world.getChunkFromBlockPosition(result.x, result.z);
         if(!chunk) return;
-        chunk->regenerateMesh();
-        /*chunk = getWorldChunk(world, chunk.worldX + 1, chunk.worldZ   ); regenerateChunkMesh(chunk);
-        chunk = getWorldChunk(world, chunk.worldX - 1, chunk.worldZ   ); regenerateChunkMesh(chunk);
-        chunk = getWorldChunk(world, chunk.worldX    , chunk.worldZ + 1); regenerateChunkMesh(chunk);
-        chunk = getWorldChunk(world, chunk.worldX    , chunk.worldZ - 1); regenerateChunkMesh(chunk);*/
-
+        chunk->regenerateMesh(world.getBlockInChunkPosition(result.x, result.z));
     }
     /*else if(button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS){
         selectedBlock = (selectedBlock + 1) % 5 + 1;
     }*/
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    camFOV -= yoffset * 5;
+
+    if(camFOV < minFOV) camFOV = minFOV;
+    else if(camFOV > maxFOV) camFOV = maxFOV;
+
+    camera.adjustFOV(camFOV);
 }
 
 int clampAngle(int angle) {
@@ -173,6 +178,7 @@ int main() {
     glfwSetCursorPosCallback(window, cursor_position_callback);
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetScrollCallback(window, scroll_callback);
     
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -219,7 +225,7 @@ int main() {
         "textures/sand.png"
     };
 
-    camera.getProgram("main").use();
+    camera.useProgram("main");
     GLTextureArray tilemap = GLTextureArray();
     tilemap.loadFromFiles(texturePaths,160,160);
 
@@ -293,7 +299,7 @@ int main() {
         camera.updateUniforms();
         camera.drawSkybox();
 
-        camera.getProgram("main").use();
+        camera.useProgram("main");
         glUniform3f(camPosLoc, camX, camY, camZ);
         tilemap.bind();
 
@@ -328,9 +334,8 @@ int main() {
 
                 camera.setModelPosition(chunkX * DEFAULT_CHUNK_SIZE,0,chunkZ * DEFAULT_CHUNK_SIZE);
                 camera.updateUniforms();
-                camera.getProgram("main").use();
 
-                chunk->solidBuffer->getBuffer().draw();
+                if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();
             }
         }
         /* Swap front and back buffers */

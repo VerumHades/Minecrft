@@ -53,6 +53,7 @@ class World{
         Chunk* getChunk(int x, int z);
         Chunk* getChunkWithMesh(int x, int z);
         Chunk* getChunkFromBlockPosition(int x, int z);
+        glm::vec2 getBlockInChunkPosition(int x, int z);
 
         CollisionCheckResult checkForPointCollision(float x, float y, float z, bool includeRectangularColliderLess);
         CollisionCheckResult checkForRectangularCollision(float x, float y, float z, RectangularCollider* collider);

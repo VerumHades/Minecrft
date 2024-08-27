@@ -5,7 +5,13 @@ void Camera::resizeScreen(int width, int height, float FOV){
     //this->viewMatrix = glm::mat4(1.0f);
     //this->modelMatrix = glm::mat4(1.0f);
 
+    this->screenWidth = width;
+    this->screenHeight = height;
     updateUniforms();
+}
+
+void Camera::adjustFOV(float FOV){
+    this->projectionMatrix = glm::perspective(glm::radians(FOV), (float) this->screenWidth / (float) this->screenHeight, 0.1f, 1000.0f);
 }
 
 Camera::Camera(){
@@ -26,6 +32,7 @@ void Camera::updateUniforms(){
             glUniformMatrix4fv(program.getModelLoc(), 1, GL_FALSE, glm::value_ptr(this->modelMatrix));
         }
     }
+    if(this->programs.find(this->currentProgram) != this->programs.end()) this->programs[this->currentProgram].use();
 }
 
 void Camera::setModelPosition(float x, float y, float z){
@@ -58,8 +65,9 @@ void Camera::addShader(std::string name, std::string vertex, std::string fragmen
 void Camera::addSkybox(std::string vertex, std::string fragment, std::array<std::string,6> paths){
     this->addShader("skybox", vertex, fragment);
     this->getProgram("skybox").makeSkybox();
+    this->useProgram("skybox");
     
-    this->skybox = std::make_unique<GLSkybox>(paths, this->getProgram("skybox"));
+    this->skybox = std::make_unique<GLSkybox>(paths);
 }
 
 ShaderProgram& Camera::getProgram(std::string name){
@@ -69,6 +77,15 @@ ShaderProgram& Camera::getProgram(std::string name){
 
     return this->programs[name];
 }
+void Camera::useProgram(std::string name){
+    if(this->programs.find(name) == this->programs.end()){
+        throw std::runtime_error("Failed to find program: " + name);
+    }
+
+    if(this->currentProgram == name) return;
+    this->currentProgram = name;
+    this->programs[name].use();
+}
 
 void Camera::drawSkybox(){
     if((this->programs.find("skybox") == programs.end()) && skybox){
@@ -76,7 +93,7 @@ void Camera::drawSkybox(){
         return;
     }
     glDisable(GL_CULL_FACE);
-    this->getProgram("skybox").use();
+    this->useProgram("skybox");
     this->skybox->draw();
     glEnable(GL_CULL_FACE);
 }

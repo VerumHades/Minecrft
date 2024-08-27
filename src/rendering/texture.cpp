@@ -169,8 +169,7 @@ float skyboxVertices[] = {
      1.0f, -1.0f,  1.0f
 };
 
-GLSkybox::GLSkybox(std::array<std::string, 6> filenames, ShaderProgram& program){
-    program.use();
+GLSkybox::GLSkybox(std::array<std::string, 6> filenames){
     glGenTextures(1, &this->texture);
     glBindTexture(GL_TEXTURE_CUBE_MAP, this->texture);
 

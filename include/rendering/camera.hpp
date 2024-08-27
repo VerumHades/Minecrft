@@ -10,6 +10,7 @@
 class Camera{
     private:
         std::unique_ptr<GLSkybox> skybox;
+        std::string currentProgram;
         std::unordered_map<std::string,ShaderProgram> programs;
 
         glm::mat4 projectionMatrix;
@@ -20,9 +21,13 @@ class Camera{
         glm::vec3 direction = glm::vec3(1,0,0);
         glm::vec3 up = glm::vec3(0,1,0);
 
+        float screenWidth = 1920;
+        float screenHeight = 1080;
+
     public:
         Camera();
         void resizeScreen(int width, int height, float FOV);
+        void adjustFOV(float FOV);
         void updateUniforms();
 
         void setModelPosition(float x, float y, float z);
@@ -33,6 +38,7 @@ class Camera{
         void addSkybox(std::string vertex, std::string fragment, std::array<std::string,6> paths);
 
         ShaderProgram& getProgram(std::string name);
+        void useProgram(std::string name);
 
         glm::vec3& getDirection() {return direction;}
         void drawSkybox();

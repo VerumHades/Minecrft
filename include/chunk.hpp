@@ -99,7 +99,7 @@ class Chunk{
         bool buffersLoaded = false;
         
         std::unique_ptr<GLDoubleBuffer> solidBuffer;
-        std::optional<Mesh> solidMesh;
+        std::unique_ptr<Mesh> solidMesh;
         //std::optional<Mesh> transparentMesh;
 
         bool isDrawn;
@@ -111,6 +111,7 @@ class Chunk{
 
         void generateMeshes();
         void regenerateMesh();
+        void regenerateMesh(glm::vec2 blockCoords);
 
         const glm::vec2& getWorldPosition();
         World& getWorld();
