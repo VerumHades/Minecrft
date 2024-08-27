@@ -306,3 +306,27 @@ void Chunk::generateMeshes(){
 
     //std::cout << "Faces:" << this->solidMesh.value().getVertices().size() / 12 / 4 << std::endl;
 }
+
+
+static inline bool isOnOrForwardPlane(const Plane& plane, glm::vec3 center){
+    // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
+    const float r = 
+        std::abs(plane.normal.x) * (DEFAULT_CHUNK_SIZE / 2) +
+        std::abs(plane.normal.y) * (DEFAULT_CHUNK_HEIGHT / 2) +
+        std::abs(plane.normal.z) * (DEFAULT_CHUNK_SIZE / 2);
+
+    return -r <= plane.getSignedDistanceToPlane(center);
+}
+
+bool Chunk::isOnFrustum(Camera& camera) const {
+    //Get global scale thanks to our transform
+    Frustum& frustum = camera.getFrustum();
+    glm::vec3 position = glm::vec3(this->worldPosition.x * DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_HEIGHT / 2, this->worldPosition.y * DEFAULT_CHUNK_SIZE);
+
+    return isOnOrForwardPlane(frustum.leftFace, position) &&
+        isOnOrForwardPlane(frustum.rightFace, position) &&
+        isOnOrForwardPlane(frustum.topFace, position) &&
+        isOnOrForwardPlane(frustum.bottomFace, position) &&
+        isOnOrForwardPlane(frustum.nearFace, position) &&
+        isOnOrForwardPlane(frustum.farFace, position);
+};

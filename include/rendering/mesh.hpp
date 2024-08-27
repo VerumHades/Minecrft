@@ -28,7 +28,4 @@ class Mesh{
         const std::vector<unsigned int>& getIndices();
         const std::vector<int>& getFormat();
 };
-
-#include <chunk.hpp>
-
 #endif

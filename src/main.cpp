@@ -309,35 +309,39 @@ int main() {
         float offsetCamX = camX - cos(M_PI_D180 * camYaw) * (-camPitch - 90 + camY);
         float offsetCamZ = camZ - sin(M_PI_D180 * camYaw) * (-camPitch - 90 + camY);
 
+        int total = 0;
         for(int x = -renderDistance; x <= renderDistance; x++){
             for(int z = -renderDistance; z <= renderDistance; z++){
                 int chunkX = x + camWorldX;
                 int chunkZ = z + camWorldZ;
 
-                int realChunkX = chunkX * DEFAULT_CHUNK_SIZE + DEFAULT_CHUNK_SIZE/2;
+                /*int realChunkX = chunkX * DEFAULT_CHUNK_SIZE + DEFAULT_CHUNK_SIZE/2;
                 int realChunkZ = chunkZ * DEFAULT_CHUNK_SIZE + DEFAULT_CHUNK_SIZE/2;
 
                 float angle = clampAngle(atan2(offsetCamZ - realChunkZ, offsetCamX - realChunkX) * 180 / M_PI - 90);
                 float difference = abs(angle - (camYaw + 90));
                 difference = fmin(difference, 360 - difference);
 
-                if(difference > halfCamFov) continue; 
+                if(difference > halfCamFov) continue; */
 
-                Chunk* chunk = world.getChunkWithMesh(chunkX, chunkZ);
-                if(!chunk){
-                    if(!world.getChunk(chunkX, chunkZ)) world.generateAndGetChunk(chunkX, chunkZ);
-                    continue;
+                Chunk* meshlessChunk = world.getChunk(chunkX, chunkZ);
+                if(!meshlessChunk){
+                    meshlessChunk = world.generateAndGetChunk(chunkX, chunkZ);
                 }
-            
-                
+
+                if(!camera.isVisible(*meshlessChunk)) continue;
+                Chunk* chunk = world.getChunkWithMesh(chunkX, chunkZ);
+                if(!chunk) continue;
                 if(!chunk->isDrawn) continue;
 
                 camera.setModelPosition(chunkX * DEFAULT_CHUNK_SIZE,0,chunkZ * DEFAULT_CHUNK_SIZE);
                 camera.updateUniforms();
 
                 if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();
+                total++;
             }
         }
+        std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 

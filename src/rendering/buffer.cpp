@@ -104,11 +104,6 @@ void GLBuffer::draw(){
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
-
-const glm::vec2& Chunk::getWorldPosition(){
-    return this->worldPosition;
-}
-
 void GLDoubleBuffer::swap(){
     this->current = !this->current;
 }

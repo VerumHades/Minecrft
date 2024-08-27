@@ -4,9 +4,12 @@
 #include <cmath>
 #include <ctime>
 
+
 #include <rendering/texture.hpp>
 #include <rendering/buffer.hpp>
 #include <rendering/mesh.hpp>
+#include <rendering/camera.hpp>
+
 #include <glm/glm.hpp>
 #include <map>
 #include <optional>
@@ -84,7 +87,7 @@ struct FaceDefinition {
 
 class World;
 
-class Chunk{
+class Chunk: public Volume{
     private:
         glm::vec2 worldPosition = glm::vec2(0,0);
         World& world;
@@ -103,6 +106,7 @@ class Chunk{
         //std::optional<Mesh> transparentMesh;
 
         bool isDrawn;
+        bool isOnFrustum(Camera& cam) const;
 
         Chunk(World& world, const glm::vec2& pos);
 
@@ -113,8 +117,11 @@ class Chunk{
         void regenerateMesh();
         void regenerateMesh(glm::vec2 blockCoords);
 
-        const glm::vec2& getWorldPosition();
         World& getWorld();
+        const glm::vec2& getWorldPosition(){
+            return this->worldPosition;
+        }
+
 }; 
 extern std::unordered_map<BlockTypes, BlockType> predefinedBlocks;
 extern std::mutex predefinedBlockMutex;

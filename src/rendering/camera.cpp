@@ -1,17 +1,43 @@
 #include <rendering/camera.hpp>
 
 void Camera::resizeScreen(int width, int height, float FOV){
-    this->projectionMatrix = glm::perspective(glm::radians(FOV), (float) width / (float) height, 0.1f, 1000.0f);
+    this->screenWidth = width;
+    this->screenHeight = height;
+    this->FOV = FOV;
+    this->aspect = (float) this->screenWidth / (float) this->screenHeight;
+
+    this->projectionMatrix = glm::perspective(glm::radians(FOV), aspect, zNear, zFar);
     //this->viewMatrix = glm::mat4(1.0f);
     //this->modelMatrix = glm::mat4(1.0f);
 
-    this->screenWidth = width;
-    this->screenHeight = height;
     updateUniforms();
 }
 
 void Camera::adjustFOV(float FOV){
-    this->projectionMatrix = glm::perspective(glm::radians(FOV), (float) this->screenWidth / (float) this->screenHeight, 0.1f, 1000.0f);
+    this->FOV = FOV;
+
+    this->projectionMatrix = glm::perspective(glm::radians(FOV), aspect, zNear, zFar);
+    updateUniforms();
+}
+
+void Camera::calculateFrustum(){
+    const float halfVSide = zFar * tanf(FOV * .5f);
+    const float halfHSide = halfVSide * aspect;
+    const glm::vec3 frontMultFar = zFar * this->direction;
+
+    glm::vec3 CamRight = glm::normalize(glm::cross(this->direction, glm::vec3(0.0f, 1.0f, 0.0f)));
+    glm::vec3 CamUp = glm::normalize(glm::cross(CamRight, this->direction));
+
+    frustum.nearFace = { this->position + zNear * this->direction, this->direction };
+    frustum.farFace = { this->position + frontMultFar, -this->direction };
+    frustum.rightFace = { this->position,
+                            glm::cross(frontMultFar - CamRight * halfHSide, CamUp) };
+    frustum.leftFace = { this->position,
+                            glm::cross(CamUp,frontMultFar + CamRight  * halfHSide) };
+    frustum.topFace = { this->position,
+                            glm::cross(CamRight, frontMultFar - CamUp * halfVSide) };
+    frustum.bottomFace = { this->position,
+                            glm::cross(frontMultFar + CamUp * halfVSide, CamRight) };
 }
 
 Camera::Camera(){
@@ -42,6 +68,7 @@ void Camera::setModelPosition(float x, float y, float z){
 void Camera::setPosition(float x, float y, float z) {
     this->position = glm::vec3(x, y, z);
     this->viewMatrix = glm::lookAt(this->position, this->position + this->direction, this->up);
+    calculateFrustum();
 }
 
 void Camera::setRotation(float pitch, float yaw) {
@@ -52,6 +79,7 @@ void Camera::setRotation(float pitch, float yaw) {
 
     this->direction = glm::normalize(front);
     this->viewMatrix = glm::lookAt(this->position, this->position + this->direction, this->up);
+    calculateFrustum();
 }
 
 void Camera::addShader(std::string name, std::string vertex, std::string fragment){

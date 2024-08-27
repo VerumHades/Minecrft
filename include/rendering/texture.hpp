@@ -26,7 +26,6 @@ class GLTextureArray{
         void loadFromFiles(std::vector<std::string> filenames, int layerWidth, int layerHeight);
         void bind();
 };
-class ShaderProgram;
 
 class GLSkybox{
     private:
@@ -40,7 +39,6 @@ class GLSkybox{
         void draw();
 };
 
-#include <rendering/shaders.hpp>
 #include <rendering/buffer.hpp>
 
 #endif
