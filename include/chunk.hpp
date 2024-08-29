@@ -106,7 +106,7 @@ class Chunk: public Volume{
         //std::optional<Mesh> transparentMesh;
 
         bool isDrawn;
-        bool isOnFrustum(Camera& cam) const;
+        bool isOnFrustum(PerspectiveCamera& cam) const;
 
         Chunk(World& world, const glm::vec2& pos);
 

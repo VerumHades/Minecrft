@@ -200,7 +200,7 @@ void Chunk::generateMeshes(){
                         nonOffsetAxis[1] = 1;
                     }
 
-                    int max_height = 17;
+                    int max_height = DEFAULT_CHUNK_SIZE;
                     while(1){
                         int offset_ix = ix + coordinates[0];
                         int offset_iz = iz + coordinates[2]; 
@@ -318,7 +318,7 @@ static inline bool isOnOrForwardPlane(const Plane& plane, glm::vec3 center){
     return -r <= plane.getSignedDistanceToPlane(center);
 }
 
-bool Chunk::isOnFrustum(Camera& camera) const {
+bool Chunk::isOnFrustum(PerspectiveCamera& camera) const {
     //Get global scale thanks to our transform
     Frustum& frustum = camera.getFrustum();
     glm::vec3 position = glm::vec3(this->worldPosition.x * DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_HEIGHT / 2, this->worldPosition.y * DEFAULT_CHUNK_SIZE);

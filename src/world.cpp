@@ -300,3 +300,30 @@ bool World::setBlock(int x, int y, int z, Block index){
 
     return true;
 }
+
+void World::drawChunks(Camera& camera, int renderDistance){
+    int camWorldX = camera.getPosition().x / DEFAULT_CHUNK_SIZE;
+    int camWorldZ = camera.getPosition().z / DEFAULT_CHUNK_SIZE;
+
+    for(int x = -renderDistance; x <= renderDistance; x++){
+        for(int z = -renderDistance; z <= renderDistance; z++){
+            int chunkX = x + camWorldX;
+            int chunkZ = z + camWorldZ;
+
+            Chunk* meshlessChunk = this->getChunk(chunkX, chunkZ);
+            if(!meshlessChunk){
+                meshlessChunk = this->generateAndGetChunk(chunkX, chunkZ);
+            }
+
+            if(!camera.isVisible(*meshlessChunk)) continue;
+            Chunk* chunk = this->getChunkWithMesh(chunkX, chunkZ);
+            if(!chunk) continue;
+            if(!chunk->isDrawn) continue;
+
+            camera.setModelPosition(chunkX * DEFAULT_CHUNK_SIZE,0,chunkZ * DEFAULT_CHUNK_SIZE);
+            camera.updateUniforms();
+
+            if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();
+        }
+    }
+}

@@ -23,39 +23,45 @@ void Mesh::setVertexFormat(const std::vector<int>& format){
 }
 
 void Mesh::addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, std::vector<float> metadata, int clockwise, int width, int height){
-    unsigned int vecIndices[4];
+    // Precalculate texture coordinates
+    float textureX = metadata[0];
+    float textureY = metadata[1];
+    float textureXW = textureX + width;
+    float textureYH = textureY + height;
     
-    for(int i = 0;i < 4;i++){
-        glm::vec3 pos = vertices[i];
+    glm::vec2 textureCoordinates[4] = {
+        {textureX , textureY },
+        {textureXW, textureY },
+        {textureXW, textureYH},
+        {textureX , textureYH}
+    };
 
-        std::vector<float> vertex(this->vertexSize, 0.0f);
-        
-        vertex[0] = pos.x;
-        vertex[1] = pos.y;
-        vertex[2] = pos.z;
+    unsigned int vecIndices[4];
 
+    std::vector<float> vertex(this->vertexSize);
+    for(int i = 0; i < 4; i++){
+        vertex[0] = vertices[i].x;
+        vertex[1] = vertices[i].y;
+        vertex[2] = vertices[i].z;
+
+        // Normals
         vertex[3] = normals.x;
         vertex[4] = normals.y;
         vertex[5] = normals.z;
 
-        float textureX = metadata[0];
-        float textureY = metadata[1];
+        // Texture coordinates
+        vertex[6] = textureCoordinates[i].x;
+        vertex[7] = textureCoordinates[i].y;
 
-        std::vector<std::vector<float>> textureCoordinates = {
-            {textureX        , textureY         },
-            {textureX + width, textureY         },
-            {textureX + width, textureY + height},
-            {textureX        , textureY + height}
-        };
-        vertex[6] = textureCoordinates[i][0];
-        vertex[7] = textureCoordinates[i][1];
+        // Metadata
+        vertex[8] = metadata[2];  // Assuming this is some identifier or flag
 
-        vertex[8] = metadata[2];
-
+        // Store the vertex index and add the vertex to the vertices array
         vecIndices[i] = this->vertices.size() / this->vertexSize;
         this->vertices.insert(this->vertices.end(), vertex.begin(), vertex.end());
     }
 
+    // Insert indices depending on winding order (clockwise or counter-clockwise)
     if (clockwise) {
         this->indices.insert(this->indices.end(), {vecIndices[0], vecIndices[1], vecIndices[3]});
         this->indices.insert(this->indices.end(), {vecIndices[1], vecIndices[2], vecIndices[3]});
@@ -63,7 +69,7 @@ void Mesh::addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, std::vector<flo
         this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[1], vecIndices[0]});
         this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[2], vecIndices[1]});
     }
-}   
+}
 
 /*
     textureX, textureY

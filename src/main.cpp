@@ -9,7 +9,8 @@
 #include <rendering/texture.hpp>
 #include <rendering/camera.hpp>
 
-Camera camera;
+PerspectiveCamera camera;
+DepthCamera suncam;
 
 int lastMouseX = 0;
 int lastMouseY = 0;
@@ -22,7 +23,7 @@ float camX = 0;
 float camY = 150;
 float camZ = 0;
 
-int renderDistance = 16;
+int renderDistance = 8;
 
 float accelX = 0;
 float accelZ = 0;
@@ -34,8 +35,6 @@ float M_PI_D180 = M_PI / 180;
 float camFOV = 90;
 float maxFOV = 90;
 float minFOV = 10;
-
-float halfCamFov = 50;
 
 
 RectangularCollider playerCollider = {-0.3,-1.7, -0.3, 0.6, 1.8, 0.6};
@@ -163,6 +162,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
+    ///glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(1920, 1080, "Hello World", NULL, NULL);
 
@@ -173,6 +173,8 @@ int main() {
     }
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
+    //glfwSwapInterval(0);
+
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, cursor_position_callback);
@@ -229,22 +231,47 @@ int main() {
     GLTextureArray tilemap = GLTextureArray();
     tilemap.loadFromFiles(texturePaths,160,160);
 
-    int camPosLoc = glGetUniformLocation(camera.getProgram("main").getID(),"camPos");
+    suncam.initialize();
+    suncam.getTexture()->bind(1);
+    int distance = 200;
+    float sunAngle = 45;
 
-    clock_t last = clock();
-    clock_t current = clock();
+    int lightSpaceMatrixLoc = camera.getProgram("main").getUniformLocation("lightSpaceMatrix");
+    int lightPosLoc = camera.getProgram("main").getUniformLocation("lightPos");
+
+    int sunPosLoc = camera.getProgram("skybox").getUniformLocation("sunPos");
+    int camPosSkyboxLoc = camera.getProgram("skybox").getUniformLocation("camPos");
+    int camDirSkyboxLoc = camera.getProgram("skybox").getUniformLocation("camDir");
+    
+    int camPosLoc = camera.getProgram("main").getUniformLocation("camPos");
+
+    int TimeLoc = camera.getProgram("main").getUniformLocation("time");
+
+    glUniform1i(camera.getProgram("main").getUniformLocation("textureArray"),0);
+    glUniform1i(camera.getProgram("main").getUniformLocation("shadowMap"),1);
+
+    double last = glfwGetTime();
+    double current = glfwGetTime();
 
     int callsToExpand = 0;
+    int time = 0;
 
     double seconds;
     while (!glfwWindowShouldClose(window)) {
+        current = glfwGetTime();
+        seconds = current - last;
         last = current;
-        current = clock();
-        seconds = (double)(current - last) / (double)CLOCKS_PER_SEC;
 
+        /*if(seconds >= 0.01){
+            last = current;
+            
+            glUniform1f(TimeLoc, time);
+            time = (time + 1) % 2400;
+            //std::cout << time << std::endl;
+        }*/
+        //std::cout << seconds << std::endl;
         double fps = 1.0 / seconds;
-        //printf("FPS: %f\n",fps);
-
+        printf("FPS: %f\n",fps);
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -294,54 +321,49 @@ int main() {
         else camZ += accelZ;
 
 
-        //printf("x:%f y:%f z:%f ax:%f ay:%f az:%f\n",camX,camY,camZ,accelX,accelY,accelZ);
+        //printf("x:%f y:%f z:%f ax:%f ay:%f az:%f\ n",camX,camY,camZ,accelX,accelY,accelZ);
+
+        //suncam.setPosition(c0,400, camera.getPosition().z);
+
+        int offsetX = camera.getPosition().x - 100;
+        int offsetZ = camera.getPosition().z;
+
+        suncam.setPosition(
+            offsetX + distance * cos(glm::radians(sunAngle)), // X position (cosine component)
+            distance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
+            offsetZ  // Z position (cosine component)
+        );
+        suncam.setTarget(
+            offsetX,
+            0,
+            offsetZ
+        );
+        suncam.updateProjection();
+        glUniform3f(lightPosLoc, suncam.getPosition().x,suncam.getPosition().y,suncam.getPosition().z);
+        glUniformMatrix4fv(lightSpaceMatrixLoc, 1, GL_FALSE, glm::value_ptr(suncam.getLightSpaceMatrix()));
+
+        //suncam.updateProjection();
+        //glDisable( GL_CULL_FACE );
+        suncam.prepareForRender();
+        world.drawChunks(suncam, renderDistance);
+        //glEnable( GL_CULL_FACE );
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
+
         camera.setPosition(camX, camY, camZ);
         camera.updateUniforms();
         camera.drawSkybox();
+        glUniform3f(sunPosLoc, suncam.getPosition().x,suncam.getPosition().y,suncam.getPosition().z);
+        glUniform3f(camPosSkyboxLoc, camX, camY, camZ);
+        glUniform3f(camDirSkyboxLoc, camera.getDirection().x, camera.getDirection().y, camera.getDirection().z);
 
         camera.useProgram("main");
         glUniform3f(camPosLoc, camX, camY, camZ);
-        tilemap.bind();
+        tilemap.bind(0);
 
-        int camWorldX = camX / DEFAULT_CHUNK_SIZE;
-        int camWorldZ = camZ / DEFAULT_CHUNK_SIZE;
-
-        float offsetCamX = camX - cos(M_PI_D180 * camYaw) * (-camPitch - 90 + camY);
-        float offsetCamZ = camZ - sin(M_PI_D180 * camYaw) * (-camPitch - 90 + camY);
-
-        int total = 0;
-        for(int x = -renderDistance; x <= renderDistance; x++){
-            for(int z = -renderDistance; z <= renderDistance; z++){
-                int chunkX = x + camWorldX;
-                int chunkZ = z + camWorldZ;
-
-                /*int realChunkX = chunkX * DEFAULT_CHUNK_SIZE + DEFAULT_CHUNK_SIZE/2;
-                int realChunkZ = chunkZ * DEFAULT_CHUNK_SIZE + DEFAULT_CHUNK_SIZE/2;
-
-                float angle = clampAngle(atan2(offsetCamZ - realChunkZ, offsetCamX - realChunkX) * 180 / M_PI - 90);
-                float difference = abs(angle - (camYaw + 90));
-                difference = fmin(difference, 360 - difference);
-
-                if(difference > halfCamFov) continue; */
-
-                Chunk* meshlessChunk = world.getChunk(chunkX, chunkZ);
-                if(!meshlessChunk){
-                    meshlessChunk = world.generateAndGetChunk(chunkX, chunkZ);
-                }
-
-                if(!camera.isVisible(*meshlessChunk)) continue;
-                Chunk* chunk = world.getChunkWithMesh(chunkX, chunkZ);
-                if(!chunk) continue;
-                if(!chunk->isDrawn) continue;
-
-                camera.setModelPosition(chunkX * DEFAULT_CHUNK_SIZE,0,chunkZ * DEFAULT_CHUNK_SIZE);
-                camera.updateUniforms();
-
-                if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();
-                total++;
-            }
-        }
-        std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
+        world.drawChunks(camera, renderDistance);
+        //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 

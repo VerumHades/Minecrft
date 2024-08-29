@@ -1,31 +1,32 @@
 #include <rendering/camera.hpp>
 
-void Camera::resizeScreen(int width, int height, float FOV){
+void PerspectiveCamera::resizeScreen(int width, int height, float FOV){
     this->screenWidth = width;
     this->screenHeight = height;
     this->FOV = FOV;
     this->aspect = (float) this->screenWidth / (float) this->screenHeight;
 
-    this->projectionMatrix = glm::perspective(glm::radians(FOV), aspect, zNear, zFar);
+    this->projectionMatrix = glm::perspective<float>(glm::radians(FOV), aspect, zNear, zFar);
     //this->viewMatrix = glm::mat4(1.0f);
     //this->modelMatrix = glm::mat4(1.0f);
-
+    calculateFrustum();
     updateUniforms();
 }
 
-void Camera::adjustFOV(float FOV){
+void PerspectiveCamera::adjustFOV(float FOV){
     this->FOV = FOV;
 
-    this->projectionMatrix = glm::perspective(glm::radians(FOV), aspect, zNear, zFar);
+    this->projectionMatrix = glm::perspective<float>(glm::radians(FOV), aspect, zNear, zFar);
+    calculateFrustum();
     updateUniforms();
 }
 
-void Camera::calculateFrustum(){
+void PerspectiveCamera::calculateFrustum(){
     const float halfVSide = zFar * tanf(FOV * .5f);
     const float halfHSide = halfVSide * aspect;
     const glm::vec3 frontMultFar = zFar * this->direction;
 
-    glm::vec3 CamRight = glm::normalize(glm::cross(this->direction, glm::vec3(0.0f, 1.0f, 0.0f)));
+    glm::vec3 CamRight = glm::normalize(glm::cross(this->direction, this->up));
     glm::vec3 CamUp = glm::normalize(glm::cross(CamRight, this->direction));
 
     frustum.nearFace = { this->position + zNear * this->direction, this->direction };
@@ -40,11 +41,11 @@ void Camera::calculateFrustum(){
                             glm::cross(frontMultFar + CamUp * halfVSide, CamRight) };
 }
 
-Camera::Camera(){
+PerspectiveCamera::PerspectiveCamera(){
     this->resizeScreen(1920,1080,90);
 }
 
-void Camera::updateUniforms(){
+void PerspectiveCamera::updateUniforms(){
     for(auto& [key, program]: this->programs){
         program.use();
         glUniformMatrix4fv(program.getProjLoc(), 1, GL_FALSE, glm::value_ptr(this->projectionMatrix));
@@ -61,17 +62,17 @@ void Camera::updateUniforms(){
     if(this->programs.find(this->currentProgram) != this->programs.end()) this->programs[this->currentProgram].use();
 }
 
-void Camera::setModelPosition(float x, float y, float z){
+void PerspectiveCamera::setModelPosition(float x, float y, float z){
     this->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x,y,z));
 }
 
-void Camera::setPosition(float x, float y, float z) {
+void PerspectiveCamera::setPosition(float x, float y, float z) {
     this->position = glm::vec3(x, y, z);
     this->viewMatrix = glm::lookAt(this->position, this->position + this->direction, this->up);
     calculateFrustum();
 }
 
-void Camera::setRotation(float pitch, float yaw) {
+void PerspectiveCamera::setRotation(float pitch, float yaw) {
     glm::vec3 front;
     front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     front.y = sin(glm::radians(pitch));
@@ -82,7 +83,7 @@ void Camera::setRotation(float pitch, float yaw) {
     calculateFrustum();
 }
 
-void Camera::addShader(std::string name, std::string vertex, std::string fragment){
+void PerspectiveCamera::addShader(std::string name, std::string vertex, std::string fragment){
     ShaderProgram& program = this->programs[name];
 
     program.initialize();
@@ -90,7 +91,7 @@ void Camera::addShader(std::string name, std::string vertex, std::string fragmen
     program.addShader(fragment.c_str(), GL_FRAGMENT_SHADER);
     program.compile();
 }
-void Camera::addSkybox(std::string vertex, std::string fragment, std::array<std::string,6> paths){
+void PerspectiveCamera::addSkybox(std::string vertex, std::string fragment, std::array<std::string,6> paths){
     this->addShader("skybox", vertex, fragment);
     this->getProgram("skybox").makeSkybox();
     this->useProgram("skybox");
@@ -98,14 +99,14 @@ void Camera::addSkybox(std::string vertex, std::string fragment, std::array<std:
     this->skybox = std::make_unique<GLSkybox>(paths);
 }
 
-ShaderProgram& Camera::getProgram(std::string name){
+ShaderProgram& PerspectiveCamera::getProgram(std::string name){
     if(this->programs.find(name) == this->programs.end()){
         throw std::runtime_error("Failed to find program: " + name);
     }
 
     return this->programs[name];
 }
-void Camera::useProgram(std::string name){
+void PerspectiveCamera::useProgram(std::string name){
     if(this->programs.find(name) == this->programs.end()){
         throw std::runtime_error("Failed to find program: " + name);
     }
@@ -115,7 +116,7 @@ void Camera::useProgram(std::string name){
     this->programs[name].use();
 }
 
-void Camera::drawSkybox(){
+void PerspectiveCamera::drawSkybox(){
     if((this->programs.find("skybox") == programs.end()) && skybox){
         std::cout << "Skybox uninitialized" << std::endl;
         return;
@@ -124,4 +125,56 @@ void Camera::drawSkybox(){
     this->useProgram("skybox");
     this->skybox->draw();
     glEnable(GL_CULL_FACE);
+}
+
+
+
+void DepthCamera::updateProjection(){
+    float size = DEFAULT_CHUNK_SIZE * 8;
+
+    this->projectionMatrix = glm::ortho(-size, size, -size, size, this->zNear, this->zFar); 
+    this->viewMatrix = glm::lookAt(this->position, this->target, glm::vec3(0,1,0));
+    this->lightSpaceMatrix = this->projectionMatrix * this->viewMatrix; 
+
+    updateUniforms();
+}
+
+void DepthCamera::updateUniforms(){
+    unsigned int loc = glGetUniformLocation(program.getID(), "lightSpaceMatrix");
+    
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(this->lightSpaceMatrix));
+    glUniformMatrix4fv(program.getModelLoc(), 1, GL_FALSE, glm::value_ptr(this->modelMatrix));
+}
+void DepthCamera::initialize(){
+    program.initialize();
+    program.addShader("shaders/depth.vs", GL_VERTEX_SHADER);
+    program.addShader("shaders/depth.fs", GL_FRAGMENT_SHADER);
+    program.compile();
+
+    glGenFramebuffers(1, &depthMapFBO);  
+
+    texture = std::make_unique<GLDepthTexture>(SHADOW_WIDTH, SHADOW_HEIGHT);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture->getID(), 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);  
+}
+
+void DepthCamera::prepareForRender(){
+    program.use();
+    glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glClear(GL_DEPTH_BUFFER_BIT);
+}
+
+void DepthCamera::setModelPosition(float x, float y, float z){
+    this->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x,y,z));
+}
+void DepthCamera::setPosition(float x, float y, float z){
+    this->position = glm::vec3(x,y,z);
+}
+void DepthCamera::setTarget(float x, float y, float z){
+    this->target = glm::vec3(x,y,z);
 }

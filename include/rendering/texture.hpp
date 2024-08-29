@@ -7,29 +7,48 @@
 #include <iostream>
 #include <array>
 
-class GLTexture{
-    private:
+class BindableTexture{
+    protected: 
         unsigned int texture;
+        unsigned int TYPE;
+        BindableTexture(){
+            glGenTextures(1, &this->texture);
+        }
+        ~BindableTexture(){
+            glDeleteTextures(1, &this->texture);
+        }
+    public:
+        void bind(int unit){
+            glActiveTexture(GL_TEXTURE0 + unit);
+            glBindTexture(TYPE, this->texture);
+        }  
+        unsigned int getID() {return texture;}
+};
+
+class GLTexture: public BindableTexture{
     public:
         GLTexture(char* filename);
-        ~GLTexture();
-        void bind();
 };
 
-class GLTextureArray{
+class GLDepthTexture: public BindableTexture{
     private:
-        unsigned int textureArray;
+        int width;
+        int height;
+
     public:
-        GLTextureArray();
-        ~GLTextureArray();
+        GLDepthTexture(int width, int height);
 
-        void loadFromFiles(std::vector<std::string> filenames, int layerWidth, int layerHeight);
-        void bind();
+        int getWidth(){return width;}
+        int getHeight(){return height;}
 };
 
-class GLSkybox{
+class GLTextureArray: public BindableTexture{
+    public:
+        void loadFromFiles(std::vector<std::string> filenames, int layerWidth, int layerHeight);
+};
+
+class GLSkybox: public BindableTexture{
     private:
-        unsigned int texture;
         unsigned int vertexBuffer;
         unsigned int vao;
     public:

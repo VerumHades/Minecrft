@@ -29,6 +29,7 @@ class ShaderProgram{
         ~ShaderProgram();
 
         void addShader(std::string filename, int type);
+        void addShaderSource(std::string source, int type);
         void compile();
         void use(){
             glUseProgram(this->program);
@@ -38,6 +39,8 @@ class ShaderProgram{
         int getProjLoc() {return projLoc;};
         int getViewLoc() {return viewLoc;};
         int getModelLoc() {return modelLoc;};
+
+        int getUniformLocation(std::string name);
 
         bool isSkybox(){return isSkybox_; }; 
         void makeSkybox(){this->isSkybox_ = true;};

@@ -22,7 +22,7 @@ unsigned int compileShader(const char* source, int type){
         // Provide the infolog in whatever manor you deem best.
         // Exit with failure.
         glDeleteShader(shader); // Don't leak the shader.
-        return -1;
+        throw std::runtime_error("");
     }
 
     return shader;
@@ -52,6 +52,16 @@ void ShaderProgram::addShader(std::string filename, int type){
 
     unsigned int shader = compileShader(source.c_str(), type);
     this->shaders.push_back(shader);
+}
+
+void ShaderProgram::addShaderSource(std::string source, int type){
+    unsigned int shader = compileShader(source.c_str(), type);
+    this->shaders.push_back(shader);
+}
+
+int ShaderProgram::getUniformLocation(std::string name){
+    this->use();
+    return glGetUniformLocation(this->program, name.c_str());
 }
 
 void ShaderProgram::compile(){

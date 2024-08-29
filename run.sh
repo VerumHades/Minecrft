@@ -5,7 +5,7 @@ clear
 # mkdir build
 cd build
 # cmake ..
-cmake --build .
+cmake --build . -j 8 || { echo "Build failed. Exiting."; exit 1; }
 cd ..
 #./build/main
 gdb -ex run ./build/main

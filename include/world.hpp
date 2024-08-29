@@ -59,6 +59,8 @@ class World{
         CollisionCheckResult checkForRectangularCollision(float x, float y, float z, RectangularCollider* collider);
 
         RaycastResult raycast(float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance);
+
+        void drawChunks(Camera& camera, int renderDistance);
 };
 
 extern size_t predefinedBlocksTotal;

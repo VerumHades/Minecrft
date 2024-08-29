@@ -39,15 +39,24 @@ struct Frustum
     Plane nearFace;
 };
 
-class Camera;
+class PerspectiveCamera;
 struct Volume
 {
-    virtual bool isOnFrustum(Camera& camera) const = 0;
+    virtual bool isOnFrustum(PerspectiveCamera& camera) const = 0;
 };
 
 #include <rendering/shaders.hpp>
 
 class Camera{
+    public:
+        //virtual ~Camera() {}  // Add a virtual destructor
+        virtual void setModelPosition(float x, float y, float z) = 0;
+        virtual glm::vec3& getPosition() = 0;
+        virtual bool isVisible(Volume& volume) = 0;
+        virtual void updateUniforms() = 0;
+};
+
+class PerspectiveCamera: public Camera{
     private:
         std::unique_ptr<GLSkybox> skybox;
         std::string currentProgram;
@@ -74,7 +83,7 @@ class Camera{
         void calculateFrustum();
 
     public:
-        Camera();
+        PerspectiveCamera();
         void resizeScreen(int width, int height, float FOV);
         void adjustFOV(float FOV);
         void updateUniforms();
@@ -97,6 +106,48 @@ class Camera{
         Frustum& getFrustum() {return frustum;}
         glm::vec3& getPosition() {return position;}
         void drawSkybox();
+        int getScreenWidth(){return screenWidth;}
+        int getScreenHeight(){return screenHeight;}
 };
+
+class DepthCamera: public Camera{
+    private:
+        ShaderProgram program;
+        std::unique_ptr<GLDepthTexture> texture;
+
+        glm::mat4 projectionMatrix;
+        glm::mat4 viewMatrix = glm::mat4(1.0f);
+        glm::mat4 lightSpaceMatrix;
+        glm::mat4 modelMatrix = glm::mat4(1.0f);
+
+        glm::vec3 position = glm::vec3(0,0,0);
+        glm::vec3 target = glm::vec3(0,0,0);
+        
+        float zNear = -500.0f;
+        float zFar = 500.0f;
+
+        unsigned int depthMapFBO;
+        const unsigned int SHADOW_WIDTH = 1024 * 3, SHADOW_HEIGHT = 1024 * 3;
+        unsigned int depthMap;
+
+
+    public:
+        void updateUniforms();
+        void updateProjection();
+        void initialize();
+        void prepareForRender();
+
+        void setModelPosition(float x, float y, float z);
+        void setPosition(float x, float y, float z);
+        void setPosition(glm::vec3& position) {this->position = position;};
+        void setTarget(float x, float y, float z);
+        void setTarget(glm::vec3& target) {this->target = target;}
+        bool isVisible(Volume& volume){return true;}
+        
+        glm::vec3& getPosition() {return position;}
+        GLDepthTexture* getTexture() const {return texture.get();}
+        glm::mat4& getLightSpaceMatrix() {return lightSpaceMatrix;}
+};
+#include <chunk.hpp>
 
 #endif

@@ -5,6 +5,8 @@
 
 
 GLTexture::GLTexture(char* filename){
+    TYPE = GL_TEXTURE_2D;
+
     int width, height, nrChannels;
     unsigned char *data = stbi_load(filename, &width, &height, &nrChannels, 0);
     if (!data) {
@@ -12,7 +14,6 @@ GLTexture::GLTexture(char* filename){
         return;
     }
 
-    glGenTextures(1, &this->texture);
     glBindTexture(GL_TEXTURE_2D, this->texture);
 
     CHECK_GL_ERROR();
@@ -20,11 +21,6 @@ GLTexture::GLTexture(char* filename){
     // Set texture wrapping parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
-
-    // Set texture filtering parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -53,25 +49,10 @@ GLTexture::GLTexture(char* filename){
     //glActiveTexture(GL_TEXTURE0);
     //glBindTexture(GL_TEXTURE_2D, texture);
 }
-void GLTexture::bind(){
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, this->texture);
-
-    CHECK_GL_ERROR();
-}
-GLTexture::~GLTexture(){
-    glDeleteTextures(1, &this->texture);
-}
-
-GLTextureArray::GLTextureArray(){
-    glGenTextures(1, &this->textureArray);
-}
-GLTextureArray::~GLTextureArray(){
-    glDeleteTextures(1, &this->textureArray);
-}
 
 void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layerWidth, int layerHeight){
-    glBindTexture(GL_TEXTURE_2D_ARRAY, this->textureArray);
+    TYPE = GL_TEXTURE_2D_ARRAY;
+    glBindTexture(GL_TEXTURE_2D_ARRAY, this->texture);
 
     int mipLevels = floor(log2(fmax(layerWidth, layerHeight))) + 1;
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, GL_RGB8, layerWidth, layerHeight, filenames.size());
@@ -116,13 +97,6 @@ void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layer
 
     CHECK_GL_ERROR();
 }
-
-void GLTextureArray::bind(){
-    glBindTexture(GL_TEXTURE_2D_ARRAY, this->textureArray);
-
-    CHECK_GL_ERROR();
-}
-
 
 float skyboxVertices[] = {
     // positions          
@@ -170,7 +144,8 @@ float skyboxVertices[] = {
 };
 
 GLSkybox::GLSkybox(std::array<std::string, 6> filenames){
-    glGenTextures(1, &this->texture);
+    TYPE = GL_TEXTURE_CUBE_MAP;
+
     glBindTexture(GL_TEXTURE_CUBE_MAP, this->texture);
 
     int width, height, nrChannels;
@@ -238,7 +213,21 @@ void GLSkybox::draw(){
     glDepthMask(GL_TRUE);
 }
 GLSkybox::~GLSkybox(){
-    glDeleteTextures(1, &this->texture);
     glDeleteBuffers(1 , &this->vertexBuffer);
     glDeleteVertexArrays(1, &this->vao);
+}
+
+GLDepthTexture::GLDepthTexture(int width, int height): width(width), height(height){
+    TYPE = GL_TEXTURE_2D;
+
+    glBindTexture(GL_TEXTURE_2D, this->texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 
+                width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);  
+    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
 }
