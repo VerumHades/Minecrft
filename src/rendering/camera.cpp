@@ -130,7 +130,7 @@ void PerspectiveCamera::drawSkybox(){
 
 
 void DepthCamera::updateProjection(){
-    float size = DEFAULT_CHUNK_SIZE * 8;
+    float size = 256;
 
     this->projectionMatrix = glm::ortho(-size, size, -size, size, this->zNear, this->zFar); 
     this->viewMatrix = glm::lookAt(this->position, this->target, glm::vec3(0,1,0));

@@ -315,7 +315,7 @@ void World::drawChunks(Camera& camera, int renderDistance){
                 meshlessChunk = this->generateAndGetChunk(chunkX, chunkZ);
             }
 
-            if(!camera.isVisible(*meshlessChunk)) continue;
+            if(!camera.isVisible(*meshlessChunk) && !(abs(x) + abs(z) <= 2)) continue;
             Chunk* chunk = this->getChunkWithMesh(chunkX, chunkZ);
             if(!chunk) continue;
             if(!chunk->isDrawn) continue;

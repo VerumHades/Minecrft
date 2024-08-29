@@ -23,7 +23,7 @@ float camX = 0;
 float camY = 150;
 float camZ = 0;
 
-int renderDistance = 8;
+int renderDistance = 12;
 
 float accelX = 0;
 float accelZ = 0;
@@ -233,13 +233,13 @@ int main() {
 
     suncam.initialize();
     suncam.getTexture()->bind(1);
-    int distance = 200;
-    float sunAngle = 45;
+    int distance = ((DEFAULT_CHUNK_SIZE * renderDistance) / 2) ;
+    float sunAngle = 70;
 
     int lightSpaceMatrixLoc = camera.getProgram("main").getUniformLocation("lightSpaceMatrix");
     int lightPosLoc = camera.getProgram("main").getUniformLocation("lightPos");
 
-    int sunPosLoc = camera.getProgram("skybox").getUniformLocation("sunPos");
+    int sunDirLoc = camera.getProgram("skybox").getUniformLocation("sunDir");
     int camPosSkyboxLoc = camera.getProgram("skybox").getUniformLocation("camPos");
     int camDirSkyboxLoc = camera.getProgram("skybox").getUniformLocation("camDir");
     
@@ -269,6 +269,11 @@ int main() {
             time = (time + 1) % 2400;
             //std::cout << time << std::endl;
         }*/
+
+        //time = (time + 1) % 2400;
+        //sunAngle = ((float)time / 2400.0) * 180.0;
+
+
         //std::cout << seconds << std::endl;
         double fps = 1.0 / seconds;
         printf("FPS: %f\n",fps);
@@ -325,7 +330,7 @@ int main() {
 
         //suncam.setPosition(c0,400, camera.getPosition().z);
 
-        int offsetX = camera.getPosition().x - 100;
+        int offsetX = camera.getPosition().x;
         int offsetZ = camera.getPosition().z;
 
         suncam.setPosition(
@@ -354,7 +359,11 @@ int main() {
         camera.setPosition(camX, camY, camZ);
         camera.updateUniforms();
         camera.drawSkybox();
-        glUniform3f(sunPosLoc, suncam.getPosition().x,suncam.getPosition().y,suncam.getPosition().z);
+        glUniform3f(sunDirLoc, 
+            distance * cos(glm::radians(sunAngle)), // X position (cosine component)
+            distance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
+            0  // Z position (cosine component)
+        );
         glUniform3f(camPosSkyboxLoc, camX, camY, camZ);
         glUniform3f(camDirSkyboxLoc, camera.getDirection().x, camera.getDirection().y, camera.getDirection().z);
 

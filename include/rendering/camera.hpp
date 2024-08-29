@@ -127,7 +127,7 @@ class DepthCamera: public Camera{
         float zFar = 500.0f;
 
         unsigned int depthMapFBO;
-        const unsigned int SHADOW_WIDTH = 1024 * 3, SHADOW_HEIGHT = 1024 * 3;
+        const unsigned int SHADOW_WIDTH = 1024 * 4, SHADOW_HEIGHT = 1024 * 4;
         unsigned int depthMap;
 
 
