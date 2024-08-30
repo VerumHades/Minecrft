@@ -1,5 +1,47 @@
 #include <world.hpp>
 
+int WorldTree::getRangeAtDepth(int depth){
+    return pow(WORLD_TREE_NODE_SIZE, this->depth - depth);
+}
+
+std::shared_mutex treeNodeGenLock;
+
+Chunk* WorldTree::getChunk(int x, int z){
+    WorldTreeNode* currentNode = &this->rootNode;
+
+    int depth = 0;
+    int range = 0, indexX = 0, indexZ = 0;
+    WorldTreeNode* newCurrentNode = nullptr;
+    Chunk* result = nullptr;
+
+    while (depth < this->depth)
+    {
+        range = this->getRangeAtDepth(depth);
+        
+        indexX = (x / range) * WORLD_TREE_NODE_SIZE;
+        indexZ = (z / range) * WORLD_TREE_NODE_SIZE;
+
+        if(depth - 1 == this->depth){
+            result = currentNode->chunks[x][z].get(); 
+            break;
+        }
+
+        newCurrentNode = currentNode->children[x][z].get(); 
+
+        if(!newCurrentNode){
+            {
+                std::unique_lock lock(treeNodeGenLock);
+                
+                currentNode->children[x][z] = std::make_unique<WorldTreeNode>();
+                newCurrentNode = currentNode->children[x][z].get(); 
+            }
+        }
+
+        currentNode = newCurrentNode;
+        depth++;
+    }
+}
+
 std::shared_mutex chunkGenLock;
 
 Chunk* World::generateAndGetChunk(int x, int z){
