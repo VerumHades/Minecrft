@@ -18,8 +18,8 @@ void main()
 
     float angSun = angV3(rp,sunDir);
 
-    vec4 finalColor = vec4(0.529, 0.808, 0.922, 1.0);
-    finalColor = mix(vec4(1,1,1,1), finalColor, (TexCoords.y + 1) * 0.5);
+    vec4 finalColor = vec4(0.529, 0.808, 0.922, 1.0) - 0.1;
+    finalColor = mix(vec4(0.8,0.8,0.8,1), finalColor, (TexCoords.y + 1) * 0.5);
 
     if (angSun < 0.03){
         finalColor = vec4(vec3(1), 1.0); // white

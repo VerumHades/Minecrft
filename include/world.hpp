@@ -41,26 +41,6 @@ typedef struct CollisionCheckResult{
     int z;
 } CollisionCheckResult;
 
-
-#define WORLD_TREE_NODE_SIZE 64
-
-struct WorldTreeNode{
-    union{
-        std::unique_ptr<WorldTreeNode> children[WORLD_TREE_NODE_SIZE][WORLD_TREE_NODE_SIZE];
-        std::unique_ptr<Chunk> chunks[WORLD_TREE_NODE_SIZE][WORLD_TREE_NODE_SIZE];
-    };
-};
-
-class WorldTree{
-    private:
-        int depth = 4;
-        WorldTreeNode rootNode;
-        
-        int getRangeAtDepth(int depth);
-    public:
-        Chunk* getChunk(int x, int z);
-};
-
 class World{
     private:
         std::unordered_map<glm::vec2, Chunk, Vec2Hash, Vec2Equal> chunks;
