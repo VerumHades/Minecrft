@@ -75,6 +75,10 @@ class PerspectiveCamera: public Camera{
 
         float zNear = 0.1f;
         float zFar = 1000.0f;
+
+        float pitch = 0;
+        float yaw = 0;
+
         float FOV = 90.0f;
         float aspect;
 
@@ -89,7 +93,8 @@ class PerspectiveCamera: public Camera{
         void updateUniforms();
 
         void setModelPosition(float x, float y, float z);
-        void setPosition(float x, float y, float z);
+        void setPosition(float x, float y, float z) {setPosition(glm::vec3(x,y,z));};
+        void setPosition(glm::vec3 pos);
         void setRotation(float pitch, float yaw);
 
         void addShader(std::string name, std::string vertex, std::string fragment);
@@ -102,12 +107,17 @@ class PerspectiveCamera: public Camera{
         ShaderProgram& getProgram(std::string name);
         void useProgram(std::string name);
 
-        glm::vec3& getDirection() {return direction;}
-        Frustum& getFrustum() {return frustum;}
         glm::vec3& getPosition() {return position;}
+        glm::vec3& getDirection() {return direction;}
+        glm::vec3& getUp() {return up;}
+        Frustum& getFrustum() {return frustum;}
         void drawSkybox();
+
         int getScreenWidth(){return screenWidth;}
         int getScreenHeight(){return screenHeight;}
+
+        float getPitch(){return pitch;};
+        float getYaw(){return yaw;};
 };
 
 class DepthCamera: public Camera{
@@ -127,9 +137,8 @@ class DepthCamera: public Camera{
         float zFar = 500.0f;
 
         unsigned int depthMapFBO;
-        const unsigned int SHADOW_WIDTH = 1024 * 4, SHADOW_HEIGHT = 1024 * 4;
+        const unsigned int SHADOW_WIDTH = 1024 * 10, SHADOW_HEIGHT = 1024 * 10;
         unsigned int depthMap;
-
 
     public:
         void updateUniforms();

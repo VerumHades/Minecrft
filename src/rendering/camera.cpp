@@ -66,13 +66,16 @@ void PerspectiveCamera::setModelPosition(float x, float y, float z){
     this->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x,y,z));
 }
 
-void PerspectiveCamera::setPosition(float x, float y, float z) {
-    this->position = glm::vec3(x, y, z);
+void PerspectiveCamera::setPosition(glm::vec3 pos) {
+    this->position = pos;
     this->viewMatrix = glm::lookAt(this->position, this->position + this->direction, this->up);
     calculateFrustum();
 }
 
 void PerspectiveCamera::setRotation(float pitch, float yaw) {
+    this->pitch = pitch;
+    this->yaw = yaw;
+
     glm::vec3 front;
     front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     front.y = sin(glm::radians(pitch));

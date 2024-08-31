@@ -22,7 +22,7 @@ class Mesh{
         Mesh();
 
         void setVertexFormat(const std::vector<int>& format);
-        void addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, std::vector<float> metadata, int clockwise, int width, int height);
+        void addQuadFace(glm::vec3 vertices[4], glm::vec3 normals,float metadata[6], int clockwise, int width, int height);
 
         const std::vector<float>& getVertices();
         const std::vector<unsigned int>& getIndices();

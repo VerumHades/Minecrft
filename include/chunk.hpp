@@ -9,6 +9,7 @@
 #include <rendering/buffer.hpp>
 #include <rendering/mesh.hpp>
 #include <rendering/camera.hpp>
+#include <entity.hpp>
 
 #include <glm/glm.hpp>
 #include <map>
@@ -16,6 +17,8 @@
 #include <functional>
 #include <mutex>
 #include <memory>
+#include <array>
+#include <blocks.hpp>
 
 #define OK -1
 #define INVALID_COORDINATES -2
@@ -24,49 +27,6 @@
 #define DEFAULT_CHUNK_SIZE 16
 #define DEFAULT_CHUNK_AREA DEFAULT_CHUNK_SIZE * DEFAULT_CHUNK_SIZE
 #define DEFAULT_CHUNK_HEIGHT 256
-
-#define TEXTURES_TOTAL 4
-
-extern float textureSize;
-
-struct RectangularCollider {
-    float x, y, z;
-    float width, height, depth;
-};
-
-enum class BlockTypes {
-    Air,
-    Grass,
-    Dirt,
-    Stone,
-    LeafBlock,
-    OakLog,
-    BirchLeafBlock,
-    BirchLog,
-    BlueWool,
-    Sand
-};
-
-typedef struct Block{
-    BlockTypes type;
-
-    Block();
-    Block(BlockTypes type);
-} Block;
-
-struct BlockType {
-    bool transparent = false;
-    bool untextured = false;
-    bool repeatTexture = false;
-    std::vector<unsigned char> textures = {};
-    std::vector<RectangularCollider> colliders = {{0, 0, 0, 1.0f, 1.0f, 1.0f}};
-
-    // Constructor for convenience
-    BlockType(bool transparent = false, bool untextured = false, bool repeatTexture = false,
-              std::vector<unsigned char> textures = {}, std::vector<RectangularCollider> colliders = {})
-        : transparent(transparent), untextured(untextured), repeatTexture(repeatTexture),
-          textures(std::move(textures)) {}
-};
 
 struct FaceDefinition {
     int offsetX = 0;

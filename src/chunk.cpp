@@ -39,7 +39,7 @@ static inline void fillChunkLevel(Chunk& chunk, unsigned int y, Block value){
 }
 
 Chunk::Chunk(World& world, const glm::vec2& pos): world(world), worldPosition(pos) {
-
+    
 }
 
 Block::Block(){
@@ -128,9 +128,7 @@ static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int 
     return 1;   
 }
 
-float textureSize = 1.0 / TEXTURES_TOTAL;
-
-static std::vector<FaceDefinition> faceDefinitions = {
+static FaceDefinition faceDefinitions[] = {
     FaceDefinition(0, 1, 0, {4, 5, 1, 0}, 0),              // Top face
     FaceDefinition(0, -1, 0, {7, 6, 2, 3}, 1, true),       // Bottom face
     FaceDefinition(-1, 0, 0, {0, 4, 7, 3}, 2, true),       // Left face
@@ -200,7 +198,7 @@ void Chunk::generateMeshes(){
                         nonOffsetAxis[1] = 1;
                     }
 
-                    int max_height = DEFAULT_CHUNK_SIZE;
+                    int max_height = DEFAULT_CHUNK_SIZE+1;
                     while(1){
                         int offset_ix = ix + coordinates[0];
                         int offset_iz = iz + coordinates[2]; 
@@ -232,7 +230,7 @@ void Chunk::generateMeshes(){
                         width++;
                         checked[offset_ix][offset_y][offset_iz][i] = true;
                     }  
-                    if(max_height == 17) continue;
+                    if(max_height == DEFAULT_CHUNK_SIZE+1) continue;
                     //if(max_height == 0) printf("%i\n", max_height);
                     for(int padderH = 0;padderH < max_height;padderH++){
                         coordinates[nonOffsetAxis[1]] = padderH;
@@ -254,7 +252,7 @@ void Chunk::generateMeshes(){
                     //printf("%i %i %i\n", coordinates[0], coordinates[1], coordinates[2]);
 
                     // Front vertices
-                    std::vector<glm::vec3> vertices = {
+                    glm::vec3 vertices[8] = {
                         {ix                 , y + coordinates[1], iz    },
                         {ix + coordinates[0], y + coordinates[1], iz    },
                         {ix + coordinates[0], y                 , iz    },
@@ -271,7 +269,7 @@ void Chunk::generateMeshes(){
                     //if(currentBlock->repeatTexture) printf("Index: %i\n", def->textureIndex);
                     int texture = currentBlock.repeatTexture ? currentBlock.textures[0] : currentBlock.textures[def.textureIndex];
 
-                    std::vector<float> metadata = {
+                    float metadata[6] = {
                         1.0, 1.0, static_cast<float>(texture),
                         lightR, lightG, lightB
                     };
@@ -304,7 +302,7 @@ void Chunk::generateMeshes(){
         }    
     }
 
-    //std::cout << "Faces:" << this->solidMesh.value().getVertices().size() / 12 / 4 << std::endl;
+    std::cout << "Vertices:" << this->solidMesh.get()->getVertices().size() << std::endl;
 }
 
 

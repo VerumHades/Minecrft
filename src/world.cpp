@@ -14,14 +14,9 @@ Chunk* World::generateAndGetChunk(int x, int z){
     }
     
     
-    Chunk chunk = generateTerrainChunk(*this,x,z);
     std::unique_lock lock(chunkGenLock);
-    auto [iter, success] = this->chunks.emplace(
-        std::piecewise_construct,
-        std::forward_as_tuple(key),
-        std::forward_as_tuple(std::move(chunk))
-    );
-
+    auto [iter, success] = this->chunks.emplace(key, Chunk(*this, glm::vec2(x, z)));
+    generateTerrainChunk(iter->second,x,z);
     return &iter->second;
 }
 
@@ -53,21 +48,16 @@ bool Vec2Equal::operator()(const glm::vec2& lhs, const glm::vec2& rhs) const noe
 
 static int threadsTotal = 0;
 void generateChunkMeshThread(Chunk* chunk){
+    auto start = std::chrono::high_resolution_clock::now();
 
-    //struct timespec start, end;
-    
-     //Start timer
-    //clock_gettime(CLOCK_REALTIME, &start);
-
+        
     chunk->generateMeshes();
-    // End timer
-    //clock_gettime(CLOCK_REALTIME, &end);
 
-    // Calculate time difference
-    //double elapsed_time = (end.tv_sec - start.tv_sec) +
-    //                     (end.tv_nsec - start.tv_nsec) / 1e9;
+    // End time point
+    auto end = std::chrono::high_resolution_clock::now();
 
-    //printf("Time generate chunk mesh: %fs\n", elapsed_time);
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "Execution time: " << duration << " microseconds" << std::endl;
 
     chunk->meshGenerating = false;
     chunk->meshGenerated = true;
@@ -103,7 +93,8 @@ Chunk* World::getChunkWithMesh(int x, int y){
             chunk->buffersLoaded = true;
             chunk->isDrawn = true;
         }
-        //printf("Vertices:%i Indices:%i\n", chunk->solidMesh->vertices_count, chunk->solidMesh->indices_count);
+        //printf("Vertices:%i Indices:%i\n", chunk->solidMesh->vertices_count, chunk->solidMesh->indices_count)
+        updated = true;
         
         if(chunk->isDrawn) return chunk;
     }

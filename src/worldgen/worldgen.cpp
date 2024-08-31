@@ -73,9 +73,7 @@ float lerp(float a, float b, float f)
     return a * (1.0 - f) + (b * f);
 }
 
-Chunk generateTerrainChunk(World& world, int chunkX, int chunkY){
-    Chunk chunk = Chunk(world, glm::vec2(chunkX, chunkY));
-
+void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY){
     // Create and configure noise state
     fnl_state noise = fnlCreateState();
     noise.noise_type = FNL_NOISE_PERLIN;
@@ -143,6 +141,5 @@ Chunk generateTerrainChunk(World& world, int chunkX, int chunkY){
             }
         }
     }
-    
-    return chunk;
+ 
 }

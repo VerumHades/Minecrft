@@ -17,7 +17,7 @@ uniform sampler2DArray textureArray;
 uniform sampler2D shadowMap;
 
 uniform vec3 camPos;
-uniform vec3 lightPos;
+uniform vec3 lightDir;
 uniform float time;
 //uniform sampler3D lightArray;
 
@@ -72,26 +72,20 @@ void main()
 */
 
     vec3 color = texture(textureArray, vec3(TexCoords, TexIndex)).rgb;
-    vec3 normal = normalize(Normal);
+    vec3 normal = normalize(-Normal);
     vec3 lightColor = vec3(1.0);
     // ambient
-    vec3 ambient = 0.2 * lightColor;
+    vec3 ambient = 0.4 * lightColor;
     // diffuse
-    vec3 lightDir = normalize(lightPos - FragPos);
+    //vec3 lightDir = normalize(lightPos - FragPos);
     //lightDir *= -1;
-    float diff = max(dot(lightDir, normal), 0.0);
-    vec3 diffuse = diff * lightColor;
-    // specular
-    vec3 viewDir = normalize(camPos - FragPos);
-    float spec = 0.0;
-    vec3 halfwayDir = normalize(lightDir + viewDir);  
-    spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
-    vec3 specular = spec * lightColor;    
+
     // calculate shadow
     float shadow = ShadowCalculation(FragPosLightSpace);       
-    //vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
+    
+    vec3 lighting = (ambient + (1.0 - shadow)) * color;
     //vec3 lighting = vec3(shadow);
 
-    vec3 lighting = (ambient + (1.0 - shadow) * 1.0) * color;
+    //vec3 lighting = (ambient + (1.0 - shadow) * 1.0) * color;
     FragColor = vec4(lighting, 1.0);
 }

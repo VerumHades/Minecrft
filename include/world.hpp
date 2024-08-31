@@ -2,7 +2,6 @@
 #define WORLD_H
 
 #include <chunk.hpp>
-#include <ctime>
 #include <worldgen/worldgen.hpp>
 #include <thread>
 #include <glm/glm.hpp>
@@ -11,6 +10,7 @@
 #include <functional>
 #include <shared_mutex> 
 #include <chrono>
+#include <entity.hpp>
 
 struct Vec2Hash {
     std::size_t operator()(const glm::vec2& v) const noexcept;
@@ -33,19 +33,15 @@ typedef struct RaycastResult{
     float lastZ;
 } RaycastResult;
 
-typedef struct CollisionCheckResult{
-    Block* collidedBlock;
-    bool collision;
-    int x;
-    int y;
-    int z;
-} CollisionCheckResult;
 
-class World{
+class World: public Collidable{
     private:
         std::unordered_map<glm::vec2, Chunk, Vec2Hash, Vec2Equal> chunks;
+        std::vector<Entity> entities;
 
     public:
+        bool updated = false;
+
         Block* getBlock(int x, int y, int z);
         bool setBlock(int x, int y, int z, Block index);
 
@@ -61,6 +57,8 @@ class World{
         RaycastResult raycast(float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance);
 
         void drawChunks(Camera& camera, int renderDistance);
+
+        std::vector<Entity>& getEntities() {return entities;}
 };
 
 extern size_t predefinedBlocksTotal;

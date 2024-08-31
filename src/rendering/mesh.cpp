@@ -1,8 +1,8 @@
 #include <rendering/mesh.hpp>
 
 Mesh::Mesh(){
-    this->vertices.reserve(5000);
-    this->indices.reserve(5000);
+    //this->vertices.reserve(10000);
+    //this->indices.reserve(10000);
 }
 const std::vector<float>& Mesh::getVertices(){
     return this->vertices;
@@ -22,7 +22,7 @@ void Mesh::setVertexFormat(const std::vector<int>& format){
     for(const int& i: this->format) this->vertexSize += i;
 }
 
-void Mesh::addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, std::vector<float> metadata, int clockwise, int width, int height){
+void Mesh::addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, float metadata[6], int clockwise, int width, int height){
     // Precalculate texture coordinates
     float textureX = metadata[0];
     float textureY = metadata[1];
@@ -36,39 +36,41 @@ void Mesh::addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, std::vector<flo
         {textureX , textureYH}
     };
 
+    //this->vertices.reserve(this->vertices.size() + 4 * this->vertexSize);
+    //this->indices.reserve(this->indices.size() + 6);
+
     unsigned int vecIndices[4];
 
-    std::vector<float> vertex(this->vertexSize);
+    float vertex[12 * 4];
+    int startIndex = this->vertices.size() / 12;
     for(int i = 0; i < 4; i++){
-        vertex[0] = vertices[i].x;
-        vertex[1] = vertices[i].y;
-        vertex[2] = vertices[i].z;
+        int offset = i * 12;
+
+        vertex[0 + offset] = vertices[i].x;
+        vertex[1 + offset] = vertices[i].y;
+        vertex[2 + offset] = vertices[i].z;
 
         // Normals
-        vertex[3] = normals.x;
-        vertex[4] = normals.y;
-        vertex[5] = normals.z;
+        vertex[3 + offset] = normals.x;
+        vertex[4 + offset] = normals.y;
+        vertex[5 + offset] = normals.z;
 
         // Texture coordinates
-        vertex[6] = textureCoordinates[i].x;
-        vertex[7] = textureCoordinates[i].y;
+        vertex[6 + offset] = textureCoordinates[i].x;
+        vertex[7 + offset] = textureCoordinates[i].y;
 
         // Metadata
-        vertex[8] = metadata[2];  // Assuming this is some identifier or flag
+        vertex[8 + offset] = metadata[2];
 
         // Store the vertex index and add the vertex to the vertices array
-        vecIndices[i] = this->vertices.size() / this->vertexSize;
-        this->vertices.insert(this->vertices.end(), vertex.begin(), vertex.end());
+        vecIndices[i] = startIndex + i;
     }
 
-    // Insert indices depending on winding order (clockwise or counter-clockwise)
-    if (clockwise) {
-        this->indices.insert(this->indices.end(), {vecIndices[0], vecIndices[1], vecIndices[3]});
-        this->indices.insert(this->indices.end(), {vecIndices[1], vecIndices[2], vecIndices[3]});
-    } else {
-        this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[1], vecIndices[0]});
-        this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[2], vecIndices[1]});
-    }
+    this->vertices.insert(this->vertices.end(), vertex, vertex + 12 * 4);
+
+    if (clockwise) this->indices.insert(this->indices.end(), {vecIndices[0], vecIndices[1], vecIndices[3], vecIndices[1], vecIndices[2], vecIndices[3]});
+    else this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[1], vecIndices[0], vecIndices[3], vecIndices[2], vecIndices[1]});
+    
 }
 
 /*
