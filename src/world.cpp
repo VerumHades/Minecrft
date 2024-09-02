@@ -13,7 +13,6 @@ Chunk* World::generateAndGetChunk(int x, int z){
         } 
     }
     
-    
     std::unique_lock lock(chunkGenLock);
     auto [iter, success] = this->chunks.emplace(key, Chunk(*this, glm::vec2(x, z)));
     generateTerrainChunk(iter->second,x,z);
@@ -44,12 +43,13 @@ bool Vec2Equal::operator()(const glm::vec2& lhs, const glm::vec2& rhs) const noe
     return lhs.x == rhs.x && lhs.y == rhs.y;
 }
 
-
-
+static int maxThreads = 16;
+//const auto maxThreads = 1;
 static int threadsTotal = 0;
 void generateChunkMeshThread(Chunk* chunk){
     auto start = std::chrono::high_resolution_clock::now();
 
+    //std::cout << "Generating mesh: " << &chunk <<  std::endl;
         
     chunk->generateMeshes();
 
@@ -68,12 +68,13 @@ Chunk* World::getChunkWithMesh(int x, int y){
     Chunk* chunk = this->getChunk(x, y);
     if(!chunk) return nullptr;
 
-    if(!chunk->meshGenerated && !chunk->meshGenerating && threadsTotal < 16){
+    if(!chunk->meshGenerated && !chunk->meshGenerating && threadsTotal < maxThreads){
         threadsTotal++;
         std::thread t1(generateChunkMeshThread, chunk);
-        chunk->meshGenerating = true;
-
         t1.detach();
+
+        chunk->meshGenerating = true;
+        //generateChunkMeshThread(chunk);
         if(chunk->isDrawn) return chunk;
         return nullptr;
     } 
@@ -111,9 +112,9 @@ CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bo
     for(int i = -range;i <= range;i++){
         for(int j = -range;j <= range;j++){
             for(int g = -range;g <= range;g++){
-                int cx = x + i;
-                int cy = y + j;
-                int cz = z + g;
+                int cx = (int) x + i;
+                int cy = (int) y + j;
+                int cz = (int) z + g;
 
                 Block* blocki = this->getBlock(cx, cy, cz);
                 if(blocki){
@@ -243,41 +244,41 @@ RaycastResult World::raycast(float fromX, float fromY, float fromZ, float dirX, 
 Block* World::getBlock(int x, int y, int z){
     if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return nullptr;
     
-    int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
-    int chunkZ = floor((double)z / (double)DEFAULT_CHUNK_SIZE);
+    int chunkX = (int) floor((double)x / (double)DEFAULT_CHUNK_SIZE);
+    int chunkZ = (int) floor((double)z / (double)DEFAULT_CHUNK_SIZE);
 
     int ix = abs(x - chunkX * DEFAULT_CHUNK_SIZE);
     int iz = abs(z - chunkZ * DEFAULT_CHUNK_SIZE);
     //printf("Chunk coords: %ix%i Block coords: %i(%i)x%ix%i(%i)\n", chunkX, chunkZ, ix,y,iz);
 
     Chunk* chunk = this->getChunk(chunkX, chunkZ);
-    if(!chunk) return this->generateAndGetChunk(chunkX, chunkZ)->getBlock(ix,y,iz);
+    if(!chunk) return nullptr;//this->generateAndGetChunk(chunkX, chunkZ)->getBlock(ix,y,iz);
 
     return chunk->getBlock(ix, y, iz);
 }
 
 Chunk* World::getChunkFromBlockPosition(int x, int z){
-    int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
-    int chunkZ = floor((double)z / (double)DEFAULT_CHUNK_SIZE);
+    int chunkX = (int) floor((double)x / (double)DEFAULT_CHUNK_SIZE);
+    int chunkZ = (int) floor((double)z / (double)DEFAULT_CHUNK_SIZE);
 
     return this->getChunk(chunkX, chunkZ);
 }
 
 glm::vec2 World::getBlockInChunkPosition(int x, int z){
-    int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
-    int chunkZ = floor((double)z / (double)DEFAULT_CHUNK_SIZE);
+    int chunkX = (int) floor((double)x / (double)DEFAULT_CHUNK_SIZE);
+    int chunkZ = (int) floor((double)z / (double)DEFAULT_CHUNK_SIZE);
 
     int ix = abs(x - chunkX * DEFAULT_CHUNK_SIZE);
     int iz = abs(z - chunkZ * DEFAULT_CHUNK_SIZE);
 
-    return glm::vec2(ix,iz);
+    return glm::vec2((float) ix,(float) iz);
 }
 
 bool World::setBlock(int x, int y, int z, Block index){
     if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return false;
     
-    int chunkX = floor((double)x / (double)DEFAULT_CHUNK_SIZE);
-    int chunkZ = floor((double)z / (double)DEFAULT_CHUNK_SIZE);
+    int chunkX = (int) floor((double)x / (double)DEFAULT_CHUNK_SIZE);
+    int chunkZ = (int) floor((double)z / (double)DEFAULT_CHUNK_SIZE);
 
     int ix = abs(x - chunkX * DEFAULT_CHUNK_SIZE);
     int iz = abs(z - chunkZ * DEFAULT_CHUNK_SIZE);
@@ -286,32 +287,39 @@ bool World::setBlock(int x, int y, int z, Block index){
     //Block* i = getWorldBlock(world, ix, y, iz);
 
     Chunk* chunk = this->getChunk(chunkX, chunkZ);
-    if(!chunk) this->generateAndGetChunk(chunkX, chunkZ)->setBlock(ix,y,iz,index);
-    else chunk->setBlock(ix, y, iz, index);
+    if(!chunk) return false;//this->generateAndGetChunk(chunkX, chunkZ)->setBlock(ix,y,iz,index);
+    chunk->setBlock(ix, y, iz, index);
 
     return true;
 }
 
 void World::drawChunks(Camera& camera, int renderDistance){
-    int camWorldX = camera.getPosition().x / DEFAULT_CHUNK_SIZE;
-    int camWorldZ = camera.getPosition().z / DEFAULT_CHUNK_SIZE;
+    int camWorldX = (int) camera.getPosition().x / DEFAULT_CHUNK_SIZE;
+    int camWorldZ = (int) camera.getPosition().z / DEFAULT_CHUNK_SIZE;
 
     for(int x = -renderDistance; x <= renderDistance; x++){
         for(int z = -renderDistance; z <= renderDistance; z++){
             int chunkX = x + camWorldX;
             int chunkZ = z + camWorldZ;
 
+            //std::cout << "Drawing chunk: " << chunkX << " " << chunkZ << " " << camera.getPosition().x << " " << camera.getPosition().z <<std::endl;
+
             Chunk* meshlessChunk = this->getChunk(chunkX, chunkZ);
             if(!meshlessChunk){
                 meshlessChunk = this->generateAndGetChunk(chunkX, chunkZ);
             }
+            if(!meshlessChunk) continue;
+
+            //std::cout << "Got chunk!" << std::endl;
 
             if(!camera.isVisible(*meshlessChunk) && !(abs(x) + abs(z) <= 2)) continue;
             Chunk* chunk = this->getChunkWithMesh(chunkX, chunkZ);
+            
+            //std::cout << "Got meshed chunk!" << std::endl;
             if(!chunk) continue;
             if(!chunk->isDrawn) continue;
 
-            camera.setModelPosition(chunkX * DEFAULT_CHUNK_SIZE,0,chunkZ * DEFAULT_CHUNK_SIZE);
+            camera.setModelPosition((float) chunkX * DEFAULT_CHUNK_SIZE,0, (float) chunkZ * DEFAULT_CHUNK_SIZE);
             camera.updateUniforms();
 
             if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();

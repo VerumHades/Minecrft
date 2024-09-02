@@ -41,3 +41,9 @@ add_executable(main ${SOURCES})
 
 # Link libraries
 target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad)
+
+if(MSVC)
+  target_compile_options(main PRIVATE /W4 /WX)
+else()
+  target_compile_options(main PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()

@@ -69,11 +69,11 @@ void Chunk::regenerateMesh(){
 }
 void Chunk::regenerateMesh(glm::vec2 blockCoords){
     this->regenerateMesh();
-    if(blockCoords.x == 0) regenMesh(this->worldPosition.x - 1, this->worldPosition.y);
-    if(blockCoords.x == DEFAULT_CHUNK_SIZE - 1) regenMesh(this->worldPosition.x + 1, this->worldPosition.y);
+    if(blockCoords.x == 0) regenMesh((int) this->worldPosition.x - 1, (int) this->worldPosition.y);
+    if(blockCoords.x == DEFAULT_CHUNK_SIZE - 1) regenMesh((int) this->worldPosition.x + 1, (int) this->worldPosition.y);
 
-    if(blockCoords.y == 0) regenMesh(this->worldPosition.x, this->worldPosition.y - 1);
-    if(blockCoords.y == DEFAULT_CHUNK_SIZE - 1) regenMesh(this->worldPosition.x, this->worldPosition.y + 1);
+    if(blockCoords.y == 0) regenMesh((int) this->worldPosition.x, (int) this->worldPosition.y - 1);
+    if(blockCoords.y == DEFAULT_CHUNK_SIZE - 1) regenMesh((int) this->worldPosition.x, (int) this->worldPosition.y + 1);
 }
 #undef regenMesh
 
@@ -81,7 +81,7 @@ Block* Chunk::getBlock(unsigned int x, unsigned int y, unsigned int z){
     if(x >= DEFAULT_CHUNK_SIZE) return nullptr;
     if(y >= DEFAULT_CHUNK_HEIGHT) return nullptr;
     if(z >= DEFAULT_CHUNK_SIZE) return nullptr;
-    
+
     return &this->blocks[x][y][z];
 }
 
@@ -146,8 +146,8 @@ void Chunk::generateMeshes(){
     for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++){
         for(int iz = 0;iz < DEFAULT_CHUNK_SIZE;iz++){
             for(int ix = 0;ix < DEFAULT_CHUNK_SIZE;ix++){
-                int x = ix + this->getWorldPosition().x * DEFAULT_CHUNK_SIZE;
-                int z = iz + this->getWorldPosition().y * DEFAULT_CHUNK_SIZE;
+                int x = ix + (int) this->getWorldPosition().x * DEFAULT_CHUNK_SIZE;
+                int z = iz + (int) this->getWorldPosition().y * DEFAULT_CHUNK_SIZE;
 
                 //printf("%ix%ix%i\n", x, y, z);
                 Block* currentBlockRef = this->getBlock(ix, y ,iz);
@@ -274,9 +274,6 @@ void Chunk::generateMeshes(){
                         lightR, lightG, lightB
                     };
 
-                    /*if(metadata.values[0] != textureX || metadata.values[1] != textureY){
-                        printf("This shouldnt happen!\n");
-                    }*/
                     if(def.offsetX != 0){
                         int temp = width;
                         width = height;
@@ -302,7 +299,7 @@ void Chunk::generateMeshes(){
         }    
     }
 
-    std::cout << "Vertices:" << this->solidMesh.get()->getVertices().size() << std::endl;
+    //std::cout << "Vertices:" << this->solidMesh.get()->getVertices().size() << std::endl;
 }
 
 

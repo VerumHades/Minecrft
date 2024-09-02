@@ -4,7 +4,6 @@
 #include <cmath>
 #include <ctime>
 
-
 #include <rendering/texture.hpp>
 #include <rendering/buffer.hpp>
 #include <rendering/mesh.hpp>
@@ -20,11 +19,7 @@
 #include <array>
 #include <blocks.hpp>
 
-#define OK -1
-#define INVALID_COORDINATES -2
-#define LAYER_CORRUPTED -3
-
-#define DEFAULT_CHUNK_SIZE 16
+#define DEFAULT_CHUNK_SIZE 24
 #define DEFAULT_CHUNK_AREA DEFAULT_CHUNK_SIZE * DEFAULT_CHUNK_SIZE
 #define DEFAULT_CHUNK_HEIGHT 256
 

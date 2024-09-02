@@ -20,11 +20,11 @@ class Collidable{
 
 class Entity{
     private:
-        glm::vec3 position;
-        glm::vec3 velocity;
+        glm::vec3 position = glm::vec3(0);
+        glm::vec3 velocity = glm::vec3(0);
 
-        float maxVelocity = 0.2;
-        float friction = 0.005;
+        float maxVelocity = 0.2f;
+        float friction = 0.005f;
         bool hasGravity = true;
 
         std::vector<RectangularCollider> colliders;

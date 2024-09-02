@@ -1,13 +1,19 @@
 #include <entity.hpp>
-
+#include <iostream>
 Entity::Entity(glm::vec3 position, glm::vec3 colliderDimensions): position(position) {
     colliders.push_back({0,0,0,colliderDimensions.x,colliderDimensions.y,colliderDimensions.z});
 }
 
 void Entity::accelerate(glm::vec3 direction){
     auto newVelocity = velocity + direction;
-    if(glm::length(newVelocity) > maxVelocity) newVelocity = glm::normalize(newVelocity) * maxVelocity;
-    velocity = newVelocity;
+
+    glm::vec3 horizontalVelocity = glm::vec3(newVelocity.x, 0, newVelocity.z);
+    glm::vec3 verticalVelocity = glm::vec3(0,newVelocity.y,0);
+
+    if(glm::length(horizontalVelocity) > maxVelocity) horizontalVelocity = glm::normalize(horizontalVelocity) * maxVelocity;
+    if(glm::length(verticalVelocity) > maxVelocity) verticalVelocity = glm::normalize(verticalVelocity) * maxVelocity;
+
+    velocity = horizontalVelocity + verticalVelocity;
 }
 
 CollisionCheckResult Entity::checkForCollision(Collidable& collidable, bool withVelocity, glm::vec3 offset){
@@ -15,8 +21,8 @@ CollisionCheckResult Entity::checkForCollision(Collidable& collidable, bool with
     if(withVelocity) pos += this->velocity;
     CollisionCheckResult result = {nullptr, false, 0,0,0};
 
-    int size = colliders.size();
-    for(int i = 0;i < size;i++){
+    size_t size = colliders.size();
+    for(size_t i = 0;i < size;i++){
         auto temp = collidable.checkForRectangularCollision(pos.x,pos.y,pos.z, &colliders[i]);
         if(temp.collision){
             result = temp;
@@ -28,8 +34,9 @@ CollisionCheckResult Entity::checkForCollision(Collidable& collidable, bool with
 }
 
 void Entity::update(Collidable& collidable){
+    if(hasGravity) this->accelerate(glm::vec3(0,-0.01,0));
+
     glm::vec3& vel = this->velocity;
-    if(hasGravity) vel += glm::vec3(0,-0.01,0);
 
     if(checkForCollision(collidable, false, {vel.x, 0, 0}).collision) vel.x = 0;
     if(checkForCollision(collidable, false, {0, vel.y, 0}).collision) vel.y = 0;

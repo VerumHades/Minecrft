@@ -14,15 +14,15 @@ const std::vector<int>& Mesh::getFormat(){
     return this->format;
 }
 
-void Mesh::setVertexFormat(const std::vector<int>& format){
-    this->format = format;
+void Mesh::setVertexFormat(const std::vector<int>& format_){
+    this->format = format_;
     this->formatSet = true;
 
     this->vertexSize = 0; 
     for(const int& i: this->format) this->vertexSize += i;
 }
 
-void Mesh::addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, float metadata[6], int clockwise, int width, int height){
+void Mesh::addQuadFace(glm::vec3 vertices_[4], glm::vec3 normals, float metadata[6], int clockwise, int width, int height){
     // Precalculate texture coordinates
     float textureX = metadata[0];
     float textureY = metadata[1];
@@ -42,13 +42,13 @@ void Mesh::addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, float metadata[
     unsigned int vecIndices[4];
 
     float vertex[12 * 4];
-    int startIndex = this->vertices.size() / 12;
+    unsigned int startIndex = (unsigned int) this->vertices.size() / 12;
     for(int i = 0; i < 4; i++){
         int offset = i * 12;
 
-        vertex[0 + offset] = vertices[i].x;
-        vertex[1 + offset] = vertices[i].y;
-        vertex[2 + offset] = vertices[i].z;
+        vertex[0 + offset] = vertices_[i].x;
+        vertex[1 + offset] = vertices_[i].y;
+        vertex[2 + offset] = vertices_[i].z;
 
         // Normals
         vertex[3 + offset] = normals.x;

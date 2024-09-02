@@ -15,21 +15,20 @@ DepthCamera suncam;
 
 int lastMouseX = 0;
 int lastMouseY = 0;
-float sensitivity = 0.1;
+float sensitivity = 0.1f;
 
 int renderDistance = 8;
 
-float camSpeed = 0.01;
-float M_PI_D180 = M_PI / 180;
+float camSpeed = 0.01f;
 
-glm::vec3 camOffset = {0.3,1.6,0.3};
+glm::vec3 camOffset = {0.3f,1.6f,0.3f};
 
-float camFOV = 90;
-float maxFOV = 90;
-float minFOV = 10;
+float camFOV = 90.0f;
+float maxFOV = 90.0f;
+float minFOV = 10.0f;
 
 int sunDistance = ((DEFAULT_CHUNK_SIZE * renderDistance) / 2) ;
-float sunAngle = 80;
+float sunAngle = 45.0f;
 World world;
 
 struct BoundKey{
@@ -47,7 +46,7 @@ int boundKeysCount = sizeof(boundKeys) / sizeof(boundKeys[0]);
 
 static bool lineMode = true;
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
+void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/){
     for(int i = 0; i < boundKeysCount;i++){
         if(key == boundKeys[i].key && action == GLFW_PRESS) boundKeys[i].isDown = true; 
         else if(key == boundKeys[i].key && action == GLFW_RELEASE) boundKeys[i].isDown = false; 
@@ -60,19 +59,19 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height){
+void framebuffer_size_callback(GLFWwindow* /*window*/, int width, int height){
     glViewport(0,0,width,height);
     camera.resizeScreen(width, height, camFOV);
     camera.updateUniforms();
     //printf("%i %i\n",width,height);
 }
 
-void cursor_position_callback(GLFWwindow* window, double mouseX, double mouseY)
+void cursor_position_callback(GLFWwindow* /*window*/, double mouseX, double mouseY)
 {
-    float xoffset = mouseX - lastMouseX;
-    float yoffset = lastMouseY - mouseY; // Reversed since y-coordinates go from bottom to top
-    lastMouseX = mouseX;
-    lastMouseY = mouseY;
+    float xoffset = (float)mouseX - lastMouseX;
+    float yoffset = lastMouseY - (float)mouseY; // Reversed since y-coordinates go from bottom to top
+    lastMouseX = (int)mouseX;
+    lastMouseY = (int)mouseY;
 
     xoffset *= sensitivity;
     yoffset *= sensitivity * 2;
@@ -92,7 +91,7 @@ void cursor_position_callback(GLFWwindow* window, double mouseX, double mouseY)
 }
 
 //static int selectedBlock = 1;
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /*mods*/)
 {
     glm::vec3& camDirection = camera.getDirection();
     glm::vec3 camPosition = camera.getPosition();
@@ -129,9 +128,9 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     }*/
 }
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+void scroll_callback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset)
 {
-    camFOV -= yoffset * 5;
+    camFOV -= (float) yoffset * 5.0f;
 
     if(camFOV < minFOV) camFOV = minFOV;
     else if(camFOV > maxFOV) camFOV = maxFOV;
@@ -152,8 +151,8 @@ int main() {
         return -1;
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
     ///glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
@@ -182,6 +181,9 @@ int main() {
         return -1;
     }
 
+
+    std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
+    
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     
@@ -204,6 +206,7 @@ int main() {
     };
 
     camera.addSkybox("shaders/skybox.vs","shaders/skybox.fs", skyboxPaths);
+    std::cout << "Loaded skybox" << std::endl;
    // GLSkybox skybox = GLSkybox(skyboxPaths);
 
     std::vector<std::string> texturePaths = {
@@ -224,6 +227,7 @@ int main() {
     camera.useProgram("main");
     GLTextureArray tilemap = GLTextureArray();
     tilemap.loadFromFiles(texturePaths,160,160);
+    std::cout << "Loaded textures" << std::endl;
 
     suncam.initialize();
     suncam.getTexture()->bind(1);
@@ -237,7 +241,7 @@ int main() {
     
     int camPosLoc = camera.getProgram("main").getUniformLocation("camPos");
 
-    int TimeLoc = camera.getProgram("main").getUniformLocation("time");
+    //int TimeLoc = camera.getProgram("main").getUniformLocation("time");
 
     glUniform1i(camera.getProgram("main").getUniformLocation("textureArray"),0);
     glUniform1i(camera.getProgram("main").getUniformLocation("shadowMap"),1);
@@ -245,27 +249,9 @@ int main() {
     double last = glfwGetTime();
     double current = glfwGetTime();
 
-    int callsToExpand = 0;
-    int time = 0;
-
     int pregenDistance = renderDistance + 2;
 
-    int total = 0;
-    for(int x = -pregenDistance; x <= pregenDistance; x++){
-        for(int z = -pregenDistance; z <= pregenDistance; z++){
-            int chunkX = x;
-            int chunkZ = z;
-
-            Chunk* meshlessChunk = world.getChunk(chunkX, chunkZ);
-            if(!meshlessChunk){
-                meshlessChunk = world.generateAndGetChunk(chunkX, chunkZ);
-            }
-            total++;
-
-            std::cout << "\r Generation chunks: " << total << "/" << pow(pregenDistance * 2,2);
-        }
-    }
-    std::cout << std::endl;
+    camera.setPosition(0.0f,160.0f,0.0f);
 
     world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
 
@@ -279,6 +265,7 @@ int main() {
         const glm::vec3& playerPosition = player.getPosition();
         glm::vec3 camPosition = playerPosition + camOffset;
         
+        //std::cout << player.getVelocity().x << " " << player.getVelocity().y << " " << player.getVelocity().z << std::endl;
         camera.setPosition(camPosition);
         camera.updateUniforms();
 
@@ -295,9 +282,27 @@ int main() {
 
 
         //std::cout << seconds << std::endl;
-        double fps = 1.0 / seconds;
-        printf("\rFPS: %f",fps);
+        //double fps = 1.0 / seconds;
+        //std::cout << "FPS: " << fps << "Chunks loaded: " << world.chunksTotal() <<  std::endl;
+        //int time = 0;
 
+        int total = 0;
+        for(int x = -pregenDistance; x <= pregenDistance; x++){
+            for(int z = -pregenDistance; z <= pregenDistance; z++){
+                int chunkX = x;
+                int chunkZ = z;
+
+                Chunk* meshlessChunk = world.getChunk(chunkX, chunkZ);
+                if(!meshlessChunk){
+                    meshlessChunk = world.generateAndGetChunk(chunkX, chunkZ);
+                }
+                total++;
+
+                //std::cout << "\r Generation chunks: " << total << "/" << pow(pregenDistance * 2,2);
+            }
+        }
+       // std::cout << std::endl;
+        
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -320,8 +325,8 @@ int main() {
         //suncam.setPosition(c0,400, camera.getPosition().z);
 
         if(world.updated){
-            int offsetX = camera.getPosition().x;
-            int offsetZ = camera.getPosition().z;
+            float offsetX = camera.getPosition().x;
+            float offsetZ = camera.getPosition().z;
 
             suncam.setPosition(
                 offsetX + sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)

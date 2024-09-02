@@ -1,22 +1,22 @@
 #include <rendering/camera.hpp>
 
-void PerspectiveCamera::resizeScreen(int width, int height, float FOV){
+void PerspectiveCamera::resizeScreen(int width, int height, float fov){
     this->screenWidth = width;
     this->screenHeight = height;
-    this->FOV = FOV;
+    this->FOV = fov;
     this->aspect = (float) this->screenWidth / (float) this->screenHeight;
 
-    this->projectionMatrix = glm::perspective<float>(glm::radians(FOV), aspect, zNear, zFar);
+    this->projectionMatrix = glm::perspective<float>(glm::radians(fov), aspect, zNear, zFar);
     //this->viewMatrix = glm::mat4(1.0f);
     //this->modelMatrix = glm::mat4(1.0f);
     calculateFrustum();
     updateUniforms();
 }
 
-void PerspectiveCamera::adjustFOV(float FOV){
-    this->FOV = FOV;
+void PerspectiveCamera::adjustFOV(float fov){
+    this->FOV = fov;
 
-    this->projectionMatrix = glm::perspective<float>(glm::radians(FOV), aspect, zNear, zFar);
+    this->projectionMatrix = glm::perspective<float>(glm::radians(fov), aspect, zNear, zFar);
     calculateFrustum();
     updateUniforms();
 }
@@ -72,9 +72,9 @@ void PerspectiveCamera::setPosition(glm::vec3 pos) {
     calculateFrustum();
 }
 
-void PerspectiveCamera::setRotation(float pitch, float yaw) {
-    this->pitch = pitch;
-    this->yaw = yaw;
+void PerspectiveCamera::setRotation(float pitch_, float yaw_){
+    this->pitch = pitch_;
+    this->yaw = yaw_;
 
     glm::vec3 front;
     front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));

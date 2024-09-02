@@ -7,10 +7,10 @@
 GLTexture::GLTexture(char* filename){
     TYPE = GL_TEXTURE_2D;
 
-    int width, height, nrChannels;
+    int width = 0, height = 0, nrChannels = 0;
     unsigned char *data = stbi_load(filename, &width, &height, &nrChannels, 0);
     if (!data) {
-        fprintf(stderr, "Failed to load texture: '%s'.\n", filename);
+        std::cerr << "Failed to load texture: " << filename << std::endl;
         return;
     }
 
@@ -54,15 +54,21 @@ void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layer
     TYPE = GL_TEXTURE_2D_ARRAY;
     glBindTexture(GL_TEXTURE_2D_ARRAY, this->texture);
 
-    int mipLevels = floor(log2(fmax(layerWidth, layerHeight))) + 1;
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, GL_RGB8, layerWidth, layerHeight, filenames.size());
+    int size = (int)filenames.size();
+    std::cout << "Loading texture1: " << size << std::endl;
 
-    int width, height, nrChannels;
+    int mipLevels = (int) floor(log2(fmax(layerWidth, layerHeight))) + 1;
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, GL_RGB8, layerWidth, layerHeight,  size);
+    
+    std::cout << "Loading texture2" << std::endl;
+
+    int width = 0, height = 0, nrChannels = 0;
     unsigned char *data;  
-    for(unsigned int i = 0; i <  filenames.size(); i++)
-    {
+    for(int i = 0; i < size; i++)
+    {   
+        std::cout << "Loaded texture: " << filenames[i] << "Channels: " << nrChannels << std::endl;
         data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 0);
-
+    
         if (!data) {
             throw std::runtime_error("Failed to load texture '%s'\n");
         }
@@ -148,17 +154,20 @@ GLSkybox::GLSkybox(std::array<std::string, 6> filenames){
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, this->texture);
 
-    int width, height, nrChannels;
-    unsigned char *data;  
+    int width = 0, height = 0, nrChannels = 0;
+    unsigned char *data = nullptr;  
     for(unsigned int i = 0; i < 6; i++)
     {
         data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 0);
 
         if (!data) {
+            std::cout << "Failed to load texture: " <<  filenames[i] << std::endl;
             throw std::runtime_error("Failed to load texture when creating skybox.");
         }
+       // std::cout << "Loaded " << filenames[i] << " successfully! Channels:" << nrChannels << std::endl;
 
         if(nrChannels != 4 && nrChannels != 3){
+            std::cout << "Invalid channels in skybox texture: " << nrChannels << std::endl;
             throw std::runtime_error("Invalid channels in skybox texture.");
         }
 
@@ -175,7 +184,6 @@ GLSkybox::GLSkybox(std::array<std::string, 6> filenames){
 
     unsigned int VBO;
     glGenBuffers(1, &VBO);
-    unsigned int vao;
     glGenVertexArrays(1, &vao);
 
     glBindVertexArray(vao);

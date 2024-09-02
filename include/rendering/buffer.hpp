@@ -15,8 +15,8 @@ class GLBuffer{
         unsigned int index;
         unsigned int vao;
 
-        unsigned int vertexCount = 0;
-        unsigned int indiciesCount = 0;
+        size_t vertexCount = 0;
+        size_t indiciesCount = 0;
 
         bool dataLoaded = false;
     public:

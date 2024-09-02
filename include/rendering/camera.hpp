@@ -49,7 +49,7 @@ struct Volume
 
 class Camera{
     public:
-        //virtual ~Camera() {}  // Add a virtual destructor
+        //~Camera() {std::cout << "Camera destroyed:" << this << std::endl;}
         virtual void setModelPosition(float x, float y, float z) = 0;
         virtual glm::vec3& getPosition() = 0;
         virtual bool isVisible(Volume& volume) = 0;
@@ -70,8 +70,8 @@ class PerspectiveCamera: public Camera{
         glm::vec3 direction = glm::vec3(1,0,0);
         glm::vec3 up = glm::vec3(0,1,0);
 
-        float screenWidth = 1920;
-        float screenHeight = 1080;
+        int screenWidth = 1920;
+        int screenHeight = 1080;
 
         float zNear = 0.1f;
         float zFar = 1000.0f;
@@ -148,10 +148,10 @@ class DepthCamera: public Camera{
 
         void setModelPosition(float x, float y, float z);
         void setPosition(float x, float y, float z);
-        void setPosition(glm::vec3& position) {this->position = position;};
+        void setPosition(glm::vec3& pos) {this->position = pos;};
         void setTarget(float x, float y, float z);
-        void setTarget(glm::vec3& target) {this->target = target;}
-        bool isVisible(Volume& volume){return true;}
+        void setTarget(glm::vec3& t) {this->target = t;}
+        bool isVisible(Volume&){return true;}
         
         glm::vec3& getPosition() {return position;}
         GLDepthTexture* getTexture() const {return texture.get();}

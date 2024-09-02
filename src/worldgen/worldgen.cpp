@@ -48,7 +48,7 @@ void generateOakTree(Chunk& chunk, int x, int y, int z){
     generateTree(chunk, x,y,z,trunkBlock,leafBlock);
 }
 
-void generateNoTree(Chunk& chunk, int x, int y, int z){}
+void generateNoTree(Chunk& /*chunk*/, int /*x*/, int /*y*/, int /*z*/){}
 
 
 std::vector<Biome> biomes = {
@@ -70,26 +70,26 @@ const Biome& getBiome(float temperature){
 
 float lerp(float a, float b, float f)
 {
-    return a * (1.0 - f) + (b * f);
+    return a * (1.0f - f) + (b * f);
 }
 
 void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY){
     // Create and configure noise state
     fnl_state noise = fnlCreateState();
     noise.noise_type = FNL_NOISE_PERLIN;
-    noise.frequency = 0.004;
+    noise.frequency = 0.004f;
 
     fnl_state noise2 = fnlCreateState();
     noise2.noise_type = FNL_NOISE_PERLIN;
-    noise2.frequency = 0.1;
+    noise2.frequency = 0.1f;
 
     fnl_state mountain_areas = fnlCreateState();
     mountain_areas.noise_type = FNL_NOISE_PERLIN;
-    mountain_areas.frequency = 0.01;
+    mountain_areas.frequency = 0.01f;
 
     fnl_state temperatureNoise = fnlCreateState();
     temperatureNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
-    temperatureNoise.frequency = 0.001;
+    temperatureNoise.frequency = 0.001f;
 
     int waterLevel = 256 / 3;
 
@@ -104,12 +104,12 @@ void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY){
 
 
             float temperature = (fnlGetNoise2D(&temperatureNoise, rx, ry) + 1) / 2;
-            temperature =  1.0 - lerp(main,temperature,0.1);
+            temperature =  1.0f - lerp(main,temperature,0.1f);
 
-            main = lerp(main, secondary, pow(main,7));
+            main = lerp(main, secondary, (float) pow(main,7));
             //value *= perlin(rx / 20.0, ry / 20.0);
         
-            int height = floor(256 * main); 
+            int height = (int) floor(256 * main); 
 
             const Biome& biome = getBiome(temperature);
 

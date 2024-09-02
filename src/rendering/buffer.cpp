@@ -37,7 +37,6 @@ GLBuffer::~GLBuffer(){
 void GLBuffer::loadMesh(Mesh& mesh){
     unsigned int buffer = this->data;
     unsigned int index_buffer = this->index;
-    unsigned int vao = this->vao;
     
     glBindVertexArray(vao);
 
@@ -55,7 +54,7 @@ void GLBuffer::loadMesh(Mesh& mesh){
 
     size_t stride =  mesh.vertexSize * sizeof(float);
 
-    int size_to_now = 0;
+    size_t size_to_now = 0;
     for(int i = 0;i < mesh.getFormat().size();i++){
         size_t current_size = mesh.getFormat()[i];
         
@@ -63,7 +62,7 @@ void GLBuffer::loadMesh(Mesh& mesh){
 
         //printf("Size: %lu Pointer: %lu Stride: %lu\n",current_size,pointer,stride);
 
-        glVertexAttribPointer(i, current_size, GL_FLOAT, GL_FALSE, stride, (void*)pointer);
+        glVertexAttribPointer(i, (int) current_size, GL_FLOAT, GL_FALSE, (int)stride, (void*)pointer);
         glEnableVertexAttribArray(i);
 
         CHECK_GL_ERROR();
@@ -83,7 +82,6 @@ void GLBuffer::loadMesh(Mesh& mesh){
 void GLBuffer::draw(){
     unsigned int buffer = this->data;
     unsigned int index_buffer =this->index;
-    unsigned int vao = this->vao;
 
     //printf("%u %u %u\n", buffer, index_buffer, vao);
 
@@ -94,7 +92,7 @@ void GLBuffer::draw(){
 
     glDrawElements(
         GL_TRIANGLES,      // mode
-        this->indiciesCount,    // count
+        (int) this->indiciesCount,    // count
         GL_UNSIGNED_INT,   // type
         (void*)0           // element array buffer offset
     );
