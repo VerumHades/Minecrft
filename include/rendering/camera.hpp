@@ -73,7 +73,7 @@ class PerspectiveCamera: public Camera{
         int screenWidth = 1920;
         int screenHeight = 1080;
 
-        float zNear = 0.1f;
+        float zNear = 0.01f;
         float zFar = 1000.0f;
 
         float pitch = 0;
@@ -136,9 +136,9 @@ class DepthCamera: public Camera{
         float zNear = -500.0f;
         float zFar = 500.0f;
 
-        unsigned int depthMapFBO;
-        const unsigned int SHADOW_WIDTH = 1024 * 10, SHADOW_HEIGHT = 1024 * 10;
-        unsigned int depthMap;
+        uint32_t depthMapFBO;
+        const uint32_t SHADOW_WIDTH = 1024 * 6, SHADOW_HEIGHT = 1024 * 6;
+        uint32_t depthMap;
 
     public:
         void updateUniforms();

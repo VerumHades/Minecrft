@@ -14,10 +14,7 @@ void PerspectiveCamera::resizeScreen(int width, int height, float fov){
 }
 
 void PerspectiveCamera::adjustFOV(float fov){
-    this->FOV = fov;
-
     this->projectionMatrix = glm::perspective<float>(glm::radians(fov), aspect, zNear, zFar);
-    calculateFrustum();
     updateUniforms();
 }
 
@@ -133,7 +130,7 @@ void PerspectiveCamera::drawSkybox(){
 
 
 void DepthCamera::updateProjection(){
-    float size = 256;
+    float size = 140;
 
     this->projectionMatrix = glm::ortho(-size, size, -size, size, this->zNear, this->zFar); 
     this->viewMatrix = glm::lookAt(this->position, this->target, glm::vec3(0,1,0));
@@ -143,7 +140,7 @@ void DepthCamera::updateProjection(){
 }
 
 void DepthCamera::updateUniforms(){
-    unsigned int loc = glGetUniformLocation(program.getID(), "lightSpaceMatrix");
+    uint32_t loc = glGetUniformLocation(program.getID(), "lightSpaceMatrix");
     
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(this->lightSpaceMatrix));
     glUniformMatrix4fv(program.getModelLoc(), 1, GL_FALSE, glm::value_ptr(this->modelMatrix));

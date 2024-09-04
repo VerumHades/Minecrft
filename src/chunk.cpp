@@ -32,7 +32,7 @@ std::string getBlockTypeName(BlockTypes type){
 }
 #undef BLT
 
-static inline void fillChunkLevel(Chunk& chunk, unsigned int y, Block value){
+static inline void fillChunkLevel(Chunk& chunk, uint32_t y, Block value){
     for(int x = 0; x < DEFAULT_CHUNK_SIZE;x++) for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
         chunk.setBlock(x,y,z, value);
     }
@@ -77,7 +77,7 @@ void Chunk::regenerateMesh(glm::vec2 blockCoords){
 }
 #undef regenMesh
 
-Block* Chunk::getBlock(unsigned int x, unsigned int y, unsigned int z){
+Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     if(x >= DEFAULT_CHUNK_SIZE) return nullptr;
     if(y >= DEFAULT_CHUNK_HEIGHT) return nullptr;
     if(z >= DEFAULT_CHUNK_SIZE) return nullptr;
@@ -85,7 +85,7 @@ Block* Chunk::getBlock(unsigned int x, unsigned int y, unsigned int z){
     return &this->blocks[x][y][z];
 }
 
-bool Chunk::setBlock(unsigned int x, unsigned int y, unsigned int z, Block value){
+bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     if(x >= DEFAULT_CHUNK_SIZE) return false;
     if(y >= DEFAULT_CHUNK_HEIGHT) return false;
     if(z >= DEFAULT_CHUNK_SIZE) return false;
@@ -128,18 +128,9 @@ static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int 
     return 1;   
 }
 
-static FaceDefinition faceDefinitions[] = {
-    FaceDefinition(0, 1, 0, {4, 5, 1, 0}, 0),              // Top face
-    FaceDefinition(0, -1, 0, {7, 6, 2, 3}, 1, true),       // Bottom face
-    FaceDefinition(-1, 0, 0, {0, 4, 7, 3}, 2, true),       // Left face
-    FaceDefinition(1, 0, 0, {1, 5, 6, 2}, 3),              // Right face
-    FaceDefinition(0, 0, -1, {0, 1, 2, 3}, 4),             // Front face
-    FaceDefinition(0, 0, 1, {4, 5, 6, 7}, 5, true)         // Back face
-};
-
 void Chunk::generateMeshes(){
     this->solidMesh = std::make_unique<Mesh>();
-    this->solidMesh->setVertexFormat({3,3,2,1,3});
+    this->solidMesh->setVertexFormat({3,3,2,1});
 
     bool checked[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][6] = {};
 
@@ -155,10 +146,6 @@ void Chunk::generateMeshes(){
 
                 const BlockType& currentBlock = getBlockType(currentBlockRef);
                 if(currentBlock.untextured) continue;
-                
-                float lightR = 0.5;
-                float lightG = 0.5;
-                float lightB = 0.5;
 
                 for(int i = 0;i < 6;i++){
                     if(checked[ix][y][iz][i]) continue;
@@ -269,9 +256,8 @@ void Chunk::generateMeshes(){
                     //if(currentBlock->repeatTexture) printf("Index: %i\n", def->textureIndex);
                     int texture = currentBlock.repeatTexture ? currentBlock.textures[0] : currentBlock.textures[def.textureIndex];
 
-                    float metadata[6] = {
-                        1.0, 1.0, static_cast<float>(texture),
-                        lightR, lightG, lightB
+                    float metadata[] = {
+                        1.0, 1.0, static_cast<float>(texture)
                     };
 
                     if(def.offsetX != 0){
@@ -287,7 +273,7 @@ void Chunk::generateMeshes(){
                         vertices[def.vertexIndexes[3]]
                     };
 
-                    this->solidMesh->addQuadFace(
+                    this->solidMesh->addQuadFaceGreedy(
                         vertexArray,
                         glm::vec3(def.offsetX, def.offsetY,  def.offsetZ),
                         metadata,

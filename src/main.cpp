@@ -17,7 +17,7 @@ int lastMouseX = 0;
 int lastMouseY = 0;
 float sensitivity = 0.1f;
 
-int renderDistance = 8;
+int renderDistance = 16;
 
 float camSpeed = 0.01f;
 
@@ -25,10 +25,10 @@ glm::vec3 camOffset = {0.3f,1.6f,0.3f};
 
 float camFOV = 90.0f;
 float maxFOV = 90.0f;
-float minFOV = 10.0f;
+float minFOV = 2.0f;
 
 int sunDistance = ((DEFAULT_CHUNK_SIZE * renderDistance) / 2) ;
-float sunAngle = 45.0f;
+float sunAngle = 70.0f;
 World world;
 
 struct BoundKey{
@@ -90,7 +90,7 @@ void cursor_position_callback(GLFWwindow* /*window*/, double mouseX, double mous
     camera.setRotation(camPitch, camYaw);
 }
 
-//static int selectedBlock = 1;
+static int selectedBlock = 1;
 void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /*mods*/)
 {
     glm::vec3& camDirection = camera.getDirection();
@@ -110,7 +110,7 @@ void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /
     else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hit){
         CollisionCheckResult result = world.checkForPointCollision(hit.lastX, hit.lastY, hit.lastZ, 1);
 
-        world.setBlock(result.x,  result.y,  result.z, {BlockTypes::BlueWool});
+        world.setBlock(result.x,  result.y,  result.z, {static_cast<BlockTypes>(selectedBlock)});
         if(
             player.checkForCollision(world, false).collision ||
             player.checkForCollision(world, true).collision
@@ -123,24 +123,31 @@ void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /
         if(!chunk) return;
         chunk->regenerateMesh(world.getBlockInChunkPosition(result.x, result.z));
     }
-    /*else if(button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS){
-        selectedBlock = (selectedBlock + 1) % 5 + 1;
-    }*/
 }
 
 void scroll_callback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset)
 {
-    camFOV -= (float) yoffset * 5.0f;
+    if(boundKeys[1].isDown){
+        camFOV -= (float) yoffset * 5.0f;
 
-    if(camFOV < minFOV) camFOV = minFOV;
-    else if(camFOV > maxFOV) camFOV = maxFOV;
+        if(camFOV < minFOV) camFOV = minFOV;
+        else if(camFOV > maxFOV) camFOV = maxFOV;
 
-    camera.adjustFOV(camFOV);
+        camera.adjustFOV(camFOV);
+    }
+    else{
+        selectedBlock = (selectedBlock + 1) % predefinedBlocks.size() + 1;
+        std::cout << "Selected block: " << getBlockTypeName(static_cast<BlockTypes>(selectedBlock)) << std::endl;
+    }
 }
 
 int clampAngle(int angle) {
     return (angle % 360 + 360) % 360;
 }
+
+void physicsUpdate();
+void pregenUpdate();
+static bool running = true;
 
 int main() {
     GLFWwindow* window;
@@ -249,99 +256,59 @@ int main() {
     double last = glfwGetTime();
     double current = glfwGetTime();
 
-    int pregenDistance = renderDistance + 2;
-
     camera.setPosition(0.0f,160.0f,0.0f);
 
     world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
 
-    double seconds;
+    std::thread physicsThread(physicsUpdate);
+    std::thread pregenThread(pregenUpdate);
+
+    float deltatime;
     while (!glfwWindowShouldClose(window)) {
         current = glfwGetTime();
-        seconds = current - last;
+        deltatime = (float)(current - last);
         last = current;
 
         Entity& player = world.getEntities()[0];
         const glm::vec3& playerPosition = player.getPosition();
         glm::vec3 camPosition = playerPosition + camOffset;
-        
+        glm::vec3 camDir = glm::normalize(camera.getDirection());
+
         //std::cout << player.getVelocity().x << " " << player.getVelocity().y << " " << player.getVelocity().z << std::endl;
         camera.setPosition(camPosition);
         camera.updateUniforms();
-
-        /*if(seconds >= 0.01){
-            last = current;
-            
-            glUniform1f(TimeLoc, time);
-            time = (time + 1) % 2400;
-            //std::cout << time << std::endl;
-        }*/
-
-        //time = (time + 1) % 2400;
-        //sunAngle = ((float)time / 2400.0) * 180.0;
-
-
-        //std::cout << seconds << std::endl;
-        //double fps = 1.0 / seconds;
-        //std::cout << "FPS: " << fps << "Chunks loaded: " << world.chunksTotal() <<  std::endl;
-        //int time = 0;
-
-        int total = 0;
-        for(int x = -pregenDistance; x <= pregenDistance; x++){
-            for(int z = -pregenDistance; z <= pregenDistance; z++){
-                int chunkX = x;
-                int chunkZ = z;
-
-                Chunk* meshlessChunk = world.getChunk(chunkX, chunkZ);
-                if(!meshlessChunk){
-                    meshlessChunk = world.generateAndGetChunk(chunkX, chunkZ);
-                }
-                total++;
-
-                //std::cout << "\r Generation chunks: " << total << "/" << pow(pregenDistance * 2,2);
-            }
-        }
        // std::cout << std::endl;
+
+        world.updateBuffers();
         
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //if(boundKeys[0].isDown) accelY += 0.0006;
         //if(boundKeys[1].isDown) accelY -= 0.0006;
-        glm::vec3 camDir = glm::normalize(camera.getDirection());
-        glm::vec3 horizontalDir = {camDir.x, 0, camDir.z};
-        glm::vec3 rightDir = normalize(glm::cross(camera.getUp(), horizontalDir));
-
-        if(boundKeys[4].isDown) player.accelerate(rightDir * camSpeed);
-        if(boundKeys[5].isDown) player.accelerate(-rightDir * camSpeed);
-        if(boundKeys[3].isDown) player.accelerate(-horizontalDir * camSpeed);
-        if(boundKeys[2].isDown) player.accelerate(horizontalDir * camSpeed);
-        if(boundKeys[0].isDown) player.accelerate(camera.getUp());
-
-        player.update(world);
 
         //printf("x:%f y:%f z:%f ax:%f ay:%f az:%f\ n",camX,camY,camZ,accelX,accelY,accelZ);
 
         //suncam.setPosition(c0,400, camera.getPosition().z);
 
         if(world.updated){
-            float offsetX = camera.getPosition().x;
-            float offsetZ = camera.getPosition().z;
+            int offsetX = (int) (camera.getPosition().x + -sunDistance * cos(glm::radians(sunAngle)));
+            int offsetZ = (int) camera.getPosition().z;
 
             suncam.setPosition(
-                offsetX + sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)
+                (float) offsetX + sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)
                 sunDistance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
-                offsetZ  // Z position (cosine component)
+                (float) offsetZ  // Z position (cosine component)
             );
             suncam.setTarget(
-                offsetX,
-                0,
-                offsetZ
+                (float) offsetX - sunDistance * cos(glm::radians(sunAngle)),
+                -sunDistance * sin(glm::radians(sunAngle)),
+                (float) offsetZ
             );
             suncam.updateProjection();
 
             glUniform3f(lightDirLoc, 
-                -sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)
+                -sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)adorkastock
                 -sunDistance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
                 0  // Z position (cosine component)
             );
@@ -381,7 +348,68 @@ int main() {
         glfwPollEvents();
     }
 
+    running = false;
+    physicsThread.join();
+    pregenThread.join();
+
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
+}
+
+void physicsUpdate(){
+    double last = glfwGetTime();
+    double current = glfwGetTime();
+    float deltatime;
+
+    float targetTPS = 60;
+    float tickTime = 1.0f / targetTPS;
+
+    while(running){
+        current = glfwGetTime();
+        deltatime = (float)(current - last);
+
+        //std::cout << deltatime << "/" << tickTime << std::endl;
+        if(deltatime < tickTime) continue;
+        last = current;
+
+        Entity& player = world.getEntities()[0];
+
+        glm::vec3 camDir = glm::normalize(camera.getDirection());
+        glm::vec3 horizontalDir = glm::normalize(glm::vec3(camDir.x, 0, camDir.z));
+        glm::vec3 rightDir = normalize(glm::cross(camera.getUp(), horizontalDir));
+
+        if(boundKeys[4].isDown) player.accelerate(rightDir * camSpeed);
+        if(boundKeys[5].isDown) player.accelerate(-rightDir * camSpeed);
+        if(boundKeys[3].isDown) player.accelerate(-horizontalDir * camSpeed);
+        if(boundKeys[2].isDown) player.accelerate(horizontalDir * camSpeed);
+        if(
+            boundKeys[0].isDown 
+            && player.checkForCollision(world, false, {0,-0.1f,0}).collision
+            && player.getVelocity().y == 0
+        ) player.accelerate(camera.getUp() * 0.2f);
+
+        player.update(world);
+    }
+}
+
+void pregenUpdate(){
+    int pregenDistance = renderDistance + 2;
+
+    while(running){
+        int camWorldX = (int) camera.getPosition().x / DEFAULT_CHUNK_SIZE;
+        int camWorldZ = (int) camera.getPosition().z / DEFAULT_CHUNK_SIZE;
+
+        for(int x = -pregenDistance; x <= pregenDistance; x++){
+            for(int z = -pregenDistance; z <= pregenDistance; z++){
+                int chunkX = camWorldX + x;
+                int chunkZ = camWorldZ + z;
+
+                Chunk* meshlessChunk = world.getChunk(chunkX, chunkZ);
+                if(!meshlessChunk){
+                    meshlessChunk = world.generateAndGetChunk(chunkX, chunkZ);
+                }
+            }
+        }
+    }
 }

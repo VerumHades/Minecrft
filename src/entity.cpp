@@ -10,8 +10,8 @@ void Entity::accelerate(glm::vec3 direction){
     glm::vec3 horizontalVelocity = glm::vec3(newVelocity.x, 0, newVelocity.z);
     glm::vec3 verticalVelocity = glm::vec3(0,newVelocity.y,0);
 
-    if(glm::length(horizontalVelocity) > maxVelocity) horizontalVelocity = glm::normalize(horizontalVelocity) * maxVelocity;
-    if(glm::length(verticalVelocity) > maxVelocity) verticalVelocity = glm::normalize(verticalVelocity) * maxVelocity;
+    if(glm::length(horizontalVelocity) > maxVelocityHorizontal) horizontalVelocity = glm::normalize(horizontalVelocity) * maxVelocityHorizontal;
+    if(glm::length(verticalVelocity) > maxVelocityVertical) verticalVelocity = glm::normalize(verticalVelocity) * maxVelocityVertical;
 
     velocity = horizontalVelocity + verticalVelocity;
 }
@@ -35,16 +35,16 @@ CollisionCheckResult Entity::checkForCollision(Collidable& collidable, bool with
 
 void Entity::update(Collidable& collidable){
     if(hasGravity) this->accelerate(glm::vec3(0,-0.01,0));
-
+    
     glm::vec3& vel = this->velocity;
-
-    if(checkForCollision(collidable, false, {vel.x, 0, 0}).collision) vel.x = 0;
-    if(checkForCollision(collidable, false, {0, vel.y, 0}).collision) vel.y = 0;
-    if(checkForCollision(collidable, false, {0, 0, vel.z}).collision) vel.z = 0;
 
     float len = glm::length(vel);
     if(len > friction) vel = glm::normalize(vel) * (len - friction);
     else vel = glm::vec3(0);
+
+    if(checkForCollision(collidable, false, {vel.x, 0, 0}).collision) vel.x = 0;
+    if(checkForCollision(collidable, false, {0, vel.y, 0}).collision) vel.y = 0;
+    if(checkForCollision(collidable, false, {0, 0, vel.z}).collision) vel.z = 0;
 
     this->position += vel;
 }

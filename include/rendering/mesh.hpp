@@ -11,7 +11,7 @@
 class Mesh{
     private:
         std::vector<float> vertices;
-        std::vector<unsigned int> indices;
+        std::vector<uint32_t> indices;
         std::vector<int> format;
 
         bool formatSet = false;
@@ -22,10 +22,11 @@ class Mesh{
         Mesh();
 
         void setVertexFormat(const std::vector<int>& format);
-        void addQuadFace(glm::vec3 vertices[4], glm::vec3 normals,float metadata[6], int clockwise, int width, int height);
+        void addQuadFaceGreedy(glm::vec3 vertices[4], glm::vec3 normals,float metadata[6], int clockwise, int width, int height);
+        void addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, int clockwise);
 
         const std::vector<float>& getVertices();
-        const std::vector<unsigned int>& getIndices();
+        const std::vector<uint32_t>& getIndices();
         const std::vector<int>& getFormat();
 };
 #endif

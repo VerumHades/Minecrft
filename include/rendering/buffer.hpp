@@ -11,9 +11,9 @@ class Mesh;
 
 class GLBuffer{
     private:
-        unsigned int data;
-        unsigned int index;
-        unsigned int vao;
+        uint32_t data;
+        uint32_t index;
+        uint32_t vao;
 
         size_t vertexCount = 0;
         size_t indiciesCount = 0;

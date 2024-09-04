@@ -5,7 +5,6 @@ precision highp float;
 in vec3 Normal;
 in vec2 TexCoords;
 in float TexIndex;
-in vec3 LightLevel;
 
 in vec4 FragPosLightSpace;
 in vec3 FragPos;
@@ -36,7 +35,7 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
-    float bias = 0.0011; 
+    float bias = 0.001; 
     
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);

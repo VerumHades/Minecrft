@@ -43,7 +43,7 @@ bool Vec2Equal::operator()(const glm::vec2& lhs, const glm::vec2& rhs) const noe
     return lhs.x == rhs.x && lhs.y == rhs.y;
 }
 
-static int maxThreads = 16;
+static int maxThreads = 6;
 //const auto maxThreads = 1;
 static int threadsTotal = 0;
 void generateChunkMeshThread(Chunk* chunk){
@@ -79,28 +79,43 @@ Chunk* World::getChunkWithMesh(int x, int y){
         return nullptr;
     } 
 
-    if(!chunk->buffersLoaded && chunk->meshGenerated){
-        if(!chunk->solidBuffer){
-            chunk->solidBuffer = std::make_unique<GLDoubleBuffer>();
-        }
-        //printf("Loading meshes %2i:%2i (%i)...\n",x,z,chunk->buffersLoaded);
-        if (chunk->solidBuffer && chunk->solidMesh) {
-            GLDoubleBuffer& dbuffer = *chunk->solidBuffer;
-            
-            dbuffer.getBackBuffer().loadMesh(*chunk->solidMesh);
-            dbuffer.swap();
-            chunk->solidMesh = nullptr;
-
-            chunk->buffersLoaded = true;
-            chunk->isDrawn = true;
-        }
+    if(!chunk->buffersLoaded && !chunk->buffersInQue && chunk->meshGenerated){
+        chunk->buffersInQue = true;
+        this->bufferLoadQue.push(chunk->getWorldPosition());
         //printf("Vertices:%i Indices:%i\n", chunk->solidMesh->vertices_count, chunk->solidMesh->indices_count)
         updated = true;
-        
         if(chunk->isDrawn) return chunk;
     }
 
    return chunk;
+}
+
+void World::updateBuffers(){
+    if(this->bufferLoadQue.empty()) return;
+    glm::vec2 currentPos = this->bufferLoadQue.front();
+
+    Chunk* chunk = this->getChunk((int) currentPos.x,(int) currentPos.y);
+
+    if(!chunk->solidBuffer){
+        chunk->solidBuffer = std::make_unique<GLDoubleBuffer>();
+    }
+    //printf("Loading meshes %2i:%2i (%i)...\n",x,z,chunk->buffersLoaded);
+    if (chunk->solidBuffer && chunk->solidMesh) {
+        GLDoubleBuffer& dbuffer = *chunk->solidBuffer;
+        
+        dbuffer.getBackBuffer().loadMesh(*chunk->solidMesh);
+        dbuffer.swap();
+        chunk->solidMesh = nullptr;
+
+        chunk->buffersLoaded = true;
+        chunk->buffersInQue = false;
+        chunk->isDrawn = true;
+
+        this->bufferLoadQue.pop();
+    }
+    else{
+        std::cerr << "Failed to load chunk buffer!" << std::endl;
+    }
 }
 
 CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bool includeRectangularColliderLess){
@@ -305,14 +320,10 @@ void World::drawChunks(Camera& camera, int renderDistance){
             //std::cout << "Drawing chunk: " << chunkX << " " << chunkZ << " " << camera.getPosition().x << " " << camera.getPosition().z <<std::endl;
 
             Chunk* meshlessChunk = this->getChunk(chunkX, chunkZ);
-            if(!meshlessChunk){
-                meshlessChunk = this->generateAndGetChunk(chunkX, chunkZ);
-            }
             if(!meshlessChunk) continue;
 
             //std::cout << "Got chunk!" << std::endl;
-
-            if(!camera.isVisible(*meshlessChunk) && !(abs(x) + abs(z) <= 2)) continue;
+            if(!camera.isVisible(*meshlessChunk) && !(glm::length(glm::vec2(x,z)) <= 2)) continue;
             Chunk* chunk = this->getChunkWithMesh(chunkX, chunkZ);
             
             //std::cout << "Got meshed chunk!" << std::endl;

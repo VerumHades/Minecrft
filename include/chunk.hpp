@@ -9,6 +9,7 @@
 #include <rendering/mesh.hpp>
 #include <rendering/camera.hpp>
 #include <entity.hpp>
+#include <rendering/model.hpp>
 
 #include <glm/glm.hpp>
 #include <map>
@@ -19,25 +20,9 @@
 #include <array>
 #include <blocks.hpp>
 
-#define DEFAULT_CHUNK_SIZE 24
+#define DEFAULT_CHUNK_SIZE 16
 #define DEFAULT_CHUNK_AREA DEFAULT_CHUNK_SIZE * DEFAULT_CHUNK_SIZE
 #define DEFAULT_CHUNK_HEIGHT 256
-
-struct FaceDefinition {
-    int offsetX = 0;
-    int offsetY = 0;
-    int offsetZ = 0;
-    std::vector<int> vertexIndexes;
-    int textureIndex = 0;
-    bool clockwise = false;
-
-    FaceDefinition(int offsetX, int offsetY, int offsetZ, 
-                   std::vector<int> vertexIndexes, int textureIndex, 
-                   bool clockwise = false)
-        : offsetX(offsetX), offsetY(offsetY), offsetZ(offsetZ),
-          vertexIndexes(std::move(vertexIndexes)), textureIndex(textureIndex),
-          clockwise(clockwise) {}
-};
 
 
 class World;
@@ -54,6 +39,7 @@ class Chunk: public Volume{
         bool meshGenerating = false;
         bool meshGenerated = false;
 
+        bool buffersInQue = false;
         bool buffersLoaded = false;
         
         std::unique_ptr<GLDoubleBuffer> solidBuffer;
@@ -65,8 +51,8 @@ class Chunk: public Volume{
 
         Chunk(World& world, const glm::vec2& pos);
 
-        Block* getBlock(unsigned int x, unsigned int y, unsigned int z);
-        bool setBlock(unsigned int x, unsigned int y, unsigned int z, Block value);
+        Block* getBlock(uint32_t x, uint32_t y, uint32_t z);
+        bool setBlock(uint32_t x, uint32_t y, uint32_t z, Block value);
 
         void generateMeshes();
         void regenerateMesh();
@@ -90,6 +76,11 @@ inline const BlockType& getBlockType(Block* block){
     //std::lock_guard<std::mutex> lock(predefinedBlockMutex);
     return predefinedBlocks[block->type];
 }
+
+
+std::string getBlockTypeName(BlockTypes type);
+
+
 
 #include <world.hpp>
 

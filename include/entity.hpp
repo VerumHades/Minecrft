@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include <blocks.hpp>
+#include <rendering/model.hpp>
 
 typedef struct CollisionCheckResult{
     Block* collidedBlock;
@@ -23,11 +24,14 @@ class Entity{
         glm::vec3 position = glm::vec3(0);
         glm::vec3 velocity = glm::vec3(0);
 
-        float maxVelocity = 0.2f;
+        float maxVelocityHorizontal = 0.1f;
+        float maxVelocityVertical = 0.5f;
         float friction = 0.005f;
         bool hasGravity = true;
 
         std::vector<RectangularCollider> colliders;
+        
+        std::unique_ptr<Model> model;
 
     public:
         Entity(glm::vec3 position, glm::vec3 colliderDimensions);
