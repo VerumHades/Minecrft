@@ -10,8 +10,9 @@
 #include <functional>
 #include <shared_mutex> 
 #include <chrono>
-#include <entity.hpp>
 #include <queue>
+
+#include <entity.hpp>
 
 struct Vec2Hash {
     std::size_t operator()(const glm::vec2& v) const noexcept;
@@ -34,6 +35,8 @@ typedef struct RaycastResult{
     float lastZ;
 } RaycastResult;
 
+
+class ModelManager;
 
 class World: public Collidable{
     private:
@@ -58,7 +61,8 @@ class World: public Collidable{
 
         RaycastResult raycast(float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance);
 
-        void World::drawChunks(Camera& camera, ShaderProgram& program, int renderDistance);
+        void drawChunks(Camera& camera, ShaderProgram& program, int renderDistance);
+        void drawEntities(ModelManager& manager, Camera& camera);
         void updateBuffers();
         void updateEntities();
 

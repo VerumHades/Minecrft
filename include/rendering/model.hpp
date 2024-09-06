@@ -4,9 +4,9 @@
 #include <memory>
 #include <vector>
 
-#include <rendering/mesh.hpp>
 #include <rendering/camera.hpp>
 #include <rendering/buffer.hpp>
+#include <rendering/mesh.hpp>
 
 struct FaceDefinition {
     int offsetX = 0;
@@ -68,7 +68,12 @@ class ModelManager{
     public:
         void initialize();
         Model& createModel(std::string name);
-        Model& getModel(std::string name) {return models.at(name);}
+        Model& getModel(std::string name) {
+            if(models.count(name) == 0) {
+                std::cout << "Model: " << name << "not really found." << std::endl;
+            }
+            return models.at(name);
+        }
         void drawModel(Model& model, Camera& camera, glm::vec3 offset);
 
         ShaderProgram& getModelProgram() {return *modelProgram;};

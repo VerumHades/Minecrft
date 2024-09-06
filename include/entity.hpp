@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include <blocks.hpp>
-//#include <rendering/model.hpp>
+#include <string>
 
 typedef struct CollisionCheckResult{
     Block* collidedBlock;
@@ -31,7 +31,7 @@ class Entity{
 
         std::vector<RectangularCollider> colliders;
         
-        //std::unique_ptr<Model> model;
+        std::string modelName = "default"; // This is going to be bad if models get added on the run
 
     public:
         Entity(glm::vec3 position, glm::vec3 colliderDimensions);
@@ -44,6 +44,9 @@ class Entity{
         const glm::vec3& getPosition() {return position;};
         const glm::vec3& getVelocity() {return velocity;};
         const std::vector<RectangularCollider>& getColliders() {return colliders;}
+        std::string getModelName() {return modelName;};
+        void setModel(const std::string& name) {modelName = name;}
 };
+
 
 #endif

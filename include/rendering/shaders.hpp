@@ -112,11 +112,11 @@ class Uniform: public UniformBase{
         }
 
         void setUniformValue(const std::vector<glm::mat4>& mats, int32_t location){
-            glUniformMatrix4fv(location, mats.size(), GL_FALSE, glm::value_ptr(mats[0]));
+            glUniformMatrix4fv(location, static_cast<GLsizei>(mats.size()), GL_FALSE, glm::value_ptr(mats[0]));
         }
 
         void setUniformValue(const std::vector<glm::mat3>& mats, int32_t location){
-            glUniformMatrix3fv(location, mats.size(), GL_FALSE, glm::value_ptr(mats[0]));
+            glUniformMatrix3fv(location, static_cast<GLsizei>(mats.size()), GL_FALSE, glm::value_ptr(mats[0]));
         }
 };
 

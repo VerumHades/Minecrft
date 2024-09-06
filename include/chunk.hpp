@@ -8,7 +8,6 @@
 #include <rendering/buffer.hpp>
 #include <rendering/mesh.hpp>
 #include <rendering/camera.hpp>
-#include <entity.hpp>
 #include <rendering/model.hpp>
 
 #include <glm/glm.hpp>

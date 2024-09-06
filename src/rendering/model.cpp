@@ -45,14 +45,14 @@ Mesh generateBasicCubeMesh(){
 }
 
 void Model::calculateMatrices(){
-    auto cuboids = this->getCuboids();
+    auto cubos = this->getCuboids();
     
     calculatedMatrices.clear();
     calculatedTextureMatrices.clear();
 
     //mat[col][row]
 
-    for(auto& cuboid: cuboids){
+    for(auto& cuboid: cubos){
         glm::mat4 temp = glm::mat4(1.0f);
         
         temp = glm::translate(temp, cuboid.offset);
@@ -80,11 +80,19 @@ void Model::calculateMatrices(){
     }
 }
 
+void Model::setCuboids(std::vector<Cuboid> cuboids_){
+    cuboids = cuboids_;
+    calculateMatrices();
+}
+
 void ModelManager::initialize(){
     Mesh mesh = generateBasicCubeMesh();
+
     cubeBuffer = std::make_unique<GLBuffer>();
     modelProgram = std::make_unique<ShaderProgram>();
     
+    std::cout << "Loading mesh: "  << mesh.getVertices().size() << std::endl;
+
     cubeBuffer->loadMesh(mesh);
     
     modelProgram->initialize();
@@ -108,5 +116,6 @@ void ModelManager::drawModel(Model& model, Camera& camera, glm::vec3 position){
     camera.setModelPosition(position);
     
     this->modelProgram.get()->updateUniforms();
-    this->cubeBuffer.get()->drawInstances(model.getCalculatedMatrices().size());
+    this->modelProgram.get()->use();
+    this->cubeBuffer.get()->drawInstances(static_cast<int>(model.getCalculatedMatrices().size()));
 }

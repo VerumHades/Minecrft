@@ -220,6 +220,22 @@ int main() {
     modelManager.initialize();
     camera.getProjectionUniform().attach(modelManager.getModelProgram());
     camera.getViewUniform().attach(modelManager.getModelProgram());
+
+    Model& bob = modelManager.createModel("bob");
+    bob.setCuboids({
+        {
+            {0,0,0},
+            {1,1,1},
+            {
+                {0,0},
+                {0,1},
+                {1,1},
+                {1,0}
+            },
+            1
+        }
+    });
+
     
     std::array<std::string,6> skyboxPaths = {
         "skybox/stars/right.png",
@@ -265,9 +281,8 @@ int main() {
 
     suncam.initialize();
     suncam.getTexture()->bind(1);
-
-    int lightSpaceMatrixLoc = mainProgram.getUniformLocation("lightSpaceMatrix");
-
+    suncam.getLightSpaceMatrixUniform().attach(mainProgram);
+    suncam.getLightSpaceMatrixUniform().attach(modelManager.getModelProgram());
 
     //int sunDirLoc = camera.getProgram("skybox").getUniformLocation("sunDir");
     auto sunDirUniform = Uniform<glm::vec3>("sunDir");
@@ -285,7 +300,9 @@ int main() {
     camera.setPosition(0.0f,160.0f,0.0f);
 
     world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
-
+    
+    world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
+    world.getEntities()[1].setModel("bob");
 
     sunDirUniform.setValue({ 
         -sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)
@@ -343,12 +360,11 @@ int main() {
             );
             suncam.updateProjection();
 
-            glUniform3f(lightDirLoc, 
+            /*glUniform3f(lightDirLoc, 
                 -sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)adorkastock
                 -sunDistance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
                 0  // Z position (cosine component)
-            );
-            glUniformMatrix4fv(lightSpaceMatrixLoc, 1, GL_FALSE, glm::value_ptr(suncam.getLightSpaceMatrix()));
+            );*/
             //suncam.updateProjection();
             //glDisable( GL_CULL_FACE );
             suncam.prepareForRender();
@@ -373,6 +389,7 @@ int main() {
         tilemap.bind(0);
 
         world.drawChunks(camera, mainProgram, renderDistance);
+        world.drawEntities(modelManager, camera);
         //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

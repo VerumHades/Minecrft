@@ -48,8 +48,8 @@ void PerspectiveCamera::initialize(std::vector<std::reference_wrapper<ShaderProg
     }
 }
 
-void PerspectiveCamera::setModelPosition(const glm::vec3& position){
-    this->modelMatrix = glm::translate(glm::mat4(1.0f), position);
+void PerspectiveCamera::setModelPosition(const glm::vec3& position_){
+    this->modelMatrix = glm::translate(glm::mat4(1.0f), position_);
 }
 
 void PerspectiveCamera::setPosition(glm::vec3 pos) {
@@ -111,8 +111,8 @@ void DepthCamera::prepareForRender(){
     glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void DepthCamera::setModelPosition(const glm::vec3& position){
-    this->modelMatrix = glm::translate(glm::mat4(1.0f), position);
+void DepthCamera::setModelPosition(const glm::vec3& position_){
+    this->modelMatrix = glm::translate(glm::mat4(1.0f), position_);
 }
 void DepthCamera::setPosition(float x, float y, float z){
     this->position = glm::vec3(x,y,z);

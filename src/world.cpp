@@ -342,6 +342,14 @@ void World::drawChunks(Camera& camera, ShaderProgram& program, int renderDistanc
     }
 }
 
+void World::drawEntities(ModelManager& manager, Camera& camera){
+    for (auto& entity: this->entities) { 
+        if(entity.getModelName() == "default") continue;
+        
+        manager.drawModel(manager.getModel(entity.getModelName()), camera, entity.getPosition());
+    }
+}
+
 void World::updateEntities(){
     for (auto& entity: this->entities) { 
         entity.update(*this);

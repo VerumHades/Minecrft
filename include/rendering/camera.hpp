@@ -146,6 +146,7 @@ class DepthCamera: public Camera{
         glm::vec3& getPosition() {return position;}
         GLDepthTexture* getTexture() const {return texture.get();}
         glm::mat4& getLightSpaceMatrix() {return lightSpaceMatrix.getValue();}
+        Uniform<glm::mat4>& getLightSpaceMatrixUniform() {return lightSpaceMatrix;}
         ShaderProgram& getProgram() {return program;}
 
         Uniform<glm::mat4>& getProjectionUniform() {return projectionMatrix;}
