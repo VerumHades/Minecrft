@@ -116,6 +116,5 @@ void ModelManager::drawModel(Model& model, Camera& camera, glm::vec3 position){
     camera.setModelPosition(position);
     
     this->modelProgram.get()->updateUniforms();
-    this->modelProgram.get()->use();
     this->cubeBuffer.get()->drawInstances(static_cast<int>(model.getCalculatedMatrices().size()));
 }

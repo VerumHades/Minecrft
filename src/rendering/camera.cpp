@@ -24,15 +24,15 @@ void PerspectiveCamera::calculateFrustum(){
     glm::vec3 CamRight = glm::normalize(glm::cross(this->direction, this->up));
     glm::vec3 CamUp = glm::normalize(glm::cross(CamRight, this->direction));
 
-    frustum.nearFace = { this->position + zNear * this->direction, this->direction };
-    frustum.farFace = { this->position + frontMultFar, -this->direction };
-    frustum.rightFace = { this->position,
+    frustum.nearFace = { this->position.getValue() + zNear * this->direction, this->direction };
+    frustum.farFace = { this->position.getValue() + frontMultFar, -this->direction };
+    frustum.rightFace = { this->position.getValue(),
                             glm::cross(frontMultFar - CamRight * halfHSide, CamUp) };
-    frustum.leftFace = { this->position,
+    frustum.leftFace = { this->position.getValue(),
                             glm::cross(CamUp,frontMultFar + CamRight  * halfHSide) };
-    frustum.topFace = { this->position,
+    frustum.topFace = { this->position.getValue(),
                             glm::cross(CamRight, frontMultFar - CamUp * halfVSide) };
-    frustum.bottomFace = { this->position,
+    frustum.bottomFace = { this->position.getValue(),
                             glm::cross(frontMultFar + CamUp * halfVSide, CamRight) };
 }
 
@@ -54,7 +54,7 @@ void PerspectiveCamera::setModelPosition(const glm::vec3& position_){
 
 void PerspectiveCamera::setPosition(glm::vec3 pos) {
     this->position = pos;
-    this->viewMatrix = glm::lookAt(this->position, this->position + this->direction, this->up);
+    this->viewMatrix = glm::lookAt(this->position.getValue(), this->position.getValue() + this->direction, this->up);
     calculateFrustum();
 }
 
@@ -68,14 +68,14 @@ void PerspectiveCamera::setRotation(float pitch_, float yaw_){
     front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
     this->direction = glm::normalize(front);
-    this->viewMatrix = glm::lookAt(this->position, this->position + this->direction, this->up);
+    this->viewMatrix = glm::lookAt(this->position.getValue(), this->position.getValue() + this->direction, this->up);
     calculateFrustum();
 }
 
 
 
 void DepthCamera::updateProjection(){
-    float size = 140;
+    float size = 256;
 
     this->projectionMatrix = glm::ortho(-size, size, -size, size, this->zNear, this->zFar); 
     this->viewMatrix = glm::lookAt(this->position, this->target, glm::vec3(0,1,0));

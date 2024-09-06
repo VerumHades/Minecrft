@@ -16,7 +16,7 @@ out float TexIndex;
 out vec4 FragPosLightSpace;
 
 out vec3 FragPos;
-out vec3 pos;
+uniform vec3 camPos;
 
 void main()
 {
@@ -27,6 +27,14 @@ void main()
     TexIndex = aTexIndex;
     FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
     //gl_Position = vec4(aPos, 1.0);
+    
+   // gl_Position = FragPosLightSpace;
+
+    //float dist = length(gl_Position.xy);  // Distance from the center
+    // Normalize the centered position and multiply by warped distanc
+    // Update the xz position
+    //gl_Position.xy /= (dist+.1);
+
 
     //gl_Position = FragPosLightSpace;
 }

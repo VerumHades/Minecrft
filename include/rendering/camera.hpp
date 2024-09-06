@@ -61,7 +61,7 @@ class PerspectiveCamera: public Camera{
         Uniform<glm::mat4> viewMatrix = Uniform<glm::mat4>("viewMatrix");;
         Uniform<glm::mat4> modelMatrix = Uniform<glm::mat4>("modelMatrix");;
 
-        glm::vec3 position = glm::vec3(0,0,0);
+        Uniform<glm::vec3> position = Uniform<glm::vec3>("camPos");
         glm::vec3 direction = glm::vec3(1,0,0);
         glm::vec3 up = glm::vec3(0,1,0);
 
@@ -96,7 +96,7 @@ class PerspectiveCamera: public Camera{
             return volume.isOnFrustum(*this);
         }
 
-        glm::vec3& getPosition() {return position;}
+        glm::vec3& getPosition() {return position.getValue();}
         glm::vec3& getDirection() {return direction;}
         glm::vec3& getUp() {return up;}
         Frustum& getFrustum() {return frustum;}
@@ -109,6 +109,7 @@ class PerspectiveCamera: public Camera{
 
         Uniform<glm::mat4>& getProjectionUniform() {return projectionMatrix;}
         Uniform<glm::mat4>& getViewUniform() {return viewMatrix;}
+        Uniform<glm::vec3>& getPositionUniform() {return position;}
 };
 
 class DepthCamera: public Camera{
@@ -128,7 +129,7 @@ class DepthCamera: public Camera{
         float zFar = 500.0f;
 
         uint32_t depthMapFBO;
-        const uint32_t SHADOW_WIDTH = 1024 * 6, SHADOW_HEIGHT = 1024 * 6;
+        const uint32_t SHADOW_WIDTH = 1024 * 4, SHADOW_HEIGHT = 1024 * 4;
         uint32_t depthMap;
 
     public:

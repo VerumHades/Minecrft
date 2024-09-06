@@ -283,6 +283,10 @@ int main() {
     suncam.getTexture()->bind(1);
     suncam.getLightSpaceMatrixUniform().attach(mainProgram);
     suncam.getLightSpaceMatrixUniform().attach(modelManager.getModelProgram());
+    
+    camera.getPositionUniform().attach(suncam.getProgram());
+    camera.getPositionUniform().attach(mainProgram);
+    camera.getPositionUniform().attach(modelManager.getModelProgram());
 
     //int sunDirLoc = camera.getProgram("skybox").getUniformLocation("sunDir");
     auto sunDirUniform = Uniform<glm::vec3>("sunDir");
@@ -296,7 +300,7 @@ int main() {
     double last = glfwGetTime();
     double current = glfwGetTime();
 
-    camera.initialize({skyboxProgram, mainProgram});
+    camera.initialize({skyboxProgram, mainProgram, modelManager.getModelProgram()});
     camera.setPosition(0.0f,160.0f,0.0f);
 
     world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
@@ -329,7 +333,6 @@ int main() {
 
         //std::cout << player.getVelocity().x << " " << player.getVelocity().y << " " << player.getVelocity().z << std::endl;
         camera.setPosition(camPosition);
-        mainProgram.updateUniforms();
        // std::cout << std::endl;
 
         world.updateBuffers();
@@ -385,11 +388,12 @@ int main() {
         skybox.draw();
         glEnable(GL_CULL_FACE);
 
+        mainProgram.updateUniforms();
         mainProgram.use();
         tilemap.bind(0);
 
         world.drawChunks(camera, mainProgram, renderDistance);
-        world.drawEntities(modelManager, camera);
+        //world.drawEntities(modelManager, camera);
         //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
