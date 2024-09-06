@@ -130,7 +130,7 @@ static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int 
 
 void Chunk::generateMeshes(){
     this->solidMesh = std::make_unique<Mesh>();
-    this->solidMesh->setVertexFormat({3,3,2,1});
+    this->solidMesh->setVertexFormat({3,3,2,1,3});
 
     bool checked[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][6] = {};
 

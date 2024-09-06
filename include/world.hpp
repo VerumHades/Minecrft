@@ -58,8 +58,9 @@ class World: public Collidable{
 
         RaycastResult raycast(float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance);
 
-        void drawChunks(Camera& camera, int renderDistance);
+        void World::drawChunks(Camera& camera, ShaderProgram& program, int renderDistance);
         void updateBuffers();
+        void updateEntities();
 
         std::vector<Entity>& getEntities() {return entities;}
 };

@@ -73,7 +73,7 @@ void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals, float me
     
 }
 
-void Mesh::addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, int clockwise){
+void Mesh::addQuadFace(glm::vec3 vertices_[4], glm::vec3 normals, int clockwise){
     uint32_t vecIndices[4];
 
     float vertex[6 * 4];
@@ -81,9 +81,9 @@ void Mesh::addQuadFace(glm::vec3 vertices[4], glm::vec3 normals, int clockwise){
     for(int i = 0; i < 4; i++){
         int offset = i * 6;
 
-        vertex[0 + offset] = vertices[i].x;
-        vertex[1 + offset] = vertices[i].y;
-        vertex[2 + offset] = vertices[i].z;
+        vertex[0 + offset] = vertices_[i].x;
+        vertex[1 + offset] = vertices_[i].y;
+        vertex[2 + offset] = vertices_[i].z;
 
         // Normals
         vertex[3 + offset] = normals.x;

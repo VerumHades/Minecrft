@@ -47,17 +47,17 @@ static int maxThreads = 6;
 //const auto maxThreads = 1;
 static int threadsTotal = 0;
 void generateChunkMeshThread(Chunk* chunk){
-    auto start = std::chrono::high_resolution_clock::now();
+    //auto start = std::chrono::high_resolution_clock::now();
 
     //std::cout << "Generating mesh: " << &chunk <<  std::endl;
         
     chunk->generateMeshes();
 
     // End time point
-    auto end = std::chrono::high_resolution_clock::now();
+    //auto end = std::chrono::high_resolution_clock::now();
 
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Execution time: " << duration << " microseconds" << std::endl;
+    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    //std::cout << "Execution time: " << duration << " microseconds" << std::endl;
 
     chunk->meshGenerating = false;
     chunk->meshGenerated = true;
@@ -308,7 +308,7 @@ bool World::setBlock(int x, int y, int z, Block index){
     return true;
 }
 
-void World::drawChunks(Camera& camera, int renderDistance){
+void World::drawChunks(Camera& camera, ShaderProgram& program, int renderDistance){
     int camWorldX = (int) camera.getPosition().x / DEFAULT_CHUNK_SIZE;
     int camWorldZ = (int) camera.getPosition().z / DEFAULT_CHUNK_SIZE;
 
@@ -330,10 +330,20 @@ void World::drawChunks(Camera& camera, int renderDistance){
             if(!chunk) continue;
             if(!chunk->isDrawn) continue;
 
-            camera.setModelPosition((float) chunkX * DEFAULT_CHUNK_SIZE,0, (float) chunkZ * DEFAULT_CHUNK_SIZE);
-            camera.updateUniforms();
+            camera.setModelPosition( {
+                (float) chunkX * DEFAULT_CHUNK_SIZE,
+                0,
+                (float) chunkZ * DEFAULT_CHUNK_SIZE
+            });
+            program.updateUniform("modelMatrix");
 
             if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();
         }
+    }
+}
+
+void World::updateEntities(){
+    for (auto& entity: this->entities) { 
+        entity.update(*this);
     }
 }

@@ -44,13 +44,56 @@ Mesh generateBasicCubeMesh(){
     return mesh;
 }
 
-void ModelManager::initialize(){
-    cubeBuffer.loadMesh(generateBasicCubeMesh());
+void Model::calculateMatrices(){
+    auto cuboids = this->getCuboids();
     
-    modelProgram.initialize();
-    modelProgram.addShader("shaders/model/model.vs", GL_VERTEX_SHADER);
-    modelProgram.addShader("shaders/model/model.fs", GL_FRAGMENT_SHADER);
-    modelProgram.compile();
+    calculatedMatrices.clear();
+    calculatedTextureMatrices.clear();
+
+    //mat[col][row]
+
+    for(auto& cuboid: cuboids){
+        glm::mat4 temp = glm::mat4(1.0f);
+        
+        temp = glm::translate(temp, cuboid.offset);
+        temp = glm::scale(temp, cuboid.dimensions);
+
+        calculatedMatrices.push_back(temp);
+        
+        glm::mat3 texTemp = glm::mat3(1.0f);
+
+        texTemp[0][0] = cuboid.textureCoordinates[0].x;
+        texTemp[1][0] = cuboid.textureCoordinates[0].x;
+
+        texTemp[2][0] = cuboid.textureCoordinates[1].x;
+        texTemp[0][1] = cuboid.textureCoordinates[1].x;
+
+        texTemp[1][1] = cuboid.textureCoordinates[2].x;
+        texTemp[2][1] = cuboid.textureCoordinates[2].x;
+
+        texTemp[0][2] = cuboid.textureCoordinates[3].x;
+        texTemp[1][2] = cuboid.textureCoordinates[3].x;
+
+        texTemp[2][2] = static_cast<float>(cuboid.textureIndex);
+
+        calculatedTextureMatrices.push_back(texTemp);
+    }
+}
+
+void ModelManager::initialize(){
+    Mesh mesh = generateBasicCubeMesh();
+    cubeBuffer = std::make_unique<GLBuffer>();
+    modelProgram = std::make_unique<ShaderProgram>();
+    
+    cubeBuffer->loadMesh(mesh);
+    
+    modelProgram->initialize();
+    modelProgram->addShader("shaders/model/model.vs", GL_VERTEX_SHADER);
+    modelProgram->addShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
+    modelProgram->compile();
+
+    cubiodMatUniform.attach(*modelProgram);
+    cubiodTexUniform.attach(*modelProgram);
 }
 
 Model& ModelManager::createModel(std::string name){
@@ -58,9 +101,12 @@ Model& ModelManager::createModel(std::string name){
     return getModel(name);
 }
 
-void ModelManager::drawModel(Model& model, Camera& camera, glm::vec3 offset){
-    auto cubos = model.getCuboids();
-    modelProgram.use();
+void ModelManager::drawModel(Model& model, Camera& camera, glm::vec3 position){
+    cubiodMatUniform = model.getCalculatedMatrices();
+    cubiodTexUniform = model.getCalculatedTextureMatrices();
 
+    camera.setModelPosition(position);
     
+    this->modelProgram.get()->updateUniforms();
+    this->cubeBuffer.get()->drawInstances(model.getCalculatedMatrices().size());
 }

@@ -5,8 +5,6 @@ in vec3 TexCoords;
 
 uniform samplerCube skybox;
 uniform vec3 sunDir;
-uniform vec3 camDir;
-uniform vec3 camPos;
 
 float angV3(vec3 v1, vec3 v2) {
     return acos(dot(normalize(v1), normalize(v2)));

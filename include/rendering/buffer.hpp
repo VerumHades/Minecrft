@@ -24,6 +24,7 @@ class GLBuffer{
         ~GLBuffer();
         void loadMesh(Mesh& mesh);
         void draw();
+        void drawInstances(int count);
 };
 
 class GLDoubleBuffer{

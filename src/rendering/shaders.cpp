@@ -81,3 +81,14 @@ void ShaderProgram::compile(){
     this->modelLoc = glGetUniformLocation(this->program, "model");
 }
 
+void ShaderProgram::updateUniforms(){
+    this->use();
+    for (auto& [key, value]: attachedUniforms) {
+        value.get().update(this->program);
+    }
+}
+
+void ShaderProgram::updateUniform(std::string name){
+    this->use();
+    attachedUniforms.at(name).get().update(this->program);
+}

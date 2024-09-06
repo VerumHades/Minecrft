@@ -102,6 +102,32 @@ void GLBuffer::draw(){
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
+
+void GLBuffer::drawInstances(int count){
+    uint32_t buffer = this->data;
+    uint32_t index_buffer =this->index;
+
+    //printf("%u %u %u\n", buffer, index_buffer, vao);
+
+    glBindVertexArray(vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+
+    glDrawElementsInstanced(
+        GL_TRIANGLES,      // mode
+        (int) this->indiciesCount,    // count
+        GL_UNSIGNED_INT,   // type
+        (void*)0,           // element array buffer offset,
+        count
+    );
+
+    CHECK_GL_ERROR();
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
 void GLDoubleBuffer::swap(){
     this->current = !this->current;
 }

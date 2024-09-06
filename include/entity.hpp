@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include <blocks.hpp>
-#include <rendering/model.hpp>
+//#include <rendering/model.hpp>
 
 typedef struct CollisionCheckResult{
     Block* collidedBlock;
@@ -31,7 +31,7 @@ class Entity{
 
         std::vector<RectangularCollider> colliders;
         
-        std::unique_ptr<Model> model;
+        //std::unique_ptr<Model> model;
 
     public:
         Entity(glm::vec3 position, glm::vec3 colliderDimensions);

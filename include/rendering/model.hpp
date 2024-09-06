@@ -29,9 +29,12 @@ extern FaceDefinition faceDefinitions[];
 #define MAX_MODEL_CUBOIDS 64
 
 class Cuboid{
-    private:
+    public:
         glm::vec3 offset;
         glm::vec3 dimensions;
+
+        glm::vec2 textureCoordinates[4];
+        int textureIndex;
 };
 
 class ModelManager;
@@ -39,24 +42,36 @@ class ModelManager;
 class Model{
     private:
         std::vector<Cuboid> cuboids;
+        std::vector<glm::mat4> calculatedMatrices;
+        std::vector<glm::mat3> calculatedTextureMatrices;
         ModelManager& manager;
 
     public:
         Model(ModelManager& manager) : manager(manager) {}
-        const std::vector<Cuboid>& getCuboids();
+        void setCuboids(std::vector<Cuboid> cuboids);
+        void calculateMatrices();
+        const std::vector<Cuboid>& getCuboids() const {return cuboids;};
+
+        std::vector<glm::mat4> getCalculatedMatrices() {return calculatedMatrices;};
+        std::vector<glm::mat3> getCalculatedTextureMatrices() {return calculatedTextureMatrices;};
 };
 
 class ModelManager{
     private:
         std::unordered_map<std::string, Model> models;
-        GLBuffer cubeBuffer;
-        ShaderProgram modelProgram;
+        std::unique_ptr<GLBuffer> cubeBuffer;
+        std::unique_ptr<ShaderProgram> modelProgram;
+
+        Uniform<std::vector<glm::mat4>> cubiodMatUniform = Uniform<std::vector<glm::mat4>>("cuboidMatrices");
+        Uniform<std::vector<glm::mat3>> cubiodTexUniform = Uniform<std::vector<glm::mat3>>("textureCoordinates");
 
     public:
         void initialize();
         Model& createModel(std::string name);
         Model& getModel(std::string name) {return models.at(name);}
         void drawModel(Model& model, Camera& camera, glm::vec3 offset);
+
+        ShaderProgram& getModelProgram() {return *modelProgram;};
 };
 
 #endif

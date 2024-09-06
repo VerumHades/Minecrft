@@ -55,12 +55,9 @@ void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layer
     glBindTexture(GL_TEXTURE_2D_ARRAY, this->texture);
 
     int size = (int)filenames.size();
-    std::cout << "Loading texture1: " << size << std::endl;
 
     int mipLevels = (int) floor(log2(fmax(layerWidth, layerHeight))) + 1;
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, GL_RGB8, layerWidth, layerHeight,  size);
-    
-    std::cout << "Loading texture2" << std::endl;
 
     int width = 0, height = 0, nrChannels = 0;
     unsigned char *data;  

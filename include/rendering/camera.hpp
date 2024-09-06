@@ -50,21 +50,16 @@ struct Volume
 class Camera{
     public:
         //~Camera() {std::cout << "Camera destroyed:" << this << std::endl;}
-        virtual void setModelPosition(float x, float y, float z) = 0;
+        virtual void setModelPosition(const glm::vec3& position) = 0;
         virtual glm::vec3& getPosition() = 0;
         virtual bool isVisible(Volume& volume) = 0;
-        virtual void updateUniforms() = 0;
 };
 
 class PerspectiveCamera: public Camera{
     private:
-        std::unique_ptr<GLSkybox> skybox;
-        std::string currentProgram;
-        std::unordered_map<std::string,ShaderProgram> programs;
-
-        glm::mat4 projectionMatrix;
-        glm::mat4 viewMatrix = glm::mat4(1.0f);
-        glm::mat4 modelMatrix = glm::mat4(1.0f);
+        Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("projectionMatrix");
+        Uniform<glm::mat4> viewMatrix = Uniform<glm::mat4>("viewMatrix");;
+        Uniform<glm::mat4> modelMatrix = Uniform<glm::mat4>("modelMatrix");;
 
         glm::vec3 position = glm::vec3(0,0,0);
         glm::vec3 direction = glm::vec3(1,0,0);
@@ -90,34 +85,30 @@ class PerspectiveCamera: public Camera{
         PerspectiveCamera();
         void resizeScreen(int width, int height, float FOV);
         void adjustFOV(float FOV);
-        void updateUniforms();
+        void initialize(std::vector<std::reference_wrapper<ShaderProgram>> programs);
 
-        void setModelPosition(float x, float y, float z);
+        void setModelPosition(const glm::vec3& position);
         void setPosition(float x, float y, float z) {setPosition(glm::vec3(x,y,z));};
         void setPosition(glm::vec3 pos);
         void setRotation(float pitch, float yaw);
-
-        void addShader(std::string name, std::string vertex, std::string fragment);
-        void addSkybox(std::string vertex, std::string fragment, std::array<std::string,6> paths);
 
         bool isVisible(Volume& volume){
             return volume.isOnFrustum(*this);
         }
 
-        ShaderProgram& getProgram(std::string name);
-        void useProgram(std::string name);
-
         glm::vec3& getPosition() {return position;}
         glm::vec3& getDirection() {return direction;}
         glm::vec3& getUp() {return up;}
         Frustum& getFrustum() {return frustum;}
-        void drawSkybox();
-
+        
         int getScreenWidth(){return screenWidth;}
         int getScreenHeight(){return screenHeight;}
 
         float getPitch(){return pitch;};
         float getYaw(){return yaw;};
+
+        Uniform<glm::mat4>& getProjectionUniform() {return projectionMatrix;}
+        Uniform<glm::mat4>& getViewUniform() {return viewMatrix;}
 };
 
 class DepthCamera: public Camera{
@@ -125,10 +116,10 @@ class DepthCamera: public Camera{
         ShaderProgram program;
         std::unique_ptr<GLDepthTexture> texture;
 
-        glm::mat4 projectionMatrix;
-        glm::mat4 viewMatrix = glm::mat4(1.0f);
-        glm::mat4 lightSpaceMatrix;
-        glm::mat4 modelMatrix = glm::mat4(1.0f);
+        Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("projectionMatrix");
+        Uniform<glm::mat4> viewMatrix = Uniform<glm::mat4>("viewMatrix");
+        Uniform<glm::mat4> lightSpaceMatrix = Uniform<glm::mat4>("lightSpaceMatrix");
+        Uniform<glm::mat4> modelMatrix = Uniform<glm::mat4>("modelMatrix");
 
         glm::vec3 position = glm::vec3(0,0,0);
         glm::vec3 target = glm::vec3(0,0,0);
@@ -141,12 +132,11 @@ class DepthCamera: public Camera{
         uint32_t depthMap;
 
     public:
-        void updateUniforms();
         void updateProjection();
         void initialize();
         void prepareForRender();
 
-        void setModelPosition(float x, float y, float z);
+        void setModelPosition(const glm::vec3& position);
         void setPosition(float x, float y, float z);
         void setPosition(glm::vec3& pos) {this->position = pos;};
         void setTarget(float x, float y, float z);
@@ -155,7 +145,11 @@ class DepthCamera: public Camera{
         
         glm::vec3& getPosition() {return position;}
         GLDepthTexture* getTexture() const {return texture.get();}
-        glm::mat4& getLightSpaceMatrix() {return lightSpaceMatrix;}
+        glm::mat4& getLightSpaceMatrix() {return lightSpaceMatrix.getValue();}
+        ShaderProgram& getProgram() {return program;}
+
+        Uniform<glm::mat4>& getProjectionUniform() {return projectionMatrix;}
+        Uniform<glm::mat4>& getViewUniform() {return viewMatrix;}
 };
 #include <chunk.hpp>
 

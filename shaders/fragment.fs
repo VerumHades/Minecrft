@@ -14,10 +14,6 @@ out vec4 FragColor;
 
 uniform sampler2DArray textureArray;
 uniform sampler2D shadowMap;
-
-uniform vec3 camPos;
-uniform vec3 lightDir;
-uniform float time;
 //uniform sampler3D lightArray;
 
 float ShadowCalculation(vec4 fragPosLightSpace)
