@@ -22,7 +22,7 @@ void Mesh::setVertexFormat(const std::vector<int>& format_){
     for(const int& i: this->format) this->vertexSize += i;
 }
 
-void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals, float metadata[6], int clockwise, int width, int height){
+void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals[4], float metadata[6], int clockwise, int width, int height){
     // Precalculate texture coordinates
     float textureX = metadata[0];
     float textureY = metadata[1];
@@ -35,6 +35,7 @@ void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals, float me
         {textureXW, textureYH},
         {textureX , textureYH}
     };
+    
 
     //this->vertices.reserve(this->vertices.size() + 4 * this->vertexSize);
     //this->indices.reserve(this->indices.size() + 6);
@@ -51,9 +52,9 @@ void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals, float me
         vertex[2 + offset] = vertices_[i].z;
 
         // Normals
-        vertex[3 + offset] = normals.x;
-        vertex[4 + offset] = normals.y;
-        vertex[5 + offset] = normals.z;
+        vertex[3 + offset] = normals[i].x;
+        vertex[4 + offset] = normals[i].y;
+        vertex[5 + offset] = normals[i].z;
 
         // Texture coordinates
         vertex[6 + offset] = textureCoordinates[i].x;

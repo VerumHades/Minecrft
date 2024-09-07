@@ -28,8 +28,8 @@ float camSpeed = 0.01f;
 
 glm::vec3 camOffset = {0.3f,1.6f,0.3f};
 
-float camFOV = 70.0f;
-float maxFOV = 70.0f; 
+float camFOV = 90.0f;
+float maxFOV = 90.0f; 
 float minFOV = 2.0f;
 
 int sunDistance = ((DEFAULT_CHUNK_SIZE * renderDistance) / 2) ;
@@ -291,6 +291,7 @@ int main() {
     //int sunDirLoc = camera.getProgram("skybox").getUniformLocation("sunDir");
     auto sunDirUniform = Uniform<glm::vec3>("sunDir");
     sunDirUniform.attach(skyboxProgram);
+    sunDirUniform.attach(mainProgram);
     
     //int TimeLoc = mainProgram.getUniformLocation("time");
 
@@ -309,8 +310,8 @@ int main() {
     world.getEntities()[1].setModel("bob");
 
     sunDirUniform.setValue({ 
-        -sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)
-        -sunDistance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
+        -cos(glm::radians(sunAngle)), // X position (cosine component)
+        -sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
         0  // Z position (cosine component)
     });
 
@@ -369,10 +370,10 @@ int main() {
                 0  // Z position (cosine component)
             );*/
             //suncam.updateProjection();
-            //glDisable( GL_CULL_FACE );
+            glDisable( GL_CULL_FACE );
             suncam.prepareForRender();
             world.drawChunks(suncam, suncam.getProgram(), renderDistance);
-            //glEnable( GL_CULL_FACE );
+            glEnable( GL_CULL_FACE );
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());

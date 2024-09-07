@@ -25,6 +25,7 @@ struct FaceDefinition {
 };
 
 extern FaceDefinition faceDefinitions[];
+extern const glm::vec3 cubeNormals[8];
 
 #define MAX_MODEL_CUBOIDS 64
 

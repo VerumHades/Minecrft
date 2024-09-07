@@ -9,6 +9,17 @@ FaceDefinition faceDefinitions[] = {
     FaceDefinition(0, 0, 1, {4, 5, 6, 7}, 5, true)         // Back face
 };
 
+const glm::vec3 cubeNormals[8] = {
+    glm::normalize(glm::vec3(-1, 1,-1)),
+    glm::normalize(glm::vec3( 1, 1,-1)),
+    glm::normalize(glm::vec3( 1,-1,-1)),
+    glm::normalize(glm::vec3(-1,-1,-1)),
+    glm::normalize(glm::vec3(-1, 1, 1)),
+    glm::normalize(glm::vec3( 1, 1, 1)),
+    glm::normalize(glm::vec3( 1,-1, 1)),
+    glm::normalize(glm::vec3(-1,-1, 1))
+};
+
 Mesh generateBasicCubeMesh(){
     Mesh mesh = Mesh();
     mesh.setVertexFormat({3,3});

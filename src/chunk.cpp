@@ -273,9 +273,16 @@ void Chunk::generateMeshes(){
                         vertices[def.vertexIndexes[3]]
                     };
 
+                    glm::vec3 normalArray[4] = {
+                        cubeNormals[def.vertexIndexes[0]],
+                        cubeNormals[def.vertexIndexes[1]],
+                        cubeNormals[def.vertexIndexes[2]],
+                        cubeNormals[def.vertexIndexes[3]]
+                    };
+
                     this->solidMesh->addQuadFaceGreedy(
                         vertexArray,
-                        glm::vec3(def.offsetX, def.offsetY,  def.offsetZ),
+                        normalArray,
                         metadata,
                         def.clockwise,
                         width,height
@@ -291,10 +298,13 @@ void Chunk::generateMeshes(){
 
 static inline bool isOnOrForwardPlane(const Plane& plane, glm::vec3 center){
     // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
+    const int wd = DEFAULT_CHUNK_SIZE / 2;
+    const int h = DEFAULT_CHUNK_HEIGHT / 2;
+
     const float r = 
-        std::abs(plane.normal.x) * (DEFAULT_CHUNK_SIZE / 2) +
-        std::abs(plane.normal.y) * (DEFAULT_CHUNK_HEIGHT / 2) +
-        std::abs(plane.normal.z) * (DEFAULT_CHUNK_SIZE / 2);
+        std::abs(plane.normal.x) * (wd) +
+        std::abs(plane.normal.y) * (h) +
+        std::abs(plane.normal.z) * (wd);
 
     return -r <= plane.getSignedDistanceToPlane(center);
 }
