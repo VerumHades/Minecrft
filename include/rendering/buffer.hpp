@@ -25,6 +25,8 @@ class GLBuffer{
         void loadMesh(Mesh& mesh);
         void draw();
         void drawInstances(int count);
+
+        uint32_t getID(){ return data; } 
 };
 
 class GLDoubleBuffer{

@@ -42,8 +42,8 @@ class ShaderProgram{
         void use(){
             if(programInUse == program) return;
             programInUse = program;
+            //if(!glIsProgram(this->program)) std::cout << "Invalid program?" << std::endl;
             glUseProgram(this->program);
-            CHECK_GL_ERROR();
         }
         void updateUniforms();
         void updateUniform(std::string name);

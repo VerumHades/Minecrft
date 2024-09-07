@@ -9,3 +9,7 @@ make sure things that should be synchronized are actually synchronized, it saves
 # SOME GL VERSIONS MISS SOME FUNCTIONS
 
 make sure the glad version matches the opengl version, if not you are in trouble!
+
+# Make sure texture samplers are set to the corresponding texture units
+
+if they arent it breaks stuff badly and is hard to find!

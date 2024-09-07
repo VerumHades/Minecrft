@@ -16,7 +16,7 @@ GLTexture::GLTexture(char* filename){
 
     glBindTexture(GL_TEXTURE_2D, this->texture);
 
-    CHECK_GL_ERROR();
+    CHECK_GL_ERROR();;
 
     // Set texture wrapping parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -24,7 +24,7 @@ GLTexture::GLTexture(char* filename){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    CHECK_GL_ERROR();
+    CHECK_GL_ERROR();;
 
     //printf("Texture channels: %i\n", nrChannels);
     // Load image data to GPU
@@ -38,11 +38,11 @@ GLTexture::GLTexture(char* filename){
         return;
     }
 
-    CHECK_GL_ERROR();
+    CHECK_GL_ERROR();;
 
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    CHECK_GL_ERROR();
+    CHECK_GL_ERROR();;
 
     stbi_image_free(data);
 
@@ -83,7 +83,7 @@ void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layer
         }
     }
 
-    CHECK_GL_ERROR();
+    CHECK_GL_ERROR();;
 
     // Set texture wrapping parameters
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -92,13 +92,13 @@ void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layer
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT);
 
-    CHECK_GL_ERROR();
+    CHECK_GL_ERROR();;
 
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
-    CHECK_GL_ERROR();
+    CHECK_GL_ERROR();;
 }
 
 float skyboxVertices[] = {
@@ -188,7 +188,7 @@ GLSkybox::GLSkybox(std::array<std::string, 6> filenames){
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_DYNAMIC_DRAW);
     
-    CHECK_GL_ERROR();
+    CHECK_GL_ERROR();;
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glEnableVertexAttribArray(0);
@@ -196,7 +196,7 @@ GLSkybox::GLSkybox(std::array<std::string, 6> filenames){
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    CHECK_GL_ERROR();
+    CHECK_GL_ERROR();;
 
     this->vertexBuffer = VBO;
     this->vao = vao;
@@ -205,15 +205,15 @@ void GLSkybox::draw(){
     glDepthMask(GL_FALSE);
     glBindVertexArray(this->vao);
     
-    CHECK_GL_ERROR();
+    CHECK_GL_ERROR();;
     
     glBindTexture(GL_TEXTURE_CUBE_MAP, this->texture);
     
-    CHECK_GL_ERROR();
+    CHECK_GL_ERROR();;
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
     
-    CHECK_GL_ERROR();
+    CHECK_GL_ERROR();;
     glBindVertexArray(0);
     glDepthMask(GL_TRUE);
 }

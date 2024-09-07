@@ -65,9 +65,9 @@ void Model::calculateMatrices(){
 
     for(auto& cuboid: cubos){
         glm::mat4 temp = glm::mat4(1.0f);
-        
-        temp = glm::translate(temp, cuboid.offset);
-        temp = glm::scale(temp, cuboid.dimensions);
+
+        temp = glm::scale(temp, cuboid.dimensions);        
+        temp = glm::translate(glm::mat4(1.0f), cuboid.offset) * temp;
 
         calculatedMatrices.push_back(temp);
         
@@ -99,20 +99,32 @@ void Model::setCuboids(std::vector<Cuboid> cuboids_){
 void ModelManager::initialize(){
     Mesh mesh = generateBasicCubeMesh();
 
-    cubeBuffer = std::make_unique<GLBuffer>();
     modelProgram = std::make_unique<ShaderProgram>();
-    
-    std::cout << "Loading mesh: "  << mesh.getVertices().size() << std::endl;
 
-    cubeBuffer->loadMesh(mesh);
-    
     modelProgram->initialize();
     modelProgram->addShader("shaders/model/model.vs", GL_VERTEX_SHADER);
     modelProgram->addShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
     modelProgram->compile();
+    modelProgram->use();
 
     cubiodMatUniform.attach(*modelProgram);
     cubiodTexUniform.attach(*modelProgram);
+
+
+    /*glValidateProgram(modelProgram->getID());
+    GLint validateStatus;
+    glGetProgramiv(modelProgram->getID(), GL_VALIDATE_STATUS, &validateStatus);
+    if (!validateStatus) {
+        char infoLog[512];
+        glGetProgramInfoLog(modelProgram->getID(), 512, NULL, infoLog);
+        std::cerr << "Shader Program Validation Error: " << infoLog << std::endl;
+    }*/
+
+    cubeBuffer = std::make_unique<GLBuffer>();
+
+    std::cout << "Loading mesh: "  << mesh.getVertices().size() << std::endl;
+
+    cubeBuffer->loadMesh(mesh);
 }
 
 Model& ModelManager::createModel(std::string name){
@@ -126,6 +138,6 @@ void ModelManager::drawModel(Model& model, Camera& camera, glm::vec3 position){
 
     camera.setModelPosition(position);
     
-    this->modelProgram.get()->updateUniforms();
-    this->cubeBuffer.get()->drawInstances(static_cast<int>(model.getCalculatedMatrices().size()));
+    this->modelProgram->updateUniforms();
+    this->cubeBuffer->drawInstances(static_cast<int>(model.getCalculatedMatrices().size()));
 }

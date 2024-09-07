@@ -35,7 +35,7 @@ void main()
     float texX = texCoordMat[col][row];
     float texY = texCoordMat[col2][row2];
 
-    FragPos = vec3(current * modelMatrix * vec4(aPos, 1.0));
+    FragPos = vec3(modelMatrix * current * vec4(aPos, 1.0));
     gl_Position = projectionMatrix * viewMatrix * vec4(FragPos,1.0);
     
     Normal = transpose(inverse(mat3(modelMatrix))) * aNormal;
