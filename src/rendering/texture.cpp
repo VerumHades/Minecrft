@@ -4,7 +4,7 @@
 #include <stb_image.h>
 
 
-GLTexture::GLTexture(char* filename){
+GLTexture::GLTexture(const char* filename){
     TYPE = GL_TEXTURE_2D;
 
     int width = 0, height = 0, nrChannels = 0;

@@ -8,6 +8,10 @@
 #include <rendering/buffer.hpp>
 #include <rendering/mesh.hpp>
 
+#include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/scene.h>           // Output data structure
+#include <assimp/postprocess.h>     // Post processing flags
+
 struct FaceDefinition {
     int offsetX = 0;
     int offsetY = 0;
@@ -42,30 +46,19 @@ class ModelManager;
 
 class Model{
     private:
-        std::vector<Cuboid> cuboids;
-        std::vector<glm::mat4> calculatedMatrices;
-        std::vector<glm::mat3> calculatedTextureMatrices;
         ModelManager& manager;
+        std::vector<Mesh> meshes;
+        bool loadFromFile(const std::string& filename);
+        void processNode(aiNode *node, const aiScene *scene);
+        Mesh processMesh(aiMesh *mesh, const aiScene *scene);
 
     public:
-        Model(ModelManager& manager) : manager(manager) {}
-        void setCuboids(std::vector<Cuboid> cuboids);
-        void calculateMatrices();
-        const std::vector<Cuboid>& getCuboids() const {return cuboids;};
-
-        std::vector<glm::mat4> getCalculatedMatrices() {return calculatedMatrices;};
-        std::vector<glm::mat3> getCalculatedTextureMatrices() {return calculatedTextureMatrices;};
+        Model(ModelManager& manager, const std::string& filename) : manager(manager) {}
 };
 
 class ModelManager{
     private:
         std::unordered_map<std::string, Model> models;
-        std::unique_ptr<GLBuffer> cubeBuffer;
-        std::unique_ptr<ShaderProgram> modelProgram;
-        std::unique_ptr<ShaderProgram> modelDepthProgram;
-
-        Uniform<std::vector<glm::mat4>> cubiodMatUniform = Uniform<std::vector<glm::mat4>>("cuboidMatrices");
-        Uniform<std::vector<glm::mat3>> cubiodTexUniform = Uniform<std::vector<glm::mat3>>("textureCoordinates");
 
     public:
         void initialize();
@@ -77,9 +70,6 @@ class ModelManager{
             return models.at(name);
         }
         void drawModel(Model& model, Camera& camera, glm::vec3 offset, bool depthMode = false);
-
-        ShaderProgram& getModelProgram() {return *modelProgram;};
-        ShaderProgram& getModelDepthProgram() {return *modelDepthProgram;};
 };
 
 #endif

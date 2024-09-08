@@ -27,7 +27,7 @@ class BindableTexture{
 
 class GLTexture: public BindableTexture{
     public:
-        GLTexture(char* filename);
+        GLTexture(const char* filename);
 };
 
 class GLDepthTexture: public BindableTexture{

@@ -50,7 +50,7 @@ add_executable(main ${SOURCES})
 target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad assimp)
 
 if(MSVC)
-  target_compile_options(main PRIVATE /W4 /WX)
+  target_compile_options(main PRIVATE /W4)
 else()
   target_compile_options(main PRIVATE -Wall -Wextra)
 endif()

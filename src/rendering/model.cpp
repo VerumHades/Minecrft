@@ -1,148 +1,96 @@
 #include <rendering/model.hpp>
 
-FaceDefinition faceDefinitions[] = {
-    FaceDefinition(0, 1, 0, {4, 5, 1, 0}, 0),              // Top face
-    FaceDefinition(0, -1, 0, {7, 6, 2, 3}, 1, true),       // Bottom face
-    FaceDefinition(-1, 0, 0, {0, 4, 7, 3}, 2, true),       // Left face
-    FaceDefinition(1, 0, 0, {1, 5, 6, 2}, 3),              // Right face
-    FaceDefinition(0, 0, -1, {0, 1, 2, 3}, 4),             // Front face
-    FaceDefinition(0, 0, 1, {4, 5, 6, 7}, 5, true)         // Back face
-};
-
-const glm::vec3 cubeNormals[8] = {
-    glm::normalize(glm::vec3(-1, 1,-1)),
-    glm::normalize(glm::vec3( 1, 1,-1)),
-    glm::normalize(glm::vec3( 1,-1,-1)),
-    glm::normalize(glm::vec3(-1,-1,-1)),
-    glm::normalize(glm::vec3(-1, 1, 1)),
-    glm::normalize(glm::vec3( 1, 1, 1)),
-    glm::normalize(glm::vec3( 1,-1, 1)),
-    glm::normalize(glm::vec3(-1,-1, 1))
-};
-
-Mesh generateBasicCubeMesh(){
-    Mesh mesh = Mesh();
-    mesh.setVertexFormat({3,3,1});
-
-    glm::vec3 vertices[] = {
-        {0,1,0},
-        {1,1,0},
-        {1,0,0},
-        {0,0,0},
-        {0,1,1},
-        {1,1,1},
-        {1,0,1},
-        {0,0,1}
-    }; // cube vertices
-
-    for(int i = 0;i < 6;i++){
-        const FaceDefinition& def = faceDefinitions[i];
-       
-        glm::vec3 vertexArray[4] = {
-            vertices[def.vertexIndexes[0]],
-            vertices[def.vertexIndexes[1]],
-            vertices[def.vertexIndexes[2]],
-            vertices[def.vertexIndexes[3]]
-        };
-
-        glm::vec3 normalArray[4] = {
-            cubeNormals[def.vertexIndexes[0]],
-            cubeNormals[def.vertexIndexes[1]],
-            cubeNormals[def.vertexIndexes[2]],
-            cubeNormals[def.vertexIndexes[3]]
-        };
-
-        mesh.addQuadFace(
-            vertexArray,
-            normalArray,
-            def.clockwise
-        );
+void Model::processNode(aiNode *node, const aiScene *scene)
+{
+    // process all the node's meshes (if any)
+    for(unsigned int i = 0; i < node->mNumMeshes; i++)
+    {
+        aiMesh *mesh = scene->mMeshes[node->mMeshes[i]]; 
+        meshes.push_back(processMesh(mesh, scene));			
     }
+    // then do the same for each of its children
+    for(unsigned int i = 0; i < node->mNumChildren; i++)
+    {
+        processNode(node->mChildren[i], scene);
+    }
+}  
 
-    return mesh;
-}
+Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
+    Mesh outMesh = Mesh();
+    outMesh.setVertexFormat({3,3});
+    const int size = 9;
 
-void Model::calculateMatrices(){
-    auto cubos = this->getCuboids();
-    
-    calculatedMatrices.clear();
-    calculatedTextureMatrices.clear();
-
-    //mat[col][row]
-
-    for(auto& cuboid: cubos){
-        glm::mat4 temp = glm::mat4(1.0f);
-
-        temp = glm::scale(temp, cuboid.dimensions);        
-        temp = glm::translate(glm::mat4(1.0f), cuboid.offset) * temp;
-
-        calculatedMatrices.push_back(temp);
+    for(unsigned int i = 0; i < mesh->mNumVertices; i++)
+    {
+        float vertex[size];
         
-        glm::mat3 texTemp = glm::mat3(1.0f);
+        vertex[0] = mesh->mVertices[i].x;
+        vertex[1] = mesh->mVertices[i].y;
+        vertex[2] = mesh->mVertices[i].z; 
 
-        texTemp[0][0] = cuboid.textureCoordinates[0].x;
-        texTemp[1][0] = cuboid.textureCoordinates[0].x;
+        vertex[3] = mesh->mNormals[i].x;
+        vertex[4] = mesh->mNormals[i].y;
+        vertex[5] = mesh->mNormals[i].z; 
 
-        texTemp[2][0] = cuboid.textureCoordinates[1].x;
-        texTemp[0][1] = cuboid.textureCoordinates[1].x;
+        if(mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
+        {
+            vertex[6] = mesh->mTextureCoords[0][i].x; 
+            vertex[7] = mesh->mTextureCoords[0][i].y;
+        }
+        else{
+            vertex[6] = 0;
+            vertex[7] = 0;
+        }
 
-        texTemp[1][1] = cuboid.textureCoordinates[2].x;
-        texTemp[2][1] = cuboid.textureCoordinates[2].x;
-
-        texTemp[0][2] = cuboid.textureCoordinates[3].x;
-        texTemp[1][2] = cuboid.textureCoordinates[3].x;
-
-        texTemp[2][2] = static_cast<float>(cuboid.textureIndex);
-
-        calculatedTextureMatrices.push_back(texTemp);
+        outMesh.getVertices().insert(outMesh.getVertices().end(), vertex, vertex + size);;
     }
+
+    for(unsigned int i = 0; i < mesh->mNumFaces; i++)
+    {
+        aiFace face = mesh->mFaces[i];
+        outMesh.getIndices().insert(outMesh.getIndices().end(), face.mIndices, face.mIndices + face.mNumIndices);
+    }  
+
+    if (mesh->mMaterialIndex >= 0) {
+        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+
+        // Retrieve the texture (e.g., the diffuse texture)
+        aiString texturePath;
+        if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
+            // Load the texture using your GLTexture class
+            outMesh.setTexture(texturePath.C_Str());
+        }
+    }
+
+    return outMesh;
 }
 
-void Model::setCuboids(std::vector<Cuboid> cuboids_){
-    cuboids = cuboids_;
-    calculateMatrices();
+bool Model::loadFromFile( const std::string& pFile) {
+  // Create an instance of the Importer class
+  Assimp::Importer importer;
+
+  // And have it read the given file with some example postprocessing
+  // Usually - if speed is not the most important aspect for you - you'll
+  // probably to request more postprocessing than we do in this example.
+  const aiScene* scene = importer.ReadFile( pFile,
+    aiProcess_CalcTangentSpace       |
+    aiProcess_Triangulate            |
+    aiProcess_JoinIdenticalVertices  |
+    aiProcess_SortByPType);
+
+  // If the import failed, report it
+  if (nullptr == scene) {
+    std::cout << importer.GetErrorString() << std::endl;
+    return false;
+  }
+
+  // Now we can access the file's contents.
+  processNode(scene->mRootNode, scene);
+
+  // We're done. Everything will be cleaned up by the importer destructor
+  return true;
 }
 
-void ModelManager::initialize(){
-    Mesh mesh = generateBasicCubeMesh();
-
-    modelProgram = std::make_unique<ShaderProgram>();
-
-    modelProgram->initialize();
-    modelProgram->addShader("shaders/model/model.vs", GL_VERTEX_SHADER);
-    modelProgram->addShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
-    modelProgram->compile();
-    modelProgram->use();
-
-    cubiodMatUniform.attach(*modelProgram);
-    cubiodTexUniform.attach(*modelProgram);
-
-
-    /*glValidateProgram(modelProgram->getID());
-    GLint validateStatus;
-    glGetProgramiv(modelProgram->getID(), GL_VALIDATE_STATUS, &validateStatus);
-    if (!validateStatus) {
-        char infoLog[512];
-        glGetProgramInfoLog(modelProgram->getID(), 512, NULL, infoLog);
-        std::cerr << "Shader Program Validation Error: " << infoLog << std::endl;
-    }*/
-
-    cubeBuffer = std::make_unique<GLBuffer>();
-
-    std::cout << "Loading mesh: "  << mesh.getVertices().size() << std::endl;
-
-    cubeBuffer->loadMesh(mesh);
-
-    modelDepthProgram = std::make_unique<ShaderProgram>();
-
-    modelDepthProgram->initialize();
-    modelDepthProgram->addShader("shaders/model/depthModel.vs", GL_VERTEX_SHADER);
-    modelDepthProgram->addShader("shaders/depth.fs", GL_FRAGMENT_SHADER);
-    modelDepthProgram->compile();
-    modelDepthProgram->use();
-
-    cubiodMatUniform.attach(*modelDepthProgram);
-}
 
 Model& ModelManager::createModel(std::string name){
     models.emplace(name, *this);
@@ -150,13 +98,5 @@ Model& ModelManager::createModel(std::string name){
 }
 
 void ModelManager::drawModel(Model& model, Camera& camera, glm::vec3 position, bool depthMode){
-    cubiodMatUniform = model.getCalculatedMatrices();
-    cubiodTexUniform = model.getCalculatedTextureMatrices();
-
-    camera.setModelPosition(position);
     
-    if(!depthMode) this->modelProgram->updateUniforms();
-    else this->modelDepthProgram->updateUniforms();
-
-    this->cubeBuffer->drawInstances(static_cast<int>(model.getCalculatedMatrices().size()));
 }
