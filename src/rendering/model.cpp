@@ -22,7 +22,7 @@ const glm::vec3 cubeNormals[8] = {
 
 Mesh generateBasicCubeMesh(){
     Mesh mesh = Mesh();
-    mesh.setVertexFormat({3,3});
+    mesh.setVertexFormat({3,3,1});
 
     glm::vec3 vertices[] = {
         {0,1,0},
@@ -45,9 +45,16 @@ Mesh generateBasicCubeMesh(){
             vertices[def.vertexIndexes[3]]
         };
 
+        glm::vec3 normalArray[4] = {
+            cubeNormals[def.vertexIndexes[0]],
+            cubeNormals[def.vertexIndexes[1]],
+            cubeNormals[def.vertexIndexes[2]],
+            cubeNormals[def.vertexIndexes[3]]
+        };
+
         mesh.addQuadFace(
             vertexArray,
-            glm::vec3(def.offsetX, def.offsetY,  def.offsetZ),
+            normalArray,
             def.clockwise
         );
     }
@@ -125,6 +132,16 @@ void ModelManager::initialize(){
     std::cout << "Loading mesh: "  << mesh.getVertices().size() << std::endl;
 
     cubeBuffer->loadMesh(mesh);
+
+    modelDepthProgram = std::make_unique<ShaderProgram>();
+
+    modelDepthProgram->initialize();
+    modelDepthProgram->addShader("shaders/model/depthModel.vs", GL_VERTEX_SHADER);
+    modelDepthProgram->addShader("shaders/depth.fs", GL_FRAGMENT_SHADER);
+    modelDepthProgram->compile();
+    modelDepthProgram->use();
+
+    cubiodMatUniform.attach(*modelDepthProgram);
 }
 
 Model& ModelManager::createModel(std::string name){
@@ -132,12 +149,14 @@ Model& ModelManager::createModel(std::string name){
     return getModel(name);
 }
 
-void ModelManager::drawModel(Model& model, Camera& camera, glm::vec3 position){
+void ModelManager::drawModel(Model& model, Camera& camera, glm::vec3 position, bool depthMode){
     cubiodMatUniform = model.getCalculatedMatrices();
     cubiodTexUniform = model.getCalculatedTextureMatrices();
 
     camera.setModelPosition(position);
     
-    this->modelProgram->updateUniforms();
+    if(!depthMode) this->modelProgram->updateUniforms();
+    else this->modelDepthProgram->updateUniforms();
+
     this->cubeBuffer->drawInstances(static_cast<int>(model.getCalculatedMatrices().size()));
 }

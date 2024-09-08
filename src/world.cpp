@@ -342,11 +342,11 @@ void World::drawChunks(Camera& camera, ShaderProgram& program, int renderDistanc
     }
 }
 
-void World::drawEntities(ModelManager& manager, Camera& camera){
+void World::drawEntities(ModelManager& manager, Camera& camera, bool depthMode){
     for (auto& entity: this->entities) { 
         if(entity.getModelName() == "default") continue;
         
-        manager.drawModel(manager.getModel(entity.getModelName()), camera, entity.getPosition());
+        manager.drawModel(manager.getModel(entity.getModelName()), camera, entity.getPosition(), depthMode);
     }
 }
 

@@ -62,6 +62,7 @@ class ModelManager{
         std::unordered_map<std::string, Model> models;
         std::unique_ptr<GLBuffer> cubeBuffer;
         std::unique_ptr<ShaderProgram> modelProgram;
+        std::unique_ptr<ShaderProgram> modelDepthProgram;
 
         Uniform<std::vector<glm::mat4>> cubiodMatUniform = Uniform<std::vector<glm::mat4>>("cuboidMatrices");
         Uniform<std::vector<glm::mat3>> cubiodTexUniform = Uniform<std::vector<glm::mat3>>("textureCoordinates");
@@ -75,9 +76,10 @@ class ModelManager{
             }
             return models.at(name);
         }
-        void drawModel(Model& model, Camera& camera, glm::vec3 offset);
+        void drawModel(Model& model, Camera& camera, glm::vec3 offset, bool depthMode = false);
 
         ShaderProgram& getModelProgram() {return *modelProgram;};
+        ShaderProgram& getModelDepthProgram() {return *modelDepthProgram;};
 };
 
 #endif

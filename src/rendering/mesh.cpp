@@ -74,27 +74,30 @@ void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals[4], float
     
 }
 
-void Mesh::addQuadFace(glm::vec3 vertices_[4], glm::vec3 normals, int clockwise){
+static const int size = 7;
+void Mesh::addQuadFace(glm::vec3 vertices_[4], glm::vec3 normals[4], int clockwise){
     uint32_t vecIndices[4];
 
-    float vertex[6 * 4];
-    uint32_t startIndex = (uint32_t) this->vertices.size() / 6;
+    float vertex[size * 4];
+    uint32_t startIndex = (uint32_t) this->vertices.size() / size;
     for(int i = 0; i < 4; i++){
-        int offset = i * 6;
+        int offset = i * size;
 
         vertex[0 + offset] = vertices_[i].x;
         vertex[1 + offset] = vertices_[i].y;
         vertex[2 + offset] = vertices_[i].z;
 
         // Normals
-        vertex[3 + offset] = normals.x;
-        vertex[4 + offset] = normals.y;
-        vertex[5 + offset] = normals.z;
+        vertex[3 + offset] = normals[i].x;
+        vertex[4 + offset] = normals[i].y;
+        vertex[5 + offset] = normals[i].z;
+
+        vertex[6 + offset] = static_cast<float>(i);
 
         vecIndices[i] = startIndex + i;
     }
 
-    this->vertices.insert(this->vertices.end(), vertex, vertex + 6 * 4);
+    this->vertices.insert(this->vertices.end(), vertex, vertex + size * 4);
 
     if (clockwise) this->indices.insert(this->indices.end(), {vecIndices[0], vecIndices[1], vecIndices[3], vecIndices[1], vecIndices[2], vecIndices[3]});
     else this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[1], vecIndices[0], vecIndices[3], vecIndices[2], vecIndices[1]});

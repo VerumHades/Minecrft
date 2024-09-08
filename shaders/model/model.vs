@@ -2,6 +2,7 @@
 
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
+layout(location = 2) in float aVertexIndex;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -21,7 +22,7 @@ uniform mat3 textureCoordinates[64];
 void main()
 {
     mat4 current = cuboidMatrices[gl_InstanceID];
-    int vertIndex = gl_VertexID * 2;
+    int vertIndex = int(aVertexIndex) * 2;
     
     int col = vertIndex % 3;
     int row = vertIndex / 3;
@@ -32,17 +33,22 @@ void main()
     int row2 = vertIndex / 3;
 
     mat3 texCoordMat = textureCoordinates[gl_InstanceID];
-    float texX = texCoordMat[col][row];
-    float texY = texCoordMat[col2][row2];
+    float texX = texCoordMat[row][col];
+    float texY = texCoordMat[row2][col2];
 
     FragPos = vec3(modelMatrix * current * vec4(aPos, 1.0));
     gl_Position = projectionMatrix * viewMatrix * vec4(FragPos,1.0);
     
-    Normal = transpose(inverse(mat3(modelMatrix))) * aNormal;
+    Normal = transpose(inverse(mat3(current))) * aNormal;
     TexCoords = vec2(texX, texY);
     TexIndex = texCoordMat[2][2];
     FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
-    //gl_Position = vec4(aPos, 1.0);
 
-    //gl_Position = FragPosLightSpace;
+    /*FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
+    //gl_Position = vec4(aPos, 1.0);
+    
+    gl_Position = FragPosLightSpace;
+
+    float dist = length(gl_Position.xy);  // Distance from the center
+    gl_Position.xy /= (dist+.1);*/
 }

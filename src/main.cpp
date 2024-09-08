@@ -22,7 +22,7 @@ int lastMouseX = 0;
 int lastMouseY = 0;
 float sensitivity = 0.1f;
 
-int renderDistance = 16;
+int renderDistance = 8;
 
 float camSpeed = 0.01f;
 
@@ -251,7 +251,7 @@ int main() {
     glCullFace(GL_BACK);     // Cull back faces
     glFrontFace(GL_CW);     // Set counterclockwise winding order as front*/
 
-    glEnable(GL_FRAMEBUFFER_SRGB);
+    //glEnable(GL_FRAMEBUFFER_SRGB);
     glEnable(GL_MULTISAMPLE);  // Redundant perhaps
     //glDepthMask(GL_FALSE);
 
@@ -269,15 +269,15 @@ int main() {
     Model& bob = modelManager.createModel("bob");
     bob.setCuboids({
         {
-            {0,0,0},
-            {1,0.5,1},
+            {0.2,0,0.2},
+            {0.6,1.6,0.6},
             {
                 {0,0},
                 {0,1},
                 {1,1},
                 {1,0}
             },
-            1
+            3
         },
         {
             {0,1,0},
@@ -288,7 +288,7 @@ int main() {
                 {1,1},
                 {1,0}
             },
-            1
+            10
         }
     });
 
@@ -339,10 +339,8 @@ int main() {
     suncam.getTexture()->bind(1);
     suncam.getLightSpaceMatrixUniform().attach(mainProgram);
     suncam.getLightSpaceMatrixUniform().attach(modelManager.getModelProgram());
-    
-    camera.getPositionUniform().attach(suncam.getProgram());
-    camera.getPositionUniform().attach(mainProgram);
-    camera.getPositionUniform().attach(modelManager.getModelProgram());
+    suncam.getLightSpaceMatrixUniform().attach(modelManager.getModelDepthProgram());
+    suncam.getModelUniform().attach(modelManager.getModelDepthProgram());
 
     //int sunDirLoc = camera.getProgram("skybox").getUniformLocation("sunDir");
     auto sunDirUniform = Uniform<glm::vec3>("sunDir");
@@ -432,6 +430,7 @@ int main() {
             glDisable( GL_CULL_FACE );
             suncam.prepareForRender();
             world.drawChunks(suncam, suncam.getProgram(), renderDistance);
+            world.drawEntities(modelManager, suncam, true);
             glEnable( GL_CULL_FACE );
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);

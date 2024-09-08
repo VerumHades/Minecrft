@@ -62,7 +62,7 @@ class World: public Collidable{
         RaycastResult raycast(float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance);
 
         void drawChunks(Camera& camera, ShaderProgram& program, int renderDistance);
-        void drawEntities(ModelManager& manager, Camera& camera);
+        void drawEntities(ModelManager& manager, Camera& camera, bool depthMode  = false);
         void updateBuffers();
         void updateEntities();
 

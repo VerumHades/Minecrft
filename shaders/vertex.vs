@@ -25,15 +25,14 @@ void main()
     Normal = /*transpose(inverse(mat3(modelMatrix))) */ aNormal;
     TexCoords = aTexCoords;
     TexIndex = aTexIndex;
-    FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
-    //gl_Position = vec4(aPos, 1.0);
     
-   // gl_Position = FragPosLightSpace;
+    FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
+    /*//gl_Position = vec4(aPos, 1.0);
+    
+    gl_Position = FragPosLightSpace;
 
-    //float dist = length(gl_Position.xy);  // Distance from the center
-    // Normalize the centered position and multiply by warped distanc
-    // Update the xz position
-    //gl_Position.xy /= (dist+.1);
+    float dist = length(gl_Position.xy);  // Distance from the center
+    gl_Position.xy /= (dist+.1);*/
 
 
     //gl_Position = FragPosLightSpace;

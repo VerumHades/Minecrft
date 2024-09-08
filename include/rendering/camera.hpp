@@ -152,6 +152,7 @@ class DepthCamera: public Camera{
 
         Uniform<glm::mat4>& getProjectionUniform() {return projectionMatrix;}
         Uniform<glm::mat4>& getViewUniform() {return viewMatrix;}
+        Uniform<glm::mat4>& getModelUniform() {return modelMatrix;}
 };
 #include <chunk.hpp>
 

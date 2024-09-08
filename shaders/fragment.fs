@@ -92,4 +92,6 @@ void main()
     //vec3 lighting = (ambient + (1.0 - shadow) * 1.0) * color;
     FragColor = vec4(lighting, 1.0);
     //FragColor = vec4((Normal + 1.0) * 0.5,1.0);
+    //float depthValue = texture(shadowMap, TexCoords).r;
+    //FragColor = vec4(vec3(depthValue), 1.0); 
 }
