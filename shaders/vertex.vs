@@ -27,9 +27,9 @@ void main()
     TexIndex = aTexIndex;
     
     FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
-    /*//gl_Position = vec4(aPos, 1.0);
+    //gl_Position = vec4(aPos, 1.0);
     
-    gl_Position = FragPosLightSpace;
+    /*gl_Position = FragPosLightSpace;
 
     float dist = length(gl_Position.xy);  // Distance from the center
     gl_Position.xy /= (dist+.1);*/

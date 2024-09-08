@@ -33,7 +33,7 @@ float maxFOV = 90.0f;
 float minFOV = 2.0f;
 
 int sunDistance = ((DEFAULT_CHUNK_SIZE * renderDistance) / 2) ;
-float sunAngle = 70.0f;
+float sunAngle = 60.0f;
 World world;
 
 struct BoundKey{
@@ -269,26 +269,70 @@ int main() {
     Model& bob = modelManager.createModel("bob");
     bob.setCuboids({
         {
-            {0.2,0,0.2},
-            {0.6,1.6,0.6},
+            {0,0.3,0.2},
+            {1.0,0.6,0.6},
             {
-                {0,0},
-                {0,1},
                 {1,1},
-                {1,0}
+                {0.9,1},
+                {0.9,0.9},
+                {1,0.9}
             },
-            3
+            12
         },
         {
-            {0,1,0},
-            {1,0.5,1},
+            {-0.2,0.7,0.25},
+            {0.5,0.5,0.5},
             {
-                {0,0},
-                {0,1},
                 {1,1},
+                {0,1},
+                {0,0},
                 {1,0}
             },
-            10
+            12
+        },
+        {
+            {0.1,0,0.15},
+            {0.3,0.6,0.3},
+            {
+                {1,1},
+                {0.9,1},
+                {0.9,0.9},
+                {1,0.9}
+            },
+            12
+        },
+        {
+            {0.1,0,0.55},
+            {0.3,0.6,0.3},
+            {
+                {1,1},
+                {0.9,1},
+                {0.9,0.9},
+                {1,0.9}
+            },
+            12
+        },
+        {
+            {0.8,0,0.15},
+            {0.3,0.6,0.3},
+            {
+                {1,1},
+                {0.9,1},
+                {0.9,0.9},
+                {1,0.9}
+            },
+            12
+        },
+        {
+            {0.8,0,0.55},
+            {0.3,0.6,0.3},
+            {
+                {1,1},
+                {0.9,1},
+                {0.9,0.9},
+                {1,0.9}
+            },
+            12
         }
     });
 
@@ -322,7 +366,8 @@ int main() {
         "textures/birch_log.png",
         "textures/birch_log_top.png",
         "textures/blue_wool.png",
-        "textures/sand.png"
+        "textures/sand.png",
+        "textures/pig.png"
     };
     
     mainProgram.initialize();
@@ -405,18 +450,19 @@ int main() {
 
         //suncam.setPosition(c0,400, camera.getPosition().z);
 
-        if(world.updated){
-            int offsetX = (int) (camera.getPosition().x + -sunDistance * cos(glm::radians(sunAngle)));
+        //if(world.updated){
+            int offsetX = (int) camera.getPosition().x;
+            int offsetY = (int) camera.getPosition().y;
             int offsetZ = (int) camera.getPosition().z;
 
             suncam.setPosition(
                 (float) offsetX + sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)
-                sunDistance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
+                (float) offsetY + sunDistance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
                 (float) offsetZ  // Z position (cosine component)
             );
             suncam.setTarget(
-                (float) offsetX - sunDistance * cos(glm::radians(sunAngle)),
-                -sunDistance * sin(glm::radians(sunAngle)),
+                (float) offsetX,
+                (float) offsetY,
                 (float) offsetZ
             );
             suncam.updateProjection();
@@ -436,8 +482,8 @@ int main() {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
 
-            world.updated = false;
-        }
+            //world.updated = false;
+        //}
 
 
         //skyboxProgram.updateUniforms();
