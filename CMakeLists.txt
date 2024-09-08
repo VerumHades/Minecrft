@@ -31,6 +31,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+# Fetch GLM
+FetchContent_Declare(
+  assimp
+  GIT_REPOSITORY https://github.com/assimp/assimp.git
+)
+FetchContent_MakeAvailable(assimp)
+
 find_package(OpenGL REQUIRED)
 
 # Source files
@@ -40,7 +47,7 @@ file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp ${CMAKE_SOURCE_DIR}/src/
 add_executable(main ${SOURCES})
 
 # Link libraries
-target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad)
+target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad assimp)
 
 if(MSVC)
   target_compile_options(main PRIVATE /W4 /WX)
