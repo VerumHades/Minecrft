@@ -4,15 +4,6 @@ Mesh::Mesh(){
     //this->vertices.reserve(10000);
     //this->indices.reserve(10000);
 }
-const std::vector<float>& Mesh::getVertices(){
-    return this->vertices;
-}
-const std::vector<uint32_t>& Mesh::getIndices(){
-    return this->indices;
-}
-const std::vector<int>& Mesh::getFormat(){
-    return this->format;
-}
 
 void Mesh::setVertexFormat(const std::vector<int>& format_){
     this->format = format_;

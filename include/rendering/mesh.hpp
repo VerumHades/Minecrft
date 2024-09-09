@@ -7,15 +7,14 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-
 class Mesh{
     private:
         std::vector<float> vertices;
         std::vector<uint32_t> indices;
         std::vector<int> format;
 
-        std::unique_ptr<GLTexture> texture;
         bool formatSet = false;
+        int textureIndex = -1;
 
     public:
         size_t vertexSize = 0;
@@ -26,10 +25,11 @@ class Mesh{
         void addQuadFaceGreedy(glm::vec3 vertices[4], glm::vec3 normals[4],float metadata[6], int clockwise, int width, int height);
         void addQuadFace(glm::vec3 vertices[4], glm::vec3 normals[4], int clockwise);
 
-        std::vector<float>& getVertices();
-        std::vector<uint32_t>& getIndices();
-        std::vector<int>& getFormat();
+        std::vector<float>& getVertices() {return this->vertices;}
+        std::vector<uint32_t>& getIndices() {return this->indices;}
+        std::vector<int>& getFormat() {return this->format;}
 
-        void setTexture(const char* filename) {texture = std::make_unique<GLTexture>(filename);};
+        void setTextureIndex(int index){textureIndex = index;}
+        int getTextureIndex(){return textureIndex;};
 };
 #endif

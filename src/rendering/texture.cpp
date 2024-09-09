@@ -4,6 +4,37 @@
 #include <stb_image.h>
 
 
+void GLTexture::loadData(unsigned char* data, int width, int height, int channels){
+    glBindTexture(GL_TEXTURE_2D, this->texture);
+
+    CHECK_GL_ERROR();;
+
+    // Set texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    CHECK_GL_ERROR();;
+
+    //printf("Texture channels: %i\n", nrChannels);
+    // Load image data to GPU
+    if(channels != 3 && channels != 4){
+        std::cout << "Invalid number of channels: " << channels;
+        std::terminate();
+        return;
+    }
+
+    GLenum format = (channels == 4) ? GL_RGBA : GL_RGB;
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+
+    CHECK_GL_ERROR();;
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    CHECK_GL_ERROR();;
+}
+
 GLTexture::GLTexture(const char* filename){
     TYPE = GL_TEXTURE_2D;
 
@@ -14,40 +45,15 @@ GLTexture::GLTexture(const char* filename){
         return;
     }
 
-    glBindTexture(GL_TEXTURE_2D, this->texture);
-
-    CHECK_GL_ERROR();;
-
-    // Set texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    CHECK_GL_ERROR();;
-
-    //printf("Texture channels: %i\n", nrChannels);
-    // Load image data to GPU
-    if (nrChannels == 3) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    } else if (nrChannels == 4) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    } else{
-        std::cout << "Invalid number of channels: " << nrChannels << " in texture image: " << filename << std::endl;
-        std::terminate();
-        return;
-    }
-
-    CHECK_GL_ERROR();;
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    CHECK_GL_ERROR();;
+    loadData(data, width, height, nrChannels);
 
     stbi_image_free(data);
+}
 
-    //glActiveTexture(GL_TEXTURE0);
-    //glBindTexture(GL_TEXTURE_2D, texture);
+GLTexture::GLTexture(unsigned char* data, int width, int height){
+    TYPE = GL_TEXTURE_2D;
+
+    loadData(data, width, height, 4);
 }
 
 void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layerWidth, int layerHeight){

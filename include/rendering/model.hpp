@@ -12,6 +12,8 @@
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>     // Post processing flags
 
+#include <stb_image.h>
+
 struct FaceDefinition {
     int offsetX = 0;
     int offsetY = 0;
@@ -47,21 +49,34 @@ class ModelManager;
 class Model{
     private:
         ModelManager& manager;
+        
         std::vector<Mesh> meshes;
-        bool loadFromFile(const std::string& filename);
+        std::vector<std::unique_ptr<GLBuffer>> buffers;
+
         void processNode(aiNode *node, const aiScene *scene);
         Mesh processMesh(aiMesh *mesh, const aiScene *scene);
+        int Model::handleTexture(aiString texturePath, Mesh& outMesh, const aiScene *scene);
 
     public:
-        Model(ModelManager& manager, const std::string& filename) : manager(manager) {}
+        int textureIndex = -1;
+        
+        Model(ModelManager& manager) : manager(manager) {}
+        bool loadFromFile(const std::string& filename);
+        void draw();
 };
 
 class ModelManager{
     private:
         std::unordered_map<std::string, Model> models;
+        std::unique_ptr<ShaderProgram> modelProgram;
+        std::unique_ptr<ShaderProgram> modelDepthProgram;
+        std::unordered_map<int, GLTexture> loadedTextures;
 
     public:
         void initialize();
+        void loadTexture(int index, const aiScene *scene);
+        GLTexture& getTexture(int index) {return loadedTextures.at(index);};
+
         Model& createModel(std::string name);
         Model& getModel(std::string name) {
             if(models.count(name) == 0) {
@@ -70,6 +85,9 @@ class ModelManager{
             return models.at(name);
         }
         void drawModel(Model& model, Camera& camera, glm::vec3 offset, bool depthMode = false);
+
+        ShaderProgram& getModelProgram() {return *modelProgram;};
+        ShaderProgram& getModelDepthProgram() {return *modelDepthProgram;};
 };
 
 #endif

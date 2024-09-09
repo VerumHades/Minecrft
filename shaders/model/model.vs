@@ -2,7 +2,7 @@
 
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
-layout(location = 2) in float aVertexIndex;
+layout(location = 2) in vec2 aTexCoords;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -11,37 +11,17 @@ uniform mat4 lightSpaceMatrix;
 
 out vec3 Normal;
 out vec2 TexCoords;
-out float TexIndex;
 out vec4 FragPosLightSpace;
 
 out vec3 FragPos;
 
-uniform mat4 cuboidMatrices[64];
-uniform mat3 textureCoordinates[64]; 
-
 void main()
 {
-    mat4 current = cuboidMatrices[gl_InstanceID];
-    int vertIndex = int(aVertexIndex) * 2;
-    
-    int col = vertIndex % 3;
-    int row = vertIndex / 3;
-
-    vertIndex++;
-
-    int col2 = vertIndex % 3;
-    int row2 = vertIndex / 3;
-
-    mat3 texCoordMat = textureCoordinates[gl_InstanceID];
-    float texX = texCoordMat[row][col];
-    float texY = texCoordMat[row2][col2];
-
-    FragPos = vec3(modelMatrix * current * vec4(aPos, 1.0));
+    FragPos = vec3(modelMatrix * vec4(aPos, 1.0));
     gl_Position = projectionMatrix * viewMatrix * vec4(FragPos,1.0);
     
-    Normal = transpose(inverse(mat3(current))) * aNormal;
-    TexCoords = vec2(texX, texY);
-    TexIndex = texCoordMat[2][2];
+    Normal = transpose(inverse(mat3(modelMatrix))) * aNormal;
+    TexCoords = aTexCoords;
     FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
 
     /*FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);

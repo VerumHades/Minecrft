@@ -249,15 +249,17 @@ int main() {
     
     glEnable(GL_CULL_FACE);  // Enable backface culling
     glCullFace(GL_BACK);     // Cull back faces
-    glFrontFace(GL_CW);     // Set counterclockwise winding order as front*/
+    glFrontFace(GL_CCW);     // Set counterclockwise winding order as front*/
 
     //glEnable(GL_FRAMEBUFFER_SRGB);
     glEnable(GL_MULTISAMPLE);  // Redundant perhaps
     //glDepthMask(GL_FALSE);
 
+    /*
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
+    */
 
     //glEnable(GL_BLEND);
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -267,74 +269,7 @@ int main() {
     camera.getViewUniform().attach(modelManager.getModelProgram());
 
     Model& bob = modelManager.createModel("bob");
-    bob.setCuboids({
-        {
-            {0,0.3,0.2},
-            {1.0,0.6,0.6},
-            {
-                {1,1},
-                {0.9,1},
-                {0.9,0.9},
-                {1,0.9}
-            },
-            12
-        },
-        {
-            {-0.2,0.7,0.25},
-            {0.5,0.5,0.5},
-            {
-                {1,1},
-                {0,1},
-                {0,0},
-                {1,0}
-            },
-            12
-        },
-        {
-            {0.1,0,0.15},
-            {0.3,0.6,0.3},
-            {
-                {1,1},
-                {0.9,1},
-                {0.9,0.9},
-                {1,0.9}
-            },
-            12
-        },
-        {
-            {0.1,0,0.55},
-            {0.3,0.6,0.3},
-            {
-                {1,1},
-                {0.9,1},
-                {0.9,0.9},
-                {1,0.9}
-            },
-            12
-        },
-        {
-            {0.8,0,0.15},
-            {0.3,0.6,0.3},
-            {
-                {1,1},
-                {0.9,1},
-                {0.9,0.9},
-                {1,0.9}
-            },
-            12
-        },
-        {
-            {0.8,0,0.55},
-            {0.3,0.6,0.3},
-            {
-                {1,1},
-                {0.9,1},
-                {0.9,0.9},
-                {1,0.9}
-            },
-            12
-        }
-    });
+    bob.loadFromFile("models/car.gltf");
 
     
     std::array<std::string,6> skyboxPaths = {
@@ -378,7 +313,6 @@ int main() {
 
     GLTextureArray tilemap = GLTextureArray();
     tilemap.loadFromFiles(texturePaths,160,160);
-    std::cout << "Loaded textures" << std::endl;
 
     suncam.initialize();
     suncam.getTexture()->bind(1);
@@ -396,9 +330,6 @@ int main() {
 
     glUniform1i(mainProgram.getUniformLocation("textureArray"),0);
     glUniform1i(mainProgram.getUniformLocation("shadowMap"),1);
-
-    glUniform1i(modelManager.getModelProgram().getUniformLocation("textureArray"),0);
-    glUniform1i(modelManager.getModelProgram().getUniformLocation("shadowMap"),1);
 
     double last = glfwGetTime();
     double current = glfwGetTime();

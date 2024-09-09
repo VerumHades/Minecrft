@@ -26,8 +26,12 @@ class BindableTexture{
 };
 
 class GLTexture: public BindableTexture{
+    private:
+        void loadData(unsigned char* data, int width, int height, int channels);
+
     public:
         GLTexture(const char* filename);
+        GLTexture(unsigned char* data, int width, int height);
 };
 
 class GLDepthTexture: public BindableTexture{
