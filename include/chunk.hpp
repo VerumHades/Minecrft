@@ -19,10 +19,17 @@
 #include <array>
 #include <blocks.hpp>
 
-#define DEFAULT_CHUNK_SIZE 16
+#define DEFAULT_CHUNK_SIZE 32
 #define DEFAULT_CHUNK_AREA DEFAULT_CHUNK_SIZE * DEFAULT_CHUNK_SIZE
-#define DEFAULT_CHUNK_HEIGHT 256
+#define DEFAULT_CHUNK_HEIGHT 32
 
+struct ChunkTreeNode{
+    std::unique_ptr<ChunkTreeNode> children[2][2][2] = {};
+    short blockCounts[(size_t) BlockTypes::BLOCK_TYPES_TOTAL];
+    Block value = {BlockTypes::Air};
+    int size;
+    ChunkTreeNode* parent;
+};
 
 class World;
 
@@ -31,8 +38,9 @@ class Chunk: public Volume{
         glm::vec2 worldPosition = glm::vec2(0,0);
         World& world;
 
-        Block blocks[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE] = {};
+        //Block blocks[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE] = {};
         //unsigned char lightArray[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][3];
+        std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
         
     public:
         bool meshGenerating = false;

@@ -82,7 +82,26 @@ Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     if(y >= DEFAULT_CHUNK_HEIGHT) return nullptr;
     if(z >= DEFAULT_CHUNK_SIZE) return nullptr;
 
-    return &this->blocks[x][y][z];
+    ChunkTreeNode* currentNode = rootNode.get();
+    
+    int range = DEFAULT_CHUNK_SIZE;
+    while(range > 1){
+        int indexX = (float) x / (float) range >= 0.5;
+        int indexY = (float) y / (float) range >= 0.5;
+        int indexZ = (float) z / (float) range >= 0.5;
+
+        ChunkTreeNode* newNode = currentNode->children[indexX][indexY][indexZ].get();
+        if(newNode == nullptr) return &currentNode->value;
+        
+        currentNode = newNode;
+
+        range /= 2;
+        x -= range * indexX;
+        y -= range * indexY;
+        z -= range * indexZ;
+    }
+
+    return &currentNode->value;
 }
 
 bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
@@ -90,7 +109,61 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     if(y >= DEFAULT_CHUNK_HEIGHT) return false;
     if(z >= DEFAULT_CHUNK_SIZE) return false;
 
-    this->blocks[x][y][z] = value;
+    ChunkTreeNode* currentNode = rootNode.get();
+    
+    int range = DEFAULT_CHUNK_SIZE;
+    while(range > 1){
+        int indexX = (float) x / (float) range >= 0.5;
+        int indexY = (float) y / (float) range >= 0.5;
+        int indexZ = (float) z / (float) range >= 0.5;
+
+        //if(currentNode->value.type == value.type) return true;
+
+        ChunkTreeNode* newNode = currentNode->children[indexX][indexY][indexZ].get();
+        if(newNode == nullptr){
+            currentNode->children[indexX][indexY][indexZ] = std::make_unique<ChunkTreeNode>();
+            newNode = currentNode->children[indexX][indexY][indexZ].get();
+            newNode->size = pow(range / 2, 3);
+            newNode->parent = currentNode;
+        }
+
+        currentNode = newNode;
+
+        range /= 2;
+        x -= range * indexX;
+        y -= range * indexY;
+        z -= range * indexZ;
+
+        //std::cout << range << std::endl;
+    }
+
+    BlockTypes oldType = currentNode->value.type;
+    currentNode->value = value;
+
+    currentNode = currentNode->parent;
+    
+    while(currentNode != nullptr){
+        currentNode->blockCounts[(size_t) oldType]--;
+        currentNode->blockCounts[(size_t) value.type]++;
+
+        if(currentNode->blockCounts[(size_t) value.type] == currentNode->size){
+            currentNode->value = value;
+
+            for (int x = 0; x < 2; ++x) {
+                for (int y = 0; y < 2; ++y) {
+                    for (int z = 0; z < 2; ++z) {
+                        currentNode->children[x][y][z].reset();
+                    }
+                }
+            }
+            /*std::cout << "Compressed: ";
+            for(int i = 0;i < (int) BlockTypes::BLOCK_TYPES_TOTAL;i++) std::cout << currentNode->blockCounts[(size_t) value.type] << ", ";
+            std::cout << std::endl;*/
+        }
+
+        currentNode = currentNode->parent;
+    }
+
     return true;
 }
 

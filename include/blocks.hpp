@@ -18,7 +18,8 @@ enum class BlockTypes {
     BirchLeafBlock,
     BirchLog,
     BlueWool,
-    Sand
+    Sand,
+    BLOCK_TYPES_TOTAL
 };
 
 typedef struct Block{

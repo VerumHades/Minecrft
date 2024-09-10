@@ -337,10 +337,10 @@ int main() {
     camera.initialize({skyboxProgram, mainProgram, modelManager.getModelProgram()});
     camera.setPosition(0.0f,160.0f,0.0f);
 
-    world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
+    world.getEntities().emplace_back(glm::vec3(0,16,0), glm::vec3(0.6, 1.8, 0.6));
     
     world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
-    world.getEntities()[1].setModel("bob");
+    //world.getEntities()[1].setModel("bob");
 
     sunDirUniform.setValue({ 
         -cos(glm::radians(sunAngle)), // X position (cosine component)
@@ -497,6 +497,7 @@ void pregenUpdate(){
                 Chunk* meshlessChunk = world.getChunk(chunkX, chunkZ);
                 if(!meshlessChunk){
                     meshlessChunk = world.generateAndGetChunk(chunkX, chunkZ);
+                    std::cout << "Chunk generated: " << chunkX << " " << chunkZ << std::endl;
                 }
             }
         }
