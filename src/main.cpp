@@ -22,7 +22,7 @@ int lastMouseX = 0;
 int lastMouseY = 0;
 float sensitivity = 0.1f;
 
-int renderDistance = 8;
+int renderDistance = 16;
 
 float camSpeed = 0.01f;
 
@@ -33,7 +33,7 @@ float maxFOV = 90.0f;
 float minFOV = 2.0f;
 
 int sunDistance = ((DEFAULT_CHUNK_SIZE * renderDistance) / 2) ;
-float sunAngle = 60.0f;
+float sunAngle = 70.0f;
 World world;
 
 struct BoundKey{
@@ -359,6 +359,8 @@ int main() {
         current = glfwGetTime();
         deltatime = (float)(current - last);
         last = current;
+
+        //std::cout << "fps" << 1.0 / deltatime << std::endl;
 
         Entity& player = world.getEntities()[0];
         const glm::vec3& playerPosition = player.getPosition();

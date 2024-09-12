@@ -9,6 +9,7 @@ in float TexIndex;
 in vec4 FragPosLightSpace;
 in vec3 FragPos;
 in vec3 pos;
+in float occlusion;
 
 out vec4 FragColor;
 
@@ -86,7 +87,7 @@ void main()
     // calculate shadow
     float shadow = ShadowCalculation(FragPosLightSpace);       
     
-    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse)) * color;
+    vec3 lighting = (ambient + (1.0 - shadow) * (1.0 - occlusion)) * color;
     //vec3 lighting = vec3(shadow);
 
     //vec3 lighting = (ambient + (1.0 - shadow) * 1.0) * color;

@@ -46,12 +46,12 @@ bool Vec2Equal::operator()(const glm::vec2& lhs, const glm::vec2& rhs) const noe
 static int maxThreads = 6;
 //const auto maxThreads = 1;
 static int threadsTotal = 0;
-void generateChunkMeshThread(Chunk* chunk){
+void generateChunkMeshThread(Chunk* chunk, int LOD){
     //auto start = std::chrono::high_resolution_clock::now();
 
     //std::cout << "Generating mesh: " << &chunk <<  std::endl;
         
-    chunk->generateMeshes();
+    chunk->generateMeshes(LOD);
 
     // End time point
     //auto end = std::chrono::high_resolution_clock::now();
@@ -64,14 +64,16 @@ void generateChunkMeshThread(Chunk* chunk){
     threadsTotal--;
 }
 
-Chunk* World::getChunkWithMesh(int x, int y){
+Chunk* World::getChunkWithMesh(int x, int y, int LOD){
     Chunk* chunk = this->getChunk(x, y);
     if(!chunk) return nullptr;
 
     if(!chunk->meshGenerated && !chunk->meshGenerating && threadsTotal < maxThreads){
         threadsTotal++;
-        std::thread t1(generateChunkMeshThread, chunk);
+        std::thread t1(generateChunkMeshThread, chunk, LOD);
         t1.detach();
+
+        chunk->currentLOD = LOD;
 
         chunk->meshGenerating = true;
         //generateChunkMeshThread(chunk);
@@ -85,6 +87,13 @@ Chunk* World::getChunkWithMesh(int x, int y){
         //printf("Vertices:%i Indices:%i\n", chunk->solidMesh->vertices_count, chunk->solidMesh->indices_count)
         updated = true;
         if(chunk->isDrawn) return chunk;
+    }
+
+    if(chunk->currentLOD != LOD){
+        chunk->regenerateMesh();
+        
+        if(chunk->isDrawn) return chunk;
+        return nullptr;
     }
 
    return chunk;
@@ -131,7 +140,7 @@ CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bo
                 int cy = (int) y + j;
                 int cz = (int) z + g;
 
-                Block* blocki = this->getBlock(cx, cy, cz);
+                Block* blocki = this->getBlock(cx, cy, cz, 0);
                 if(blocki){
                     BlockType block = getBlockType(blocki);
                     if((block.colliders.size() == 0 || blocki->type == BlockTypes::Air) && !includeRectangularColliderLess) continue;
@@ -176,7 +185,7 @@ CollisionCheckResult World::checkForRectangularCollision(float x, float y, float
                 int cy = (int)floor(y + j);
                 int cz = (int)floor(z + g);
 
-                Block* blocki = this->getBlock(cx, cy, cz);
+                Block* blocki = this->getBlock(cx, cy, cz, 0);
                 if(blocki){
                     BlockType block = getBlockType(blocki);
                     if(block.colliders.size() == 0 || blocki->type == BlockTypes::Air) continue;
@@ -256,7 +265,7 @@ RaycastResult World::raycast(float fromX, float fromY, float fromZ, float dirX, 
     return result;
 }
 
-Block* World::getBlock(int x, int y, int z){
+Block* World::getBlock(int x, int y, int z, int LOD){
     if(y < 0 || y > DEFAULT_CHUNK_HEIGHT) return nullptr;
     
     int chunkX = (int) floor((double)x / (double)DEFAULT_CHUNK_SIZE);
@@ -269,7 +278,7 @@ Block* World::getBlock(int x, int y, int z){
     Chunk* chunk = this->getChunk(chunkX, chunkZ);
     if(!chunk) return nullptr;//this->generateAndGetChunk(chunkX, chunkZ)->getBlock(ix,y,iz);
 
-    return chunk->getBlock(ix, y, iz);
+    return chunk->getBlock(ix, y, iz, LOD);
 }
 
 Chunk* World::getChunkFromBlockPosition(int x, int z){
@@ -317,6 +326,8 @@ void World::drawChunks(Camera& camera, ShaderProgram& program, int renderDistanc
             int chunkX = x + camWorldX;
             int chunkZ = z + camWorldZ;
 
+            int LOD = glm::length(glm::vec2(x,z)) / 8;
+
             //std::cout << "Drawing chunk: " << chunkX << " " << chunkZ << " " << camera.getPosition().x << " " << camera.getPosition().z <<std::endl;
 
             Chunk* meshlessChunk = this->getChunk(chunkX, chunkZ);
@@ -324,7 +335,7 @@ void World::drawChunks(Camera& camera, ShaderProgram& program, int renderDistanc
 
             //std::cout << "Got chunk!" << std::endl;
             if(!camera.isVisible(*meshlessChunk) && !(glm::length(glm::vec2(x,z)) <= 2)) continue;
-            Chunk* chunk = this->getChunkWithMesh(chunkX, chunkZ);
+            Chunk* chunk = this->getChunkWithMesh(chunkX, chunkZ, LOD);
             
             //std::cout << "Got meshed chunk!" << std::endl;
             if(!chunk) continue;

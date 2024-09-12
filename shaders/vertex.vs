@@ -4,6 +4,7 @@ layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoords;
 layout(location = 3) in float aTexIndex;
+layout(location = 4) in float aOcclusion;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -14,6 +15,7 @@ out vec3 Normal;
 out vec2 TexCoords;
 out float TexIndex;
 out vec4 FragPosLightSpace;
+out float occlusion;
 
 out vec3 FragPos;
 uniform vec3 camPos;
@@ -25,7 +27,8 @@ void main()
     Normal = /*transpose(inverse(mat3(modelMatrix))) */ aNormal;
     TexCoords = aTexCoords;
     TexIndex = aTexIndex;
-    
+    occlusion = aOcclusion;
+
     FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
     //gl_Position = vec4(aPos, 1.0);
     

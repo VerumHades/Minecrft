@@ -51,6 +51,8 @@ class Chunk: public Volume{
         
         std::unique_ptr<GLDoubleBuffer> solidBuffer;
         std::unique_ptr<Mesh> solidMesh;
+
+        int currentLOD = 0;
         //std::optional<Mesh> transparentMesh;
 
         bool isDrawn;
@@ -58,10 +60,10 @@ class Chunk: public Volume{
 
         Chunk(World& world, const glm::vec2& pos);
 
-        Block* getBlock(uint32_t x, uint32_t y, uint32_t z);
+        Block* getBlock(uint32_t x, uint32_t y, uint32_t z, int LOD);
         bool setBlock(uint32_t x, uint32_t y, uint32_t z, Block value);
 
-        void generateMeshes();
+        void generateMeshes(int LOD);
         void regenerateMesh();
         void regenerateMesh(glm::vec2 blockCoords);
 

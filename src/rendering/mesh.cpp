@@ -13,10 +13,11 @@ void Mesh::setVertexFormat(const std::vector<int>& format_){
     for(const int& i: this->format) this->vertexSize += i;
 }
 
-void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals[4], float metadata[6], int clockwise, int width, int height){
+static const int greedyVertexSize = 10;
+void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals[4], float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height){
     // Precalculate texture coordinates
-    float textureX = metadata[0];
-    float textureY = metadata[1];
+    float textureX = 1.0;
+    float textureY = 1.0;
     float textureXW = textureX + width;
     float textureYH = textureY + height;
     
@@ -33,10 +34,10 @@ void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals[4], float
 
     uint32_t vecIndices[4];
 
-    float vertex[12 * 4];
-    uint32_t startIndex = (uint32_t) this->vertices.size() / 12;
+    float vertex[greedyVertexSize * 4];
+    uint32_t startIndex = (uint32_t) this->vertices.size() / greedyVertexSize;
     for(int i = 0; i < 4; i++){
-        int offset = i * 12;
+        int offset = i * greedyVertexSize;
 
         vertex[0 + offset] = vertices_[i].x;
         vertex[1 + offset] = vertices_[i].y;
@@ -51,14 +52,13 @@ void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals[4], float
         vertex[6 + offset] = textureCoordinates[i].x;
         vertex[7 + offset] = textureCoordinates[i].y;
 
-        // Metadata
-        vertex[8 + offset] = metadata[2];
-
+        vertex[8 + offset] = textureIndex;
+        vertex[9 + offset] = vertexOcclusion[i];
         // Store the vertex index and add the vertex to the vertices array
         vecIndices[i] = startIndex + i;
     }
 
-    this->vertices.insert(this->vertices.end(), vertex, vertex + 12 * 4);
+    this->vertices.insert(this->vertices.end(), vertex, vertex + greedyVertexSize * 4);
 
     if (clockwise) this->indices.insert(this->indices.end(), {vecIndices[0], vecIndices[1], vecIndices[3], vecIndices[1], vecIndices[2], vecIndices[3]});
     else this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[1], vecIndices[0], vecIndices[3], vecIndices[2], vecIndices[1]});

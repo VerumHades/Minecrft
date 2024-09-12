@@ -24,6 +24,7 @@ enum class BlockTypes {
 
 typedef struct Block{
     BlockTypes type;
+    
 
     Block();
     Block(BlockTypes type);

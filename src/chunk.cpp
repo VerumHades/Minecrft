@@ -77,7 +77,7 @@ void Chunk::regenerateMesh(glm::vec2 blockCoords){
 }
 #undef regenMesh
 
-Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
+Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z, int LOD){
     if(x >= DEFAULT_CHUNK_SIZE) return nullptr;
     if(y >= DEFAULT_CHUNK_HEIGHT) return nullptr;
     if(z >= DEFAULT_CHUNK_SIZE) return nullptr;
@@ -85,7 +85,9 @@ Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     ChunkTreeNode* currentNode = rootNode.get();
     
     int range = DEFAULT_CHUNK_SIZE;
-    while(range > 1){
+
+    int minRange = pow(2, LOD);
+    while(range > minRange){
         int indexX = (float) x / (float) range >= 0.5;
         int indexY = (float) y / (float) range >= 0.5;
         int indexZ = (float) z / (float) range >= 0.5;
@@ -167,28 +169,30 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     return true;
 }
 
-static inline Block* getWorldBlockFast(Chunk* chunk, int ix, int iz, int x, int y, int z){
+static inline Block* getWorldBlockFast(Chunk* chunk, int ix, int iz, int x, int y, int z, int LOD){
     if(y < 0 || y >= DEFAULT_CHUNK_HEIGHT) return nullptr;
 
-    Block* block = chunk->getBlock(ix, y, iz);
-    if(!block) return chunk->getWorld().getBlock(x, y, z);
+    Block* block = chunk->getBlock(ix, y, iz, LOD);
+    if(!block) return chunk->getWorld().getBlock(x, y, z, LOD);
     return block;
 }
 
-static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int z, int offset_ix, int offset_y, int offset_iz, const FaceDefinition& def, int* coordinates, Block* source){
+static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int z, int offset_ix, int offset_y, int offset_iz, const FaceDefinition& def, int* coordinates, Block* source, int LOD){
     Block* temp = getWorldBlockFast(
         chunk,
         ix + def.offsetX + coordinates[0],
         iz + def.offsetZ + coordinates[2],
         x + def.offsetX + coordinates[0],
         y + def.offsetY + coordinates[1],
-        z + def.offsetZ + coordinates[2]
+        z + def.offsetZ + coordinates[2],
+        LOD
     );
 
     Block* tempSolid = chunk->getBlock(
         offset_ix,
         offset_y,
-        offset_iz                         
+        offset_iz,
+        LOD                         
     );
 
     if(!tempSolid) return 0;
@@ -201,10 +205,10 @@ static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int 
     return 1;   
 }
 
-void Chunk::generateMeshes(){
+void Chunk::generateMeshes(int LOD){
     this->solidMesh = std::make_unique<Mesh>();
-    this->solidMesh->setVertexFormat({3,3,2,1,3});
-
+    this->solidMesh->setVertexFormat({3,3,2,1,1});
+    
     bool checked[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][6] = {};
 
     for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++){
@@ -214,7 +218,7 @@ void Chunk::generateMeshes(){
                 int z = iz + (int) this->getWorldPosition().y * DEFAULT_CHUNK_SIZE;
 
                 //printf("%ix%ix%i\n", x, y, z);
-                Block* currentBlockRef = this->getBlock(ix, y ,iz);
+                Block* currentBlockRef = this->getBlock(ix, y ,iz, LOD);
                 if(!currentBlockRef) continue;
 
                 const BlockType& currentBlock = getBlockType(currentBlockRef);
@@ -230,7 +234,8 @@ void Chunk::generateMeshes(){
                         iz + def.offsetZ,
                         x + def.offsetX,
                         y + def.offsetY,
-                        z + def.offsetZ
+                        z + def.offsetZ,
+                        LOD
                     );
                     if(!block) continue;
                     if(!getBlockType(block).transparent) continue;
@@ -270,7 +275,7 @@ void Chunk::generateMeshes(){
                             offset_iz = iz + coordinates[2]; 
                             offset_y = y + coordinates[1];
 
-                            if(!hasGreedyFace(this,ix,iz,x,y,z,offset_ix,offset_y,offset_iz,def,coordinates,currentBlockRef)) break;
+                            if(!hasGreedyFace(this,ix,iz,x,y,z,offset_ix,offset_y,offset_iz,def,coordinates,currentBlockRef, LOD)) break;
                             if(checked[offset_ix][offset_y][offset_iz][i]) break;
 
                             coordinates[nonOffsetAxis[1]] += 1;
@@ -283,7 +288,7 @@ void Chunk::generateMeshes(){
                         offset_iz = iz + coordinates[2]; 
                         offset_y = y + coordinates[1];
 
-                        if(!hasGreedyFace(this,ix,iz,x,y,z,offset_ix,offset_y,offset_iz,def,coordinates,currentBlockRef)) break;
+                        if(!hasGreedyFace(this,ix,iz,x,y,z,offset_ix,offset_y,offset_iz,def,coordinates,currentBlockRef, LOD)) break;
                         if(checked[offset_ix][offset_y][offset_iz][i]) break;
 
                         coordinates[nonOffsetAxis[0]] += 1;
@@ -291,6 +296,7 @@ void Chunk::generateMeshes(){
                         checked[offset_ix][offset_y][offset_iz][i] = true;
                     }  
                     if(max_height == DEFAULT_CHUNK_SIZE+1) continue;
+
                     //if(max_height == 0) printf("%i\n", max_height);
                     for(int padderH = 0;padderH < max_height;padderH++){
                         coordinates[nonOffsetAxis[1]] = padderH;
@@ -329,10 +335,6 @@ void Chunk::generateMeshes(){
                     //if(currentBlock->repeatTexture) printf("Index: %i\n", def->textureIndex);
                     int texture = currentBlock.repeatTexture ? currentBlock.textures[0] : currentBlock.textures[def.textureIndex];
 
-                    float metadata[] = {
-                        1.0, 1.0, static_cast<float>(texture)
-                    };
-
                     if(def.offsetX != 0){
                         int temp = width;
                         width = height;
@@ -346,17 +348,30 @@ void Chunk::generateMeshes(){
                         vertices[def.vertexIndexes[3]]
                     };
 
-                    glm::vec3 normalArray[4] = {
+                    glm::vec3 faceNormal = glm::vec3(def.offsetX, def.offsetY, def.offsetZ);
+
+                    /*glm::vec3 normalArray[4] = {
                         cubeNormals[def.vertexIndexes[0]],
                         cubeNormals[def.vertexIndexes[1]],
                         cubeNormals[def.vertexIndexes[2]],
                         cubeNormals[def.vertexIndexes[3]]
+                    };*/
+                    glm::vec3 normalArray[4] = {
+                        faceNormal,
+                        faceNormal,
+                        faceNormal,
+                        faceNormal
+                    };
+
+                    float occlusion[4] = {
+                        0,0,0,0
                     };
 
                     this->solidMesh->addQuadFaceGreedy(
                         vertexArray,
                         normalArray,
-                        metadata,
+                        occlusion,
+                        static_cast<float>(texture),
                         def.clockwise,
                         width,height
                     );
