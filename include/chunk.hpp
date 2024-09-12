@@ -19,6 +19,10 @@
 #include <array>
 #include <blocks.hpp>
 
+#include <bit>
+#include <bitset>
+#include <iostream>
+
 #define DEFAULT_CHUNK_SIZE 32
 #define DEFAULT_CHUNK_AREA DEFAULT_CHUNK_SIZE * DEFAULT_CHUNK_SIZE
 #define DEFAULT_CHUNK_HEIGHT 32
@@ -90,6 +94,14 @@ inline const BlockType& getBlockType(Block* block){
 std::string getBlockTypeName(BlockTypes type);
 
 
+struct Face{
+    int x;
+    int y;
+    int width;
+    int height;
+};
+
+std::vector<Face> greedyMeshPlane64(std::array<uint64_t, 64> rows);
 
 #include <world.hpp>
 

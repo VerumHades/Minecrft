@@ -55,7 +55,7 @@ class Model{
 
         void processNode(aiNode *node, const aiScene *scene);
         Mesh processMesh(aiMesh *mesh, const aiScene *scene);
-        int Model::handleTexture(aiString texturePath, Mesh& outMesh, const aiScene *scene);
+        int handleTexture(aiString texturePath, Mesh& outMesh, const aiScene *scene);
 
     public:
         int textureIndex = -1;

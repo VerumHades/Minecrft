@@ -205,6 +205,72 @@ static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int 
     return 1;   
 }
 
+inline int count_leading_zeros(uint64_t x) {
+    return std::countl_zero(x);
+}
+
+std::vector<Face> greedyMeshPlane64(std::array<uint64_t, 64> rows){
+    std::vector<Face> out = {};
+    int currentRow = 0, i = 0;
+    
+    while(currentRow < 64 && i < 50){
+        uint64_t row = rows[currentRow];
+        /*
+            0b00001101
+
+            'start' is 4
+        */    
+        int start = count_leading_zeros(row); // Find the first
+        if(start == 64){
+            currentRow++;
+            continue;
+        }
+        /*
+            2. 0b11010000 shift by 4
+            1. 0b00101111 negate
+
+            'width' is 2
+        */    
+        row <<= start; // Shift so the faces start
+        int width = count_leading_zeros(~row); // Calculate width (negated counts '1') 
+        row >>= start; // Return to original position
+
+        /*
+                Create a mask of all ones
+                1. 0b11111111
+                2. 0b00000011 shift beyond the face (start + width)
+                3. 0b11111100 negate
+
+                    0b11111100 & 0b00001101
+
+                4. 0b00001100 AND with the row to create the faces mask
+        */
+        uint64_t mask = ~0ULL;
+
+        //  Shifting by 64 is undefined behaviour for some reason ¯\_(ツ)_/¯
+        if((start + width) != 64) mask = ~(mask >> (start + width));
+        mask &= row;
+
+        int height = 0; 
+        while(currentRow + height < 64 && (mask & rows[currentRow + height]) == mask){
+            rows[currentRow + height]  &= ~mask; // Remove this face part from the rows
+            height++;
+        }
+
+        out.push_back({ // Add the face to the face list
+            start, currentRow,
+            width, height
+        });
+
+        //return out;
+
+        i++;
+    }
+
+    return out;
+}
+
+
 void Chunk::generateMeshes(int LOD){
     this->solidMesh = std::make_unique<Mesh>();
     this->solidMesh->setVertexFormat({3,3,2,1,1});
