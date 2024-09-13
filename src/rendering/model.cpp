@@ -164,11 +164,11 @@ bool Model::loadFromFile( const std::string& pFile) {
     unsigned int importFlags = 
                             aiProcess_GenNormals  |
                             aiProcess_Triangulate |
-                            aiProcess_PreTransformVertices |
-                            aiProcess_JoinIdenticalVertices |
-                            aiProcess_SortByPType |
+                            //aiProcess_PreTransformVertices |
+                            //aiProcess_JoinIdenticalVertices |
+                            //aiProcess_SortByPType |
                             aiProcess_OptimizeMeshes |
-                            aiProcess_OptimizeGraph |
+                            //aiProcess_OptimizeGraph |
                             aiProcess_FlipUVs;
                            //aiProcess_ConvertToLeftHanded;
 

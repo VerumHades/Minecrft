@@ -23,9 +23,7 @@
 #include <bitset>
 #include <iostream>
 
-#define DEFAULT_CHUNK_SIZE 32
-#define DEFAULT_CHUNK_AREA DEFAULT_CHUNK_SIZE * DEFAULT_CHUNK_SIZE
-#define DEFAULT_CHUNK_HEIGHT 32
+#define CHUNK_SIZE 64
 
 struct ChunkTreeNode{
     std::unique_ptr<ChunkTreeNode> children[2][2][2] = {};
@@ -39,12 +37,12 @@ class World;
 
 class Chunk: public Volume{
     private:
-        glm::vec2 worldPosition = glm::vec2(0,0);
+        glm::vec3 worldPosition = glm::vec3(0,0,0);
         World& world;
 
-        //Block blocks[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE] = {};
-        //unsigned char lightArray[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][3];
-        std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
+        Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {};
+        //unsigned char lightArray[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE][3];
+        //std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
         
     public:
         bool meshGenerating = false;
@@ -62,17 +60,17 @@ class Chunk: public Volume{
         bool isDrawn;
         bool isOnFrustum(PerspectiveCamera& cam) const;
 
-        Chunk(World& world, const glm::vec2& pos);
+        Chunk(World& world, const glm::vec3& pos);
 
         Block* getBlock(uint32_t x, uint32_t y, uint32_t z, int LOD);
         bool setBlock(uint32_t x, uint32_t y, uint32_t z, Block value);
 
         void generateMeshes(int LOD);
         void regenerateMesh();
-        void regenerateMesh(glm::vec2 blockCoords);
+        void regenerateMesh(glm::vec3 blockCoords);
 
         World& getWorld();
-        const glm::vec2& getWorldPosition(){
+        const glm::vec3& getWorldPosition(){
             return this->worldPosition;
         }
 

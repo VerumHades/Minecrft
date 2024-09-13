@@ -91,12 +91,12 @@ void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY){
     temperatureNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
     temperatureNoise.frequency = 0.001f;
 
-    int waterLevel = DEFAULT_CHUNK_HEIGHT / 3;
+    int waterLevel = CHUNK_SIZE / 3;
 
-    for(int x = 0;x < DEFAULT_CHUNK_SIZE;x++){
-        for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
-            float rx = (float)(x + chunkX * DEFAULT_CHUNK_SIZE);
-            float ry = (float)(z + chunkY * DEFAULT_CHUNK_SIZE);
+    for(int x = 0;x < CHUNK_SIZE;x++){
+        for(int z = 0;z < CHUNK_SIZE;z++){
+            float rx = (float)(x + chunkX * CHUNK_SIZE);
+            float ry = (float)(z + chunkY * CHUNK_SIZE);
 
             float main = (fnlGetNoise2D(&noise, rx, ry) + 1) / 2;
             float secondary = (fnlGetNoise2D(&noise2, rx, ry) + 1) / 2;
@@ -109,7 +109,7 @@ void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY){
             main = lerp(main, secondary, (float) pow(main,7));
             //value *= perlin(rx / 20.0, ry / 20.0);
         
-            int height = (int) floor(DEFAULT_CHUNK_HEIGHT * main); 
+            int height = (int) floor(CHUNK_SIZE * main); 
 
             const Biome& biome = getBiome(temperature);
 

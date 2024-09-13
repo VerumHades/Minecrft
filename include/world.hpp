@@ -14,12 +14,12 @@
 
 #include <entity.hpp>
 
-struct Vec2Hash {
-    std::size_t operator()(const glm::vec2& v) const noexcept;
+struct Vec3Hash {
+    std::size_t operator()(const glm::vec3& v) const noexcept;
 };
 
-struct Vec2Equal {
-    bool operator()(const glm::vec2& lhs, const glm::vec2& rhs) const noexcept;
+struct Vec3Equal {
+    bool operator()(const glm::vec3& lhs, const glm::vec3& rhs) const noexcept;
 };
 
 
@@ -40,9 +40,9 @@ class ModelManager;
 
 class World: public Collidable{
     private:
-        std::unordered_map<glm::vec2, Chunk, Vec2Hash, Vec2Equal> chunks;
+        std::unordered_map<glm::vec3, Chunk, Vec3Hash, Vec3Equal> chunks;
         std::vector<Entity> entities;
-        std::queue<glm::vec2> bufferLoadQue;
+        std::queue<glm::vec3> bufferLoadQue;
 
     public:
         bool updated = false;
@@ -50,11 +50,11 @@ class World: public Collidable{
         Block* getBlock(int x, int y, int z, int LOD);
         bool setBlock(int x, int y, int z, Block index);
 
-        Chunk* generateAndGetChunk(int x, int y);
-        Chunk* getChunk(int x, int z);
-        Chunk* getChunkWithMesh(int x, int z, int LOD);
-        Chunk* getChunkFromBlockPosition(int x, int z);
-        glm::vec2 getBlockInChunkPosition(int x, int z);
+        Chunk* generateAndGetChunk(int x, int y, int z);
+        Chunk* getChunk(int x, int y, int z);
+        Chunk* getChunkWithMesh(int x, int y, int z, int LOD);
+        Chunk* getChunkFromBlockPosition(int x, int y, int z);
+        glm::vec3 getGetChunkRelativeBlockPosition(int x, int y, int z);
 
         CollisionCheckResult checkForPointCollision(float x, float y, float z, bool includeRectangularColliderLess);
         CollisionCheckResult checkForRectangularCollision(float x, float y, float z, RectangularCollider* collider);

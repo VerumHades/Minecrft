@@ -22,7 +22,7 @@ int lastMouseX = 0;
 int lastMouseY = 0;
 float sensitivity = 0.1f;
 
-int renderDistance = 16;
+int renderDistance = 2;
 
 float camSpeed = 0.01f;
 
@@ -32,7 +32,7 @@ float camFOV = 90.0f;
 float maxFOV = 90.0f; 
 float minFOV = 2.0f;
 
-int sunDistance = ((DEFAULT_CHUNK_SIZE * renderDistance) / 2) ;
+int sunDistance = ((CHUNK_SIZE * renderDistance) / 2) ;
 float sunAngle = 70.0f;
 World world;
 
@@ -112,9 +112,9 @@ void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && hit.hit){
         world.setBlock(hit.x, hit.y, hit.z, {BlockTypes::Air});
 
-        auto chunk = world.getChunkFromBlockPosition(hit.x, hit.z);
+        auto chunk = world.getChunkFromBlockPosition(hit.x, hit.y, hit.z);
         if(!chunk) return;
-        chunk->regenerateMesh(world.getBlockInChunkPosition(hit.x, hit.z));
+        chunk->regenerateMesh(world.getGetChunkRelativeBlockPosition(hit.x, hit.y, hit.z));
         
     }
     else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hit){
@@ -129,9 +129,9 @@ void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /
             return;
         }
 
-        auto chunk = world.getChunkFromBlockPosition(result.x, result.z);
+        auto chunk = world.getChunkFromBlockPosition(result.x, result.y,result.z);
         if(!chunk) return;
-        chunk->regenerateMesh(world.getBlockInChunkPosition(result.x, result.z));
+        chunk->regenerateMesh(world.getGetChunkRelativeBlockPosition(result.x, result.y,result.z));
     }
 }
 
@@ -247,7 +247,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     
-    glEnable(GL_CULL_FACE);  // Enable backface culling
+    //glEnable(GL_CULL_FACE);  // Enable backface culling
     glCullFace(GL_BACK);     // Cull back faces
     glFrontFace(GL_CCW);     // Set counterclockwise winding order as front*/
 
@@ -337,7 +337,7 @@ int main() {
     camera.initialize({skyboxProgram, mainProgram, modelManager.getModelProgram()});
     camera.setPosition(0.0f,160.0f,0.0f);
 
-    world.getEntities().emplace_back(glm::vec3(0,16,0), glm::vec3(0.6, 1.8, 0.6));
+    world.getEntities().emplace_back(glm::vec3(0,32,0), glm::vec3(0.6, 1.8, 0.6));
     
     world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
     //world.getEntities()[1].setModel("bob");
@@ -424,7 +424,7 @@ int main() {
         glDisable(GL_CULL_FACE);
         skyboxProgram.use();
         skybox.draw();
-        glEnable(GL_CULL_FACE);
+        //glEnable(GL_CULL_FACE);
 
         mainProgram.updateUniforms();
         mainProgram.use();
@@ -488,18 +488,17 @@ void pregenUpdate(){
     int pregenDistance = renderDistance + 2;
 
     while(running){
-        int camWorldX = (int) camera.getPosition().x / DEFAULT_CHUNK_SIZE;
-        int camWorldZ = (int) camera.getPosition().z / DEFAULT_CHUNK_SIZE;
+        int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
+        int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
 
         for(int x = -pregenDistance; x <= pregenDistance; x++){
             for(int z = -pregenDistance; z <= pregenDistance; z++){
                 int chunkX = camWorldX + x;
                 int chunkZ = camWorldZ + z;
 
-                Chunk* meshlessChunk = world.getChunk(chunkX, chunkZ);
+                Chunk* meshlessChunk = world.getChunk(chunkX, 0, chunkZ);
                 if(!meshlessChunk){
-                    meshlessChunk = world.generateAndGetChunk(chunkX, chunkZ);
-                    std::cout << "Chunk generated: " << chunkX << " " << chunkZ << std::endl;
+                    meshlessChunk = world.generateAndGetChunk(chunkX, 0, chunkZ);
                 }
             }
         }

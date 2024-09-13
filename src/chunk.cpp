@@ -33,12 +33,12 @@ std::string getBlockTypeName(BlockTypes type){
 #undef BLT
 
 static inline void fillChunkLevel(Chunk& chunk, uint32_t y, Block value){
-    for(int x = 0; x < DEFAULT_CHUNK_SIZE;x++) for(int z = 0;z < DEFAULT_CHUNK_SIZE;z++){
+    for(int x = 0; x < CHUNK_SIZE;x++) for(int z = 0;z < CHUNK_SIZE;z++){
         chunk.setBlock(x,y,z, value);
     }
 }
 
-Chunk::Chunk(World& world, const glm::vec2& pos): world(world), worldPosition(pos) {
+Chunk::Chunk(World& world, const glm::vec3& pos): world(world), worldPosition(pos) {
     
 }
 
@@ -63,28 +63,31 @@ void Chunk::regenerateMesh(){
     this->buffersLoaded = 0;
 }
 
-#define regenMesh(x,z) { \
-    Chunk* temp = this->world.getChunk(x, z);\
+#define regenMesh(x,y,z) { \
+    Chunk* temp = this->world.getChunk(x, y, z);\
     if(temp) temp->regenerateMesh();\
 }
-void Chunk::regenerateMesh(glm::vec2 blockCoords){
+void Chunk::regenerateMesh(glm::vec3 blockCoords){
     this->regenerateMesh();
-    if(blockCoords.x == 0) regenMesh((int) this->worldPosition.x - 1, (int) this->worldPosition.y);
-    if(blockCoords.x == DEFAULT_CHUNK_SIZE - 1) regenMesh((int) this->worldPosition.x + 1, (int) this->worldPosition.y);
+    if(blockCoords.x == 0)              regenMesh((int) this->worldPosition.x - 1, (int) this->worldPosition.y, (int) this->worldPosition.z);
+    if(blockCoords.x == CHUNK_SIZE - 1) regenMesh((int) this->worldPosition.x + 1, (int) this->worldPosition.y, (int) this->worldPosition.z);
 
-    if(blockCoords.y == 0) regenMesh((int) this->worldPosition.x, (int) this->worldPosition.y - 1);
-    if(blockCoords.y == DEFAULT_CHUNK_SIZE - 1) regenMesh((int) this->worldPosition.x, (int) this->worldPosition.y + 1);
+    if(blockCoords.y == 0)              regenMesh((int) this->worldPosition.x, (int) this->worldPosition.y - 1, (int) this->worldPosition.z);
+    if(blockCoords.y == CHUNK_SIZE - 1) regenMesh((int) this->worldPosition.x, (int) this->worldPosition.y + 1, (int) this->worldPosition.z);
+
+    if(blockCoords.z == 0)              regenMesh((int) this->worldPosition.x, (int) this->worldPosition.y, (int) this->worldPosition.z - 1);
+    if(blockCoords.z == CHUNK_SIZE - 1) regenMesh((int) this->worldPosition.x, (int) this->worldPosition.y, (int) this->worldPosition.z + 1);
 }
 #undef regenMesh
 
-Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z, int LOD){
-    if(x >= DEFAULT_CHUNK_SIZE) return nullptr;
-    if(y >= DEFAULT_CHUNK_HEIGHT) return nullptr;
-    if(z >= DEFAULT_CHUNK_SIZE) return nullptr;
+/*Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z, int LOD){
+    if(x >= CHUNK_SIZE) return nullptr;
+    if(y >= CHUNK_SIZE) return nullptr;
+    if(z >= CHUNK_SIZE) return nullptr;
 
     ChunkTreeNode* currentNode = rootNode.get();
     
-    int range = DEFAULT_CHUNK_SIZE;
+    int range = CHUNK_SIZE;
 
     int minRange = pow(2, LOD);
     while(range > minRange){
@@ -104,16 +107,34 @@ Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z, int LOD){
     }
 
     return &currentNode->value;
+}*/
+
+Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z, int LOD){
+    if(x >= CHUNK_SIZE) return nullptr;
+    if(y >= CHUNK_SIZE) return nullptr;
+    if(z >= CHUNK_SIZE) return nullptr;
+
+    return &blocks[x][y][z];
 }
 
+
 bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
-    if(x >= DEFAULT_CHUNK_SIZE) return false;
-    if(y >= DEFAULT_CHUNK_HEIGHT) return false;
-    if(z >= DEFAULT_CHUNK_SIZE) return false;
+    if(x >= CHUNK_SIZE) return false;
+    if(y >= CHUNK_SIZE) return false;
+    if(z >= CHUNK_SIZE) return false;
+
+    blocks[x][y][z] = value;
+    return true;
+}
+
+/*bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
+    if(x >= CHUNK_SIZE) return false;
+    if(y >= CHUNK_SIZE) return false;
+    if(z >= CHUNK_SIZE) return false;
 
     ChunkTreeNode* currentNode = rootNode.get();
     
-    int range = DEFAULT_CHUNK_SIZE;
+    int range = CHUNK_SIZE;
     while(range > 1){
         int indexX = (float) x / (float) range >= 0.5;
         int indexY = (float) y / (float) range >= 0.5;
@@ -158,51 +179,20 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
                     }
                 }
             }
-            /*std::cout << "Compressed: ";
-            for(int i = 0;i < (int) BlockTypes::BLOCK_TYPES_TOTAL;i++) std::cout << currentNode->blockCounts[(size_t) value.type] << ", ";
-            std::cout << std::endl;*/
         }
 
         currentNode = currentNode->parent;
     }
 
     return true;
-}
+}*/
 
-static inline Block* getWorldBlockFast(Chunk* chunk, int ix, int iz, int x, int y, int z, int LOD){
-    if(y < 0 || y >= DEFAULT_CHUNK_HEIGHT) return nullptr;
+static inline Block* getWorldBlockFast(Chunk* chunk, int ix, int iy, int iz, int x, int y, int z, int LOD){
+    if(y < 0 || y >= CHUNK_SIZE) return nullptr;
 
-    Block* block = chunk->getBlock(ix, y, iz, LOD);
+    Block* block = chunk->getBlock(ix, iy, iz, LOD);
     if(!block) return chunk->getWorld().getBlock(x, y, z, LOD);
     return block;
-}
-
-static inline int hasGreedyFace(Chunk* chunk, int ix, int iz, int x, int y, int z, int offset_ix, int offset_y, int offset_iz, const FaceDefinition& def, int* coordinates, Block* source, int LOD){
-    Block* temp = getWorldBlockFast(
-        chunk,
-        ix + def.offsetX + coordinates[0],
-        iz + def.offsetZ + coordinates[2],
-        x + def.offsetX + coordinates[0],
-        y + def.offsetY + coordinates[1],
-        z + def.offsetZ + coordinates[2],
-        LOD
-    );
-
-    Block* tempSolid = chunk->getBlock(
-        offset_ix,
-        offset_y,
-        offset_iz,
-        LOD                         
-    );
-
-    if(!tempSolid) return 0;
-
-    if(getBlockType(tempSolid).untextured) return 0;
-    if(!getBlockType(temp).untextured) return 0;
-
-    if(tempSolid->type != source->type) return 0;
-
-    return 1;   
 }
 
 inline int count_leading_zeros(uint64_t x) {
@@ -276,22 +266,98 @@ inline uint64_t bit_set(uint64_t number, uint64_t index) {
 
 void Chunk::generateMeshes(int LOD){
     this->solidMesh = std::make_unique<Mesh>();
-    this->solidMesh->setVertexFormat({3,3,2,1,1});
+    this->solidMesh->setVertexFormat({3,3,2,1,1});     
 
-    int coordinates[] = {0,0,0};         
-    
-    int axes[] = {0,1,2};
+    int chunkX = worldPosition.x * CHUNK_SIZE;
+    int chunkY = worldPosition.y * CHUNK_SIZE;
+    int chunkZ = worldPosition.z * CHUNK_SIZE;
+ 
+    Block air = {BlockTypes::Air};
 
+    for(int y = 0; y < CHUNK_SIZE;y++){
+        std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planes = {0};
+        std::array<bool, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> usedPlanes = {0};
+        
+        for(int x = 0;x < CHUNK_SIZE;x++){
+            for(int z = 0;z < CHUNK_SIZE;z++){
+                Block* block = getWorldBlockFast(this, 
+                    x,
+                    y,
+                    z,
+                    x + chunkX,
+                    y + chunkY,
+                    z + chunkZ,
+                    LOD
+                );
 
-    int size = 64;
+                Block* upperBlock = getWorldBlockFast(this, 
+                    x,
+                    y + 1,
+                    z,
+                    x + chunkX,
+                    y + chunkY + 1,
+                    z + chunkZ,
+                    LOD
+                );
+
+                //if(!block) block = &air;
+                //if(!upperBlock) upperBlock = &air;
+                if(!block || !upperBlock) continue;
+
+                if(getBlockType(block).untextured == getBlockType(upperBlock).untextured) continue;
+
+                planes[(size_t) block->type][z] |= ((1ULL << 63) >> x);
+                usedPlanes[(size_t) block->type] = true;
+            }
+        }
+
+        for(int i = 0;i < (size_t) BlockTypes::BLOCK_TYPES_TOTAL;i++){
+            if(!usedPlanes[i]) continue;
+
+            BlockType type = predefinedBlocks[static_cast<BlockTypes>(i)];
+            if(type.untextured) continue;
+            //std::cout << "Solving plane: " << i << std::endl;
+            //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
+            
+            std::vector<Face> faces = greedyMeshPlane64(planes[i]);
+
+            std::array<glm::vec3, 4> normals = {
+                glm::vec3(0,0,0),
+                glm::vec3(0,0,0),
+                glm::vec3(0,0,0),
+                glm::vec3(0,0,0)
+            };
+            float occlusion[4] = {0,0,0,0};
+
+            for(const auto& face: faces){
+                std::array<glm::vec3, 4> vertices = {
+                    glm::vec3(face.x             ,y + 1,face.y              ),
+                    glm::vec3(face.x + face.width,y + 1,face.y              ),
+                    glm::vec3(face.x + face.width,y + 1,face.y + face.height),
+                    glm::vec3(face.x             ,y + 1,face.y + face.height)
+                };
+
+                solidMesh->addQuadFaceGreedy(
+                    vertices.data(),
+                    normals.data(),
+                    occlusion,
+                    static_cast<float>(type.textures[0]),
+                    1,
+                    face.width,
+                    face.height
+                );
+            }
+        }
+    }
+
     //std::cout << "Vertices:" << this->solidMesh.get()->getVertices().size() << std::endl;
 }
 
 
 static inline bool isOnOrForwardPlane(const Plane& plane, glm::vec3 center){
     // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
-    const int wd = DEFAULT_CHUNK_SIZE / 2;
-    const int h = DEFAULT_CHUNK_HEIGHT / 2;
+    const int wd = CHUNK_SIZE / 2;
+    const int h = CHUNK_SIZE / 2;
 
     const float r = 
         std::abs(plane.normal.x) * (wd) +
@@ -304,7 +370,7 @@ static inline bool isOnOrForwardPlane(const Plane& plane, glm::vec3 center){
 bool Chunk::isOnFrustum(PerspectiveCamera& camera) const {
     //Get global scale thanks to our transform
     Frustum& frustum = camera.getFrustum();
-    glm::vec3 position = glm::vec3(this->worldPosition.x * DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_HEIGHT / 2, this->worldPosition.y * DEFAULT_CHUNK_SIZE);
+    glm::vec3 position = glm::vec3(this->worldPosition.x * CHUNK_SIZE, CHUNK_SIZE / 2, this->worldPosition.y * CHUNK_SIZE);
 
     return isOnOrForwardPlane(frustum.leftFace, position) &&
         isOnOrForwardPlane(frustum.rightFace, position) &&
