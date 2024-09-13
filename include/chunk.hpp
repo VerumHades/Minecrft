@@ -35,12 +35,19 @@ struct ChunkTreeNode{
 
 class World;
 
+struct ChunkMask{
+    Block block = {BlockTypes::Air};
+    std::array<std::array<uint64_t,64>,64> segments = {0}; 
+};
+
 class Chunk: public Volume{
     private:
         glm::vec3 worldPosition = glm::vec3(0,0,0);
         World& world;
 
-        Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {};
+        //Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {};
+        ChunkMask solidMask;
+        std::unordered_map<BlockTypes,ChunkMask> masks;
         //unsigned char lightArray[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE][3];
         //std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
         
@@ -53,8 +60,6 @@ class Chunk: public Volume{
         
         std::unique_ptr<GLDoubleBuffer> solidBuffer;
         std::unique_ptr<Mesh> solidMesh;
-
-        int currentLOD = 0;
         //std::optional<Mesh> transparentMesh;
 
         bool isDrawn;
@@ -62,10 +67,10 @@ class Chunk: public Volume{
 
         Chunk(World& world, const glm::vec3& pos);
 
-        Block* getBlock(uint32_t x, uint32_t y, uint32_t z, int LOD);
+        Block* getBlock(uint32_t x, uint32_t y, uint32_t z);
         bool setBlock(uint32_t x, uint32_t y, uint32_t z, Block value);
 
-        void generateMeshes(int LOD);
+        void generateMeshes();
         void regenerateMesh();
         void regenerateMesh(glm::vec3 blockCoords);
 

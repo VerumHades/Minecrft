@@ -27,7 +27,7 @@ class Entity{
         float maxVelocityHorizontal = 0.1f;
         float maxVelocityVertical = 0.5f;
         float friction = 0.005f;
-        bool hasGravity = true;
+        bool hasGravity = false;
 
         std::vector<RectangularCollider> colliders;
         

@@ -80,118 +80,43 @@ void Chunk::regenerateMesh(glm::vec3 blockCoords){
 }
 #undef regenMesh
 
-/*Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z, int LOD){
+
+Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     if(x >= CHUNK_SIZE) return nullptr;
     if(y >= CHUNK_SIZE) return nullptr;
     if(z >= CHUNK_SIZE) return nullptr;
 
-    ChunkTreeNode* currentNode = rootNode.get();
-    
-    int range = CHUNK_SIZE;
+    for(auto& [key,mask]: masks){
+        uint64_t row = mask.segments[x][y];
 
-    int minRange = pow(2, LOD);
-    while(range > minRange){
-        int indexX = (float) x / (float) range >= 0.5;
-        int indexY = (float) y / (float) range >= 0.5;
-        int indexZ = (float) z / (float) range >= 0.5;
-
-        ChunkTreeNode* newNode = currentNode->children[indexX][indexY][indexZ].get();
-        if(newNode == nullptr) return &currentNode->value;
-        
-        currentNode = newNode;
-
-        range /= 2;
-        x -= range * indexX;
-        y -= range * indexY;
-        z -= range * indexZ;
+        if(row & (1 << z)){
+            return &mask.block;
+        }
     }
 
-    return &currentNode->value;
-}*/
-
-Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z, int LOD){
-    if(x >= CHUNK_SIZE) return nullptr;
-    if(y >= CHUNK_SIZE) return nullptr;
-    if(z >= CHUNK_SIZE) return nullptr;
-
-    return &blocks[x][y][z];
+    return nullptr;
 }
-
 
 bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     if(x >= CHUNK_SIZE) return false;
     if(y >= CHUNK_SIZE) return false;
     if(z >= CHUNK_SIZE) return false;
 
-    blocks[x][y][z] = value;
+    if(masks.count(value.type) == 0) masks[value.type] = {};
+    masks[value.type].block = value;
+    masks[value.type].segments[x][y] |= (1 << z);
+
+    if(getBlockType(&value).untextured) solidMask.segments[x][y] &= ~(1ULL << z);
+    else solidMask.segments[x][y] |= (1 << z);
+
     return true;
 }
 
-/*bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
-    if(x >= CHUNK_SIZE) return false;
-    if(y >= CHUNK_SIZE) return false;
-    if(z >= CHUNK_SIZE) return false;
-
-    ChunkTreeNode* currentNode = rootNode.get();
-    
-    int range = CHUNK_SIZE;
-    while(range > 1){
-        int indexX = (float) x / (float) range >= 0.5;
-        int indexY = (float) y / (float) range >= 0.5;
-        int indexZ = (float) z / (float) range >= 0.5;
-
-        //if(currentNode->value.type == value.type) return true;
-
-        ChunkTreeNode* newNode = currentNode->children[indexX][indexY][indexZ].get();
-        if(newNode == nullptr){
-            currentNode->children[indexX][indexY][indexZ] = std::make_unique<ChunkTreeNode>();
-            newNode = currentNode->children[indexX][indexY][indexZ].get();
-            newNode->size = pow(range / 2, 3);
-            newNode->parent = currentNode;
-        }
-
-        currentNode = newNode;
-
-        range /= 2;
-        x -= range * indexX;
-        y -= range * indexY;
-        z -= range * indexZ;
-
-        //std::cout << range << std::endl;
-    }
-
-    BlockTypes oldType = currentNode->value.type;
-    currentNode->value = value;
-
-    currentNode = currentNode->parent;
-    
-    while(currentNode != nullptr){
-        currentNode->blockCounts[(size_t) oldType]--;
-        currentNode->blockCounts[(size_t) value.type]++;
-
-        if(currentNode->blockCounts[(size_t) value.type] == currentNode->size){
-            currentNode->value = value;
-
-            for (int x = 0; x < 2; ++x) {
-                for (int y = 0; y < 2; ++y) {
-                    for (int z = 0; z < 2; ++z) {
-                        currentNode->children[x][y][z].reset();
-                    }
-                }
-            }
-        }
-
-        currentNode = currentNode->parent;
-    }
-
-    return true;
-}*/
-
-static inline Block* getWorldBlockFast(Chunk* chunk, int ix, int iy, int iz, int x, int y, int z, int LOD){
+static inline Block* getWorldBlockFast(Chunk* chunk, int ix, int iy, int iz, int x, int y, int z){
     if(y < 0 || y >= CHUNK_SIZE) return nullptr;
 
-    Block* block = chunk->getBlock(ix, iy, iz, LOD);
-    if(!block) return chunk->getWorld().getBlock(x, y, z, LOD);
+    Block* block = chunk->getBlock(ix, iy, iz);
+    if(!block) return chunk->getWorld().getBlock(x, y, z);
     return block;
 }
 
@@ -264,7 +189,7 @@ inline uint64_t bit_set(uint64_t number, uint64_t index) {
     return number | ((uint64_t)1 << index);
 }
 
-void Chunk::generateMeshes(int LOD){
+void Chunk::generateMeshes(){
     this->solidMesh = std::make_unique<Mesh>();
     this->solidMesh->setVertexFormat({3,3,2,1,1});     
 
@@ -274,52 +199,22 @@ void Chunk::generateMeshes(int LOD){
  
     Block air = {BlockTypes::Air};
 
-    for(int y = 0; y < CHUNK_SIZE;y++){
+    for(int y = 0; y < CHUNK_SIZE - 1;y++){
         std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planes = {0};
-        std::array<bool, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> usedPlanes = {0};
         
         for(int x = 0;x < CHUNK_SIZE;x++){
-            for(int z = 0;z < CHUNK_SIZE;z++){
-                Block* block = getWorldBlockFast(this, 
-                    x,
-                    y,
-                    z,
-                    x + chunkX,
-                    y + chunkY,
-                    z + chunkZ,
-                    LOD
-                );
-
-                Block* upperBlock = getWorldBlockFast(this, 
-                    x,
-                    y + 1,
-                    z,
-                    x + chunkX,
-                    y + chunkY + 1,
-                    z + chunkZ,
-                    LOD
-                );
-
-                //if(!block) block = &air;
-                //if(!upperBlock) upperBlock = &air;
-                if(!block || !upperBlock) continue;
-
-                if(getBlockType(block).untextured == getBlockType(upperBlock).untextured) continue;
-
-                planes[(size_t) block->type][z] |= ((1ULL << 63) >> x);
-                usedPlanes[(size_t) block->type] = true;
+            for(auto& [key,mask]: masks){
+                planes[(size_t) mask.block.type][x] = mask.segments[x][y] & (solidMask.segments[x][y] ^ solidMask.segments[x][y + 1]);
             }
         }
 
-        for(int i = 0;i < (size_t) BlockTypes::BLOCK_TYPES_TOTAL;i++){
-            if(!usedPlanes[i]) continue;
-
-            BlockType type = predefinedBlocks[static_cast<BlockTypes>(i)];
+        for(auto& [key,mask]: masks){
+            BlockType type = predefinedBlocks[mask.block.type];
             if(type.untextured) continue;
             //std::cout << "Solving plane: " << i << std::endl;
             //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
             
-            std::vector<Face> faces = greedyMeshPlane64(planes[i]);
+            std::vector<Face> faces = greedyMeshPlane64(planes[(size_t) mask.block.type]);
 
             std::array<glm::vec3, 4> normals = {
                 glm::vec3(0,0,0),

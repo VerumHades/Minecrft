@@ -47,12 +47,12 @@ class World: public Collidable{
     public:
         bool updated = false;
 
-        Block* getBlock(int x, int y, int z, int LOD);
+        Block* getBlock(int x, int y, int z);
         bool setBlock(int x, int y, int z, Block index);
 
         Chunk* generateAndGetChunk(int x, int y, int z);
         Chunk* getChunk(int x, int y, int z);
-        Chunk* getChunkWithMesh(int x, int y, int z, int LOD);
+        Chunk* getChunkWithMesh(int x, int y, int z);
         Chunk* getChunkFromBlockPosition(int x, int y, int z);
         glm::vec3 getGetChunkRelativeBlockPosition(int x, int y, int z);
 

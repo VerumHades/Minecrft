@@ -68,10 +68,10 @@ const Biome& getBiome(float temperature){
     return biomes[0];
 }
 
-float lerp(float a, float b, float f)
+/*float lerp(float a, float b, float f)
 {
     return a * (1.0f - f) + (b * f);
-}
+}*/
 
 void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY){
     // Create and configure noise state
