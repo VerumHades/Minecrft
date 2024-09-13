@@ -270,182 +270,20 @@ std::vector<Face> greedyMeshPlane64(std::array<uint64_t, 64> rows){
     return out;
 }
 
+inline uint64_t bit_set(uint64_t number, uint64_t index) {
+    return number | ((uint64_t)1 << index);
+}
 
 void Chunk::generateMeshes(int LOD){
     this->solidMesh = std::make_unique<Mesh>();
     this->solidMesh->setVertexFormat({3,3,2,1,1});
+
+    int coordinates[] = {0,0,0};         
     
-    bool checked[DEFAULT_CHUNK_SIZE][DEFAULT_CHUNK_HEIGHT][DEFAULT_CHUNK_SIZE][6] = {};
+    int axes[] = {0,1,2};
 
-    for(int y = 0;y < DEFAULT_CHUNK_HEIGHT;y++){
-        for(int iz = 0;iz < DEFAULT_CHUNK_SIZE;iz++){
-            for(int ix = 0;ix < DEFAULT_CHUNK_SIZE;ix++){
-                int x = ix + (int) this->getWorldPosition().x * DEFAULT_CHUNK_SIZE;
-                int z = iz + (int) this->getWorldPosition().y * DEFAULT_CHUNK_SIZE;
 
-                //printf("%ix%ix%i\n", x, y, z);
-                Block* currentBlockRef = this->getBlock(ix, y ,iz, LOD);
-                if(!currentBlockRef) continue;
-
-                const BlockType& currentBlock = getBlockType(currentBlockRef);
-                if(currentBlock.untextured) continue;
-
-                for(int i = 0;i < 6;i++){
-                    if(checked[ix][y][iz][i]) continue;
-
-                    const FaceDefinition& def = faceDefinitions[i];
-                    Block* block = getWorldBlockFast(
-                        this,
-                        ix + def.offsetX,
-                        iz + def.offsetZ,
-                        x + def.offsetX,
-                        y + def.offsetY,
-                        z + def.offsetZ,
-                        LOD
-                    );
-                    if(!block) continue;
-                    if(!getBlockType(block).transparent) continue;
-
-                    int coordinates[] = {0,0,0};
-                    
-                    int offsetAxis = 0;
-                    int nonOffsetAxis[] = {0,0};
-
-                    int width = 0;
-                    int height = 1;
-
-                    if(def.offsetX != 0){
-                        nonOffsetAxis[0] = 1;
-                        nonOffsetAxis[1] = 2;
-                    }
-                    else if(def.offsetY != 0){
-                        offsetAxis = 1;
-                        nonOffsetAxis[0] = 0;
-                        nonOffsetAxis[1] = 2;
-                    }
-                    else if(def.offsetZ != 0){
-                        offsetAxis = 2;
-                        nonOffsetAxis[0] = 0;
-                        nonOffsetAxis[1] = 1;
-                    }
-
-                    int max_height = DEFAULT_CHUNK_SIZE+1;
-                    while(1){
-                        int offset_ix = ix + coordinates[0];
-                        int offset_iz = iz + coordinates[2]; 
-                        int offset_y = y + coordinates[1];
-
-                        coordinates[nonOffsetAxis[1]] = 0;
-                        while(1){
-                            offset_ix = ix + coordinates[0];
-                            offset_iz = iz + coordinates[2]; 
-                            offset_y = y + coordinates[1];
-
-                            if(!hasGreedyFace(this,ix,iz,x,y,z,offset_ix,offset_y,offset_iz,def,coordinates,currentBlockRef, LOD)) break;
-                            if(checked[offset_ix][offset_y][offset_iz][i]) break;
-
-                            coordinates[nonOffsetAxis[1]] += 1;
-                        }
-                        
-                        if(coordinates[nonOffsetAxis[1]] != 0) max_height = coordinates[nonOffsetAxis[1]] < max_height ? coordinates[nonOffsetAxis[1]] : max_height;
-                        coordinates[nonOffsetAxis[1]] = 0;
-
-                        offset_ix = ix + coordinates[0];
-                        offset_iz = iz + coordinates[2]; 
-                        offset_y = y + coordinates[1];
-
-                        if(!hasGreedyFace(this,ix,iz,x,y,z,offset_ix,offset_y,offset_iz,def,coordinates,currentBlockRef, LOD)) break;
-                        if(checked[offset_ix][offset_y][offset_iz][i]) break;
-
-                        coordinates[nonOffsetAxis[0]] += 1;
-                        width++;
-                        checked[offset_ix][offset_y][offset_iz][i] = true;
-                    }  
-                    if(max_height == DEFAULT_CHUNK_SIZE+1) continue;
-
-                    //if(max_height == 0) printf("%i\n", max_height);
-                    for(int padderH = 0;padderH < max_height;padderH++){
-                        coordinates[nonOffsetAxis[1]] = padderH;
-                        for(int padderW = 0;padderW < width;padderW++){
-                            coordinates[nonOffsetAxis[0]] = padderW;
-                            int offset_ix = ix + coordinates[0];
-                            int offset_iz = iz + coordinates[2]; 
-                            int offset_y = y + coordinates[1];
-
-                            checked[offset_ix][offset_y][offset_iz][i] = true;
-                        }
-                    } 
-
-                    coordinates[nonOffsetAxis[0]] = width;
-                    coordinates[nonOffsetAxis[1]] = max_height;
-
-                    height = max_height;
-                    coordinates[offsetAxis] = 1;
-                    //printf("%i %i %i\n", coordinates[0], coordinates[1], coordinates[2]);
-
-                    // Front vertices
-                    glm::vec3 vertices[8] = {
-                        {ix                 , y + coordinates[1], iz    },
-                        {ix + coordinates[0], y + coordinates[1], iz    },
-                        {ix + coordinates[0], y                 , iz    },
-                        {ix                 , y                 , iz    },
-                        {ix                 , y + coordinates[1], iz + coordinates[2]},
-                        {ix + coordinates[0], y + coordinates[1], iz + coordinates[2]},
-                        {ix + coordinates[0], y                 , iz + coordinates[2]},
-                        {ix                 , y                 , iz + coordinates[2]}
-                    };
-
-                    //printf("%i %i %i\n", coordinates[0], coordinates[1], coordinates[2]);
-                    
-                    
-                    //if(currentBlock->repeatTexture) printf("Index: %i\n", def->textureIndex);
-                    int texture = currentBlock.repeatTexture ? currentBlock.textures[0] : currentBlock.textures[def.textureIndex];
-
-                    if(def.offsetX != 0){
-                        int temp = width;
-                        width = height;
-                        height = temp;
-                    }
-
-                    glm::vec3 vertexArray[4] = {
-                        vertices[def.vertexIndexes[0]],
-                        vertices[def.vertexIndexes[1]],
-                        vertices[def.vertexIndexes[2]],
-                        vertices[def.vertexIndexes[3]]
-                    };
-
-                    glm::vec3 faceNormal = glm::vec3(def.offsetX, def.offsetY, def.offsetZ);
-
-                    /*glm::vec3 normalArray[4] = {
-                        cubeNormals[def.vertexIndexes[0]],
-                        cubeNormals[def.vertexIndexes[1]],
-                        cubeNormals[def.vertexIndexes[2]],
-                        cubeNormals[def.vertexIndexes[3]]
-                    };*/
-                    glm::vec3 normalArray[4] = {
-                        faceNormal,
-                        faceNormal,
-                        faceNormal,
-                        faceNormal
-                    };
-
-                    float occlusion[4] = {
-                        0,0,0,0
-                    };
-
-                    this->solidMesh->addQuadFaceGreedy(
-                        vertexArray,
-                        normalArray,
-                        occlusion,
-                        static_cast<float>(texture),
-                        def.clockwise,
-                        width,height
-                    );
-                }
-            }
-        }    
-    }
-
+    int size = 64;
     //std::cout << "Vertices:" << this->solidMesh.get()->getVertices().size() << std::endl;
 }
 
