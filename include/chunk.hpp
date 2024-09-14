@@ -38,6 +38,16 @@ class World;
 struct ChunkMask{
     Block block = {BlockTypes::Air};
     std::array<std::array<uint64_t,64>,64> segments = {0}; 
+    std::array<std::array<uint64_t,64>,64> segmentsRotated = {0}; 
+    
+    void set(uint32_t x,uint32_t y,uint32_t z) {
+        segments[z][y] |= (1ULL << (63 - x));
+        segmentsRotated[x][y] |= (1ULL << (63 - z));
+    }
+    void reset(uint32_t x,uint32_t y,uint32_t z) {
+        segments[z][y] &= ~(1ULL << (63 - x));
+        segmentsRotated[x][y] &= ~(1ULL << (63 - z));
+    }
 };
 
 class Chunk: public Volume{
@@ -104,7 +114,7 @@ struct Face{
     int height;
 };
 
-std::vector<Face> greedyMeshPlane64(std::array<uint64_t, 64> rows);
+//std::vector<Face> greedyMeshPlane64(std::array<uint64_t, 64> rows);
 
 #include <world.hpp>
 

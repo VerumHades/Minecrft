@@ -1,8 +1,8 @@
 #include <rendering/mesh.hpp>
 
 Mesh::Mesh(){
-    //this->vertices.reserve(10000);
-    //this->indices.reserve(10000);
+    this->vertices.reserve(10000);
+    this->indices.reserve(10000);
 }
 
 void Mesh::setVertexFormat(const std::vector<int>& format_){

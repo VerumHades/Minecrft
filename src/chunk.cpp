@@ -85,11 +85,13 @@ Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     if(x >= CHUNK_SIZE) return nullptr;
     if(y >= CHUNK_SIZE) return nullptr;
     if(z >= CHUNK_SIZE) return nullptr;
-
+    
+    uint64_t checkMask = (1ULL << (63 - x));
+    
     for(auto& [key,mask]: masks){
-        uint64_t row = mask.segments[x][y];
+        uint64_t row = mask.segments[z][y];
 
-        if(row & (1 << z)){
+        if(row & checkMask){
             return &mask.block;
         }
     }
@@ -102,12 +104,24 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     if(y >= CHUNK_SIZE) return false;
     if(z >= CHUNK_SIZE) return false;
 
+    uint64_t currentMask = (1ULL << (63 - x));
+
     if(masks.count(value.type) == 0) masks[value.type] = {};
     masks[value.type].block = value;
-    masks[value.type].segments[x][y] |= (1 << z);
+    masks[value.type].set(x,y,z);
 
-    if(getBlockType(&value).untextured) solidMask.segments[x][y] &= ~(1ULL << z);
-    else solidMask.segments[x][y] |= (1 << z);
+    for(auto& [key,mask]: masks){
+        uint64_t row = mask.segments[z][y];
+
+        if(!(row & currentMask)) continue;
+        if(mask.block.type == value.type) continue;
+
+        mask.reset(x,y,z);
+        break;
+    }
+
+    if(getBlockType(&value).untextured) solidMask.reset(x,y,z);
+    else solidMask.set(x,y,z);
 
     return true;
 }
@@ -193,18 +207,12 @@ void Chunk::generateMeshes(){
     this->solidMesh = std::make_unique<Mesh>();
     this->solidMesh->setVertexFormat({3,3,2,1,1});     
 
-    int chunkX = worldPosition.x * CHUNK_SIZE;
-    int chunkY = worldPosition.y * CHUNK_SIZE;
-    int chunkZ = worldPosition.z * CHUNK_SIZE;
- 
-    Block air = {BlockTypes::Air};
-
     for(int y = 0; y < CHUNK_SIZE - 1;y++){
         std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planes = {0};
         
         for(int x = 0;x < CHUNK_SIZE;x++){
             for(auto& [key,mask]: masks){
-                planes[(size_t) mask.block.type][x] = mask.segments[x][y] & (solidMask.segments[x][y] ^ solidMask.segments[x][y + 1]);
+                planes[(size_t) mask.block.type][x] = (mask.segments[x][y] | mask.segments[x][y + 1]) & (solidMask.segments[x][y] ^ solidMask.segments[x][y + 1]);
             }
         }
 
@@ -224,7 +232,7 @@ void Chunk::generateMeshes(){
             };
             float occlusion[4] = {0,0,0,0};
 
-            for(const auto& face: faces){
+            for(auto& face: faces){
                 std::array<glm::vec3, 4> vertices = {
                     glm::vec3(face.x             ,y + 1,face.y              ),
                     glm::vec3(face.x + face.width,y + 1,face.y              ),
@@ -245,6 +253,79 @@ void Chunk::generateMeshes(){
         }
     }
 
+    for(int z = 0; z < CHUNK_SIZE - 1;z++){
+        std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planesZ = {0};
+        std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planesX = {0};
+        
+        for(int y = 0;y < CHUNK_SIZE;y++){
+            for(auto& [key,mask]: masks){
+                planesZ[(size_t) mask.block.type][y] = (mask.segments[z][y] | mask.segments[z + 1][y]) & (solidMask.segments[z][y] ^ solidMask.segments[z + 1][y]);
+                planesX[(size_t) mask.block.type][y] = (mask.segmentsRotated[z][y] | mask.segmentsRotated[z + 1][y]) & (solidMask.segmentsRotated[z][y] ^ solidMask.segmentsRotated[z + 1][y]);
+            }
+        }
+
+        for(auto& [key,mask]: masks){
+            BlockType type = predefinedBlocks[mask.block.type];
+            if(type.untextured) continue;
+            //std::cout << "Solving plane: " << i << std::endl;
+            //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
+            
+            std::vector<Face> facesZ = greedyMeshPlane64(planesZ[(size_t) mask.block.type]);
+            std::vector<Face> facesX = greedyMeshPlane64(planesX[(size_t) mask.block.type]);
+
+            std::array<glm::vec3, 4> normals = {
+                glm::vec3(0,0,0),
+                glm::vec3(0,0,0),
+                glm::vec3(0,0,0),
+                glm::vec3(0,0,0)
+            };
+            float occlusion[4] = {0,0,0,0};
+
+            for(auto& face: facesZ){
+                std::array<glm::vec3, 4> vertices = {
+                    glm::vec3(face.x              ,face.y + face.height, z + 1),
+                    glm::vec3(face.x + face.width ,face.y + face.height, z + 1),
+                    glm::vec3(face.x + face.width ,face.y              , z + 1),
+                    glm::vec3(face.x              ,face.y              , z + 1)
+                };
+
+                int texture = z % 2;
+                texture = type.repeatTexture ? type.textures[0] : type.textures[2 + texture];
+
+                solidMesh->addQuadFaceGreedy(
+                    vertices.data(),
+                    normals.data(),
+                    occlusion,
+                    static_cast<float>(texture),
+                    1,
+                    face.width,
+                    face.height
+                );
+            }
+
+            for(auto& face: facesX){
+                std::array<glm::vec3, 4> vertices = {
+                    glm::vec3(z + 1, face.y + face.height, face.x             ),
+                    glm::vec3(z + 1, face.y + face.height, face.x + face.width),
+                    glm::vec3(z + 1, face.y              , face.x + face.width),
+                    glm::vec3(z + 1, face.y              , face.x             )
+                };
+
+                int texture = z % 2;
+                texture = type.repeatTexture ? type.textures[0] : type.textures[4 + texture];
+
+                solidMesh->addQuadFaceGreedy(
+                    vertices.data(),
+                    normals.data(),
+                    occlusion,
+                    static_cast<float>(texture),
+                    1,
+                    face.width,
+                    face.height
+                );
+            }
+        }
+    }
     //std::cout << "Vertices:" << this->solidMesh.get()->getVertices().size() << std::endl;
 }
 
@@ -265,7 +346,7 @@ static inline bool isOnOrForwardPlane(const Plane& plane, glm::vec3 center){
 bool Chunk::isOnFrustum(PerspectiveCamera& camera) const {
     //Get global scale thanks to our transform
     Frustum& frustum = camera.getFrustum();
-    glm::vec3 position = glm::vec3(this->worldPosition.x * CHUNK_SIZE, CHUNK_SIZE / 2, this->worldPosition.y * CHUNK_SIZE);
+    glm::vec3 position = glm::vec3(this->worldPosition.x * CHUNK_SIZE, this->worldPosition.y * CHUNK_SIZE, this->worldPosition.z * CHUNK_SIZE);
 
     return isOnOrForwardPlane(frustum.leftFace, position) &&
         isOnOrForwardPlane(frustum.rightFace, position) &&
