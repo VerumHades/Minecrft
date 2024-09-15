@@ -210,6 +210,8 @@ void Chunk::generateMeshes(){
             }
         }
 
+        int direction = z % 2;
+
         for(auto& [key,mask]: masks){
             BlockType type = predefinedBlocks[mask.block.type];
             if(type.untextured) continue;
@@ -236,15 +238,14 @@ void Chunk::generateMeshes(){
                     glm::vec3(face.x              ,face.y              , z + 1)
                 };
 
-                int texture = z % 2;
-                texture = type.repeatTexture ? type.textures[0] : type.textures[2 + texture];
+                int texture = type.repeatTexture ? type.textures[0] : type.textures[2 + direction];
 
                 solidMesh->addQuadFaceGreedy(
                     vertices.data(),
                     normals.data(),
                     occlusion,
                     static_cast<float>(texture),
-                    1,
+                    !direction,
                     face.width,
                     face.height
                 );
@@ -258,15 +259,14 @@ void Chunk::generateMeshes(){
                     glm::vec3(z + 1, face.y              , face.x             )
                 };
 
-                int texture = z % 2;
-                texture = type.repeatTexture ? type.textures[0] : type.textures[4 + texture];
+                int texture = type.repeatTexture ? type.textures[0] : type.textures[4 + direction];
 
                 solidMesh->addQuadFaceGreedy(
                     vertices.data(),
                     normals.data(),
                     occlusion,
                     static_cast<float>(texture),
-                    1,
+                    !direction,
                     face.width,
                     face.height
                 );
@@ -280,12 +280,14 @@ void Chunk::generateMeshes(){
                     glm::vec3(face.x             ,z + 1,face.y + face.height)
                 };
 
+                int texture = type.repeatTexture ? type.textures[0] : type.textures[!direction];
+
                 solidMesh->addQuadFaceGreedy(
                     vertices.data(),
                     normals.data(),
                     occlusion,
-                    static_cast<float>(type.textures[0]),
-                    1,
+                    static_cast<float>(texture),
+                    direction,
                     face.width,
                     face.height
                 );
@@ -365,7 +367,7 @@ void Chunk::generateMeshes(){
                 normals.data(),
                 occlusion,
                 static_cast<float>(texture),
-                1,
+                0,
                 face.width,
                 face.height
             );
@@ -386,7 +388,7 @@ void Chunk::generateMeshes(){
                 normals.data(),
                 occlusion,
                 static_cast<float>(texture),
-                1,
+                0,
                 face.width,
                 face.height
             );
@@ -405,7 +407,7 @@ void Chunk::generateMeshes(){
                 normals.data(),
                 occlusion,
                 static_cast<float>(type.textures[0]),
-                1,
+                0,
                 face.width,
                 face.height
             );

@@ -385,7 +385,7 @@ int main() {
 
         //if(world.updated){
             int offsetX = (int) camera.getPosition().x;
-            int offsetY = (int) camera.getPosition().y;
+            int offsetY = 0;
             int offsetZ = (int) camera.getPosition().z;
 
             suncam.setPosition(
@@ -468,7 +468,7 @@ void physicsUpdate(){
 
         glm::vec3 camDir = glm::normalize(camera.getDirection());
         glm::vec3 horizontalDir = glm::normalize(glm::vec3(camDir.x, 0, camDir.z));
-        glm::vec3 rightDir = normalize(glm::cross(camera.getUp(), horizontalDir));
+        glm::vec3 rightDir = glm::normalize(glm::cross(camera.getUp(), horizontalDir));
 
         if(boundKeys[4].isDown) player.accelerate(rightDir * camSpeed);
         if(boundKeys[5].isDown) player.accelerate(-rightDir * camSpeed);
