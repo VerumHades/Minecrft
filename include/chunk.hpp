@@ -89,6 +89,9 @@ class Chunk: public Volume{
             return this->worldPosition;
         }
 
+        const ChunkMask& getSolidMask() {return solidMask;}
+        const std::unordered_map<BlockTypes,ChunkMask>& getMasks() {return masks;}
+
 }; 
 extern std::unordered_map<BlockTypes, BlockType> predefinedBlocks;
 extern std::mutex predefinedBlockMutex;

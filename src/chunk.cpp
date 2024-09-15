@@ -207,60 +207,16 @@ void Chunk::generateMeshes(){
     this->solidMesh = std::make_unique<Mesh>();
     this->solidMesh->setVertexFormat({3,3,2,1,1});     
 
-    for(int y = 0; y < CHUNK_SIZE - 1;y++){
-        std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planes = {0};
-        
-        for(int x = 0;x < CHUNK_SIZE;x++){
-            for(auto& [key,mask]: masks){
-                planes[(size_t) mask.block.type][x] = (mask.segments[x][y] | mask.segments[x][y + 1]) & (solidMask.segments[x][y] ^ solidMask.segments[x][y + 1]);
-            }
-        }
-
-        for(auto& [key,mask]: masks){
-            BlockType type = predefinedBlocks[mask.block.type];
-            if(type.untextured) continue;
-            //std::cout << "Solving plane: " << i << std::endl;
-            //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
-            
-            std::vector<Face> faces = greedyMeshPlane64(planes[(size_t) mask.block.type]);
-
-            std::array<glm::vec3, 4> normals = {
-                glm::vec3(0,0,0),
-                glm::vec3(0,0,0),
-                glm::vec3(0,0,0),
-                glm::vec3(0,0,0)
-            };
-            float occlusion[4] = {0,0,0,0};
-
-            for(auto& face: faces){
-                std::array<glm::vec3, 4> vertices = {
-                    glm::vec3(face.x             ,y + 1,face.y              ),
-                    glm::vec3(face.x + face.width,y + 1,face.y              ),
-                    glm::vec3(face.x + face.width,y + 1,face.y + face.height),
-                    glm::vec3(face.x             ,y + 1,face.y + face.height)
-                };
-
-                solidMesh->addQuadFaceGreedy(
-                    vertices.data(),
-                    normals.data(),
-                    occlusion,
-                    static_cast<float>(type.textures[0]),
-                    1,
-                    face.width,
-                    face.height
-                );
-            }
-        }
-    }
-
     for(int z = 0; z < CHUNK_SIZE - 1;z++){
-        std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planesZ = {0};
         std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planesX = {0};
+        std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planesY = {0};
+        std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planesZ = {0};
         
         for(int y = 0;y < CHUNK_SIZE;y++){
             for(auto& [key,mask]: masks){
-                planesZ[(size_t) mask.block.type][y] = (mask.segments[z][y] | mask.segments[z + 1][y]) & (solidMask.segments[z][y] ^ solidMask.segments[z + 1][y]);
                 planesX[(size_t) mask.block.type][y] = (mask.segmentsRotated[z][y] | mask.segmentsRotated[z + 1][y]) & (solidMask.segmentsRotated[z][y] ^ solidMask.segmentsRotated[z + 1][y]);
+                planesY[(size_t) mask.block.type][y] = (mask.segments[y][z] | mask.segments[y][z + 1]) & (solidMask.segments[y][z] ^ solidMask.segments[y][z + 1]);
+                planesZ[(size_t) mask.block.type][y] = (mask.segments[z][y] | mask.segments[z + 1][y]) & (solidMask.segments[z][y] ^ solidMask.segments[z + 1][y]);
             }
         }
 
@@ -270,8 +226,9 @@ void Chunk::generateMeshes(){
             //std::cout << "Solving plane: " << i << std::endl;
             //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
             
-            std::vector<Face> facesZ = greedyMeshPlane64(planesZ[(size_t) mask.block.type]);
             std::vector<Face> facesX = greedyMeshPlane64(planesX[(size_t) mask.block.type]);
+            std::vector<Face> facesY = greedyMeshPlane64(planesY[(size_t) mask.block.type]);
+            std::vector<Face> facesZ = greedyMeshPlane64(planesZ[(size_t) mask.block.type]);
 
             std::array<glm::vec3, 4> normals = {
                 glm::vec3(0,0,0),
@@ -324,6 +281,144 @@ void Chunk::generateMeshes(){
                     face.height
                 );
             }
+
+            for(auto& face: facesY){
+                std::array<glm::vec3, 4> vertices = {
+                    glm::vec3(face.x             ,z + 1,face.y              ),
+                    glm::vec3(face.x + face.width,z + 1,face.y              ),
+                    glm::vec3(face.x + face.width,z + 1,face.y + face.height),
+                    glm::vec3(face.x             ,z + 1,face.y + face.height)
+                };
+
+                solidMesh->addQuadFaceGreedy(
+                    vertices.data(),
+                    normals.data(),
+                    occlusion,
+                    static_cast<float>(type.textures[0]),
+                    1,
+                    face.width,
+                    face.height
+                );
+            }
+        }
+    }
+
+    std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planesX = {0};
+    std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planesY = {0};
+    std::array<std::array<uint64_t, 64>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> planesZ = {0};
+    
+
+    Chunk* nextX = world.getChunk(worldPosition.x - 1,worldPosition.y,worldPosition.z);
+    const ChunkMask& nextXSolid = nextX->getSolidMask();
+    const auto& nextXmasks = nextX->getMasks();
+
+    /*Chunk* nextY = world.getChunk(worldPosition.x,worldPosition.y - 1,worldPosition.z);
+    const ChunkMask& nextYSolid = nextY->getSolidMask();
+    const auto& nextYmasks = nextY->getMasks();*/
+
+    Chunk* nextZ = world.getChunk(worldPosition.x,worldPosition.y,worldPosition.z - 1);
+    const ChunkMask& nextZSolid = nextZ->getSolidMask();
+    const auto& nextZmasks = nextZ->getMasks();
+
+    for(int y = 0;y < CHUNK_SIZE;y++){
+        for(auto& [key,mask]: masks){
+            if(nextXmasks.count(key) != 0){
+                const auto& nextMask = nextXmasks.at(key);
+                planesX[(size_t) mask.block.type][y] =  (mask.segmentsRotated[0][y] | nextMask.segmentsRotated[63][y]) & 
+                                                        (solidMask.segmentsRotated[0][y] ^ nextXSolid.segmentsRotated[63][y]);
+            }
+
+            /*if(nextYmasks.count(key) != 0){
+                const auto& nextMask = nextYmasks.at(key);
+                planesY[(size_t) mask.block.type][y] =  (mask.segments[y][0] | nextMask.segments[y][63]) & 
+                                                        (solidMask.segments[y][0] ^ nextYSolid.segments[y][63]);
+            }*/
+
+            if(nextZmasks.count(key) != 0){
+                const auto& nextMask = nextZmasks.at(key);
+                planesZ[(size_t) mask.block.type][y] =  (mask.segments[0][y] | nextMask.segments[63][y]) & 
+                                                        (solidMask.segments[0][y] ^ nextZSolid.segments[63][y]);
+            }
+        }
+    }
+
+    for(auto& [key,mask]: masks){
+        BlockType type = predefinedBlocks[mask.block.type];
+        if(type.untextured) continue;
+        //std::cout << "Solving plane: " << i << std::endl;
+        //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
+        
+        std::vector<Face> facesX = greedyMeshPlane64(planesX[(size_t) mask.block.type]);
+        std::vector<Face> facesY = greedyMeshPlane64(planesY[(size_t) mask.block.type]);
+        std::vector<Face> facesZ = greedyMeshPlane64(planesZ[(size_t) mask.block.type]);
+
+        std::array<glm::vec3, 4> normals = {
+            glm::vec3(0,0,0),
+            glm::vec3(0,0,0),
+            glm::vec3(0,0,0),
+            glm::vec3(0,0,0)
+        };
+        float occlusion[4] = {0,0,0,0};
+
+        for(auto& face: facesZ){
+            std::array<glm::vec3, 4> vertices = {
+                glm::vec3(face.x              ,face.y + face.height, 0),
+                glm::vec3(face.x + face.width ,face.y + face.height, 0),
+                glm::vec3(face.x + face.width ,face.y              , 0),
+                glm::vec3(face.x              ,face.y              , 0)
+            };
+
+            int texture = type.repeatTexture ? type.textures[0] : type.textures[2];
+
+            solidMesh->addQuadFaceGreedy(
+                vertices.data(),
+                normals.data(),
+                occlusion,
+                static_cast<float>(texture),
+                1,
+                face.width,
+                face.height
+            );
+        }
+
+        for(auto& face: facesX){
+            std::array<glm::vec3, 4> vertices = {
+                glm::vec3(0, face.y + face.height, face.x             ),
+                glm::vec3(0, face.y + face.height, face.x + face.width),
+                glm::vec3(0, face.y              , face.x + face.width),
+                glm::vec3(0, face.y              , face.x             )
+            };
+
+            int texture = type.repeatTexture ? type.textures[0] : type.textures[4];
+
+            solidMesh->addQuadFaceGreedy(
+                vertices.data(),
+                normals.data(),
+                occlusion,
+                static_cast<float>(texture),
+                1,
+                face.width,
+                face.height
+            );
+        }
+
+        for(auto& face: facesY){
+            std::array<glm::vec3, 4> vertices = {
+                glm::vec3(face.x             , 0,face.y              ),
+                glm::vec3(face.x + face.width, 0,face.y              ),
+                glm::vec3(face.x + face.width, 0,face.y + face.height),
+                glm::vec3(face.x             , 0,face.y + face.height)
+            };
+
+            solidMesh->addQuadFaceGreedy(
+                vertices.data(),
+                normals.data(),
+                occlusion,
+                static_cast<float>(type.textures[0]),
+                1,
+                face.width,
+                face.height
+            );
         }
     }
     //std::cout << "Vertices:" << this->solidMesh.get()->getVertices().size() << std::endl;

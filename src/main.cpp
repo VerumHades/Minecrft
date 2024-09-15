@@ -22,7 +22,7 @@ int lastMouseX = 0;
 int lastMouseY = 0;
 float sensitivity = 0.1f;
 
-int renderDistance = 8;
+int renderDistance = 4;
 
 float camSpeed = 0.01f;
 
