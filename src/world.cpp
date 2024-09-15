@@ -156,13 +156,13 @@ CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bo
                         return result;
                     }
                 }
-                else{
+                /*else{
                     result.collision = 1;
                     result.x = cx;
                     result.y = cy;
                     result.z = cz;
                     return result;
-                }
+                }*/
             }
         }
     }
@@ -210,13 +210,13 @@ CollisionCheckResult World::checkForRectangularCollision(float x, float y, float
                         }
                     }
                 }
-                else{
+                /*else{
                     result.collision = 1;
                     result.x = cx;
                     result.y = cy;
                     result.z = cz;
                     return result;
-                }
+                }*/
             }
         }
     }
@@ -269,7 +269,7 @@ Block* World::getBlock(int x, int y, int z){
     int ix = abs(x - chunkX * CHUNK_SIZE);
     int iy = abs(y - chunkY * CHUNK_SIZE);
     int iz = abs(z - chunkZ * CHUNK_SIZE);
-    //printf("Chunk coords: %ix%i Block coords: %i(%i)x%ix%i(%i)\n", chunkX, chunkZ, ix,y,iz);
+    //printf("Chunk coords: %ix%i Block coords: %i(%i)x%ix%i(%i)\n", chunkX, chunkZ, ix,iy,iz);
 
     Chunk* chunk = this->getChunk(chunkX, chunkY, chunkZ);
     if(!chunk) return nullptr;//this->generateAndGetChunk(chunkX, chunkZ)->getBlock(ix,y,iz);

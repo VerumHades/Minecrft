@@ -22,7 +22,7 @@ int lastMouseX = 0;
 int lastMouseY = 0;
 float sensitivity = 0.1f;
 
-int renderDistance = 4;
+int renderDistance = 2;
 
 float camSpeed = 0.01f;
 
@@ -337,7 +337,7 @@ int main() {
     camera.initialize({skyboxProgram, mainProgram, modelManager.getModelProgram()});
     camera.setPosition(0.0f,160.0f,0.0f);
 
-    world.getEntities().emplace_back(glm::vec3(-1,38,0), glm::vec3(0.6, 1.8, 0.6));
+    world.getEntities().emplace_back(glm::vec3(-1,50,0), glm::vec3(0.6, 1.8, 0.6));
     
     world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
     //world.getEntities()[1].setModel("bob");
@@ -475,13 +475,13 @@ void physicsUpdate(){
         if(boundKeys[3].isDown) player.accelerate(-horizontalDir * camSpeed);
         if(boundKeys[2].isDown) player.accelerate(horizontalDir * camSpeed);
 
-        if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * camSpeed);
-        if(boundKeys[0].isDown) player.accelerate(camera.getUp() * camSpeed);
-        /*if(
+        //if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * camSpeed);
+        //if(boundKeys[0].isDown) player.accelerate(camera.getUp() * camSpeed);
+        if(
             boundKeys[0].isDown 
             && player.checkForCollision(world, false, {0,-0.1f,0}).collision
             && player.getVelocity().y == 0
-        ) player.accelerate(camera.getUp() * 0.2f);*/
+        ) player.accelerate(camera.getUp() * 0.2f);
 
         world.updateEntities();
     }

@@ -126,14 +126,6 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     return true;
 }
 
-static inline Block* getWorldBlockFast(Chunk* chunk, int ix, int iy, int iz, int x, int y, int z){
-    if(y < 0 || y >= CHUNK_SIZE) return nullptr;
-
-    Block* block = chunk->getBlock(ix, iy, iz);
-    if(!block) return chunk->getWorld().getBlock(x, y, z);
-    return block;
-}
-
 inline int count_leading_zeros(uint64_t x) {
     return std::countl_zero(x);
 }

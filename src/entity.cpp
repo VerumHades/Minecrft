@@ -42,9 +42,9 @@ void Entity::update(Collidable& collidable){
     if(len > friction) vel = glm::normalize(vel) * (len - friction);
     else vel = glm::vec3(0);
 
-    //if(checkForCollision(collidable, false, {vel.x, 0, 0}).collision) vel.x = 0;
-    //if(checkForCollision(collidable, false, {0, vel.y, 0}).collision) vel.y = 0;
-    //if(checkForCollision(collidable, false, {0, 0, vel.z}).collision) vel.z = 0;
+    if(checkForCollision(collidable, false, {vel.x, 0, 0}).collision) vel.x = 0;
+    if(checkForCollision(collidable, false, {0, vel.y, 0}).collision) vel.y = 0;
+    if(checkForCollision(collidable, false, {0, 0, vel.z}).collision) vel.z = 0;
 
     this->position += vel;
 }
