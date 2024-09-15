@@ -210,8 +210,6 @@ void Chunk::generateMeshes(){
             }
         }
 
-        int direction = z % 2;
-
         for(auto& [key,mask]: masks){
             BlockType type = predefinedBlocks[mask.block.type];
             if(type.untextured) continue;
@@ -230,27 +228,6 @@ void Chunk::generateMeshes(){
             };
             float occlusion[4] = {0,0,0,0};
 
-            for(auto& face: facesZ){
-                std::array<glm::vec3, 4> vertices = {
-                    glm::vec3(face.x              ,face.y + face.height, z + 1),
-                    glm::vec3(face.x + face.width ,face.y + face.height, z + 1),
-                    glm::vec3(face.x + face.width ,face.y              , z + 1),
-                    glm::vec3(face.x              ,face.y              , z + 1)
-                };
-
-                int texture = type.repeatTexture ? type.textures[0] : type.textures[2 + direction];
-
-                solidMesh->addQuadFaceGreedy(
-                    vertices.data(),
-                    normals.data(),
-                    occlusion,
-                    static_cast<float>(texture),
-                    !direction,
-                    face.width,
-                    face.height
-                );
-            }
-
             for(auto& face: facesX){
                 std::array<glm::vec3, 4> vertices = {
                     glm::vec3(z + 1, face.y + face.height, face.x             ),
@@ -259,6 +236,7 @@ void Chunk::generateMeshes(){
                     glm::vec3(z + 1, face.y              , face.x             )
                 };
 
+                int direction = (solidMask.segmentsRotated[z + 1][face.y] >> (63 - face.x)) & 1ULL;
                 int texture = type.repeatTexture ? type.textures[0] : type.textures[4 + direction];
 
                 solidMesh->addQuadFaceGreedy(
@@ -280,7 +258,30 @@ void Chunk::generateMeshes(){
                     glm::vec3(face.x             ,z + 1,face.y + face.height)
                 };
 
-                int texture = type.repeatTexture ? type.textures[0] : type.textures[!direction];
+                int direction = (solidMask.segments[face.y][z + 1] >> (63 - face.x)) & 1;
+                int texture = type.repeatTexture ? type.textures[0] : type.textures[direction];
+
+                solidMesh->addQuadFaceGreedy(
+                    vertices.data(),
+                    normals.data(),
+                    occlusion,
+                    static_cast<float>(texture),
+                    direction,
+                    face.width,
+                    face.height
+                );
+            }
+
+            for(auto& face: facesZ){
+                std::array<glm::vec3, 4> vertices = {
+                    glm::vec3(face.x              ,face.y + face.height, z + 1),
+                    glm::vec3(face.x + face.width ,face.y + face.height, z + 1),
+                    glm::vec3(face.x + face.width ,face.y              , z + 1),
+                    glm::vec3(face.x              ,face.y              , z + 1)
+                };
+
+                int direction = (solidMask.segments[z + 1][face.y] >> (63 - face.x)) & 1;
+                int texture = type.repeatTexture ? type.textures[0] : type.textures[2 + direction];
 
                 solidMesh->addQuadFaceGreedy(
                     vertices.data(),
@@ -352,27 +353,6 @@ void Chunk::generateMeshes(){
         };
         float occlusion[4] = {0,0,0,0};
 
-        for(auto& face: facesZ){
-            std::array<glm::vec3, 4> vertices = {
-                glm::vec3(face.x              ,face.y + face.height, 0),
-                glm::vec3(face.x + face.width ,face.y + face.height, 0),
-                glm::vec3(face.x + face.width ,face.y              , 0),
-                glm::vec3(face.x              ,face.y              , 0)
-            };
-
-            int texture = type.repeatTexture ? type.textures[0] : type.textures[2];
-
-            solidMesh->addQuadFaceGreedy(
-                vertices.data(),
-                normals.data(),
-                occlusion,
-                static_cast<float>(texture),
-                0,
-                face.width,
-                face.height
-            );
-        }
-
         for(auto& face: facesX){
             std::array<glm::vec3, 4> vertices = {
                 glm::vec3(0, face.y + face.height, face.x             ),
@@ -381,6 +361,7 @@ void Chunk::generateMeshes(){
                 glm::vec3(0, face.y              , face.x             )
             };
 
+            int direction = (solidMask.segmentsRotated[0][face.y] >> (63 - face.x)) & 1ULL;
             int texture = type.repeatTexture ? type.textures[0] : type.textures[4];
 
             solidMesh->addQuadFaceGreedy(
@@ -388,7 +369,7 @@ void Chunk::generateMeshes(){
                 normals.data(),
                 occlusion,
                 static_cast<float>(texture),
-                0,
+                !direction,
                 face.width,
                 face.height
             );
@@ -402,12 +383,36 @@ void Chunk::generateMeshes(){
                 glm::vec3(face.x             , 0,face.y + face.height)
             };
 
+            int direction = !((solidMask.segments[face.y][0] >> (63 - face.x)) & 1);
+
             solidMesh->addQuadFaceGreedy(
                 vertices.data(),
                 normals.data(),
                 occlusion,
                 static_cast<float>(type.textures[0]),
-                0,
+                direction,
+                face.width,
+                face.height
+            );
+        }
+
+        for(auto& face: facesZ){
+            std::array<glm::vec3, 4> vertices = {
+                glm::vec3(face.x              ,face.y + face.height, 0),
+                glm::vec3(face.x + face.width ,face.y + face.height, 0),
+                glm::vec3(face.x + face.width ,face.y              , 0),
+                glm::vec3(face.x              ,face.y              , 0)
+            };
+            
+            int direction = (solidMask.segments[0][face.y] >> (63 - face.x)) & 1;
+            int texture = type.repeatTexture ? type.textures[0] : type.textures[2];
+
+            solidMesh->addQuadFaceGreedy(
+                vertices.data(),
+                normals.data(),
+                occlusion,
+                static_cast<float>(texture),
+                direction,
                 face.width,
                 face.height
             );

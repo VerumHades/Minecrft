@@ -22,7 +22,7 @@ int lastMouseX = 0;
 int lastMouseY = 0;
 float sensitivity = 0.1f;
 
-int renderDistance = 2;
+int renderDistance = 4;
 
 float camSpeed = 0.01f;
 
@@ -247,7 +247,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     
-    //glEnable(GL_CULL_FACE);  // Enable backface culling
+    glEnable(GL_CULL_FACE);  // Enable backface culling
     glCullFace(GL_BACK);     // Cull back faces
     glFrontFace(GL_CCW);     // Set counterclockwise winding order as front*/
 
@@ -424,7 +424,7 @@ int main() {
         glDisable(GL_CULL_FACE);
         skyboxProgram.use();
         skybox.draw();
-        //glEnable(GL_CULL_FACE);
+        glEnable(GL_CULL_FACE);
 
         mainProgram.updateUniforms();
         mainProgram.use();
@@ -475,13 +475,13 @@ void physicsUpdate(){
         if(boundKeys[3].isDown) player.accelerate(-horizontalDir * camSpeed);
         if(boundKeys[2].isDown) player.accelerate(horizontalDir * camSpeed);
 
-        //if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * camSpeed);
-        //if(boundKeys[0].isDown) player.accelerate(camera.getUp() * camSpeed);
-        if(
+        if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * 0.2f);
+        if(boundKeys[0].isDown) player.accelerate(camera.getUp() * 0.2f);
+        /*if(
             boundKeys[0].isDown 
             && player.checkForCollision(world, false, {0,-0.1f,0}).collision
             && player.getVelocity().y == 0
-        ) player.accelerate(camera.getUp() * 0.2f);
+        ) player.accelerate(camera.getUp() * 0.2f);*/
 
         world.updateEntities();
     }

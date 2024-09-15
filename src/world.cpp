@@ -102,7 +102,7 @@ void World::updateBuffers(){
         chunk->solidBuffer = std::make_unique<GLDoubleBuffer>();
     }
 
-    std::cout << "Loading mesh: " << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
+    //std::cout << "Loading mesh: " << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
 
     //printf("Loading meshes %2i:%2i (%i)...\n",x,z,chunk->buffersLoaded);
     if (chunk->solidBuffer && chunk->solidMesh) {
@@ -324,7 +324,7 @@ void World::drawChunks(Camera& camera, ShaderProgram& program, int renderDistanc
     for(int x = -renderDistance; x <= renderDistance; x++){
         for(int z = -renderDistance; z <= renderDistance; z++){
             int chunkX = x + camWorldX;
-            int chunkY = camWorldY;
+            int chunkY = 0;
             int chunkZ = z + camWorldZ;
 
             //std::cout << "Drawing chunk: " << chunkX << " " << chunkZ << " " << camera.getPosition().x << " " << camera.getPosition().z <<std::endl;

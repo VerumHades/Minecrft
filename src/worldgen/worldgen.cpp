@@ -104,9 +104,9 @@ void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY){
 
 
             float temperature = (fnlGetNoise2D(&temperatureNoise, rx, ry) + 1) / 2;
-            temperature =  1.0f - lerp(main,temperature,0.1f);
+            //temperature =  1.0f - lerp(main,temperature,0.1f);
 
-            main = lerp(main, secondary, (float) pow(main,7));
+            //main = lerp(main, secondary, (float) pow(main,7));
             //value *= perlin(rx / 20.0, ry / 20.0);
         
             int height = (int) floor(CHUNK_SIZE * main); 

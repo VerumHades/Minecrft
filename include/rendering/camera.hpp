@@ -69,7 +69,7 @@ class PerspectiveCamera: public Camera{
         int screenHeight = 1080;
 
         float zNear = 0.01f;
-        float zFar = 1000.0f;
+        float zFar = 10000.0f;
 
         float pitch = 0;
         float yaw = 0;
