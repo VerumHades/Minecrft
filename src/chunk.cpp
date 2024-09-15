@@ -140,9 +140,9 @@ inline int count_leading_zeros(uint64_t x) {
 
 std::vector<Face> greedyMeshPlane64(std::array<uint64_t, 64> rows){
     std::vector<Face> out = {};
-    int currentRow = 0, i = 0;
+    int currentRow = 0;
     
-    while(currentRow < 64 && i < 50){
+    while(currentRow < 64){
         uint64_t row = rows[currentRow];
         /*
             0b00001101
@@ -192,8 +192,6 @@ std::vector<Face> greedyMeshPlane64(std::array<uint64_t, 64> rows){
         });
 
         //return out;
-
-        i++;
     }
 
     return out;
