@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <vector>
+#include <filesystem> //C++ 17
+#include <functional> // For std::hash
 
 #include <rendering/camera.hpp>
 #include <rendering/buffer.hpp>
@@ -48,20 +50,26 @@ class ModelManager;
 
 class Model{
     private:
+        std::unordered_map<int, GLTexture> loadedTextures;
+
         ModelManager& manager;
+        std::string rootPath;
         
         std::vector<Mesh> meshes;
         std::vector<std::unique_ptr<GLBuffer>> buffers;
+        std::vector<int> textureIndices;
 
         void processNode(aiNode *node, const aiScene *scene);
         Mesh processMesh(aiMesh *mesh, const aiScene *scene);
-        int handleTexture(aiString texturePath, Mesh& outMesh, const aiScene *scene);
+        int handleTexture(const char* texturePath, Mesh& outMesh, const aiScene *scene, bool outsideModelPath = false);
+
+        void loadTexture(int index, const aiScene *scene);
+        void loadTexture(int index, const char* filepath);
 
     public:
-        int textureIndex = -1;
-        
         Model(ModelManager& manager) : manager(manager) {}
-        bool loadFromFile(const std::string& filename);
+        bool loadFromFile(const std::string& filename, const std::string& rootPath);
+        GLTexture& getTexture(int index) {return loadedTextures.at(index);};
         void draw();
 };
 
@@ -70,12 +78,9 @@ class ModelManager{
         std::unordered_map<std::string, Model> models;
         std::unique_ptr<ShaderProgram> modelProgram;
         std::unique_ptr<ShaderProgram> modelDepthProgram;
-        std::unordered_map<int, GLTexture> loadedTextures;
 
     public:
         void initialize();
-        void loadTexture(int index, const aiScene *scene);
-        GLTexture& getTexture(int index) {return loadedTextures.at(index);};
 
         Model& createModel(std::string name);
         Model& getModel(std::string name) {

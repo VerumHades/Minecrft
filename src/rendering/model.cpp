@@ -21,8 +21,16 @@ const glm::vec3 cubeNormals[8] = {
 
 
 void Model::draw(){
-    for(auto& buffer: buffers){
-        buffer->draw();
+    int currentTexture = -1;
+    for(int i = 0;i < buffers.size();i++){
+        int tindex = textureIndices[i];
+
+        if(tindex != currentTexture && tindex != -1){
+            getTexture(tindex).bind(0);
+            currentTexture = tindex;
+        }
+
+        buffers[i]->draw();
     }
 }
 
@@ -77,39 +85,80 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
         outMesh.getIndices().insert(outMesh.getIndices().end(), face.mIndices, face.mIndices + face.mNumIndices);
     }  
 
-    if (mesh->mMaterialIndex >= 0 && outMesh.getTextureIndex() == -1) {
+    //std::cout << mesh->mMaterialIndex << std::endl;
+    if (mesh->mMaterialIndex >= 0) {
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-
         // Retrieve the texture (e.g., the diffuse texture)
         aiString texturePath;
-        if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
-            outMesh.setTextureIndex(handleTexture(texturePath, outMesh, scene));
+        const aiTextureType typesToCheck[] = { aiTextureType_BASE_COLOR, aiTextureType_DIFFUSE, aiTextureType_UNKNOWN };
+        bool textureFound = false;
+        for (const aiTextureType type : typesToCheck) {
+            if (material->GetTexture(type, 0, &texturePath) == AI_SUCCESS) {
+                textureFound = true;
+                outMesh.setTextureIndex(handleTexture(texturePath.C_Str(), outMesh, scene));
+                break;
+            }
+        }
+
+        if(!textureFound){
+            std::cout << "Warning: No texture found for this material." << std::endl;
+            std::string defaultTexturePath = "textures//pig.png";
+            outMesh.setTextureIndex(handleTexture(defaultTexturePath.c_str(), outMesh, scene, true));
         }
     }
 
     return outMesh;
 }
 
-int Model::handleTexture(aiString texturePath, Mesh& outMesh, const aiScene *scene){
-    if (texturePath.C_Str()[0] == '*') {
+int Model::handleTexture(const char* texturePath, Mesh& outMesh, const aiScene *scene, bool outsideModelPath){
+    if (texturePath[0] == '*') {
         // Handling embedded texture
-        int textureIndex = atoi(texturePath.C_Str() + 1);
+        int textureIndex = atoi(texturePath + 1);
         if (textureIndex >= 0 && textureIndex < scene->mNumTextures) {
-            manager.loadTexture(textureIndex, scene);
+            loadTexture(textureIndex, scene);
             return textureIndex;
         }
-
     } else {
-        // External texture path
-        std::cout << "External textures unsuported." << std::endl;
-        //std::cout << texturePath.C_Str();
-        //outMesh.setTexture(texturePath.C_Str()); // Make sure to handle this path correctly
+        std::size_t hashValue = std::hash<std::string>{}(texturePath);
+        int index = static_cast<int>(hashValue); 
+
+        if(!outsideModelPath){
+            std::filesystem::path fullPath = rootPath;
+            fullPath /= texturePath;
+
+            loadTexture(index, fullPath.string().c_str());
+        }
+        else loadTexture(index, texturePath);
+
+        return index;
     }
 
     return -1;
 }
 
-void ModelManager::loadTexture(int index, const aiScene *scene){
+void Model::loadTexture(int index, const char* filepath){
+    if(loadedTextures.count(index) != 0) return;
+
+    int width, height, channels;
+    unsigned char* data = stbi_load(
+        filepath,
+        &width, 
+        &height, 
+        &channels, 
+        4 // force 4 channels (RGBA)
+    );
+
+    if (data) {
+        // Successfully loaded image data, now use it for rendering
+        std::cout << "Loading texture: " << filepath << " with index: " << index << std::endl;
+        loadedTextures.try_emplace(index, data, width, height);
+        stbi_image_free(data); // Don't forget to free the image data
+    } else {
+        std::cout << "Failed to load texture:" << filepath << std::endl;
+    }
+}
+
+void Model::loadTexture(int index, const aiScene *scene){
     if(loadedTextures.count(index) != 0) return;
     aiTexture* embeddedTexture = scene->mTextures[index];
 
@@ -153,9 +202,10 @@ void ModelManager::loadTexture(int index, const aiScene *scene){
     }
 }
 
-bool Model::loadFromFile( const std::string& pFile) {
+bool Model::loadFromFile( const std::string& pFile, const std::string& rootPath) {
     // Create an instance of the Importer class
     Assimp::Importer importer;
+    this->rootPath = rootPath;
 
     // And have it read the given file with some example postprocessing
     // Usually - if speed is not the most important aspect for you - you'll
@@ -164,11 +214,11 @@ bool Model::loadFromFile( const std::string& pFile) {
     unsigned int importFlags = 
                             aiProcess_GenNormals  |
                             aiProcess_Triangulate |
-                            //aiProcess_PreTransformVertices |
+                            aiProcess_PreTransformVertices |
                             //aiProcess_JoinIdenticalVertices |
                             //aiProcess_SortByPType |
                             aiProcess_OptimizeMeshes |
-                            //aiProcess_OptimizeGraph |
+                            aiProcess_OptimizeGraph |
                             aiProcess_FlipUVs;
                            //aiProcess_ConvertToLeftHanded;
 
@@ -185,11 +235,6 @@ bool Model::loadFromFile( const std::string& pFile) {
     // Now we can access the file's contents.
     processNode(scene->mRootNode, scene);
 
-    if(meshes.size() > 1){
-        std::cout << "Multiple meshes unsuported: " << meshes.size() << std::endl;
-        return false;
-    }
-
     if(meshes.size() == 0){
         std::cout << "Model is missing a mesh!" << std::endl;
         return false;
@@ -198,8 +243,7 @@ bool Model::loadFromFile( const std::string& pFile) {
     for(int i = 0;i < meshes.size();i++){
         buffers.push_back(std::make_unique<GLBuffer>());
         buffers[buffers.size() - 1]->loadMesh(meshes[i]);
-
-        if(textureIndex == -1) textureIndex = meshes[i].getTextureIndex();
+        textureIndices.push_back(meshes[i].getTextureIndex());
     }
     /*for(int i = 0;i < meshes.size();i++){
         GLBuffer& buffer = buffers.emplace_back();
@@ -244,13 +288,11 @@ Model& ModelManager::createModel(std::string name){
 
 void ModelManager::drawModel(Model& model, Camera& camera, glm::vec3 position, bool depthMode){
     camera.setModelPosition(position);
+    //camera.setModelRotation(glm::vec3(-90,0,0));
 
     if(depthMode) modelDepthProgram->updateUniforms();
     else modelProgram->updateUniforms();
 
-    if(model.textureIndex != -1){
-        getTexture(model.textureIndex).bind(0);
-    }
-
     model.draw();
+    camera.setModelRotation(glm::vec3(0,0,0));
 }

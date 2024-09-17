@@ -51,6 +51,7 @@ class Camera{
     public:
         //~Camera() {std::cout << "Camera destroyed:" << this << std::endl;}
         virtual void setModelPosition(const glm::vec3& position) = 0;
+        virtual void setModelRotation(const glm::vec3& rotation) = 0;
         virtual glm::vec3& getPosition() = 0;
         virtual bool isVisible(Volume& volume) = 0;
 };
@@ -64,6 +65,9 @@ class PerspectiveCamera: public Camera{
         Uniform<glm::vec3> position = Uniform<glm::vec3>("camPos");
         glm::vec3 direction = glm::vec3(1,0,0);
         glm::vec3 up = glm::vec3(0,1,0);
+
+        glm::vec3 modelPosition = glm::vec3(0);
+        glm::vec3 modelRotation = glm::vec3(0);
 
         int screenWidth = 1920;
         int screenHeight = 1080;
@@ -88,6 +92,7 @@ class PerspectiveCamera: public Camera{
         void initialize(std::vector<std::reference_wrapper<ShaderProgram>> programs);
 
         void setModelPosition(const glm::vec3& position);
+        void setModelRotation(const glm::vec3& rotation);
         void setPosition(float x, float y, float z) {setPosition(glm::vec3(x,y,z));};
         void setPosition(glm::vec3 pos);
         void setRotation(float pitch, float yaw);
@@ -124,6 +129,9 @@ class DepthCamera: public Camera{
 
         glm::vec3 position = glm::vec3(0,0,0);
         glm::vec3 target = glm::vec3(0,0,0);
+
+        glm::vec3 modelPosition = glm::vec3(0);
+        glm::vec3 modelRotation = glm::vec3(0);
         
         float zNear = -500.0f;
         float zFar = 500.0f;
@@ -138,6 +146,8 @@ class DepthCamera: public Camera{
         void prepareForRender();
 
         void setModelPosition(const glm::vec3& position);
+        void setModelRotation(const glm::vec3& rotation);
+
         void setPosition(float x, float y, float z);
         void setPosition(glm::vec3& pos) {this->position = pos;};
         void setTarget(float x, float y, float z);

@@ -192,7 +192,14 @@ std::vector<Face> greedyMeshPlane64(std::array<uint64_t, 64> rows){
 inline uint64_t bit_set(uint64_t number, uint64_t index) {
     return number | ((uint64_t)1 << index);
 }
+/*
+    TODO: 
 
+        Fix faces merging incorrectly which results in incorrect culling and textures.
+        (Faces merge even if they face into different directions.)
+
+
+*/
 void Chunk::generateMeshes(){
     this->solidMesh = std::make_unique<Mesh>();
     this->solidMesh->setVertexFormat({3,3,2,1,1});     
@@ -258,7 +265,7 @@ void Chunk::generateMeshes(){
                     glm::vec3(face.x             ,z + 1,face.y + face.height)
                 };
 
-                int direction = (solidMask.segments[face.y][z + 1] >> (63 - face.x)) & 1;
+                int direction = (solidMask.segments[face.y][z + 1] >> (63 - face.x)) & 1ULL;
                 int texture = type.repeatTexture ? type.textures[0] : type.textures[direction];
 
                 solidMesh->addQuadFaceGreedy(
@@ -280,7 +287,7 @@ void Chunk::generateMeshes(){
                     glm::vec3(face.x              ,face.y              , z + 1)
                 };
 
-                int direction = (solidMask.segments[z + 1][face.y] >> (63 - face.x)) & 1;
+                int direction = (solidMask.segments[z + 1][face.y] >> (63 - face.x)) & 1ULL;
                 int texture = type.repeatTexture ? type.textures[0] : type.textures[2 + direction];
 
                 solidMesh->addQuadFaceGreedy(
@@ -383,7 +390,7 @@ void Chunk::generateMeshes(){
                 glm::vec3(face.x             , 0,face.y + face.height)
             };
 
-            int direction = !((solidMask.segments[face.y][0] >> (63 - face.x)) & 1);
+            int direction = !((solidMask.segments[face.y][0] >> (63 - face.x)) & 1ULL);
 
             solidMesh->addQuadFaceGreedy(
                 vertices.data(),
@@ -404,7 +411,7 @@ void Chunk::generateMeshes(){
                 glm::vec3(face.x              ,face.y              , 0)
             };
             
-            int direction = (solidMask.segments[0][face.y] >> (63 - face.x)) & 1;
+            int direction = (solidMask.segments[0][face.y] >> (63 - face.x)) & 1ULL;
             int texture = type.repeatTexture ? type.textures[0] : type.textures[2];
 
             solidMesh->addQuadFaceGreedy(

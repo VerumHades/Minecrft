@@ -1,5 +1,17 @@
 #include <rendering/camera.hpp>
 
+glm::mat4 calculateModelMatrix(glm::vec3 position, glm::vec3 rotation){
+    glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotation.x), glm::vec3(1, 0, 0));  // Rotation around X axis
+    glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotation.y), glm::vec3(0, 1, 0));  // Rotation around Y axis
+    glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), glm::radians(rotation.z), glm::vec3(0, 0, 1));  // Rotation around Z axis
+
+    // Combine the rotations in the correct order (commonly Z * Y * X)
+    glm::mat4 modelMatrix = rotationZ * rotationY * rotationX;
+    modelMatrix = glm::translate(modelMatrix, position);  // Apply the previous translation
+
+    return modelMatrix;
+}
+
 void PerspectiveCamera::resizeScreen(int width, int height, float fov){
     this->screenWidth = width;
     this->screenHeight = height;
@@ -49,8 +61,14 @@ void PerspectiveCamera::initialize(std::vector<std::reference_wrapper<ShaderProg
 }
 
 void PerspectiveCamera::setModelPosition(const glm::vec3& position_){
-    this->modelMatrix = glm::translate(glm::mat4(1.0f), position_);
+    modelPosition = position_;
+    this->modelMatrix = calculateModelMatrix(position_, modelRotation);
 }
+void PerspectiveCamera::setModelRotation(const glm::vec3& rotation){
+    modelRotation = rotation;
+    this->modelMatrix = calculateModelMatrix(modelPosition, rotation);
+}
+
 
 void PerspectiveCamera::setPosition(glm::vec3 pos) {
     this->position = pos;
@@ -71,7 +89,6 @@ void PerspectiveCamera::setRotation(float pitch_, float yaw_){
     this->viewMatrix = glm::lookAt(this->position.getValue(), this->position.getValue() + this->direction, this->up);
     calculateFrustum();
 }
-
 
 
 void DepthCamera::updateProjection(){
@@ -112,7 +129,12 @@ void DepthCamera::prepareForRender(){
 }
 
 void DepthCamera::setModelPosition(const glm::vec3& position_){
-    this->modelMatrix = glm::translate(glm::mat4(1.0f), position_);
+    modelPosition = position_;
+    this->modelMatrix = calculateModelMatrix(position_, modelRotation);
+}
+void DepthCamera::setModelRotation(const glm::vec3& rotation){
+    modelRotation = rotation;
+    this->modelMatrix = calculateModelMatrix(modelPosition, rotation);
 }
 void DepthCamera::setPosition(float x, float y, float z){
     this->position = glm::vec3(x,y,z);
