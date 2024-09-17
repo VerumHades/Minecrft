@@ -35,6 +35,9 @@ struct ChunkTreeNode{
 
 class World;
 
+typedef std::array<uint64_t, 64> Plane64;
+typedef std::array<Plane64, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> PlaneArray64;
+
 struct ChunkMask{
     Block block = {BlockTypes::Air};
     std::array<std::array<uint64_t,64>,64> segments = {0}; 
