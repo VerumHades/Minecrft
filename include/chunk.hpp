@@ -35,13 +35,14 @@ struct ChunkTreeNode{
 
 class World;
 
-typedef std::array<uint64_t, 64> Plane64;
+typedef uint_fast64_t uint64;
+typedef std::array<uint64, 64> Plane64;
 typedef std::array<Plane64, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> PlaneArray64;
 
 struct ChunkMask{
     Block block = {BlockTypes::Air};
-    std::array<std::array<uint64_t,64>,64> segments = {0}; 
-    std::array<std::array<uint64_t,64>,64> segmentsRotated = {0}; 
+    std::array<std::array<uint64,64>,64> segments = {0}; 
+    std::array<std::array<uint64,64>,64> segmentsRotated = {0}; 
     
     void set(uint32_t x,uint32_t y,uint32_t z) {
         segments[z][y] |= (1ULL << (63 - x));
@@ -120,7 +121,7 @@ struct Face{
     int height;
 };
 
-//std::vector<Face> greedyMeshPlane64(std::array<uint64_t, 64> rows);
+//std::vector<Face> greedyMeshPlane64(std::array<uint64, 64> rows);
 
 #include <world.hpp>
 

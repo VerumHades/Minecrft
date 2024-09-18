@@ -81,22 +81,23 @@ void Chunk::regenerateMesh(glm::vec3 blockCoords){
 #undef regenMesh
 
 
+static Block airBlock = {BlockTypes::Air};
 Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     if(x >= CHUNK_SIZE) return nullptr;
     if(y >= CHUNK_SIZE) return nullptr;
     if(z >= CHUNK_SIZE) return nullptr;
     
-    uint64_t checkMask = (1ULL << (63 - x));
+    uint64 checkMask = (1ULL << (63 - x));
     
     for(auto& [key,mask]: masks){
-        uint64_t row = mask.segments[z][y];
+        uint64 row = mask.segments[z][y];
 
         if(row & checkMask){
             return &mask.block;
         }
     }
 
-    return nullptr;
+    return &airBlock;
 }
 
 bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
@@ -104,14 +105,19 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     if(y >= CHUNK_SIZE) return false;
     if(z >= CHUNK_SIZE) return false;
 
-    uint64_t currentMask = (1ULL << (63 - x));
+    uint64 currentMask = (1ULL << (63 - x));
+    
+    if(value.type != BlockTypes::Air){
+        if(masks.count(value.type) == 0){
+            masks[value.type] = {};
+            masks[value.type].block = value;
+        }
 
-    if(masks.count(value.type) == 0) masks[value.type] = {};
-    masks[value.type].block = value;
-    masks[value.type].set(x,y,z);
+        masks[value.type].set(x,y,z);
+    }
 
     for(auto& [key,mask]: masks){
-        uint64_t row = mask.segments[z][y];
+        uint64 row = mask.segments[z][y];
 
         if(!(row & currentMask)) continue;
         if(mask.block.type == value.type) continue;
@@ -126,7 +132,7 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     return true;
 }
 
-inline int count_leading_zeros(uint64_t x) {
+inline int count_leading_zeros(uint64 x) {
     return std::countl_zero(x);
 }
 
@@ -135,7 +141,7 @@ std::vector<Face> greedyMeshPlane64(Plane64 rows){
     int currentRow = 0;
     
     while(currentRow < 64){
-        uint64_t row = rows[currentRow];
+        uint64 row = rows[currentRow];
         /*
             0b00001101
 
@@ -166,7 +172,7 @@ std::vector<Face> greedyMeshPlane64(Plane64 rows){
 
                 4. 0b00001100 AND with the row to create the faces mask
         */
-        uint64_t mask = ~0ULL;
+        uint64 mask = ~0ULL;
 
         //  Shifting by 64 is undefined behaviour for some reason ¯\_(ツ)_/¯
         if((start + width) != 64) mask = ~(mask >> (start + width));
@@ -188,15 +194,13 @@ std::vector<Face> greedyMeshPlane64(Plane64 rows){
 
     return out;
 }
-
-inline uint64_t bit_set(uint64_t number, uint64_t index) {
-    return number | ((uint64_t)1 << index);
+inline uint64 bit_set(uint64 number, uint64 index) {
+    return number | ((uint64)1 << index);
 }
 /*
     TODO: 
 
-        Fix faces merging incorrectly which results in incorrect culling and textures.
-        (Faces merge even if they face into different directions.)
+        Haven't broken anything yet
 
 
 */
@@ -224,15 +228,15 @@ void Chunk::generateMeshes(){
         
         for(int y = 0;y < CHUNK_SIZE;y++){
             for(auto& [key,mask]: masks){
-                uint64_t allFacesX = (mask.segmentsRotated[z][y] | mask.segmentsRotated[z + 1][y]) & (solidMask.segmentsRotated[z][y] ^ solidMask.segmentsRotated[z + 1][y]);
+                uint64 allFacesX = (mask.segmentsRotated[z][y] | mask.segmentsRotated[z + 1][y]) & (solidMask.segmentsRotated[z][y] ^ solidMask.segmentsRotated[z + 1][y]);
                 planesXforward[ (size_t) mask.block.type][y] = solidMask.segmentsRotated[z][y] & allFacesX;
                 planesXbackward[(size_t) mask.block.type][y] = solidMask.segmentsRotated[z + 1][y] & allFacesX;
 
-                uint64_t allFacesY = (mask.segments[y][z] | mask.segments[y][z + 1]) & (solidMask.segments[y][z] ^ solidMask.segments[y][z + 1]);
+                uint64 allFacesY = (mask.segments[y][z] | mask.segments[y][z + 1]) & (solidMask.segments[y][z] ^ solidMask.segments[y][z + 1]);
                 planesYforward[ (size_t) mask.block.type][y] = solidMask.segments[y][z] & allFacesY;
                 planesYbackward[(size_t) mask.block.type][y] = solidMask.segments[y][z + 1] & allFacesY;
 
-                uint64_t allFacesZ = (mask.segments[z][y] | mask.segments[z + 1][y]) & (solidMask.segments[z][y] ^ solidMask.segments[z + 1][y]);
+                uint64 allFacesZ = (mask.segments[z][y] | mask.segments[z + 1][y]) & (solidMask.segments[z][y] ^ solidMask.segments[z + 1][y]);
                 planesZforward[ (size_t) mask.block.type][y] = solidMask.segments[z][y] & allFacesZ;
                 planesZbackward[(size_t) mask.block.type][y] = solidMask.segments[z + 1][y] & allFacesZ;
             }
@@ -350,7 +354,7 @@ void Chunk::generateMeshes(){
         for(auto& [key,mask]: masks){
             if(nextXmasks.count(key) != 0){
                 const auto& nextMask = nextXmasks.at(key);
-                uint64_t allFacesX =  (mask.segmentsRotated[0][y] | nextMask.segmentsRotated[63][y]) & 
+                uint64 allFacesX =  (mask.segmentsRotated[0][y] | nextMask.segmentsRotated[63][y]) & 
                                       (solidMask.segmentsRotated[0][y] ^ nextXSolid.segmentsRotated[63][y]);
 
                 planesXforward[ (size_t) mask.block.type][y] =  solidMask.segmentsRotated[0][y] & allFacesX;
@@ -365,7 +369,7 @@ void Chunk::generateMeshes(){
 
             if(nextZmasks.count(key) != 0){
                 const auto& nextMask = nextZmasks.at(key);
-                uint64_t allFacesZ = (mask.segments[0][y] | nextMask.segments[63][y]) & 
+                uint64 allFacesZ = (mask.segments[0][y] | nextMask.segments[63][y]) & 
                                         (solidMask.segments[0][y] ^ nextZSolid.segments[63][y]);
                 
                 planesZforward[ (size_t) mask.block.type][y] =  solidMask.segments[0][y] & allFacesZ;

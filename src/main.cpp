@@ -270,7 +270,7 @@ int main() {
 
     Model& bob = modelManager.createModel("bob");
     //bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
-    bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
+    //bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
 
     
     std::array<std::string,6> skyboxPaths = {
@@ -341,7 +341,7 @@ int main() {
     world.getEntities().emplace_back(glm::vec3(-1,50,0), glm::vec3(0.6, 1.8, 0.6));
     
     world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
-    world.getEntities()[1].setModel("bob");
+    //world.getEntities()[1].setModel("bob");
 
     sunDirUniform.setValue({ 
         -cos(glm::radians(sunAngle)), // X position (cosine component)
