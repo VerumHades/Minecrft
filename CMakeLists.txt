@@ -31,12 +31,18 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
-# Fetch GLM
 FetchContent_Declare(
   assimp
   GIT_REPOSITORY https://github.com/assimp/assimp.git
 )
 FetchContent_MakeAvailable(assimp)
+
+# Declare FreeType as a dependency
+FetchContent_Declare(
+    freetype
+    GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype.git
+)
+FetchContent_MakeAvailable(freetype)
 
 find_package(OpenGL REQUIRED)
 
@@ -47,7 +53,7 @@ file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp ${CMAKE_SOURCE_DIR}/src/
 add_executable(main ${SOURCES})
 
 # Link libraries
-target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad assimp)
+target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad assimp freetype)
 
 if(MSVC)
   target_compile_options(main PRIVATE /W4)

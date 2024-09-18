@@ -48,17 +48,17 @@ static int maxThreads = 6;
 //const auto maxThreads = 1;
 static int threadsTotal = 0;
 void generateChunkMeshThread(Chunk* chunk){
-    auto start = std::chrono::high_resolution_clock::now();
+    //auto start = std::chrono::high_resolution_clock::now();
 
     //std::cout << "Generating mesh: " << &chunk <<  std::endl;
         
     chunk->generateMeshes();
 
     // End time point
-    auto end = std::chrono::high_resolution_clock::now();
+    //auto end = std::chrono::high_resolution_clock::now();
 
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Execution time: " << duration << " microseconds" << std::endl;
+    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    //std::cout << "Execution time: " << duration << " microseconds" << std::endl;
 
     chunk->meshGenerating = false;
     chunk->meshGenerated = true;

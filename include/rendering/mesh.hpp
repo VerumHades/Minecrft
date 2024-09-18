@@ -24,6 +24,7 @@ class Mesh{
         void setVertexFormat(const std::vector<int>& format);
         void addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals[4], float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height);
         void addQuadFace(glm::vec3 vertices[4], glm::vec3 normals[4], int clockwise);
+        void addFlatFace(int x, int y, int width, int height);
 
         std::vector<float>& getVertices() {return this->vertices;}
         std::vector<uint32_t>& getIndices() {return this->indices;}

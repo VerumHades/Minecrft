@@ -270,15 +270,6 @@ void ModelManager::initialize(){
 
     glUniform1i(modelProgram->getUniformLocation("texture"),0);
     glUniform1i(modelProgram->getUniformLocation("shadowMap"),1);
-
-    /*glValidateProgram(modelProgram->getID());
-    GLint validateStatus;
-    glGetProgramiv(modelProgram->getID(), GL_VALIDATE_STATUS, &validateStatus);
-    if (!validateStatus) {
-        char infoLog[512];
-        glGetProgramInfoLog(modelProgram->getID(), 512, NULL, infoLog);
-        std::cerr << "Shader Program Validation Error: " << infoLog << std::endl;
-    }*/
 }
 
 Model& ModelManager::createModel(std::string name){

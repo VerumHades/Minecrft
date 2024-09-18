@@ -8,21 +8,23 @@
 #include <rendering/shaders.hpp>
 #include <rendering/texture.hpp>
 #include <rendering/camera.hpp>
+#include <ui/manager.hpp>
 #include <entity.hpp>
 
 PerspectiveCamera camera;
 DepthCamera suncam;
 
 ModelManager modelManager;
+UIManager uiManager;
 
-ShaderProgram mainProgram;
+ShaderProgram terrainProgram;
 ShaderProgram skyboxProgram;
 
 int lastMouseX = 0;
 int lastMouseY = 0;
 float sensitivity = 0.1f;
 
-int renderDistance = 8;
+int renderDistance = 4;
 
 float camSpeed = 0.01f;
 
@@ -68,8 +70,9 @@ void framebuffer_size_callback(GLFWwindow* /*window*/, int width, int height){
     glViewport(0,0,width,height);
     camera.resizeScreen(width, height, camFOV);
     
-    mainProgram.updateUniforms();
+    terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
+    uiManager.resize(width, height);
     //printf("%i %i\n",width,height);
 }
 
@@ -96,7 +99,7 @@ void cursor_position_callback(GLFWwindow* /*window*/, double mouseX, double mous
 
     camera.setRotation(camPitch, camYaw);
 
-    mainProgram.updateUniforms();
+    terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
 }
 
@@ -264,6 +267,9 @@ int main() {
     //glEnable(GL_BLEND);
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    uiManager.initialize();
+    uiManager.update();
+
     modelManager.initialize();
     camera.getProjectionUniform().attach(modelManager.getModelProgram());
     camera.getViewUniform().attach(modelManager.getModelProgram());
@@ -306,18 +312,18 @@ int main() {
         "textures/pig.png"
     };
     
-    mainProgram.initialize();
-    mainProgram.addShader("shaders/vertex.vs", GL_VERTEX_SHADER);
-    mainProgram.addShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
-    mainProgram.compile();
-    mainProgram.use();
+    terrainProgram.initialize();
+    terrainProgram.addShader("shaders/terrain.vs", GL_VERTEX_SHADER);
+    terrainProgram.addShader("shaders/terrain.fs", GL_FRAGMENT_SHADER);
+    terrainProgram.compile();
+    terrainProgram.use();
 
     GLTextureArray tilemap = GLTextureArray();
     tilemap.loadFromFiles(texturePaths,160,160);
 
     suncam.initialize();
     suncam.getTexture()->bind(1);
-    suncam.getLightSpaceMatrixUniform().attach(mainProgram);
+    suncam.getLightSpaceMatrixUniform().attach(terrainProgram);
     suncam.getLightSpaceMatrixUniform().attach(modelManager.getModelProgram());
     suncam.getLightSpaceMatrixUniform().attach(modelManager.getModelDepthProgram());
     suncam.getModelUniform().attach(modelManager.getModelDepthProgram());
@@ -325,17 +331,17 @@ int main() {
     //int sunDirLoc = camera.getProgram("skybox").getUniformLocation("sunDir");
     auto sunDirUniform = Uniform<glm::vec3>("sunDir");
     sunDirUniform.attach(skyboxProgram);
-    sunDirUniform.attach(mainProgram);
+    sunDirUniform.attach(terrainProgram);
     
-    //int TimeLoc = mainProgram.getUniformLocation("time");
+    //int TimeLoc = terrainProgram.getUniformLocation("time");
 
-    glUniform1i(mainProgram.getUniformLocation("textureArray"),0);
-    glUniform1i(mainProgram.getUniformLocation("shadowMap"),1);
+    glUniform1i(terrainProgram.getUniformLocation("textureArray"),0);
+    glUniform1i(terrainProgram.getUniformLocation("shadowMap"),1);
 
     double last = glfwGetTime();
     double current = glfwGetTime();
 
-    camera.initialize({skyboxProgram, mainProgram, modelManager.getModelProgram()});
+    camera.initialize({skyboxProgram, terrainProgram, modelManager.getModelProgram()});
     camera.setPosition(0.0f,160.0f,0.0f);
 
     world.getEntities().emplace_back(glm::vec3(-1,50,0), glm::vec3(0.6, 1.8, 0.6));
@@ -349,7 +355,7 @@ int main() {
         0  // Z position (cosine component)
     });
 
-    mainProgram.updateUniforms();
+    terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
     
     std::thread physicsThread(physicsUpdate);
@@ -383,41 +389,32 @@ int main() {
         //printf("x:%f y:%f z:%f ax:%f ay:%f az:%f\ n",camX,camY,camZ,accelX,accelY,accelZ);
 
         //suncam.setPosition(c0,400, camera.getPosition().z);
+        
+        int offsetX = (int) camera.getPosition().x;
+        int offsetY = 0;
+        int offsetZ = (int) camera.getPosition().z;
 
-        //if(world.updated){
-            int offsetX = (int) camera.getPosition().x;
-            int offsetY = 0;
-            int offsetZ = (int) camera.getPosition().z;
+        suncam.setPosition(
+            (float) offsetX + sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)
+            (float) offsetY + sunDistance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
+            (float) offsetZ  // Z position (cosine component)
+        );
+        suncam.setTarget(
+            (float) offsetX,
+            (float) offsetY,
+            (float) offsetZ
+        );
+        suncam.updateProjection();
 
-            suncam.setPosition(
-                (float) offsetX + sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)
-                (float) offsetY + sunDistance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
-                (float) offsetZ  // Z position (cosine component)
-            );
-            suncam.setTarget(
-                (float) offsetX,
-                (float) offsetY,
-                (float) offsetZ
-            );
-            suncam.updateProjection();
+        //suncam.updateProjection();
+        glDisable( GL_CULL_FACE );
+        suncam.prepareForRender();
+        world.drawChunks(suncam, suncam.getProgram(), renderDistance);
+        world.drawEntities(modelManager, suncam, true);
+        glEnable( GL_CULL_FACE );
 
-            /*glUniform3f(lightDirLoc, 
-                -sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)adorkastock
-                -sunDistance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
-                0  // Z position (cosine component)
-            );*/
-            //suncam.updateProjection();
-            glDisable( GL_CULL_FACE );
-            suncam.prepareForRender();
-            world.drawChunks(suncam, suncam.getProgram(), renderDistance);
-            world.drawEntities(modelManager, suncam, true);
-            glEnable( GL_CULL_FACE );
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
-
-            //world.updated = false;
-        //}
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
 
 
         //skyboxProgram.updateUniforms();
@@ -427,14 +424,23 @@ int main() {
         skybox.draw();
         glEnable(GL_CULL_FACE);
 
-        mainProgram.updateUniforms();
-        mainProgram.use();
+        terrainProgram.updateUniforms();
+        terrainProgram.use();
         tilemap.bind(0);
 
-        world.drawChunks(camera, mainProgram, renderDistance);
+        world.drawChunks(camera, terrainProgram, renderDistance);
         world.drawEntities(modelManager, camera);
         //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
         /* Swap front and back buffers */
+
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        glDisable( GL_CULL_FACE );
+        glDisable(GL_DEPTH_TEST);
+        uiManager.draw();
+        glEnable(GL_DEPTH_TEST);
+        glEnable( GL_CULL_FACE );
+
         glfwSwapBuffers(window);
         /* Poll for and process events */
         glfwPollEvents();

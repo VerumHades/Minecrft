@@ -88,7 +88,7 @@ void GLBuffer::draw(){
     glBindVertexArray(vao);
 
     //glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer)
 
     glDrawElements(
         GL_TRIANGLES,      // mode
