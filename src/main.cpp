@@ -9,6 +9,7 @@
 #include <rendering/texture.hpp>
 #include <rendering/camera.hpp>
 #include <ui/manager.hpp>
+#include <ui/font.hpp>
 #include <entity.hpp>
 
 PerspectiveCamera camera;
@@ -16,6 +17,7 @@ DepthCamera suncam;
 
 ModelManager modelManager;
 UIManager uiManager;
+FontManager fontManager;
 
 ShaderProgram terrainProgram;
 ShaderProgram skyboxProgram;
@@ -52,8 +54,21 @@ struct BoundKey{
 int boundKeysCount = sizeof(boundKeys) / sizeof(boundKeys[0]);
 
 static bool lineMode = true;
+static bool menuOpen = false;
 
-void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/){
+void key_callback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/){
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
+        if(menuOpen){
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+        else{
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+        menuOpen = !menuOpen;
+    }
+
+    if(menuOpen) return;
+
     for(int i = 0; i < boundKeysCount;i++){
         if(key == boundKeys[i].key && action == GLFW_PRESS) boundKeys[i].isDown = true; 
         else if(key == boundKeys[i].key && action == GLFW_RELEASE) boundKeys[i].isDown = false; 
@@ -83,6 +98,11 @@ void cursor_position_callback(GLFWwindow* /*window*/, double mouseX, double mous
     lastMouseX = (int)mouseX;
     lastMouseY = (int)mouseY;
 
+    if(menuOpen){
+        uiManager.mouseMove(mouseX,mouseY);
+        return;
+    }
+
     xoffset *= sensitivity;
     yoffset *= sensitivity * 2;
 
@@ -106,6 +126,11 @@ void cursor_position_callback(GLFWwindow* /*window*/, double mouseX, double mous
 static int selectedBlock = 1;
 void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /*mods*/)
 {
+    if(menuOpen){
+        //uiManager.mouseEvent(mouseX,mouseY);
+        return;
+    }
+
     glm::vec3& camDirection = camera.getDirection();
     glm::vec3 camPosition = camera.getPosition();
     Entity& player = world.getEntities()[0];
@@ -140,6 +165,7 @@ void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /
 
 void scroll_callback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset)
 {
+    if(menuOpen) return;
     if(boundKeys[1].isDown){
         camFOV -= (float) yoffset * 5.0f;
 
@@ -230,7 +256,7 @@ int main() {
     }
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
-    //glfwSwapInterval(0);
+    glfwSwapInterval(0);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, cursor_position_callback);
@@ -263,12 +289,18 @@ int main() {
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
     */
-
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     uiManager.initialize();
     uiManager.update();
+
+    fontManager.initialize();
+    uiManager.getProjectionMatrix().attach(fontManager.getProgram());
+
+    Font testFont = Font();
+    testFont.load("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
 
     modelManager.initialize();
     camera.getProjectionUniform().attach(modelManager.getModelProgram());
@@ -367,8 +399,6 @@ int main() {
         deltatime = (float)(current - last);
         last = current;
 
-        //std::cout << "fps" << 1.0 / deltatime << std::endl;
-
         Entity& player = world.getEntities()[0];
         const glm::vec3& playerPosition = player.getPosition();
         glm::vec3 camPosition = playerPosition + camOffset;
@@ -437,7 +467,15 @@ int main() {
 
         glDisable( GL_CULL_FACE );
         glDisable(GL_DEPTH_TEST);
-        uiManager.draw();
+
+        if(menuOpen){
+            uiManager.draw();
+
+            fontManager.renderText("Hello World!", 25,50, 1.0, {0,0,0}, testFont);
+        }
+
+        fontManager.renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
+
         glEnable(GL_DEPTH_TEST);
         glEnable( GL_CULL_FACE );
 

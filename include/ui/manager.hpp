@@ -11,6 +11,8 @@ struct UIRenderInfo{
     int y;
     int width;
     int height;
+
+    glm::vec3 color;
 };
 
 class UIFrame{
@@ -20,13 +22,13 @@ class UIFrame{
         int width;
         int height;
 
+        glm::vec3 color;
+
+        std::vector<UIFrame> children;
+
     public:
-        UIFrame(int x, int y,int width,int height): x(x), y(y), width(width), height(height) {}
-        UIRenderInfo getRenderingInformation(){
-            return {
-                x,y,width,height
-            };
-        };
+        UIFrame(int x, int y,int width,int height,glm::vec3 color): x(x), y(y), width(width), height(height), color(color) {}
+        virtual std::vector<UIRenderInfo> getRenderingInformation();
 };
 
 class UIManager{
@@ -46,7 +48,11 @@ class UIManager{
         void initialize();
         void resize(int width, int height);
         void update();
+        void mouseEvent(int x, int y, int state);
+        void mouseMove(int x, int y);
         void draw();  
+
+        Uniform<glm::mat4>& getProjectionMatrix(){return projectionMatrix;}
 };
 
 #endif

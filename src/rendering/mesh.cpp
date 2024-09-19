@@ -93,42 +93,6 @@ void Mesh::addQuadFace(glm::vec3 vertices_[4], glm::vec3 normals[4], int clockwi
     if (clockwise) this->indices.insert(this->indices.end(), {vecIndices[0], vecIndices[1], vecIndices[3], vecIndices[1], vecIndices[2], vecIndices[3]});
     else this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[1], vecIndices[0], vecIndices[3], vecIndices[2], vecIndices[1]});
 }
-
-void Mesh::addFlatFace(int x, int y, int width, int height){
-    glm::vec2 vertices_[4] = {
-        {x        , y         },
-        {x + width, y         },
-        {x + width, y + height},
-        {x        , y + height}
-    };
-    
-    glm::vec2 textureCoordinates[4] = {
-        {1, 1},
-        {0, 1},
-        {0, 0},
-        {1, 0}
-    };
-    
-    uint32_t vecIndices[4];
-
-    const int size = 4;
-    float vertex[size * 4];
-    uint32_t startIndex = (uint32_t) this->vertices.size() / size;
-    for(int i = 0; i < 4; i++){
-        int offset = i * size;
-
-        vertex[0 + offset] = vertices_[i].x;
-        vertex[1 + offset] = vertices_[i].y;
-
-        vertex[2 + offset] = textureCoordinates[i].x;
-        vertex[3 + offset] = textureCoordinates[i].y;
-
-        vecIndices[i] = startIndex + i;
-    }
-
-    this->vertices.insert(this->vertices.end(), vertex, vertex + size * 4);
-    this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[1], vecIndices[0], vecIndices[3], vecIndices[2], vecIndices[1]});
-}
 /*
     textureX, textureY
     textureX + textureSize, textureY,

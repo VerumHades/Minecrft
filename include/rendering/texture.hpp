@@ -32,6 +32,7 @@ class GLTexture: public BindableTexture{
     public:
         GLTexture(const char* filename);
         GLTexture(unsigned char* data, int width, int height);
+        GLTexture(){TYPE = GL_TEXTURE_2D;};
 };
 
 class GLDepthTexture: public BindableTexture{
