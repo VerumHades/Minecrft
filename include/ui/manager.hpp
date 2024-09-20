@@ -7,6 +7,7 @@
 #include <ui/font.hpp>
 #include <queue>
 
+
 struct UIRenderInfo{
     int x;
     int y;
@@ -20,8 +21,10 @@ struct UIRenderInfo{
     std::vector<glm::vec2> texCoords;
 };
 
+class UIManager;
+
 class UIFrame{
-    private:
+    protected:
         int x;
         int y;
         int width;
@@ -33,7 +36,16 @@ class UIFrame{
 
     public:
         UIFrame(int x, int y,int width,int height,glm::vec3 color): x(x), y(y), width(width), height(height), color(color) {}
-        virtual std::vector<UIRenderInfo> getRenderingInformation();
+        virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
+};
+
+class UILabel: public UIFrame{
+    private:
+        std::string text;
+
+    public:
+        UILabel(std::string text, int x, int y,int width,int height,glm::vec3 color): UIFrame(x,y,width,height,color), text(text) {}
+        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
 class UIManager{
@@ -50,7 +62,6 @@ class UIManager{
         std::vector<UIFrame> windows;
 
         void processRenderingInformation(UIRenderInfo& info, Mesh& output);
-        std::vector<UIRenderInfo> buildTextRenderingInformation(std::string text, float x, float y, float scale, glm::vec3 color);
 
     public:
         void initialize();
@@ -59,6 +70,8 @@ class UIManager{
         void mouseEvent(int x, int y, int state);
         void mouseMove(int x, int y);
         void draw();  
+
+        std::vector<UIRenderInfo> buildTextRenderingInformation(std::string text, float x, float y, float scale, glm::vec3 color);
 
         Uniform<glm::mat4>& getProjectionMatrix(){return projectionMatrix;}
         FontManager& getFontManager() {return fontManager;};

@@ -21,6 +21,8 @@ void UIManager::initialize(){
     resize(1920,1080);
 
     windows.push_back({20,20,200,200, {0.1,0.5,0.9}});
+
+    windows.push_back(UILabel("Hello World!", 10,10,200,30,{0.5,0.5,0.9}));
 }
 
 void UIManager::resize(int width, int height){
@@ -92,11 +94,9 @@ void UIManager::update(){
     temp.setVertexFormat({2,2,3,2,1});
 
     for(auto& window: windows){
-        std::vector<UIRenderInfo> winfo = window.getRenderingInformation();
+        std::vector<UIRenderInfo> winfo = window.getRenderingInformation(*this);
         for(auto& info: winfo) processRenderingInformation(info, temp);
     }
-    std::vector<UIRenderInfo> winfo = buildTextRenderingInformation("HelloWorld!",20,100,1,{1.0,0.5,0.5});
-    for(auto& info: winfo) processRenderingInformation(info, temp);
 
     drawBuffer->loadMesh(temp);
 }
@@ -147,15 +147,27 @@ void UIManager::mouseMove(int x, int y){
 
 }
 
-std::vector<UIRenderInfo> UIFrame::getRenderingInformation(){
-    std::vector<UIRenderInfo> out = {{
-        x,y,width,height,false,color
-    }};
+std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
+    std::vector<UIRenderInfo> out = {
+        {x,y,width,height,false,color}
+    };
 
     for(auto& child: children){
-        auto temp = child.getRenderingInformation();
+        auto temp = child.getRenderingInformation(manager);
         out.insert(out.end(), temp.begin(), temp.end());
     }
 
     return out;
 };
+
+std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
+    //std::vector<UIRenderInfo> out = {
+     //   {x,y,width,height,false,color}
+    //};
+    std::cout << "Building label" << std::endl;
+
+    std::vector<UIRenderInfo> out = manager.buildTextRenderingInformation(text,x+5,y+5,1,{1,1,1});
+    //out.insert(out.end(), temp.begin(), temp.end());
+
+    return out;
+}

@@ -466,8 +466,6 @@ int main() {
 
         if(menuOpen){
             uiManager.draw();
-
-            uiManager.getFontManager().renderText("Hello World!", 25,50, 1.0, {0,0,0}, testFont);
         }
 
         uiManager.getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
