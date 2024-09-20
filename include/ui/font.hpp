@@ -36,6 +36,9 @@ class Font{
 
     public:
         Font(std::string filepath, int size);
+
+        glm::vec2 getTextDimensions(std::string);
+
         GLTexture* getAtlas(){return atlas.get();}
         std::unordered_map<char, Character>& getCharacters() {return characters;}
 };

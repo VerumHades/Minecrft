@@ -186,3 +186,26 @@ void FontManager::renderText(std::string text, GLfloat x, GLfloat y, GLfloat sca
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
+
+glm::vec2 Font::getTextDimensions(std::string text){
+    glm::vec2 out = {0,0};
+
+    int x = 0;
+    for (auto c = text.begin(); c != text.end(); c++) {
+        Character ch = characters[*c];
+
+        GLfloat xpos = ch.Bearing.x;
+        GLfloat ypos = (ch.Size.y - ch.Bearing.y);
+
+        GLfloat w = ch.Size.x;
+        GLfloat h = ch.Size.y;
+
+        out.x += w;
+        out.y = std::max(out.y, h);
+
+        // Advance to next glyph
+        x += (ch.Advance >> 6);  // Bitshift by 6 to get the value in pixels
+    }
+
+    return out;
+}

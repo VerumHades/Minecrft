@@ -32,7 +32,7 @@ class UIFrame{
 
         glm::vec3 color;
 
-        std::vector<UIFrame> children;
+        std::vector<std::unique_ptr<UIFrame>> children;
 
     public:
         UIFrame(int x, int y,int width,int height,glm::vec3 color): x(x), y(y), width(width), height(height), color(color) {}
@@ -59,7 +59,7 @@ class UIManager{
         int screenWidth = 1920;
         int screenHeight = 1080;
 
-        std::vector<UIFrame> windows;
+        std::vector<std::unique_ptr<UIFrame>> windows;
 
         void processRenderingInformation(UIRenderInfo& info, Mesh& output);
 

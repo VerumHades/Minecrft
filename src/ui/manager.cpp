@@ -19,10 +19,12 @@ void UIManager::initialize(){
     glUniform1i(uiProgram.getUniformLocation("textAtlas"),1);
 
     resize(1920,1080);
+    
+    auto frame = std::make_unique<UIFrame>(10,10,200,30,glm::vec3(0.5,0.5,0.9));
+    windows.push_back(std::move(frame));
 
-    windows.push_back({20,20,200,200, {0.1,0.5,0.9}});
-
-    windows.push_back(UILabel("Hello World!", 10,10,200,30,{0.5,0.5,0.9}));
+    auto label = std::make_unique<UILabel>("Hello World!", 10,10,200,30,glm::vec3(0.5,0.5,0.9));
+    windows.push_back(std::move(label));
 }
 
 void UIManager::resize(int width, int height){
@@ -94,7 +96,7 @@ void UIManager::update(){
     temp.setVertexFormat({2,2,3,2,1});
 
     for(auto& window: windows){
-        std::vector<UIRenderInfo> winfo = window.getRenderingInformation(*this);
+        std::vector<UIRenderInfo> winfo = window->getRenderingInformation(*this);
         for(auto& info: winfo) processRenderingInformation(info, temp);
     }
 
@@ -103,6 +105,8 @@ void UIManager::update(){
 
 std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string text, float x, float y, float scale, glm::vec3 color){
     std::vector<UIRenderInfo> out = {};
+
+    glm::vec2 textDimensions = mainFont->getTextDimensions(text);
 
     // Iterate through each character in the text
     for (auto c = text.begin(); c != text.end(); c++) {
@@ -113,6 +117,8 @@ std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string t
 
         GLfloat w = ch.Size.x * scale;
         GLfloat h = ch.Size.y * scale;
+
+        ypos += textDimensions.y - h;
 
         out.push_back({
             static_cast<int>(xpos),
@@ -153,7 +159,7 @@ std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
     };
 
     for(auto& child: children){
-        auto temp = child.getRenderingInformation(manager);
+        auto temp = child->getRenderingInformation(manager);
         out.insert(out.end(), temp.begin(), temp.end());
     }
 
