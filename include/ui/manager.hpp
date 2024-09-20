@@ -4,6 +4,7 @@
 #include <memory>
 #include <rendering/shaders.hpp>
 #include <rendering/mesh.hpp>
+#include <ui/font.hpp>
 #include <queue>
 
 struct UIRenderInfo{
@@ -12,7 +13,11 @@ struct UIRenderInfo{
     int width;
     int height;
 
+    bool isText = false;
     glm::vec3 color;
+
+    bool hasTexCoords = false;
+    std::vector<glm::vec2> texCoords;
 };
 
 class UIFrame{
@@ -33,7 +38,9 @@ class UIFrame{
 
 class UIManager{
     private:
-        std::unique_ptr<ShaderProgram> uiProgram;
+        ShaderProgram uiProgram;
+        FontManager fontManager;
+        std::unique_ptr<Font> mainFont;
         std::unique_ptr<GLBuffer> drawBuffer;
         Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("projectionMatrix");
         
@@ -43,6 +50,7 @@ class UIManager{
         std::vector<UIFrame> windows;
 
         void processRenderingInformation(UIRenderInfo& info, Mesh& output);
+        std::vector<UIRenderInfo> buildTextRenderingInformation(std::string text, float x, float y, float scale, glm::vec3 color);
 
     public:
         void initialize();
@@ -53,6 +61,7 @@ class UIManager{
         void draw();  
 
         Uniform<glm::mat4>& getProjectionMatrix(){return projectionMatrix;}
+        FontManager& getFontManager() {return fontManager;};
 };
 
 #endif

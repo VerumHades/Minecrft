@@ -17,7 +17,6 @@ DepthCamera suncam;
 
 ModelManager modelManager;
 UIManager uiManager;
-FontManager fontManager;
 
 ShaderProgram terrainProgram;
 ShaderProgram skyboxProgram;
@@ -296,18 +295,14 @@ int main() {
     uiManager.initialize();
     uiManager.update();
 
-    fontManager.initialize();
-    uiManager.getProjectionMatrix().attach(fontManager.getProgram());
-
-    Font testFont = Font();
-    testFont.load("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
+    Font testFont = Font("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
 
     modelManager.initialize();
     camera.getProjectionUniform().attach(modelManager.getModelProgram());
     camera.getViewUniform().attach(modelManager.getModelProgram());
 
     Model& bob = modelManager.createModel("bob");
-    //bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
+    bob.loadFromFile("models/test.gltf", "models/dio_brando");
     //bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
 
     
@@ -354,7 +349,6 @@ int main() {
     tilemap.loadFromFiles(texturePaths,160,160);
 
     suncam.initialize();
-    suncam.getTexture()->bind(1);
     suncam.getLightSpaceMatrixUniform().attach(terrainProgram);
     suncam.getLightSpaceMatrixUniform().attach(modelManager.getModelProgram());
     suncam.getLightSpaceMatrixUniform().attach(modelManager.getModelDepthProgram());
@@ -379,7 +373,7 @@ int main() {
     world.getEntities().emplace_back(glm::vec3(-1,50,0), glm::vec3(0.6, 1.8, 0.6));
     
     world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
-    //world.getEntities()[1].setModel("bob");
+    world.getEntities()[1].setModel("bob");
 
     sunDirUniform.setValue({ 
         -cos(glm::radians(sunAngle)), // X position (cosine component)
@@ -424,6 +418,8 @@ int main() {
         int offsetY = 0;
         int offsetZ = (int) camera.getPosition().z;
 
+        suncam.getTexture()->bind(1);
+        
         suncam.setPosition(
             (float) offsetX + sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)
             (float) offsetY + sunDistance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
@@ -471,10 +467,10 @@ int main() {
         if(menuOpen){
             uiManager.draw();
 
-            fontManager.renderText("Hello World!", 25,50, 1.0, {0,0,0}, testFont);
+            uiManager.getFontManager().renderText("Hello World!", 25,50, 1.0, {0,0,0}, testFont);
         }
 
-        fontManager.renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
+        uiManager.getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
 
         glEnable(GL_DEPTH_TEST);
         glEnable( GL_CULL_FACE );

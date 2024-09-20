@@ -1,16 +1,22 @@
 #include <ui/manager.hpp>
 
 void UIManager::initialize(){
-    uiProgram = std::make_unique<ShaderProgram>();
-    uiProgram->initialize();
-    uiProgram->addShader("shaders/ui/ui.vs", GL_VERTEX_SHADER);
-    uiProgram->addShader("shaders/ui/ui.fs", GL_FRAGMENT_SHADER);
-    uiProgram->compile();
-    uiProgram->use();
+    uiProgram.initialize();
+    uiProgram.addShader("shaders/ui/ui.vs", GL_VERTEX_SHADER);
+    uiProgram.addShader("shaders/ui/ui.fs", GL_FRAGMENT_SHADER);
+    uiProgram.compile();
+    uiProgram.use();
+
+    fontManager.initialize();
 
     drawBuffer = std::make_unique<GLBuffer>();
+    mainFont = std::make_unique<Font>("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
 
-    projectionMatrix.attach(*uiProgram);
+    projectionMatrix.attach(uiProgram);
+    projectionMatrix.attach(fontManager.getProgram());
+
+    glUniform1i(uiProgram.getUniformLocation("tex"),0);
+    glUniform1i(uiProgram.getUniformLocation("textAtlas"),1);
 
     resize(1920,1080);
 
@@ -42,7 +48,7 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, Mesh& output){
     
     uint32_t vecIndices[4];
 
-    const int vertexSize = 9;
+    const int vertexSize = 10;
 
     float vertex[vertexSize * 4];
     uint32_t startIndex = (uint32_t) output.getVertices().size() / vertexSize;
@@ -52,8 +58,14 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, Mesh& output){
         vertex[0 + offset] = vertices_[i].x;
         vertex[1 + offset] = vertices_[i].y;
 
-        vertex[2 + offset] = textureCoordinates[i].x;
-        vertex[3 + offset] = textureCoordinates[i].y;
+        if(info.hasTexCoords){
+            vertex[2 + offset] = info.texCoords[i].x;
+            vertex[3 + offset] = info.texCoords[i].y;
+        }
+        else{
+            vertex[2 + offset] = textureCoordinates[i].x;
+            vertex[3 + offset] = textureCoordinates[i].y;
+        }
 
         vertex[4 + offset] = info.color.x;
         vertex[5 + offset] = info.color.y;
@@ -62,6 +74,8 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, Mesh& output){
         vertex[7 + offset] = static_cast<float>(info.width);
         vertex[8 + offset] = static_cast<float>(info.height);
 
+        vertex[9 + offset] = info.isText ? 1.0 : 0.0;
+    
         vecIndices[i] = startIndex + i;
     }
 
@@ -72,21 +86,60 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, Mesh& output){
 }
 
 void UIManager::update(){
-    uiProgram->use();
+    uiProgram.use();
 
     Mesh temp = Mesh();
-    temp.setVertexFormat({2,2,3,2});
+    temp.setVertexFormat({2,2,3,2,1});
 
     for(auto& window: windows){
         std::vector<UIRenderInfo> winfo = window.getRenderingInformation();
         for(auto& info: winfo) processRenderingInformation(info, temp);
     }
+    std::vector<UIRenderInfo> winfo = buildTextRenderingInformation("HelloWorld!",20,100,1,{1.0,0.5,0.5});
+    for(auto& info: winfo) processRenderingInformation(info, temp);
 
     drawBuffer->loadMesh(temp);
 }
 
+std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string text, float x, float y, float scale, glm::vec3 color){
+    std::vector<UIRenderInfo> out = {};
+
+    // Iterate through each character in the text
+    for (auto c = text.begin(); c != text.end(); c++) {
+        Character ch = mainFont->getCharacters()[*c];
+
+        GLfloat xpos = x + ch.Bearing.x * scale;
+        GLfloat ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+        GLfloat w = ch.Size.x * scale;
+        GLfloat h = ch.Size.y * scale;
+
+        out.push_back({
+            static_cast<int>(xpos),
+            static_cast<int>(ypos),
+            static_cast<int>(w),
+            static_cast<int>(h),
+            true, // Is text
+            color,
+            true, // Has tex coords
+            {
+                {ch.TexCoordsMin.x, ch.TexCoordsMin.y},
+                {ch.TexCoordsMax.x, ch.TexCoordsMin.y},
+                {ch.TexCoordsMax.x, ch.TexCoordsMax.y},
+                {ch.TexCoordsMin.x, ch.TexCoordsMax.y}
+            }
+        });
+
+        // Advance to next glyph
+        x += (ch.Advance >> 6) * scale;  // Bitshift by 6 to get the value in pixels
+    }
+
+    return out;
+}
+
 void UIManager::draw(){
-    uiProgram->updateUniforms();
+    uiProgram.updateUniforms();
+    mainFont->getAtlas()->bind(1);
     drawBuffer->draw();
 }
 
@@ -96,7 +149,7 @@ void UIManager::mouseMove(int x, int y){
 
 std::vector<UIRenderInfo> UIFrame::getRenderingInformation(){
     std::vector<UIRenderInfo> out = {{
-        x,y,width,height,color
+        x,y,width,height,false,color
     }};
 
     for(auto& child: children){

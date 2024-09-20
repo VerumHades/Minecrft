@@ -25,7 +25,7 @@ void saveRedComponentTexture(GLuint textureID, int width, int height, const char
 }
 
 
-void Font::load(std::string filepath, int size){
+Font::Font(std::string filepath, int size){
     if (FT_Init_FreeType(&ft)) {
         std::cout << "Could not init FreeType Library" << std::endl;
         return;

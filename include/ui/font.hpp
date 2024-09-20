@@ -35,7 +35,7 @@ class Font{
         void createAtlas();
 
     public:
-        void load(std::string filepath, int size);
+        Font(std::string filepath, int size);
         GLTexture* getAtlas(){return atlas.get();}
         std::unordered_map<char, Character>& getCharacters() {return characters;}
 };
