@@ -57,7 +57,7 @@ class GLSkybox: public BindableTexture{
         uint32_t vertexBuffer;
         uint32_t vao;
     public:
-        GLSkybox(std::array<std::string, 6> filenames);
+        void load(std::array<std::string, 6> filenames);
         ~GLSkybox();
 
         void draw();

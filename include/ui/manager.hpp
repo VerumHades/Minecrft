@@ -76,29 +76,61 @@ class UILabel: public UIFrame{
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
+
+
+using SceneFunction = void (*)(UIManager& manager);
+
+class UIScene{
+    public:
+        std::vector<std::unique_ptr<UIFrame>> elements;
+
+        virtual void render(UIManager& manager) {};
+        virtual void open(UIManager& manager)  {};
+        virtual void close(UIManager& manager)  {};
+        virtual void resize(UIManager& manager, int width, int height)  {};
+
+        virtual void mouseMove(UIManager& manager, int x, int y)  {};
+        virtual void mouseEvent(UIManager& manager, int button, int action)  {};
+        virtual void mouseScroll(UIManager& manager, int yoffset) {};
+
+        virtual void keyEvent(UIManager& manager, int key, int action) {};
+};
+
 class UIManager{
     private:
-        ShaderProgram uiProgram;
         FontManager fontManager;
         std::unique_ptr<Font> mainFont;
+
+        ShaderProgram uiProgram;
         std::unique_ptr<GLBuffer> drawBuffer;
         Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("projectionMatrix");
         
         int screenWidth = 1920;
         int screenHeight = 1080;
 
-        UIFrame* underHover;
-        std::vector<std::unique_ptr<UIFrame>> windows;
+        std::string currentScene = "internal_default";
+        std::unordered_map<std::string, std::unique_ptr<UIScene>> scenes;
 
+        UIFrame* underHover;
+
+        UIScene* getCurrentScene();
         void processRenderingInformation(UIRenderInfo& info, UIFrame& frame, Mesh& output);
 
     public:
         void initialize();
         void resize(int width, int height);
         void update();
-        void mouseEvent(int x, int y, int state);
+
         void mouseMove(int x, int y);
+        void mouseEvent(int button, int action);
+        void mouseScroll(int yoffset);
+
+        void keyEvent(int key, int action);
+
         void draw();
+
+        void addScene(std::string name, std::unique_ptr<UIScene> scene);
+        void setScene(std::string name);
 
         UIFrame* getElementUnder(int x, int y);  
 

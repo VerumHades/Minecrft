@@ -19,32 +19,19 @@ void UIManager::initialize(){
     glUniform1i(uiProgram.getUniformLocation("textAtlas"),1);
 
     resize(1920,1080);
+
+    std::unique_ptr<UIScene> defaultScene = std::make_unique<UIScene>();
     
-    auto frame = std::make_unique<UIFrame>(
-        TValue(OPERATION_MINUS, {FRACTIONS,50}, {MFRACTION,50}),
-        TValue(PIXELS, 50),
-        TValue(PIXELS,300),
-        TValue(PIXELS,300),
-        glm::vec3(0.5,0.5,0.9)
-    );
-    windows.push_back(std::move(frame));
-
-    auto frame2 = std::make_unique<UIFrame>(
-        TValue(OPERATION_MINUS, {FRACTIONS,50}, {MFRACTION,50}),
-        TValue(PIXELS, 500),
-        TValue(PIXELS,300),
-        TValue(PIXELS,300),
-        glm::vec3(0.5,0.5,0.9)
-    );
-    windows.push_back(std::move(frame2));
-
     auto label = std::make_unique<UILabel>(
-        "Hello World!", 
-        TValue(PIXELS,30),
-        TValue(PIXELS,30),
-        glm::vec3(0.5,0.1,0.9)
+        "This is the default scene, if you are seeing this something has gone wrong. Or you are a dev, in that case Hello There!", 
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        glm::vec3(0,0,0)
     );
-    windows.push_back(std::move(label));
+    defaultScene->elements.push_back(std::move(label));
+
+    currentScene = "internal_default";
+    addScene("internal_default", std::move(defaultScene));
 }
 
 void UIManager::resize(int width, int height){
@@ -61,6 +48,33 @@ void UIManager::resize(int width, int height){
     );
 
     update();
+}
+
+UIScene* UIManager::getCurrentScene(){
+    if(scenes.count(currentScene) == 0){
+        std::cout << "No scene: " << currentScene << " exists." << std::endl;
+        return nullptr;
+    }
+
+    return scenes.at(currentScene).get();
+}
+
+void UIManager::addScene(std::string name, std::unique_ptr<UIScene> scene){
+    if(scenes.count(name) != 0){
+        std::cout << "Scene under name: " << currentScene << " already exists." << std::endl;
+        return;
+    }
+
+    scenes[name] = std::move(scene);
+}
+
+void UIManager::setScene(std::string name){
+    if(currentScene != name && getCurrentScene()) {
+        getCurrentScene()->close(*this);
+    }
+    currentScene = name;
+    if(!getCurrentScene()) return;
+    getCurrentScene()->open(*this);
 }
 
 static const glm::vec2 textureCoordinates[4] = {{1, 1},{0, 1},{0, 0},{1, 0}};
@@ -122,7 +136,9 @@ void UIManager::update(){
     Mesh temp = Mesh();
     temp.setVertexFormat({2,2,3,2,1});
 
-    for(auto& window: windows){
+    if(!getCurrentScene()) return;
+
+    for(auto& window: getCurrentScene()->elements){
         std::vector<UIRenderInfo> winfo = window->getRenderingInformation(*this);
         for(auto& info: winfo) processRenderingInformation(info, *window, temp);
     }
@@ -183,12 +199,23 @@ int UIFrame::getValueInPixels(TValue& value, bool horizontal, int container_size
 }
 
 void UIManager::draw(){
+    if(!getCurrentScene()) return;
+
+    getCurrentScene()->render(*this);
+
+    glDisable( GL_CULL_FACE );
+    glDisable(GL_DEPTH_TEST);
+
     uiProgram.updateUniforms();
     mainFont->getAtlas()->bind(1);
     drawBuffer->draw();
 }
 
 void UIManager::mouseMove(int x, int y){
+    if(!getCurrentScene()) return;
+
+    getCurrentScene()->mouseMove(*this, x,y);
+
     UIFrame* element = getElementUnder(x,y);
     if(element != underHover && underHover != nullptr) underHover->setHover(false);   
     if(element != nullptr) element->setHover(true);
@@ -196,10 +223,30 @@ void UIManager::mouseMove(int x, int y){
     update();
 }
 
-UIFrame* UIManager::getElementUnder(int x, int y){
-    std::queue<std::tuple<int, UIFrame*>> elements;
+void UIManager::mouseEvent(int button, int action){
+    if(!getCurrentScene()) return;
 
-    for(auto& window: windows) elements.push({0,window.get()});
+    getCurrentScene()->mouseEvent(*this, button,action);
+}
+
+void UIManager::mouseScroll(int yoffset){
+    if(!getCurrentScene()) return;
+
+    getCurrentScene()->mouseScroll(*this, yoffset);
+}
+
+void UIManager::keyEvent(int key, int action){
+    if(!getCurrentScene()) return;
+
+    getCurrentScene()->keyEvent(*this, key, action);
+}
+
+UIFrame* UIManager::getElementUnder(int x, int y){
+    if(!getCurrentScene()) return nullptr;
+
+    std::queue<std::tuple<int, UIFrame*>> elements;
+    
+    for(auto& window: getCurrentScene()->elements) elements.push({0,window.get()});
     
 
     UIFrame* current = nullptr;
