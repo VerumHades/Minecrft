@@ -34,8 +34,8 @@ struct UIRenderInfo{
     TValue width;
     TValue height;
 
-    bool isText = false;
     glm::vec3 color;
+    bool isText = false;
 
     bool hasTexCoords = false;
     std::vector<glm::vec2> texCoords;
@@ -50,6 +50,8 @@ class UIFrame{
         TValue width;
         TValue height;
 
+        bool hover = false;
+
         glm::vec3 color;
 
         std::vector<std::unique_ptr<UIFrame>> children;
@@ -59,6 +61,9 @@ class UIFrame{
         virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
 
         int getValueInPixels(TValue& value, bool horizontal, int container_size);
+        bool pointWithin(glm::vec2 position, UIManager& manager);
+        void setHover(bool value) {hover = value;}
+        std::vector<std::unique_ptr<UIFrame>>& getChildren() {return children;}
 };
 
 class UILabel: public UIFrame{
@@ -82,6 +87,7 @@ class UIManager{
         int screenWidth = 1920;
         int screenHeight = 1080;
 
+        UIFrame* underHover;
         std::vector<std::unique_ptr<UIFrame>> windows;
 
         void processRenderingInformation(UIRenderInfo& info, UIFrame& frame, Mesh& output);
@@ -92,7 +98,9 @@ class UIManager{
         void update();
         void mouseEvent(int x, int y, int state);
         void mouseMove(int x, int y);
-        void draw();  
+        void draw();
+
+        UIFrame* getElementUnder(int x, int y);  
 
         std::vector<UIRenderInfo> buildTextRenderingInformation(std::string text, float x, float y, float scale, glm::vec3 color);
 

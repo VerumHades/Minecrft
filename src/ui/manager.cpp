@@ -22,12 +22,21 @@ void UIManager::initialize(){
     
     auto frame = std::make_unique<UIFrame>(
         TValue(OPERATION_MINUS, {FRACTIONS,50}, {MFRACTION,50}),
-        TValue(OPERATION_MINUS, {FRACTIONS,50}, {MFRACTION,50}),
+        TValue(PIXELS, 50),
         TValue(PIXELS,300),
         TValue(PIXELS,300),
         glm::vec3(0.5,0.5,0.9)
     );
     windows.push_back(std::move(frame));
+
+    auto frame2 = std::make_unique<UIFrame>(
+        TValue(OPERATION_MINUS, {FRACTIONS,50}, {MFRACTION,50}),
+        TValue(PIXELS, 500),
+        TValue(PIXELS,300),
+        TValue(PIXELS,300),
+        glm::vec3(0.5,0.5,0.9)
+    );
+    windows.push_back(std::move(frame2));
 
     auto label = std::make_unique<UILabel>(
         "Hello World!", 
@@ -143,8 +152,8 @@ std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string t
             {PIXELS, static_cast<int>(ypos)},
             {PIXELS, static_cast<int>(w)},
             {PIXELS, static_cast<int>(h)},
-            true, // Is text
             color,
+            true, // Is text
             true, // Has tex coords
             {
                 {ch.TexCoordsMin.x, ch.TexCoordsMin.y},
@@ -180,12 +189,55 @@ void UIManager::draw(){
 }
 
 void UIManager::mouseMove(int x, int y){
+    UIFrame* element = getElementUnder(x,y);
+    if(element != underHover && underHover != nullptr) underHover->setHover(false);   
+    if(element != nullptr) element->setHover(true);
+    underHover = element;
+    update();
+}
 
+UIFrame* UIManager::getElementUnder(int x, int y){
+    std::queue<std::tuple<int, UIFrame*>> elements;
+
+    for(auto& window: windows) elements.push({0,window.get()});
+    
+
+    UIFrame* current = nullptr;
+    int cdepth = -1;
+
+    while(!elements.empty()){
+        auto [depth,element] = elements.front();
+        elements.pop();
+
+        for(auto& child: element->getChildren()) elements.push({depth + 1, child.get()});
+
+        if(cdepth >= depth) continue;
+        if(!element->pointWithin({x,y}, *this)) continue;
+        current = element;
+    }
+
+    return current;
+}
+
+bool UIFrame::pointWithin(glm::vec2 point, UIManager& manager){
+    int sw = manager.getScreenWidth();
+    int sh = manager.getScreenHeight();
+
+    int rx = getValueInPixels(x, true, sw);
+    int ry = getValueInPixels(y, false, sh);
+    int w = getValueInPixels(width, true, sw);
+    int h = getValueInPixels(height, false, sh);
+
+    return  point.x > rx && point.x < rx + w &&
+            point.y > ry && point.y < ry + h;
 }
 
 std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
+    
+    auto clr = hover ? glm::vec3(0.0,0.1,0.5) : color;
+    
     std::vector<UIRenderInfo> out = {
-        {x,y,width,height,false,color}
+        {x,y,width,height,clr}
     };
 
     for(auto& child: children){
@@ -209,12 +261,11 @@ std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
     
     int w = textDimensions.x + rxpadding * 2;
     int h = textDimensions.y + rypadding * 2;
-    
-    std::vector<UIRenderInfo> out = {
-       {x,y,{PIXELS, w},{PIXELS, h},false,color}
-    };
-    //std::cout << "Building label" << std::endl;
 
+    width = {PIXELS, w};
+    height ={PIXELS, h};
+    
+    std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
     std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,rx,ry,1,{1,1,1});
     out.insert(out.end(), temp.begin(), temp.end());
 
