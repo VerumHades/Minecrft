@@ -44,7 +44,7 @@ bool Vec3Equal::operator()(const glm::vec3& lhs, const glm::vec3& rhs) const noe
     return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
 }
 
-static int maxThreads = 6;
+static int maxThreads = 4;
 //const auto maxThreads = 1;
 static int threadsTotal = 0;
 void generateChunkMeshThread(Chunk* chunk){

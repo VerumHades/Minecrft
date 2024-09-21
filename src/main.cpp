@@ -25,7 +25,7 @@ int lastMouseX = 0;
 int lastMouseY = 0;
 float sensitivity = 0.1f;
 
-int renderDistance = 4;
+int renderDistance = 1;
 
 float camSpeed = 0.01f;
 
@@ -376,8 +376,8 @@ int main() {
     world.getEntities()[1].setModel("bob");
 
     sunDirUniform.setValue({ 
-        -cos(glm::radians(sunAngle)), // X position (cosine component)
-        -sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
+        cos(glm::radians(sunAngle)), // X position (cosine component)
+        sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
         0  // Z position (cosine component)
     });
 

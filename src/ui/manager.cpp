@@ -20,10 +20,21 @@ void UIManager::initialize(){
 
     resize(1920,1080);
     
-    auto frame = std::make_unique<UIFrame>(10,10,200,30,glm::vec3(0.5,0.5,0.9));
+    auto frame = std::make_unique<UIFrame>(
+        TValue(OPERATION_MINUS, {FRACTIONS,50}, {MFRACTION,50}),
+        TValue(OPERATION_MINUS, {FRACTIONS,50}, {MFRACTION,50}),
+        TValue(PIXELS,300),
+        TValue(PIXELS,300),
+        glm::vec3(0.5,0.5,0.9)
+    );
     windows.push_back(std::move(frame));
 
-    auto label = std::make_unique<UILabel>("Hello World!", 10,10,200,30,glm::vec3(0.5,0.5,0.9));
+    auto label = std::make_unique<UILabel>(
+        "Hello World!", 
+        TValue(PIXELS,30),
+        TValue(PIXELS,30),
+        glm::vec3(0.5,0.1,0.9)
+    );
     windows.push_back(std::move(label));
 }
 
@@ -39,15 +50,22 @@ void UIManager::resize(int width, int height){
         -1.0f,  // Near plane
         1.0f    // Far plane
     );
+
+    update();
 }
 
 static const glm::vec2 textureCoordinates[4] = {{1, 1},{0, 1},{0, 0},{1, 0}};
-void UIManager::processRenderingInformation(UIRenderInfo& info, Mesh& output){
+void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, Mesh& output){
+    int x = frame.getValueInPixels(info.x, true, screenWidth);
+    int y = frame.getValueInPixels(info.y, false, screenHeight);
+    int w = frame.getValueInPixels(info.width, true, screenWidth);
+    int h = frame.getValueInPixels(info.height, false, screenHeight);
+
     glm::vec2 vertices_[4] = {
-        {info.x             , info.y         },
-        {info.x + info.width, info.y         },
-        {info.x + info.width, info.y + info.height},
-        {info.x             , info.y + info.height}
+        {x    , y    },
+        {x + w, y    },
+        {x + w, y + h},
+        {x    , y + h}
     };
     
     uint32_t vecIndices[4];
@@ -75,8 +93,8 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, Mesh& output){
         vertex[5 + offset] = info.color.y;
         vertex[6 + offset] = info.color.z;
 
-        vertex[7 + offset] = static_cast<float>(info.width);
-        vertex[8 + offset] = static_cast<float>(info.height);
+        vertex[7 + offset] = static_cast<float>(w);
+        vertex[8 + offset] = static_cast<float>(h);
 
         vertex[9 + offset] = info.isText ? 1.0 : 0.0;
     
@@ -97,7 +115,7 @@ void UIManager::update(){
 
     for(auto& window: windows){
         std::vector<UIRenderInfo> winfo = window->getRenderingInformation(*this);
-        for(auto& info: winfo) processRenderingInformation(info, temp);
+        for(auto& info: winfo) processRenderingInformation(info, *window, temp);
     }
 
     drawBuffer->loadMesh(temp);
@@ -113,18 +131,18 @@ std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string t
         Character ch = mainFont->getCharacters()[*c];
 
         GLfloat xpos = x + ch.Bearing.x * scale;
-        GLfloat ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+        GLfloat ypos = y - (ch.Size.y - ch.Bearing.y) * scale  + textDimensions.y;
 
         GLfloat w = ch.Size.x * scale;
         GLfloat h = ch.Size.y * scale;
 
-        ypos += textDimensions.y - h;
+        //ypos += textDimensions.y - h;
 
         out.push_back({
-            static_cast<int>(xpos),
-            static_cast<int>(ypos),
-            static_cast<int>(w),
-            static_cast<int>(h),
+            {PIXELS, static_cast<int>(xpos)},
+            {PIXELS, static_cast<int>(ypos)},
+            {PIXELS, static_cast<int>(w)},
+            {PIXELS, static_cast<int>(h)},
             true, // Is text
             color,
             true, // Has tex coords
@@ -141,6 +159,18 @@ std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string t
     }
 
     return out;
+}
+
+int UIFrame::getValueInPixels(TValue& value, bool horizontal, int container_size){
+    switch (value.unit)
+    {
+        case PIXELS: return value.value;   
+        case FRACTIONS: return (container_size / 100.0f) * value.value;
+        case OPERATION_PLUS: return getValueInPixels(value.operands[0], horizontal, container_size) + getValueInPixels(value.operands[1], horizontal, container_size);
+        case OPERATION_MINUS: return getValueInPixels(value.operands[0], horizontal, container_size) - getValueInPixels(value.operands[1], horizontal, container_size);
+        case MFRACTION: 
+            return static_cast<float>(horizontal ? getValueInPixels(width, horizontal, container_size) : getValueInPixels(height, horizontal, container_size)) / 100.0f * value.value;
+    }
 }
 
 void UIManager::draw(){
@@ -167,13 +197,26 @@ std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
 };
 
 std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
-    //std::vector<UIRenderInfo> out = {
-     //   {x,y,width,height,false,color}
-    //};
-    std::cout << "Building label" << std::endl;
+    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
+    int sw = manager.getScreenWidth();
+    int sh = manager.getScreenHeight();
 
-    std::vector<UIRenderInfo> out = manager.buildTextRenderingInformation(text,x+5,y+5,1,{1,1,1});
-    //out.insert(out.end(), temp.begin(), temp.end());
+    int rxpadding = getValueInPixels(padding, true , sw);
+    int rypadding = getValueInPixels(padding, false, sh);
+
+    int rx = getValueInPixels(x, true , sw) + rxpadding;
+    int ry = getValueInPixels(y, false, sh) + rypadding;
+    
+    int w = textDimensions.x + rxpadding * 2;
+    int h = textDimensions.y + rypadding * 2;
+    
+    std::vector<UIRenderInfo> out = {
+       {x,y,{PIXELS, w},{PIXELS, h},false,color}
+    };
+    //std::cout << "Building label" << std::endl;
+
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,rx,ry,1,{1,1,1});
+    out.insert(out.end(), temp.begin(), temp.end());
 
     return out;
 }

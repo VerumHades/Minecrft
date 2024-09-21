@@ -200,12 +200,13 @@ glm::vec2 Font::getTextDimensions(std::string text){
         GLfloat w = ch.Size.x;
         GLfloat h = ch.Size.y;
 
-        out.x += w;
         out.y = std::max(out.y, h);
 
         // Advance to next glyph
         x += (ch.Advance >> 6);  // Bitshift by 6 to get the value in pixels
     }
+
+    out.x = x;
 
     return out;
 }

@@ -7,12 +7,32 @@
 #include <ui/font.hpp>
 #include <queue>
 
+enum Units{
+    PIXELS,
+    FRACTIONS, // Percentage of the window
+    OPERATION_PLUS, // TValue + TValue (resolved to pixels)
+    OPERATION_MINUS, // TValue - TValue
+    MFRACTION // Percentage of the size of the widget
+};
+
+struct TValue{
+    Units unit;
+    int value;
+
+    std::vector<TValue> operands;
+
+    TValue(Units unit, int value) : unit(unit), value(value){}
+    TValue(Units operation, TValue op1, TValue op2): unit(operation){
+        operands.push_back(op1);
+        operands.push_back(op2);
+    }
+};
 
 struct UIRenderInfo{
-    int x;
-    int y;
-    int width;
-    int height;
+    TValue x;
+    TValue y;
+    TValue width;
+    TValue height;
 
     bool isText = false;
     glm::vec3 color;
@@ -25,26 +45,29 @@ class UIManager;
 
 class UIFrame{
     protected:
-        int x;
-        int y;
-        int width;
-        int height;
+        TValue x;
+        TValue y;
+        TValue width;
+        TValue height;
 
         glm::vec3 color;
 
         std::vector<std::unique_ptr<UIFrame>> children;
 
     public:
-        UIFrame(int x, int y,int width,int height,glm::vec3 color): x(x), y(y), width(width), height(height), color(color) {}
+        UIFrame(TValue x, TValue y, TValue width, TValue height,glm::vec3 color): x(x), y(y), width(width), height(height), color(color) {}
         virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
+
+        int getValueInPixels(TValue& value, bool horizontal, int container_size);
 };
 
 class UILabel: public UIFrame{
     private:
         std::string text;
+        TValue padding = {PIXELS, 4};
 
     public:
-        UILabel(std::string text, int x, int y,int width,int height,glm::vec3 color): UIFrame(x,y,width,height,color), text(text) {}
+        UILabel(std::string text, TValue x, TValue y, glm::vec3 color): UIFrame(x,y,{PIXELS, 0},{PIXELS, 0},color), text(text) {}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
@@ -61,7 +84,7 @@ class UIManager{
 
         std::vector<std::unique_ptr<UIFrame>> windows;
 
-        void processRenderingInformation(UIRenderInfo& info, Mesh& output);
+        void processRenderingInformation(UIRenderInfo& info, UIFrame& frame, Mesh& output);
 
     public:
         void initialize();
@@ -75,6 +98,10 @@ class UIManager{
 
         Uniform<glm::mat4>& getProjectionMatrix(){return projectionMatrix;}
         FontManager& getFontManager() {return fontManager;};
+        Font& getMainFont(){return *mainFont;}
+
+        int getScreenWidth() {return screenWidth;}
+        int getScreenHeight() {return screenHeight;}
 };
 
 #endif
