@@ -168,7 +168,7 @@ void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
         camera.adjustFOV(camFOV);
     }
     else{
-        selectedBlock = (selectedBlock + 1) % predefinedBlocks.size() + 1;
+        selectedBlock = (selectedBlock + 1) % predefinedBlocks.size();
     }
 }
 
@@ -278,8 +278,8 @@ void MainScene::render(){
     glDisable( GL_CULL_FACE );
     glDisable(GL_DEPTH_TEST);
 
-    //manager.getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
-    //manager.getFontManager().renderText("Selected block: " + getBlockTypeName(static_cast<BlockTypes>(selectedBlock)), 10, 80, 1.0, {0,0,0}, testFont);
+    manager->getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
+    manager->getFontManager().renderText("Selected block: " + getBlockTypeName(static_cast<BlockTypes>(selectedBlock)), 10, 80, 1.0, {0,0,0}, testFont);
 
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );

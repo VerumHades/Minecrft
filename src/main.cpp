@@ -138,14 +138,30 @@ int main() {
     */
     sceneManager.initialize();
 
+    std::unique_ptr<Scene> mainMenu = std::make_unique<Scene>();
+
+    auto startButton = std::make_unique<UILabel>(
+        "New Game", 
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        glm::vec3(0.3,0.3,0.3)
+    );
+    startButton->setPadding({PIXELS, 10});
+    startButton->onMouseEvent = [](GLFWwindow* window, int button, int action, int mods) {
+        sceneManager.setScene("game");
+    };
+
+    mainMenu->window.getCurrentLayer().elements.push_back(std::move(startButton));
+
     std::unique_ptr<MainScene> mainScene = std::make_unique<MainScene>();
     mainScene->initialize();
     
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    sceneManager.addScene("main",std::move(mainScene));
-    sceneManager.setScene("main");
+    sceneManager.addScene("game",std::move(mainScene));
+    sceneManager.addScene("menu",std::move(mainMenu));
+    sceneManager.setScene("menu");
 
     float deltatime;
     while (!glfwWindowShouldClose(window)) {

@@ -19,6 +19,10 @@ SceneManager::SceneManager(){
         glm::vec3(0,0,0)
     );
 
+    /*label2->onMouseEvent = [](GLFWwindow* window, int button, int action, int mods) {
+        std::cout << "Hello World!" << std::endl;
+    };*/
+
     defaultScene->window.getCurrentLayer().elements.push_back(std::move(label2));
 
     addScene("internal_default", std::move(defaultScene));
@@ -45,6 +49,7 @@ void SceneManager::addScene(std::string name, std::unique_ptr<Scene> scene){
     }
 
     scenes[name] = std::move(scene);
+    scenes[name]->manager = &manager;
 }
 
 void SceneManager::setScene(std::string name){
@@ -68,6 +73,7 @@ void SceneManager::mouseMove(GLFWwindow* window, int x, int y){
 
 void SceneManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     getCurrentScene()->mouseEvent(window,button,action,mods);
+    manager.mouseEvent(window,button,action,mods);
 }
 void SceneManager::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
     getCurrentScene()->scrollEvent(window, xoffset, yoffset);

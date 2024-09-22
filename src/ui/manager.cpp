@@ -175,6 +175,11 @@ void UIManager::mouseMove(int x, int y){
     update();
 }
 
+void UIManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
+    if(!underHover) return;
+    if(underHover->onMouseEvent) underHover->onMouseEvent(window,button,action,mods);
+}
+
 UIFrame* UIManager::getElementUnder(int x, int y){
     if(!currentWindow) return nullptr;
 

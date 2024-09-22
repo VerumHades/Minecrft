@@ -11,7 +11,8 @@
 class Scene{
     public:
         UIWindow window;
-
+        UIManager* manager;
+        
         virtual void render() {};
         virtual void open(GLFWwindow* window)  {};
         virtual void close(GLFWwindow* window)  {};

@@ -6,6 +6,7 @@
 #include <rendering/mesh.hpp>
 #include <ui/font.hpp>
 #include <queue>
+#include <functional>
 
 enum Units{
     PIXELS,
@@ -60,6 +61,8 @@ class UIFrame{
         UIFrame(TValue x, TValue y, TValue width, TValue height,glm::vec3 color): x(x), y(y), width(width), height(height), color(color) {}
         virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
 
+        std::function<void(GLFWwindow*, int, int, int)> onMouseEvent;
+
         int getValueInPixels(TValue& value, bool horizontal, int container_size);
         bool pointWithin(glm::vec2 position, UIManager& manager);
         void setHover(bool value) {hover = value;}
@@ -74,6 +77,8 @@ class UILabel: public UIFrame{
     public:
         UILabel(std::string text, TValue x, TValue y, glm::vec3 color): UIFrame(x,y,{PIXELS, 0},{PIXELS, 0},color), text(text) {}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
+
+        void setPadding(TValue value) {padding = value;}
 };
 
 class UILayer{
@@ -113,7 +118,7 @@ class UIManager{
         void update();
 
         void mouseMove(int x, int y);
-        void mouseEvent(int button, int action);
+        void mouseEvent(GLFWwindow* window, int button, int action, int mods);
         void scrollEvent(int yoffset);
 
         void keyEvent(int key, int action);
