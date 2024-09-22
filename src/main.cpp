@@ -4,13 +4,12 @@
 #include <cmath>
 
 #include <ui/manager.hpp>
+#include <scene.hpp>
 #include <mscene.hpp>
 
-UIManager uiManager;
+SceneManager sceneManager;
 
-static bool menuOpen = false;
-
-void key_callback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/){
+/*void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
         if(menuOpen){
             uiManager.setScene("main");
@@ -23,34 +22,7 @@ void key_callback(GLFWwindow* window, int key, int /*scancode*/, int action, int
         menuOpen = !menuOpen;
     }
     uiManager.keyEvent(key,action);
-}
-
-void framebuffer_size_callback(GLFWwindow* /*window*/, int width, int height){
-    glViewport(0,0,width,height);
-    uiManager.resize(width, height);
-    //printf("%i %i\n",width,height);
-}
-
-void cursor_position_callback(GLFWwindow* /*window*/, double mouseX, double mouseY)
-{
-    uiManager.mouseMove(mouseX,mouseY);
-}
-
-static int selectedBlock = 1;
-void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /*mods*/)
-{
-
-    uiManager.mouseEvent(button, action);
-}
-
-void scroll_callback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset)
-{
-    uiManager.mouseScroll(yoffset);
-}
-
-int clampAngle(int angle) {
-    return (angle % 360 + 360) % 360;
-}
+}*/
 
 void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
                             GLenum severity, GLsizei length,
@@ -121,12 +93,23 @@ int main() {
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
     glfwSwapInterval(0);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, cursor_position_callback);
-    glfwSetKeyCallback(window, key_callback);
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
-    glfwSetScrollCallback(window, scroll_callback);
+
+    sceneManager.setWindow(window);
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
+        sceneManager.resize(window, width, height); // Call resize on the instance
+    });
+    glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y) {
+        sceneManager.mouseMove(window, static_cast<int>(x), static_cast<int>(y));
+    });
+    glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
+        sceneManager.mouseEvent(window, button, action, mods);
+    });
+    glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
+        sceneManager.scrollEvent(window, xoffset, yoffset);
+    });
+    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+        sceneManager.keyEvent(window, key, scancode, action, mods);
+    });
     
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -153,24 +136,23 @@ int main() {
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
     */
+    sceneManager.initialize();
+
     std::unique_ptr<MainScene> mainScene = std::make_unique<MainScene>();
     mainScene->initialize();
     
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    uiManager.initialize();
-    uiManager.update();
-
-    uiManager.addScene("main",std::move(mainScene));
-    uiManager.setScene("main");
+    sceneManager.addScene("main",std::move(mainScene));
+    sceneManager.setScene("main");
 
     float deltatime;
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        uiManager.draw();
+        sceneManager.render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

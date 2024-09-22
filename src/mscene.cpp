@@ -92,14 +92,14 @@ void MainScene::initialize(){
     };
 }
 
-void MainScene::resize(UIManager& manager, int width, int height){
+void MainScene::resize(GLFWwindow* window, int width, int height){
     camera.resizeScreen(width, height, camFOV);
     
     terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
 }
 
-void MainScene::mouseMove(UIManager& manager, int mouseX, int mouseY){
+void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
      float xoffset = (float)mouseX - lastMouseX;
     float yoffset = lastMouseY - (float)mouseY; // Reversed since y-coordinates go from bottom to top
     lastMouseX = (int)mouseX;
@@ -125,7 +125,7 @@ void MainScene::mouseMove(UIManager& manager, int mouseX, int mouseY){
     skyboxProgram.updateUniforms();
 }
 
-void MainScene::mouseEvent(UIManager& manager, int button, int action){
+void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     glm::vec3& camDirection = camera.getDirection();
     glm::vec3 camPosition = camera.getPosition();
     Entity& player = world.getEntities()[0];
@@ -158,7 +158,7 @@ void MainScene::mouseEvent(UIManager& manager, int button, int action){
     }
 }
 
-void MainScene::mouseScroll(UIManager& manager, int yoffset){
+void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
     if(boundKeys[1].isDown){
         camFOV -= (float) yoffset * 5.0f;
 
@@ -172,7 +172,7 @@ void MainScene::mouseScroll(UIManager& manager, int yoffset){
     }
 }
 
-void MainScene::keyEvent(UIManager& manager, int key, int action){
+void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
     for(int i = 0; i < boundKeys.size();i++){
         if(key == boundKeys[i].key && action == GLFW_PRESS) boundKeys[i].isDown = true; 
         else if(key == boundKeys[i].key && action == GLFW_RELEASE) boundKeys[i].isDown = false; 
@@ -185,22 +185,25 @@ void MainScene::keyEvent(UIManager& manager, int key, int action){
     }
 }
 
-void MainScene::open(UIManager& manager){
+void MainScene::open(GLFWwindow* window){
     running = true;
 
     std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread pregenThread(std::bind(&MainScene::physicsUpdate, this));
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     std::cout << "Threads started" << std::endl;
     physicsThread.detach();
     pregenThread.detach();
 }
 
-void MainScene::close(UIManager& manager){
+void MainScene::close(GLFWwindow* window){
     running = false;
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
-void MainScene::render(UIManager& manager){
+void MainScene::render(){
     current = glfwGetTime();
     deltatime = (float)(current - last);
     last = current;
@@ -275,8 +278,8 @@ void MainScene::render(UIManager& manager){
     glDisable( GL_CULL_FACE );
     glDisable(GL_DEPTH_TEST);
 
-    manager.getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
-    manager.getFontManager().renderText("Selected block: " + getBlockTypeName(static_cast<BlockTypes>(selectedBlock)), 10, 80, 1.0, {0,0,0}, testFont);
+    //manager.getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
+    //manager.getFontManager().renderText("Selected block: " + getBlockTypeName(static_cast<BlockTypes>(selectedBlock)), 10, 80, 1.0, {0,0,0}, testFont);
 
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );

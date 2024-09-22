@@ -76,24 +76,18 @@ class UILabel: public UIFrame{
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
-
-
-using SceneFunction = void (*)(UIManager& manager);
-
-class UIScene{
+class UILayer{
     public:
         std::vector<std::unique_ptr<UIFrame>> elements;
+};
 
-        virtual void render(UIManager& manager) {};
-        virtual void open(UIManager& manager)  {};
-        virtual void close(UIManager& manager)  {};
-        virtual void resize(UIManager& manager, int width, int height)  {};
+class UIWindow{
+    private: 
+        std::unordered_map<std::string, UILayer> layers;
+        std::string currentLayer = "default";
 
-        virtual void mouseMove(UIManager& manager, int x, int y)  {};
-        virtual void mouseEvent(UIManager& manager, int button, int action)  {};
-        virtual void mouseScroll(UIManager& manager, int yoffset) {};
-
-        virtual void keyEvent(UIManager& manager, int key, int action) {};
+    public:
+        UILayer& getCurrentLayer() {return layers[currentLayer];}
 };
 
 class UIManager{
@@ -108,12 +102,9 @@ class UIManager{
         int screenWidth = 1920;
         int screenHeight = 1080;
 
-        std::string currentScene = "internal_default";
-        std::unordered_map<std::string, std::unique_ptr<UIScene>> scenes;
-
         UIFrame* underHover;
+        UIWindow* currentWindow = nullptr;
 
-        UIScene* getCurrentScene();
         void processRenderingInformation(UIRenderInfo& info, UIFrame& frame, Mesh& output);
 
     public:
@@ -123,14 +114,12 @@ class UIManager{
 
         void mouseMove(int x, int y);
         void mouseEvent(int button, int action);
-        void mouseScroll(int yoffset);
+        void scrollEvent(int yoffset);
 
         void keyEvent(int key, int action);
 
-        void draw();
-
-        void addScene(std::string name, std::unique_ptr<UIScene> scene);
-        void setScene(std::string name);
+        void render();
+        void setCurrentWindow(UIWindow* window) {currentWindow = window;};
 
         UIFrame* getElementUnder(int x, int y);  
 

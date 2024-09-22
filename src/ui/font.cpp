@@ -89,7 +89,7 @@ void Font::createAtlas(){
         Character ch = {
             atlas->getID(),
             glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-            glm::ivec2(face->glyph->bitmap_left, 0),
+            glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
             face->glyph->advance.x,
             glm::vec2(xOffset / (float)atlasWidth, yOffset / (float)atlasHeight),
             glm::vec2((xOffset + face->glyph->bitmap.width) / (float)atlasWidth, 
@@ -158,7 +158,7 @@ void FontManager::renderText(std::string text, GLfloat x, GLfloat y, GLfloat sca
         Character ch = font.getCharacters()[*c];
 
         GLfloat xpos = x + ch.Bearing.x * scale;
-        GLfloat ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+        GLfloat ypos = y - ch.Bearing.y * scale;
 
         GLfloat w = ch.Size.x * scale;
         GLfloat h = ch.Size.y * scale;

@@ -14,13 +14,14 @@
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
 #include <entity.hpp>
+#include <scene.hpp>
 
 struct BoundKey{
     int key;
     bool isDown;
 };
 
-class MainScene: public UIScene{
+class MainScene: public Scene{
     private:
         PerspectiveCamera camera;
         DepthCamera suncam;
@@ -64,16 +65,17 @@ class MainScene: public UIScene{
         double deltatime;
         
     public:
-        void render(UIManager& manager) override;
         void initialize();
-        void open(UIManager& manager) override;
-        void close(UIManager& manager) override;
-        
-        void resize(UIManager& manager, int width, int height) override;
-        void mouseMove(UIManager& manager, int x, int y) override;
-        void mouseEvent(UIManager& manager, int button, int action) override;
-        void mouseScroll(UIManager& manager, int yoffset) override;
-        void keyEvent(UIManager& manager, int key, int action) override;
+        void render() override;
+        void open(GLFWwindow* window)  override;
+        void close(GLFWwindow* window)  override;
+        void resize(GLFWwindow* window, int width, int height)  override;
+
+        void mouseMove(GLFWwindow* window, int x, int y)  override;
+        void mouseEvent(GLFWwindow* window, int button, int action, int mods)  override;
+        void scrollEvent(GLFWwindow* window, double xoffset, double yoffset) override;
+
+        void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) override;
 };
 
 #endif
