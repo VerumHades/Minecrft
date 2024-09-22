@@ -11,6 +11,7 @@ void UIManager::initialize(){
 
     drawBuffer = std::make_unique<GLBuffer>();
     mainFont = std::make_unique<Font>("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
+    UIImage::textures = std::make_unique<DynamicTextureArray>();
 
     projectionMatrix.attach(uiProgram);
     projectionMatrix.attach(fontManager.getProgram());
@@ -130,6 +131,7 @@ std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string t
             {PIXELS, static_cast<int>(h)},
             color,
             true, // Is text
+            false, // Isnt a texture
             true, // Has tex coords
             {
                 {ch.TexCoordsMin.x, ch.TexCoordsMin.y},
@@ -163,6 +165,7 @@ void UIManager::render(){
     glDisable(GL_DEPTH_TEST);
 
     uiProgram.updateUniforms();
+    UIImage::textures->bind(0);
     mainFont->getAtlas()->bind(1);
     drawBuffer->draw();
 }
@@ -256,4 +259,23 @@ std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
     out.insert(out.end(), temp.begin(), temp.end());
 
     return out;
+}
+
+std::unique_ptr<DynamicTextureArray> UIImage::textures;
+
+std::vector<UIRenderInfo> UIImage::getRenderingInformation(UIManager& manager){
+    std::vector<UIRenderInfo> out = {{
+        x,y,width,height,
+        color,
+        false, // Isnt text
+        true, // Is a texture
+        true, // Has tex coords
+        textures->getTextureUVs(path)
+    }};
+
+    return out;
+}
+
+UIImage::UIImage(std::string path, TValue x, TValue y, TValue width, TValue height) : UIFrame(x,y,width,height,{0,0,0}), path(path){
+    textures->addTexture(path);
 }

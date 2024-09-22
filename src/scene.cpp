@@ -56,6 +56,7 @@ void SceneManager::setScene(std::string name){
     if(currentScene != name) {
         getCurrentScene()->close(window);
     }
+    else return;
     currentScene = name;
     getCurrentScene()->open(window);
     manager.setCurrentWindow(&getCurrentScene()->window);

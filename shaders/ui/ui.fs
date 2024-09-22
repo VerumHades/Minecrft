@@ -9,7 +9,7 @@ out vec4 FragColor;
 
 const float borderWidth = 0.01;
 
-uniform sampler2D tex;
+uniform sampler2DArray tex;
 uniform sampler2D textAtlas;
 
 void main()

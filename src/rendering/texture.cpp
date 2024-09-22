@@ -242,3 +242,84 @@ GLDepthTexture::GLDepthTexture(int width, int height): width(width), height(heig
     float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
 }
+
+DynamicTextureArray::~DynamicTextureArray(){
+    for(auto& [name,texture]: textures){
+        stbi_image_free(texture.data);
+    }
+}
+
+void DynamicTextureArray::addTexture(std::string path){
+    glBindTexture(GL_TEXTURE_2D_ARRAY, this->texture);
+
+    if(textures.count(path) != 0) return;
+
+    /*
+        Load the new texture
+    */
+    int width = 0, height = 0, nrChannels = 0;
+    unsigned char *data;  
+
+    data = stbi_load(path.c_str(), &width, &height, &nrChannels, 4);
+
+    if (!data) {
+        std::cout << "Failed to load texture: " << path << std::endl;
+        throw std::runtime_error("Failed to load texture.\n");
+    }
+
+    textures[path] = {
+        width,
+        height,
+        data
+    };
+    /*
+        Update the texture array
+    */
+
+    for(auto& [path, texture]: textures){
+        rwidth = std::max(texture.width, rwidth);
+        rheight = std::max(texture.height, rheight);
+    }
+
+    int textureCount = textures.size();
+
+    int mipLevels = (int) floor(log2(fmax(rwidth, rheight))) + 1;
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, GL_RGB8, rwidth, rheight, textureCount);
+
+    
+    int i = 0;
+    for(auto& [path, texture]: textures)
+    {   
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, rwidth, rheight, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        i++;
+    }
+
+    // Doesnt really need to be done every time
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+}
+
+std::vector<glm::vec2> DynamicTextureArray::getTextureUVs(std::string path){
+    if(textures.count(path) == 0) {};
+
+    DynamicTextureMember& tex = textures.at(path);
+
+    float deltaX = (float)tex.width  / (float)rwidth ;
+    float deltaY = (float)tex.height / (float)rheight;
+
+    return {
+        {
+            {0     , deltaY},
+            {deltaY, deltaX},
+            {deltaX, 0     },
+            {0     , 0     }
+        }
+    };
+}

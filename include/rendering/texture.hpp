@@ -6,6 +6,8 @@
 #include <string>
 #include <iostream>
 #include <array>
+#include <unordered_map>
+#include <glm/glm.hpp>
 
 class BindableTexture{
     protected: 
@@ -61,6 +63,27 @@ class GLSkybox: public BindableTexture{
         ~GLSkybox();
 
         void draw();
+};
+
+class DynamicTextureArray: public BindableTexture{
+    private:
+        struct DynamicTextureMember {
+            int width;
+            int height;
+
+            unsigned char* data;
+        };
+        int rwidth, rheight;
+
+        std::unordered_map<std::string,DynamicTextureMember> textures;
+
+    public:
+        DynamicTextureArray(){TYPE = GL_TEXTURE_2D_ARRAY;}
+        ~DynamicTextureArray();
+
+        void addTexture(std::string path);
+        std::vector<glm::vec2> getTextureUVs(std::string path);
+
 };
 
 #include <rendering/buffer.hpp>

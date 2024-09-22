@@ -37,6 +37,7 @@ struct UIRenderInfo{
 
     glm::vec3 color;
     bool isText = false;
+    bool isTexture = false;
 
     bool hasTexCoords = false;
     std::vector<glm::vec2> texCoords;
@@ -79,6 +80,17 @@ class UILabel: public UIFrame{
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
         void setPadding(TValue value) {padding = value;}
+};
+
+class UIImage: public UIFrame{
+    private:
+        std::string path;
+
+    public:
+        static std::unique_ptr<DynamicTextureArray> textures;
+
+        UIImage(std::string path, TValue x, TValue y, TValue width, TValue height);
+        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
 class UILayer{
