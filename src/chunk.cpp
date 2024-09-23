@@ -358,9 +358,9 @@ void Chunk::generateMeshes(){
     const ChunkMask& nextXSolid = nextX->getSolidMask();
     const auto& nextXmasks = nextX->getMasks();
 
-    /*Chunk* nextY = world.getChunk(worldPosition.x,worldPosition.y - 1,worldPosition.z);
+    Chunk* nextY = world.getChunk(worldPosition.x,worldPosition.y - 1,worldPosition.z);
     const ChunkMask& nextYSolid = nextY->getSolidMask();
-    const auto& nextYmasks = nextY->getMasks();*/
+    const auto& nextYmasks = nextY->getMasks();
 
     Chunk* nextZ = world.getChunk(worldPosition.x,worldPosition.y,worldPosition.z - 1);
     const ChunkMask& nextZSolid = nextZ->getSolidMask();
@@ -377,11 +377,14 @@ void Chunk::generateMeshes(){
                 planesXbackward[(size_t) mask.block.type][y] =  nextXSolid.segmentsRotated[63][y] & allFacesX;
             }
 
-            /*if(nextYmasks.count(key) != 0){
+            if(nextYmasks.count(key) != 0){
                 const auto& nextMask = nextYmasks.at(key);
-                planesY[(size_t) mask.block.type][y] =  (mask.segments[y][0] | nextMask.segments[y][63]) & 
-                                                        (solidMask.segments[y][0] ^ nextYSolid.segments[y][63]);
-            }*/
+                uint64 allFacesY =  (mask.segments[y][0] | nextMask.segments[y][63]) & 
+                                    (solidMask.segments[y][0] ^ nextYSolid.segments[y][63]);
+                
+                planesYforward[ (size_t) mask.block.type][y] = solidMask.segments[y][0] & allFacesY;
+                planesYbackward[(size_t) mask.block.type][y] = nextYSolid.segments[y][63] & allFacesY;
+            }
 
             if(nextZmasks.count(key) != 0){
                 const auto& nextMask = nextZmasks.at(key);

@@ -280,6 +280,7 @@ void MainScene::render(){
 
     manager->getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
     manager->getFontManager().renderText("Selected block: " + getBlockTypeName(static_cast<BlockTypes>(selectedBlock)), 10, 80, 1.0, {0,0,0}, testFont);
+    manager->getFontManager().renderText("X: " + std::to_string(playerPosition.x) + " Y: " + std::to_string(playerPosition.y) + "  Z: " + std::to_string(playerPosition.z), 10, 120, 1.0, {0,0,0}, testFont);
 
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
@@ -330,18 +331,27 @@ void MainScene::pregenUpdate(){
 
     while(running){
         int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
+        int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
         int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
 
-        for(int x = -pregenDistance; x <= pregenDistance; x++){
-            for(int z = -pregenDistance; z <= pregenDistance; z++){
-                int chunkX = camWorldX + x;
-                int chunkZ = camWorldZ + z;
+        std::vector<std::thread> openThreads = {};
 
-                Chunk* meshlessChunk = world.getChunk(chunkX, 0, chunkZ);
-                if(!meshlessChunk){
-                    meshlessChunk = world.generateAndGetChunk(chunkX, 0, chunkZ);
-                }
+        for(int x = -pregenDistance; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
+            int chunkX = camWorldX + x;
+            int chunkY = camWorldY + y;
+            int chunkZ = camWorldZ + z;
+
+            Chunk* meshlessChunk = world.getChunk(chunkX, chunkY, chunkZ);
+            if(!meshlessChunk){
+                meshlessChunk = world.generateAndGetChunk(chunkX, chunkY, chunkZ);
+
+                std::thread t(&World::generateAndGetChunk, &world, chunkX, chunkY, chunkZ);
+                openThreads.push_back(move(t));
             }
+        }
+
+        for(auto& t: openThreads){
+            t.join();
         }
     }
 }

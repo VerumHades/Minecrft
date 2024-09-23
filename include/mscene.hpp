@@ -34,7 +34,7 @@ class MainScene: public Scene{
         GLSkybox skybox;
         World world;
 
-        int renderDistance = 8;
+        int renderDistance = 4;
         int selectedBlock = 2;
         bool running = false;
         bool lineMode = true;

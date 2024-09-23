@@ -15,7 +15,7 @@ Chunk* World::generateAndGetChunk(int x, int y, int z){
     
     std::unique_lock lock(chunkGenLock);
     auto [iter, success] = this->chunks.emplace(key, Chunk(*this, key));
-    generateTerrainChunk(iter->second,x,z);
+    generateTerrainChunk(iter->second,x,y,z);
     return &iter->second;
 }
 
@@ -44,7 +44,7 @@ bool Vec3Equal::operator()(const glm::vec3& lhs, const glm::vec3& rhs) const noe
     return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
 }
 
-static int maxThreads = 4;
+static int maxThreads = 16;
 //const auto maxThreads = 1;
 static int threadsTotal = 0;
 void generateChunkMeshThread(Chunk* chunk){
@@ -68,6 +68,12 @@ void generateChunkMeshThread(Chunk* chunk){
 Chunk* World::getChunkWithMesh(int x, int y, int z){
     Chunk* chunk = this->getChunk(x, y, z);
     if(!chunk) return nullptr;
+
+    if(
+        !getChunk(x - 1,y,z) ||
+        !getChunk(x,y - 1,z) ||
+        !getChunk(x,y,z - 1) 
+    ) return nullptr;
 
     if(!chunk->meshGenerated && !chunk->meshGenerating && threadsTotal < maxThreads){
         threadsTotal++;
@@ -321,34 +327,32 @@ void World::drawChunks(Camera& camera, ShaderProgram& program, int renderDistanc
     int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
     int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
 
-    for(int x = -renderDistance; x <= renderDistance; x++){
-        for(int z = -renderDistance; z <= renderDistance; z++){
-            int chunkX = x + camWorldX;
-            int chunkY = 0;
-            int chunkZ = z + camWorldZ;
+    for(int x = -renderDistance; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
+        int chunkX = x + camWorldX;
+        int chunkY = y + camWorldY;
+        int chunkZ = z + camWorldZ;
 
-            //std::cout << "Drawing chunk: " << chunkX << " " << chunkZ << " " << camera.getPosition().x << " " << camera.getPosition().z <<std::endl;
+        //std::cout << "Drawing chunk: " << chunkX << " " << chunkZ << " " << camera.getPosition().x << " " << camera.getPosition().z <<std::endl;
 
-            Chunk* meshlessChunk = this->getChunk(chunkX, chunkY, chunkZ);
-            if(!meshlessChunk) continue;
+        Chunk* meshlessChunk = this->getChunk(chunkX, chunkY, chunkZ);
+        if(!meshlessChunk) continue;
 
-            //std::cout << "Got chunk!" << std::endl;
-            if(!camera.isVisible(*meshlessChunk) && !(glm::length(glm::vec2(x,z)) <= 2)) continue;
-            Chunk* chunk = this->getChunkWithMesh(chunkX, chunkY, chunkZ);
-            
-            //std::cout << "Got meshed chunk!" << std::endl;
-            if(!chunk) continue;
-            if(!chunk->isDrawn) continue;
+        //std::cout << "Got chunk!" << std::endl;
+        if(!camera.isVisible(*meshlessChunk) && !(glm::length(glm::vec2(x,z)) <= 2)) continue;
+        Chunk* chunk = this->getChunkWithMesh(chunkX, chunkY, chunkZ);
+        
+        //std::cout << "Got meshed chunk!" << std::endl;
+        if(!chunk) continue;
+        if(!chunk->isDrawn) continue;
 
-            camera.setModelPosition( {
-                (float) chunkX * CHUNK_SIZE,
-                (float) chunkY * CHUNK_SIZE,
-                (float) chunkZ * CHUNK_SIZE
-            });
-            program.updateUniform("modelMatrix");
+        camera.setModelPosition( {
+            (float) chunkX * CHUNK_SIZE,
+            (float) chunkY * CHUNK_SIZE,
+            (float) chunkZ * CHUNK_SIZE
+        });
+        program.updateUniform("modelMatrix");
 
-            if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();
-        }
+        if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();
     }
 }
 

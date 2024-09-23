@@ -23,6 +23,6 @@ struct Biome {
     GenerateTreeFunc generateTree;
 };
 
-void generateTerrainChunk(Chunk& chunk, int x, int z);
+void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ);
 
 #endif

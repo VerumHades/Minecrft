@@ -73,72 +73,24 @@ const Biome& getBiome(float temperature){
     return a * (1.0f - f) + (b * f);
 }*/
 
-void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY){
+void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
     // Create and configure noise state
     fnl_state noise = fnlCreateState();
     noise.noise_type = FNL_NOISE_PERLIN;
     noise.frequency = 0.004f;
 
-    fnl_state noise2 = fnlCreateState();
-    noise2.noise_type = FNL_NOISE_PERLIN;
-    noise2.frequency = 0.1f;
+    for(int x = 0;x < CHUNK_SIZE;x++) for(int y = 0;y < CHUNK_SIZE;y++) for(int z = 0;z < CHUNK_SIZE;z++){
+        float rx = (float)(x + chunkX * CHUNK_SIZE);
+        float ry = (float)(y + chunkY * CHUNK_SIZE);
+        float rz = (float)(z + chunkZ * CHUNK_SIZE);
+            
+        float value = fnlGetNoise3D(&noise, rx, ry, rz);
 
-    fnl_state mountain_areas = fnlCreateState();
-    mountain_areas.noise_type = FNL_NOISE_PERLIN;
-    mountain_areas.frequency = 0.01f;
+        value -= ry / 256;
+        value = std::max(0.0f, value);
 
-    fnl_state temperatureNoise = fnlCreateState();
-    temperatureNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
-    temperatureNoise.frequency = 0.001f;
-
-    int waterLevel = CHUNK_SIZE / 3;
-
-    for(int x = 0;x < CHUNK_SIZE;x++){
-        for(int z = 0;z < CHUNK_SIZE;z++){
-            float rx = (float)(x + chunkX * CHUNK_SIZE);
-            float ry = (float)(z + chunkY * CHUNK_SIZE);
-
-            float main = (fnlGetNoise2D(&noise, rx, ry) + 1) / 2;
-            float secondary = (fnlGetNoise2D(&noise2, rx, ry) + 1) / 2;
-            //float mountains = (fnlGetNoise2D(&mountain_areas, rx, ry) + 1) / 2;
-
-
-            float temperature = (fnlGetNoise2D(&temperatureNoise, rx, ry) + 1) / 2;
-            //temperature =  1.0f - lerp(main,temperature,0.1f);
-
-            //main = lerp(main, secondary, (float) pow(main,7));
-            //value *= perlin(rx / 20.0, ry / 20.0);
-        
-            int height = (int) floor(CHUNK_SIZE * main); 
-
-            const Biome& biome = getBiome(temperature);
-
-            for(int y = 0;y < height;y++){
-                Block block;
-                block.type = BlockTypes::Air;
-
-                if(y + 1 == height && height <= waterLevel){
-                    block.type = BlockTypes::Sand;
-                }
-                else if(y >= waterLevel && y <= waterLevel + 3){
-                    block.type = BlockTypes::Sand;
-                }
-                else if(y + 1 == height && height > waterLevel){
-                    block.type = biome.topBlock;
-                    if(rand() % 50 == 0) biome.generateTree(chunk,x,height,z);
-                }
-                else if(y + 3 >= height) block.type = biome.secondaryTopBlock;
-                else block.type = biome.undergroundBlock;
-
-                chunk.setBlock(x,y,z, block);
-            }
-
-            for(int y = height; y < waterLevel;y++){
-                Block block;
-                block.type = BlockTypes::BlueWool;
-
-                chunk.setBlock(x,y,z, block);
-            }
+        if(value > 0.5){
+            chunk.setBlock(x,y,z, {BlockTypes::Stone});
         }
     }
  
