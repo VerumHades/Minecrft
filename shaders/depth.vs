@@ -11,7 +11,7 @@ void main()
     gl_Position = lightSpaceMatrix * modelMatrix * vec4(aPos, 1.0);
 
     //float dist = distance(gl_Position.xz, camPos.xz);
-    //gl_Position.xy /= dist;
+    //gl_Position.xy /= 0.5;
 
     // Warp the shadow map to increase resolution close to the player
     float dist = length(gl_Position.xy);

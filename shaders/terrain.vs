@@ -39,4 +39,6 @@ void main()
 
 
     //gl_Position = FragPosLightSpace;
+    //float dist = length(gl_Position.xy);
+    //gl_Position.xy /= (dist+.1);
 }

@@ -54,7 +54,7 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
     
     uint32_t vecIndices[4];
 
-    const int vertexSize = 10;
+    const int vertexSize = 12;
 
     float vertex[vertexSize * 4];
     uint32_t startIndex = (uint32_t) output.getVertices().size() / vertexSize;
@@ -81,6 +81,8 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
         vertex[8 + offset] = static_cast<float>(h);
 
         vertex[9 + offset] = info.isText ? 1.0 : 0.0;
+        vertex[10 + offset] = info.isTexture ? 1.0 : 0.0;
+        vertex[11 + offset] = static_cast<float>(info.textureIndex);
     
         vecIndices[i] = startIndex + i;
     }
@@ -95,7 +97,7 @@ void UIManager::update(){
     uiProgram.use();
 
     Mesh temp = Mesh();
-    temp.setVertexFormat({2,2,3,2,1});
+    temp.setVertexFormat({2,2,3,2,1,1,1});
 
     if(!currentWindow) return;
 
@@ -270,7 +272,8 @@ std::vector<UIRenderInfo> UIImage::getRenderingInformation(UIManager& manager){
         false, // Isnt text
         true, // Is a texture
         true, // Has tex coords
-        textures->getTextureUVs(path)
+        textures->getTextureUVs(path),
+        textures->getTextureIndex(path)
     }};
 
     return out;

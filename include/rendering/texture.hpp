@@ -70,6 +70,7 @@ class DynamicTextureArray: public BindableTexture{
         struct DynamicTextureMember {
             int width;
             int height;
+            int index;
 
             unsigned char* data;
         };
@@ -83,6 +84,7 @@ class DynamicTextureArray: public BindableTexture{
 
         void addTexture(std::string path);
         std::vector<glm::vec2> getTextureUVs(std::string path);
+        int getTextureIndex(std::string path) {return textures[path].index; }
 
 };
 

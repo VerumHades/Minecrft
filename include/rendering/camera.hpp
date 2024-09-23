@@ -133,11 +133,11 @@ class DepthCamera: public Camera{
         glm::vec3 modelPosition = glm::vec3(0);
         glm::vec3 modelRotation = glm::vec3(0);
         
-        float zNear = -500.0f;
-        float zFar = 500.0f;
+        float zNear = -300.0f;
+        float zFar = 300.0f;
 
         uint32_t depthMapFBO;
-        const uint32_t SHADOW_WIDTH = 1024 * 2, SHADOW_HEIGHT = 1024 * 2;
+        const uint32_t SHADOW_WIDTH = 1024 * 4, SHADOW_HEIGHT = 1024 * 4;
         uint32_t depthMap;
 
     public:

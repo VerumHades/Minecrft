@@ -250,6 +250,8 @@ DynamicTextureArray::~DynamicTextureArray(){
 }
 
 void DynamicTextureArray::addTexture(std::string path){
+    glDeleteTextures(1,&this->texture);
+    glGenTextures(1,&this->texture);
     glBindTexture(GL_TEXTURE_2D_ARRAY, this->texture);
 
     if(textures.count(path) != 0) return;
@@ -270,6 +272,7 @@ void DynamicTextureArray::addTexture(std::string path){
     textures[path] = {
         width,
         height,
+        0,
         data
     };
     /*
@@ -290,7 +293,8 @@ void DynamicTextureArray::addTexture(std::string path){
     int i = 0;
     for(auto& [path, texture]: textures)
     {   
-        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, rwidth, rheight, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, rwidth, rheight, 1, GL_RGBA, GL_UNSIGNED_BYTE, texture.data);
+        texture.index = i;
         i++;
     }
 
@@ -316,10 +320,10 @@ std::vector<glm::vec2> DynamicTextureArray::getTextureUVs(std::string path){
 
     return {
         {
-            {0     , deltaY},
-            {deltaY, deltaX},
+            {0     , 0     },
             {deltaX, 0     },
-            {0     , 0     }
+            {deltaX, deltaY},
+            {0     , deltaY}
         }
     };
 }

@@ -252,12 +252,7 @@ void Chunk::generateMeshes(){
             std::vector<Face> facesY = greedyMeshDualPlane64(planesYforward[(size_t) mask.block.type], planesYbackward[(size_t) mask.block.type]);
             std::vector<Face> facesZ = greedyMeshDualPlane64(planesZforward[(size_t) mask.block.type], planesZbackward[(size_t) mask.block.type]);
 
-            std::array<glm::vec3, 4> normals = {
-                glm::vec3(0,0,0),
-                glm::vec3(0,0,0),
-                glm::vec3(0,0,0),
-                glm::vec3(0,0,0)
-            };
+
             float occlusion[4] = {0,0,0,0};
 
             for(auto& face: facesX){
@@ -271,6 +266,13 @@ void Chunk::generateMeshes(){
                 int direction = (solidMask.segmentsRotated[z + 1][face.y] >> (63 - face.x)) & 1ULL;
                 int texture = type.repeatTexture ? type.textures[0] : type.textures[4 + direction];
 
+                std::array<glm::vec3, 4> normals = {
+                    glm::vec3(direction ? 1 : -1,0,0),
+                    glm::vec3(direction ? 1 : -1,0,0),
+                    glm::vec3(direction ? 1 : -1,0,0),
+                    glm::vec3(direction ? 1 : -1,0,0)
+                };
+                
                 solidMesh->addQuadFaceGreedy(
                     vertices.data(),
                     normals.data(),
@@ -293,6 +295,13 @@ void Chunk::generateMeshes(){
                 int direction = (solidMask.segments[face.y][z + 1] >> (63 - face.x)) & 1ULL;
                 int texture = type.repeatTexture ? type.textures[0] : type.textures[direction];
 
+                std::array<glm::vec3, 4> normals = {
+                    glm::vec3(0, direction ? 1 : -1,0),
+                    glm::vec3(0, direction ? 1 : -1,0),
+                    glm::vec3(0, direction ? 1 : -1,0),
+                    glm::vec3(0, direction ? 1 : -1,0)
+                };
+
                 solidMesh->addQuadFaceGreedy(
                     vertices.data(),
                     normals.data(),
@@ -314,6 +323,13 @@ void Chunk::generateMeshes(){
 
                 int direction = (solidMask.segments[z + 1][face.y] >> (63 - face.x)) & 1ULL;
                 int texture = type.repeatTexture ? type.textures[0] : type.textures[2 + direction];
+
+                std::array<glm::vec3, 4> normals = {
+                    glm::vec3(0, 0, direction ? 1 : -1),
+                    glm::vec3(0, 0, direction ? 1 : -1),
+                    glm::vec3(0, 0, direction ? 1 : -1),
+                    glm::vec3(0, 0, direction ? 1 : -1)
+                };
 
                 solidMesh->addQuadFaceGreedy(
                     vertices.data(),
@@ -388,12 +404,6 @@ void Chunk::generateMeshes(){
         std::vector<Face> facesY = greedyMeshDualPlane64(planesYforward[(size_t) mask.block.type], planesYbackward[(size_t) mask.block.type]);
         std::vector<Face> facesZ = greedyMeshDualPlane64(planesZforward[(size_t) mask.block.type], planesZbackward[(size_t) mask.block.type]);
 
-        std::array<glm::vec3, 4> normals = {
-            glm::vec3(0,0,0),
-            glm::vec3(0,0,0),
-            glm::vec3(0,0,0),
-            glm::vec3(0,0,0)
-        };
         float occlusion[4] = {0,0,0,0};
 
         for(auto& face: facesX){
@@ -406,6 +416,13 @@ void Chunk::generateMeshes(){
 
             int direction = (solidMask.segmentsRotated[0][face.y] >> (63 - face.x)) & 1ULL;
             int texture = type.repeatTexture ? type.textures[0] : type.textures[4];
+
+            std::array<glm::vec3, 4> normals = {
+                glm::vec3(direction ? 1 : -1,0,0),
+                glm::vec3(direction ? 1 : -1,0,0),
+                glm::vec3(direction ? 1 : -1,0,0),
+                glm::vec3(direction ? 1 : -1,0,0)
+            };
 
             solidMesh->addQuadFaceGreedy(
                 vertices.data(),
@@ -428,6 +445,13 @@ void Chunk::generateMeshes(){
 
             int direction = !((solidMask.segments[face.y][0] >> (63 - face.x)) & 1ULL);
 
+            std::array<glm::vec3, 4> normals = {
+                glm::vec3(0, direction ? 1 : -1,0),
+                glm::vec3(0, direction ? 1 : -1,0),
+                glm::vec3(0, direction ? 1 : -1,0),
+                glm::vec3(0, direction ? 1 : -1,0)
+            };
+
             solidMesh->addQuadFaceGreedy(
                 vertices.data(),
                 normals.data(),
@@ -449,6 +473,13 @@ void Chunk::generateMeshes(){
             
             int direction = (solidMask.segments[0][face.y] >> (63 - face.x)) & 1ULL;
             int texture = type.repeatTexture ? type.textures[0] : type.textures[2];
+
+            std::array<glm::vec3, 4> normals = {
+                glm::vec3(0, 0, direction ? 1 : -1),
+                glm::vec3(0, 0, direction ? 1 : -1),
+                glm::vec3(0, 0, direction ? 1 : -1),
+                glm::vec3(0, 0, direction ? 1 : -1)
+            };
 
             solidMesh->addQuadFaceGreedy(
                 vertices.data(),

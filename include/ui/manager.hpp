@@ -41,6 +41,7 @@ struct UIRenderInfo{
 
     bool hasTexCoords = false;
     std::vector<glm::vec2> texCoords;
+    int textureIndex;
 };
 
 class UIManager;

@@ -140,6 +140,14 @@ int main() {
 
     std::unique_ptr<Scene> mainMenu = std::make_unique<Scene>();
 
+    auto background = std::make_unique<UIImage>(
+        "textures/background.png", 
+        TValue({PIXELS, 0}),
+        TValue({PIXELS, 0}),
+        TValue({FRACTIONS, 100}),
+        TValue({FRACTIONS, 100})
+    );
+
     auto startButton = std::make_unique<UILabel>(
         "New Game", 
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
@@ -151,6 +159,7 @@ int main() {
         sceneManager.setScene("game");
     };
 
+    mainMenu->window.getCurrentLayer().elements.push_back(std::move(background));
     mainMenu->window.getCurrentLayer().elements.push_back(std::move(startButton));
 
     std::unique_ptr<MainScene> mainScene = std::make_unique<MainScene>();
@@ -161,7 +170,7 @@ int main() {
 
     sceneManager.addScene("game",std::move(mainScene));
     sceneManager.addScene("menu",std::move(mainMenu));
-    sceneManager.setScene("menu");
+    sceneManager.setScene("game");
 
     float deltatime;
     while (!glfwWindowShouldClose(window)) {
