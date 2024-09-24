@@ -446,7 +446,7 @@ void Chunk::generateMeshes(){
                 glm::vec3(face.x             , 0,face.y + face.height)
             };
 
-            int direction = !((solidMask.segments[face.y][0] >> (63 - face.x)) & 1ULL);
+            int direction = ((solidMask.segments[face.y][0] >> (63 - face.x)) & 1ULL);
 
             std::array<glm::vec3, 4> normals = {
                 glm::vec3(0, direction ? 1 : -1,0),
