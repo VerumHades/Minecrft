@@ -13,6 +13,10 @@
   - [ ] Fix shadows
   - [ ] Add ambient occlusion
   - [ ] Add support for transparency
+
+- [ ] Improve rendering
+  - [ ] Batch render chunks
+
 - [ ] Add missing features:
   - [ ] Add support for non solid blocks (Stairs and such)
   - [ ] Add support sprite blocks (Like grass and such)

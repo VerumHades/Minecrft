@@ -342,7 +342,7 @@ void World::drawChunks(Camera& camera, ShaderProgram& program, int renderDistanc
         
         //std::cout << "Got meshed chunk!" << std::endl;
         if(!chunk) continue;
-        if(!chunk->isDrawn) continue;
+        if(!chunk->isDrawn || chunk->isEmpty) continue;
 
         camera.setModelPosition( {
             (float) chunkX * CHUNK_SIZE,

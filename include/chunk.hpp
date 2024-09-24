@@ -76,7 +76,8 @@ class Chunk: public Volume{
         std::unique_ptr<Mesh> solidMesh;
         //std::optional<Mesh> transparentMesh;
 
-        bool isDrawn;
+        bool isDrawn = false;
+        bool isEmpty = false;
         bool isOnFrustum(PerspectiveCamera& cam) const;
 
         Chunk(World& world, const glm::vec3& pos);

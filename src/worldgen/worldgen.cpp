@@ -73,13 +73,17 @@ const Biome& getBiome(float temperature){
     return a * (1.0f - f) + (b * f);
 }*/
 
+std::random_device dev;
+std::mt19937 rng(dev());
+std::uniform_int_distribution<std::mt19937::result_type> dist6(1,10); // distribution in range [1, 6]
+
 void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
     // Create and configure noise state
     fnl_state noise = fnlCreateState();
-    noise.noise_type = FNL_NOISE_PERLIN;
-    noise.frequency = 0.005f;
+    noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
+    noise.frequency = 0.001f;
     noise.octaves = 3;
-    noise.fractal_type = FNL_FRACTAL_RIDGED;
+    noise.fractal_type = FNL_FRACTAL_FBM;
 
     for(int x = 0;x < CHUNK_SIZE;x++) for(int y = 0;y < CHUNK_SIZE;y++) for(int z = 0;z < CHUNK_SIZE;z++){
         float rx = (float)(x + chunkX * CHUNK_SIZE);
@@ -95,5 +99,18 @@ void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
             chunk.setBlock(x,y,z, {BlockTypes::Stone});
         }
     }
- 
-}
+    
+    for(int x = 0;x < CHUNK_SIZE;x++) for(int y = 0;y < CHUNK_SIZE;y++) for(int z = 0;z < CHUNK_SIZE;z++){
+        float rx = (float)(x + chunkX * CHUNK_SIZE);
+        float ry = (float)(y + chunkY * CHUNK_SIZE);
+        float rz = (float)(z + chunkZ * CHUNK_SIZE);
+
+        Block* block = chunk.getBlock(x,y,z);
+        Block* upperBlock = chunk.getBlock(x,y + 1,z); 
+        if(block->type == BlockTypes::Stone && upperBlock && upperBlock->type == BlockTypes::Air){
+            chunk.setBlock(x,y,z, {BlockTypes::Grass});
+
+            if(dist6(rng) == 5) generateOakTree(chunk, x,y,z);
+        }
+    }
+}   

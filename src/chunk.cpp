@@ -495,7 +495,9 @@ void Chunk::generateMeshes(){
             );
         }
     }
-    //std::cout << "Vertices:" << this->solidMesh.get()->getVertices().size() << std::endl;
+
+    isEmpty = this->solidMesh.get()->getVertices().size() == 0;
+    std::cout << "Vertices:" << this->solidMesh.get()->getVertices().size() << std::endl;
 }
 
 

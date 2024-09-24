@@ -3,6 +3,7 @@
 
 #include <chunk.hpp>
 #include <optional>
+#include <random>
 
 struct Biome {
      BlockTypes topBlock;

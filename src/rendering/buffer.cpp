@@ -141,3 +141,43 @@ GLBuffer& GLDoubleBuffer::getBuffer(){
 GLBuffer& GLDoubleBuffer::getBackBuffer(){
     return this->buffers[!this->current];
 }
+
+MultiChunkBuffer::MultiChunkBuffer(uint32_t maxDrawCalls): maxDrawCalls(maxDrawCalls){
+    glGenVertexArrays(1, &vao);
+
+    /*
+        Create and map buffer for draw calls
+    */
+    glGenBuffers(1, &indirectBuffer);
+    glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(DrawElementsIndirectCommand) * maxDrawCalls, nullptr, GL_STATIC_DRAW);
+    drawCallBuffer = (DrawElementsIndirectCommand*) glMapBuffer(GL_DRAW_INDIRECT_BUFFER, GL_WRITE_ONLY);
+
+    for(int i = 0;i < maxDrawCalls;i++) {freeDrawCallIndices.push(i);}
+}
+
+MultiChunkBuffer::~MultiChunkBuffer(){
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
+    glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
+}
+
+MultiChunkBuffer::DrawCall MultiChunkBuffer::addDrawCall(uint32_t firstIndex, uint32_t count){
+    if(freeDrawCallIndices.empty()){
+        std::cout << "MultiChunkBuffer cannot create any more draw calls, it completely full!" << std::endl;
+        return {0,0,0};
+    }
+
+    uint32_t index = freeDrawCallIndices.front();
+    freeDrawCallIndices.pop();
+
+    drawCallBuffer[index].count = count;
+    drawCallBuffer[index].instanceCount = 0;
+    drawCallBuffer[index].firstIndex = firstIndex;
+    drawCallBuffer[index].baseVertex = 0;
+    drawCallBuffer[index].baseInstance = 0;
+
+    return {firstIndex, count, index};
+}
+
+void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
+
+}

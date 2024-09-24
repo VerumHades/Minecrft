@@ -229,7 +229,7 @@ void MainScene::render(){
     //suncam.setPosition(c0,400, camera.getPosition().z);
     
     int offsetX = (int) camera.getPosition().x;
-    int offsetY = 0;
+    int offsetY = (int) camera.getPosition().y;
     int offsetZ = (int) camera.getPosition().z;
 
     suncam.getTexture()->bind(1);
