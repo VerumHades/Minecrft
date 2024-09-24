@@ -68,7 +68,7 @@ void MainScene::initialize(){
     camera.initialize({skyboxProgram, terrainProgram, modelManager.getModelProgram()});
     camera.setPosition(0.0f,160.0f,0.0f);
 
-    world.getEntities().emplace_back(glm::vec3(-1,50,0), glm::vec3(0.6, 1.8, 0.6));
+    world.getEntities().emplace_back(glm::vec3(-1,200,0), glm::vec3(0.6, 1.8, 0.6));
     
     world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
     world.getEntities()[1].setModel("bob");
@@ -343,9 +343,9 @@ void MainScene::pregenUpdate(){
 
             Chunk* meshlessChunk = world.getChunk(chunkX, chunkY, chunkZ);
             if(!meshlessChunk){
-                meshlessChunk = world.generateAndGetChunk(chunkX, chunkY, chunkZ);
+                //meshlessChunk = world.generateAndGetChunk(chunkX, chunkY, chunkZ);
 
-                std::thread t(&World::generateAndGetChunk, &world, chunkX, chunkY, chunkZ);
+                std::thread t(&World::generateChunk, &world, chunkX, chunkY, chunkZ);
                 openThreads.push_back(move(t));
             }
         }

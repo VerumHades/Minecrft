@@ -40,7 +40,7 @@ class ModelManager;
 
 class World: public Collidable{
     private:
-        std::unordered_map<glm::vec3, Chunk, Vec3Hash, Vec3Equal> chunks;
+        std::unordered_map<glm::vec3, std::unique_ptr<Chunk>, Vec3Hash, Vec3Equal> chunks;
         std::vector<Entity> entities;
         std::queue<glm::vec3> bufferLoadQue;
 
@@ -50,7 +50,7 @@ class World: public Collidable{
         Block* getBlock(int x, int y, int z);
         bool setBlock(int x, int y, int z, Block index);
 
-        Chunk* generateAndGetChunk(int x, int y, int z);
+        void generateChunk(int x, int y, int z);
         Chunk* getChunk(int x, int y, int z);
         Chunk* getChunkWithMesh(int x, int y, int z);
         Chunk* getChunkFromBlockPosition(int x, int y, int z);

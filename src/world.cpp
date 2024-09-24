@@ -2,21 +2,20 @@
 
 std::shared_mutex chunkGenLock;
 
-Chunk* World::generateAndGetChunk(int x, int y, int z){
+void World::generateChunk(int x, int y, int z){
     const glm::vec3 key = glm::vec3(x,y,z);
 
     {
         std::shared_lock lock(chunkGenLock);
         auto it = this->chunks.find(key);
-        if (it != this->chunks.end()) {
-            return &it->second;
-        } 
+        if (it != this->chunks.end()) return;
     }
-    
+
+    std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(*this, key);
+    generateTerrainChunk(*chunk,x,y,z);
+
     std::unique_lock lock(chunkGenLock);
-    auto [iter, success] = this->chunks.emplace(key, Chunk(*this, key));
-    generateTerrainChunk(iter->second,x,y,z);
-    return &iter->second;
+    this->chunks.emplace(key, std::move(chunk));
 }
 
 Chunk* World::getChunk(int x, int y, int z){
@@ -26,7 +25,7 @@ Chunk* World::getChunk(int x, int y, int z){
 
     auto it = this->chunks.find(key);
     if (it != this->chunks.end()) {
-        return &it->second;
+        return it->second.get();
     }
 
     return nullptr;

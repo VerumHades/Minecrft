@@ -77,7 +77,9 @@ void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
     // Create and configure noise state
     fnl_state noise = fnlCreateState();
     noise.noise_type = FNL_NOISE_PERLIN;
-    noise.frequency = 0.004f;
+    noise.frequency = 0.005f;
+    noise.octaves = 3;
+    noise.fractal_type = FNL_FRACTAL_RIDGED;
 
     for(int x = 0;x < CHUNK_SIZE;x++) for(int y = 0;y < CHUNK_SIZE;y++) for(int z = 0;z < CHUNK_SIZE;z++){
         float rx = (float)(x + chunkX * CHUNK_SIZE);
@@ -86,7 +88,7 @@ void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
             
         float value = fnlGetNoise3D(&noise, rx, ry, rz);
 
-        value -= ry / 256;
+        value -= std::max(ry / 256,-100.0f);
         value = std::max(0.0f, value);
 
         if(value > 0.5){
