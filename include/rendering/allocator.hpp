@@ -2,6 +2,7 @@
 #define ALLOCATOR_H
 
 #include <vector>
+#include <iostream>
 
 template <typename T>
 class Allocator{
@@ -25,6 +26,7 @@ class Allocator{
 
         T* allocate(size_t size);
         void free(T* prt);
+        size_t getOffset(T* ptr);
 };
 
 #endif

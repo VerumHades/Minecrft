@@ -144,20 +144,50 @@ GLBuffer& GLDoubleBuffer::getBackBuffer(){
 
 MultiChunkBuffer::MultiChunkBuffer(uint32_t maxDrawCalls): maxDrawCalls(maxDrawCalls){
     glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    /*
+        These values are gross estimates and will probably need dynamic adjusting later
+    */
+    maxVertices = maxDrawCalls * 500000; // Estimate that every chunk has about 500000 vertices at max
+    maxIndices = maxDrawCalls * 80000; // Same for indices
 
     /*
         Create and map buffer for draw calls
     */
     glGenBuffers(1, &indirectBuffer);
     glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(DrawElementsIndirectCommand) * maxDrawCalls, nullptr, GL_STATIC_DRAW);
-    drawCallBuffer = (DrawElementsIndirectCommand*) glMapBuffer(GL_DRAW_INDIRECT_BUFFER, GL_WRITE_ONLY);
+    drawCallBuffer = static_cast<DrawElementsIndirectCommand*>(glMapBuffer(GL_DRAW_INDIRECT_BUFFER, GL_WRITE_ONLY));
+
+    CHECK_GL_ERROR();
 
     for(int i = 0;i < maxDrawCalls;i++) {freeDrawCallIndices.push(i);}
+
+    /*
+        Create and map vertex and index buffers
+    */
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, maxVertices * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+    vertexAllocator = std::make_unique<Allocator<GLfloat>>(static_cast<GLfloat*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)), maxVertices * sizeof(GLfloat));
+    
+    CHECK_GL_ERROR();
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, maxIndices * sizeof(GLuint), nullptr, GL_DYNAMIC_DRAW);
+    indexAllocator = std::make_unique<Allocator<GLuint>>(static_cast<GLuint*>(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY)), maxIndices * sizeof(GLuint));
+
+    CHECK_GL_ERROR();
 }
 
 MultiChunkBuffer::~MultiChunkBuffer(){
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
     glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexBuffer);
+    glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 }
 
 MultiChunkBuffer::DrawCall MultiChunkBuffer::addDrawCall(uint32_t firstIndex, uint32_t count){
@@ -179,5 +209,42 @@ MultiChunkBuffer::DrawCall MultiChunkBuffer::addDrawCall(uint32_t firstIndex, ui
 }
 
 void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
+    if(loadedChunks.count(pos) != 0) return;
 
+    /*
+        Allocate space for vertex data and save it
+    */
+    size_t vertexDataSize = mesh.getVertices().size() * sizeof(GLfloat);
+    GLfloat* vertexData = vertexAllocator->allocate(vertexDataSize);
+    memcpy(vertexData, mesh.getVertices().data(), vertexDataSize);
+
+    /*
+        Allocate data for index data, find position of vertex data and offset the indices
+    */
+    size_t indexDataSize = mesh.getIndices().size() * sizeof(GLuint);
+    GLuint* indexData = indexAllocator->allocate(indexDataSize);
+    
+    size_t vertexDataOffset = vertexAllocator->getOffset(vertexData);
+    for(size_t i = 0;i < mesh.getIndices().size();i++){
+        indexData[i] = vertexDataOffset + mesh.getIndices()[i];
+    }
+
+    /*
+        Register the chunks draw call and save it as loaded
+    */
+    size_t indexDataOffset = indexAllocator->getOffset(indexData);
+    DrawCall call = addDrawCall(indexDataOffset, mesh.getIndices().size());
+
+    loadedChunks[pos] = {
+        vertexData,
+        indexData,
+        call
+    };
+}
+void MultiChunkBuffer::draw(){
+    glBindVertexArray(vao);
+
+    int drawCalls = maxDrawCalls - freeDrawCallIndices.size();
+    
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, drawCalls, sizeof(DrawElementsIndirectCommand));
 }

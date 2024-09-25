@@ -13,15 +13,7 @@
 #include <queue>
 
 #include <entity.hpp>
-
-struct Vec3Hash {
-    std::size_t operator()(const glm::vec3& v) const noexcept;
-};
-
-struct Vec3Equal {
-    bool operator()(const glm::vec3& lhs, const glm::vec3& rhs) const noexcept;
-};
-
+#include <vec_hash.hpp>
 
 typedef struct RaycastResult{
     Block* hitBlock;

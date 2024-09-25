@@ -11,11 +11,12 @@ T* Allocator<T>::allocate(size_t size){
     int selected_index = -1;
 
     for(int i = 0; i < blocks.size(); i++){
-        Block& block = blocks[i];
+        MemBlock& block = blocks[i];
 
         if(block.used) continue; // Block is allocated
 
-        size_t distance = std::abs(block.size - size);
+        size_t distance = block.size > size ? block.size - size : size - block.size;
+
         if(distance >= current_distance) continue; // Block is not closer to the desired size
 
         selected = &block;
@@ -43,8 +44,8 @@ T* Allocator<T>::allocate(size_t size){
 }   
 
 template <typename T>
-void Allocator<T>::free(T* prt){
-    size_t start = size - memory;
+void Allocator<T>::free(T* ptr){
+    size_t start = ptr - memory;
 
     for(auto& block: blocks){
         if(block.start != start) continue;
@@ -59,3 +60,12 @@ void Allocator<T>::free(T* prt){
 
     std::cout << "Free of unlocatable block: " << start << std::endl;
 }
+
+template <typename T>
+size_t Allocator<T>::getOffset(T* ptr){
+    return ptr - memory;
+}
+
+
+template class Allocator<float>;          // Explicitly instantiate for float
+template class Allocator<unsigned int>;   // Explicitly instantiate for unsigned int
