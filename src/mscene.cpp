@@ -251,6 +251,8 @@ void MainScene::render(){
 
     //suncam.updateProjection();
     glDisable( GL_CULL_FACE );
+    suncam.setModelPosition({0,0,0});
+    terrainProgram.updateUniform("modelMatrix");
     suncam.prepareForRender();
     chunkBuffer.draw();
     
