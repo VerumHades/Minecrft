@@ -398,7 +398,7 @@ void MainScene::pregenUpdate(){
         int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
 
         std::vector<std::thread> openThreads = {};
-
+        
         for(int x = -pregenDistance; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
             int chunkX = camWorldX + x;
             int chunkY = camWorldY + y;
@@ -411,6 +411,7 @@ void MainScene::pregenUpdate(){
                 std::thread t(&World::generateChunk, &world, chunkX, chunkY, chunkZ);
                 openThreads.push_back(move(t));
             }
+            if(openThreads.size() > 8) break;
         }
 
         for(auto& t: openThreads){
