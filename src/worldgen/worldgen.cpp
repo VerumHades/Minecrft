@@ -78,6 +78,8 @@ std::mt19937 rng(dev());
 std::uniform_int_distribution<std::mt19937::result_type> dist6(1,10); // distribution in range [1, 6]
 
 void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
+    auto start = std::chrono::high_resolution_clock::now();
+
     // Create and configure noise state
     fnl_state noise = fnlCreateState();
     noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
@@ -100,7 +102,7 @@ void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
         }
     }
     
-    for(int x = 0;x < CHUNK_SIZE;x++) for(int y = 0;y < CHUNK_SIZE;y++) for(int z = 0;z < CHUNK_SIZE;z++){
+    /*for(int x = 0;x < CHUNK_SIZE;x++) for(int y = 0;y < CHUNK_SIZE;y++) for(int z = 0;z < CHUNK_SIZE;z++){
         float rx = (float)(x + chunkX * CHUNK_SIZE);
         float ry = (float)(y + chunkY * CHUNK_SIZE);
         float rz = (float)(z + chunkZ * CHUNK_SIZE);
@@ -110,7 +112,16 @@ void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
         if(block->type == BlockTypes::Stone && upperBlock && upperBlock->type == BlockTypes::Air){
             chunk.setBlock(x,y,z, {BlockTypes::Grass});
 
-            if(dist6(rng) == 5) generateOakTree(chunk, x,y,z);
+            if(dist6(rng) == 100) generateOakTree(chunk, x,y,z);
         }
-    }
+    }*/
+
+
+
+      // End time point
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
+
 }   

@@ -4,11 +4,9 @@
 #include <vector>
 #include <iostream>
 
-template <typename T>
 class Allocator{
     private:
         size_t memsize;
-        T* memory;
 
         struct MemBlock{
             size_t start;
@@ -20,13 +18,15 @@ class Allocator{
         std::vector<MemBlock> blocks;
 
     public:
-        Allocator(T* memory, size_t memsize) : memory(memory), memsize(memsize) {
-            blocks.push_back(MemBlock(0,memsize));
+        Allocator(size_t memsize):  memsize(memsize) {
+            blocks.push_back({0, memsize, false});
         };
+        Allocator(){
+            memsize = 0;
+        }
 
-        T* allocate(size_t size);
-        void free(T* prt);
-        size_t getOffset(T* ptr);
+        size_t allocate(size_t size);
+        void free(size_t location);
 };
 
 #endif

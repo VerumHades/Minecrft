@@ -3,11 +3,8 @@
 /*
     Allocates memory to the block of closest size, resizes blocks to be exactly the size of the allocation.
 */
-template <typename T>
-T* Allocator<T>::allocate(size_t size){
+size_t Allocator::allocate(size_t size){
     size_t current_distance = (size_t)-1; // Max 
-    
-    MemBlock* selected = nullptr;
     int selected_index = -1;
 
     for(int i = 0; i < blocks.size(); i++){
@@ -16,37 +13,49 @@ T* Allocator<T>::allocate(size_t size){
         if(block.used) continue; // Block is allocated
 
         size_t distance = block.size > size ? block.size - size : size - block.size;
-
         if(distance >= current_distance) continue; // Block is not closer to the desired size
 
-        selected = &block;
         selected_index = i;
         current_distance = distance;
     }
 
-    if(selected == nullptr) return nullptr; // Failed to find block of desired size
     
-    if(selected->size > size){ // Will fragment memory without regard, maybe update later?
+    if(selected_index == -1){
+        std::cout << "Couldnt allocate: " << size << std::endl;
+        std::cout << "Allocated at:" << blocks[selected_index].start << " of size: " << size << std::endl;
+        std::cout << "Current state:" << std::endl;
+        for(auto& block: blocks){
+            std::cout << "(" << block.start << ":" << block.size << ")[" << (block.used ? "used" : "unused") << "] ";
+        }
+        std::cout << std::endl;
+        return 0; // Failed to find block of desired size
+    }
+    
+    if(blocks[selected_index].size > size){ // Will fragment memory without regard, maybe update later?
         MemBlock newBlock;
 
-        newBlock.start = selected->start + size;
-        newBlock.size = selected->size - size; // Give it the size left;
+        newBlock.start = blocks[selected_index].start + size;
+        newBlock.size = blocks[selected_index].size - size; // Give it the size left;
         newBlock.used = false;
 
         blocks.insert(blocks.begin() + selected_index + 1, newBlock);
+        std::cout << "Resized memory block: " << size << " New block: " << newBlock.size << std::endl;
     }
 
-    
-    selected->size = size;
-    selected->used = true;
+    blocks[selected_index].size = size;
+    blocks[selected_index].used = true;
 
-    return memory + selected->start;
+    //std::cout << "Allocated at:" << blocks[selected_index].start << " of size: " << size << std::endl;
+    //std::cout << "Current state:" << std::endl;
+    //for(auto& block: blocks){
+    //    std::cout << "(" << block.start << ":" << block.size << ")[" << (block.used ? "used" : "unused") << "] ";
+    //}
+    //std::cout << std::endl;
+
+    return blocks[selected_index].start;
 }   
 
-template <typename T>
-void Allocator<T>::free(T* ptr){
-    size_t start = ptr - memory;
-
+void Allocator::free(size_t start){
     for(auto& block: blocks){
         if(block.start != start) continue;
 
@@ -60,12 +69,3 @@ void Allocator<T>::free(T* ptr){
 
     std::cout << "Free of unlocatable block: " << start << std::endl;
 }
-
-template <typename T>
-size_t Allocator<T>::getOffset(T* ptr){
-    return ptr - memory;
-}
-
-
-template class Allocator<float>;          // Explicitly instantiate for float
-template class Allocator<unsigned int>;   // Explicitly instantiate for unsigned int

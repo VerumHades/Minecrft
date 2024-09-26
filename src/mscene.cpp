@@ -68,9 +68,9 @@ void MainScene::initialize(){
     camera.initialize({skyboxProgram, terrainProgram, modelManager.getModelProgram()});
     camera.setPosition(0.0f,160.0f,0.0f);
 
-    world.getEntities().emplace_back(glm::vec3(-1,200,0), glm::vec3(0.6, 1.8, 0.6));
+    world.getEntities().emplace_back(glm::vec3(-1,0,0), glm::vec3(0.6, 1.8, 0.6));
     
-    world.getEntities().emplace_back(glm::vec3(0,160,0), glm::vec3(0.6, 1.8, 0.6));
+    world.getEntities().emplace_back(glm::vec3(0,0,0), glm::vec3(0.6, 1.8, 0.6));
     world.getEntities()[1].setModel("bob");
 
     sunDirUniform.setValue({ 
@@ -90,6 +90,11 @@ void MainScene::initialize(){
         {GLFW_KEY_A},
         {GLFW_KEY_D}
     };
+
+    chunkBuffer.initialize(pow(16*2, 3));
+
+    camera.setModelPosition({0,0,0});
+    terrainProgram.updateUniform("modelMatrix");
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
@@ -219,8 +224,6 @@ void MainScene::render(){
     //std::cout << player.getVelocity().x << " " << player.getVelocity().y << " " << player.getVelocity().z << std::endl;
     camera.setPosition(camPosition);
     // std::cout << std::endl;
-
-    world.updateBuffers();
     //if(boundKeys[0].isDown) accelY += 0.0006;
     //if(boundKeys[1].isDown) accelY -= 0.0006;
 
@@ -249,7 +252,8 @@ void MainScene::render(){
     //suncam.updateProjection();
     glDisable( GL_CULL_FACE );
     suncam.prepareForRender();
-    world.drawChunks(suncam, suncam.getProgram(), renderDistance);
+    chunkBuffer.draw();
+    
     world.drawEntities(modelManager, suncam, true);
     glEnable( GL_CULL_FACE );
 
@@ -268,7 +272,10 @@ void MainScene::render(){
     terrainProgram.use();
     tilemap.bind(0);
 
-    world.drawChunks(camera, terrainProgram, renderDistance);
+    camera.setModelPosition({0,0,0});
+    terrainProgram.updateUniform("modelMatrix");
+    chunkBuffer.draw();
+
     world.drawEntities(modelManager, camera);
     //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
     /* Swap front and back buffers */
@@ -284,7 +291,55 @@ void MainScene::render(){
 
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
+
+    if(boundKeys[1].isDown) {
+        generateMeshes();
+    }
     
+}
+
+void MainScene::generateMeshes(){
+    int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
+    int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
+    int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
+
+    for(int x = -renderDistance; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
+        int chunkX = x + camWorldX;
+        int chunkY = y + camWorldY;
+        int chunkZ = z + camWorldZ;
+
+        //std::cout << "Drawing chunk: " << chunkX << " " << chunkZ << " " << camera.getPosition().x << " " << camera.getPosition().z <<std::endl;
+
+        Chunk* meshlessChunk = world.getChunk(chunkX, chunkY, chunkZ);
+        //std::cout << "Got chunk!" << std::endl;
+        if(!camera.isVisible(*meshlessChunk) && !(glm::length(glm::vec2(x,z)) <= 2)) continue;
+
+        world.generateChunkMesh(chunkX,chunkY,chunkZ, chunkBuffer);
+
+        //std::cout << "Drawing chunk: " << chunkX << " " << chunkZ << " " << camera.getPosition().x << " " << camera.getPosition().z <<std::endl;
+
+        //Chunk* meshlessChunk = this->getChunk(chunkX, chunkY, chunkZ);
+        //if(!meshlessChunk) continue;
+
+        //std::cout << "Got chunk!" << std::endl;
+        //if(!camera.isVisible(*meshlessChunk) && !(glm::length(glm::vec2(x,z)) <= 2)) continue;
+        //Chunk* chunk = this->getChunkWithMesh(chunkX, chunkY, chunkZ);
+        
+        //std::cout << "Got meshed chunk!" << std::endl;
+        //if(!chunk) continue;
+        //if(!chunk->isDrawn || chunk->isEmpty) continue;
+
+        //camera.setModelPosition( {
+        //    (float) chunkX * CHUNK_SIZE,
+        //    (float) chunkY * CHUNK_SIZE,
+        //    (float) chunkZ * CHUNK_SIZE
+        //});
+        //program.updateUniform("modelMatrix");
+
+        //if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();
+    }
+
+    //std::cout << "Generating meshes" << std::endl;
 }
 
 void MainScene::physicsUpdate(){
@@ -299,9 +354,15 @@ void MainScene::physicsUpdate(){
         current = glfwGetTime();
         deltatime = (float)(current - last);
 
+        int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
+        int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
+        int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
+
         //std::cout << deltatime << "/" << tickTime << std::endl;
         if(deltatime < tickTime) continue;
         last = current;
+
+        if(!world.getChunk(camWorldX, camWorldY,camWorldZ)) continue;
 
         Entity& player = world.getEntities()[0];
 

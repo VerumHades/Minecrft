@@ -214,7 +214,11 @@ std::vector<Face> greedyMeshDualPlane64(Plane64 a, Plane64 b){
 
 void Chunk::generateMeshes(){
     this->solidMesh = std::make_unique<Mesh>();
-    this->solidMesh->setVertexFormat({3,3,2,1,1});     
+    this->solidMesh->setVertexFormat({3,3,2,1,1}); 
+
+    float worldX = getWorldPosition().x * CHUNK_SIZE;
+    float worldY = getWorldPosition().y * CHUNK_SIZE;
+    float worldZ = getWorldPosition().z * CHUNK_SIZE;
 
     for(int z = 0; z < CHUNK_SIZE - 1;z++){
         PlaneArray64 planesXforward = {0};
@@ -257,10 +261,10 @@ void Chunk::generateMeshes(){
 
             for(auto& face: facesX){
                 std::array<glm::vec3, 4> vertices = {
-                    glm::vec3(z + 1, face.y + face.height, face.x             ),
-                    glm::vec3(z + 1, face.y + face.height, face.x + face.width),
-                    glm::vec3(z + 1, face.y              , face.x + face.width),
-                    glm::vec3(z + 1, face.y              , face.x             )
+                    glm::vec3(worldX + z + 1, worldY + face.y + face.height, worldZ + face.x             ),
+                    glm::vec3(worldX + z + 1, worldY + face.y + face.height, worldZ + face.x + face.width),
+                    glm::vec3(worldX + z + 1, worldY + face.y              , worldZ + face.x + face.width),
+                    glm::vec3(worldX + z + 1, worldY + face.y              , worldZ + face.x             )
                 };
 
                 int direction = (solidMask.segmentsRotated[z + 1][face.y] >> (63 - face.x)) & 1ULL;
@@ -286,10 +290,10 @@ void Chunk::generateMeshes(){
 
             for(auto& face: facesY){
                 std::array<glm::vec3, 4> vertices = {
-                    glm::vec3(face.x             ,z + 1,face.y              ),
-                    glm::vec3(face.x + face.width,z + 1,face.y              ),
-                    glm::vec3(face.x + face.width,z + 1,face.y + face.height),
-                    glm::vec3(face.x             ,z + 1,face.y + face.height)
+                    glm::vec3(worldX + face.x             , worldY + z + 1, worldZ + face.y              ),
+                    glm::vec3(worldX + face.x + face.width, worldY + z + 1, worldZ + face.y              ),
+                    glm::vec3(worldX + face.x + face.width, worldY + z + 1, worldZ + face.y + face.height),
+                    glm::vec3(worldX + face.x             , worldY + z + 1, worldZ + face.y + face.height)
                 };
 
                 int direction = (solidMask.segments[face.y][z + 1] >> (63 - face.x)) & 1ULL;
@@ -315,10 +319,10 @@ void Chunk::generateMeshes(){
 
             for(auto& face: facesZ){
                 std::array<glm::vec3, 4> vertices = {
-                    glm::vec3(face.x              ,face.y + face.height, z + 1),
-                    glm::vec3(face.x + face.width ,face.y + face.height, z + 1),
-                    glm::vec3(face.x + face.width ,face.y              , z + 1),
-                    glm::vec3(face.x              ,face.y              , z + 1)
+                    glm::vec3(worldX + face.x              , worldY + face.y + face.height, worldZ + z + 1),
+                    glm::vec3(worldX + face.x + face.width , worldY + face.y + face.height, worldZ + z + 1),
+                    glm::vec3(worldX + face.x + face.width , worldY + face.y              , worldZ + z + 1),
+                    glm::vec3(worldX + face.x              , worldY + face.y              , worldZ + z + 1)
                 };
 
                 int direction = (solidMask.segments[z + 1][face.y] >> (63 - face.x)) & 1ULL;
@@ -411,10 +415,10 @@ void Chunk::generateMeshes(){
 
         for(auto& face: facesX){
             std::array<glm::vec3, 4> vertices = {
-                glm::vec3(0, face.y + face.height, face.x             ),
-                glm::vec3(0, face.y + face.height, face.x + face.width),
-                glm::vec3(0, face.y              , face.x + face.width),
-                glm::vec3(0, face.y              , face.x             )
+                glm::vec3(worldX, worldY + face.y + face.height, worldZ + face.x             ),
+                glm::vec3(worldX, worldY + face.y + face.height, worldZ + face.x + face.width),
+                glm::vec3(worldX, worldY + face.y              , worldZ + face.x + face.width),
+                glm::vec3(worldX, worldY + face.y              , worldZ + face.x             )
             };
 
             int direction = (solidMask.segmentsRotated[0][face.y] >> (63 - face.x)) & 1ULL;
@@ -440,10 +444,10 @@ void Chunk::generateMeshes(){
 
         for(auto& face: facesY){
             std::array<glm::vec3, 4> vertices = {
-                glm::vec3(face.x             , 0,face.y              ),
-                glm::vec3(face.x + face.width, 0,face.y              ),
-                glm::vec3(face.x + face.width, 0,face.y + face.height),
-                glm::vec3(face.x             , 0,face.y + face.height)
+                glm::vec3(worldX + face.x             , worldY, worldZ + face.y              ),
+                glm::vec3(worldX + face.x + face.width, worldY, worldZ + face.y              ),
+                glm::vec3(worldX + face.x + face.width, worldY, worldZ + face.y + face.height),
+                glm::vec3(worldX + face.x             , worldY, worldZ + face.y + face.height)
             };
 
             int direction = ((solidMask.segments[face.y][0] >> (63 - face.x)) & 1ULL);
@@ -468,10 +472,10 @@ void Chunk::generateMeshes(){
 
         for(auto& face: facesZ){
             std::array<glm::vec3, 4> vertices = {
-                glm::vec3(face.x              ,face.y + face.height, 0),
-                glm::vec3(face.x + face.width ,face.y + face.height, 0),
-                glm::vec3(face.x + face.width ,face.y              , 0),
-                glm::vec3(face.x              ,face.y              , 0)
+                glm::vec3(worldX + face.x              , worldY + face.y + face.height, worldZ),
+                glm::vec3(worldX + face.x + face.width , worldY + face.y + face.height, worldZ),
+                glm::vec3(worldX + face.x + face.width , worldY + face.y              , worldZ),
+                glm::vec3(worldX + face.x              , worldY + face.y              , worldZ)
             };
             
             int direction = (solidMask.segments[0][face.y] >> (63 - face.x)) & 1ULL;

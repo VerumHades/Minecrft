@@ -6,6 +6,7 @@
 #include <ui/manager.hpp>
 #include <scene.hpp>
 #include <mscene.hpp>
+#include <rendering/allocator.hpp>
 
 SceneManager sceneManager;
 
@@ -136,6 +137,7 @@ int main() {
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
     */
+   
     sceneManager.initialize();
 
     std::unique_ptr<Scene> mainMenu = std::make_unique<Scene>();

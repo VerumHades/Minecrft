@@ -33,6 +33,28 @@ GLBuffer::~GLBuffer(){
 
     //std::cerr << "GLBuffer destructor called for object at " << this << std::endl;
 }
+void setupFormat(std::vector<int> format){
+    int vertexSize = 0;
+    for(auto& sz: format) vertexSize += sz;
+
+    size_t stride =  vertexSize * sizeof(float);
+
+    size_t size_to_now = 0;
+    for(int i = 0;i < format.size();i++){
+        size_t current_size = format[i];
+        
+        uintptr_t pointer = size_to_now * sizeof(float);
+
+        //printf("Size: %lu Pointer: %lu Stride: %lu\n",current_size,pointer,stride);
+
+        glVertexAttribPointer(i, (int) current_size, GL_FLOAT, GL_FALSE, (int)stride, (void*)pointer);
+        glEnableVertexAttribArray(i);
+
+        CHECK_GL_ERROR();;
+
+        size_to_now += current_size;
+    }
+}
 
 void GLBuffer::loadMesh(Mesh& mesh){
     uint32_t buffer = this->data;
@@ -52,23 +74,7 @@ void GLBuffer::loadMesh(Mesh& mesh){
     
     CHECK_GL_ERROR();;
 
-    size_t stride =  mesh.vertexSize * sizeof(float);
-
-    size_t size_to_now = 0;
-    for(int i = 0;i < mesh.getFormat().size();i++){
-        size_t current_size = mesh.getFormat()[i];
-        
-        uintptr_t pointer = size_to_now * sizeof(float);
-
-        //printf("Size: %lu Pointer: %lu Stride: %lu\n",current_size,pointer,stride);
-
-        glVertexAttribPointer(i, (int) current_size, GL_FLOAT, GL_FALSE, (int)stride, (void*)pointer);
-        glEnableVertexAttribArray(i);
-
-        CHECK_GL_ERROR();;
-
-        size_to_now += current_size;
-    }
+    setupFormat(mesh.getFormat());
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -142,22 +148,26 @@ GLBuffer& GLDoubleBuffer::getBackBuffer(){
     return this->buffers[!this->current];
 }
 
-MultiChunkBuffer::MultiChunkBuffer(uint32_t maxDrawCalls): maxDrawCalls(maxDrawCalls){
+void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
+    maxDrawCalls = maxDrawCalls_;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-
+    
+    CHECK_GL_ERROR();
     /*
         These values are gross estimates and will probably need dynamic adjusting later
     */
-    maxVertices = maxDrawCalls * 500000; // Estimate that every chunk has about 500000 vertices at max
-    maxIndices = maxDrawCalls * 80000; // Same for indices
+    maxVertices = maxDrawCalls * 1000; // Estimate that every chunk has about 50000 vertices at max
+    maxIndices = maxDrawCalls * 500; // Same for indices
+    vertexAllocator = Allocator(maxVertices);
+    indexAllocator = Allocator(maxIndices);
 
     /*
         Create and map buffer for draw calls
     */
     glGenBuffers(1, &indirectBuffer);
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
     glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(DrawElementsIndirectCommand) * maxDrawCalls, nullptr, GL_STATIC_DRAW);
-    drawCallBuffer = static_cast<DrawElementsIndirectCommand*>(glMapBuffer(GL_DRAW_INDIRECT_BUFFER, GL_WRITE_ONLY));
 
     CHECK_GL_ERROR();
 
@@ -166,17 +176,19 @@ MultiChunkBuffer::MultiChunkBuffer(uint32_t maxDrawCalls): maxDrawCalls(maxDrawC
     /*
         Create and map vertex and index buffers
     */
+    glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, maxVertices * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
-    vertexAllocator = std::make_unique<Allocator<GLfloat>>(static_cast<GLfloat*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)), maxVertices * sizeof(GLfloat));
-    
+
     CHECK_GL_ERROR();
 
+    glGenBuffers(1, &indexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, maxIndices * sizeof(GLuint), nullptr, GL_DYNAMIC_DRAW);
-    indexAllocator = std::make_unique<Allocator<GLuint>>(static_cast<GLuint*>(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY)), maxIndices * sizeof(GLuint));
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, maxIndices * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
 
     CHECK_GL_ERROR();
+
+    setupFormat({3,3,2,1,1});
 }
 
 MultiChunkBuffer::~MultiChunkBuffer(){
@@ -190,7 +202,7 @@ MultiChunkBuffer::~MultiChunkBuffer(){
     glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 }
 
-MultiChunkBuffer::DrawCall MultiChunkBuffer::addDrawCall(uint32_t firstIndex, uint32_t count){
+MultiChunkBuffer::DrawCall MultiChunkBuffer::addDrawCall(uint32_t firstIndex, uint32_t count, uint32_t baseVertex){
     if(freeDrawCallIndices.empty()){
         std::cout << "MultiChunkBuffer cannot create any more draw calls, it completely full!" << std::endl;
         return {0,0,0};
@@ -199,45 +211,47 @@ MultiChunkBuffer::DrawCall MultiChunkBuffer::addDrawCall(uint32_t firstIndex, ui
     uint32_t index = freeDrawCallIndices.front();
     freeDrawCallIndices.pop();
 
+    drawCallBuffer = static_cast<DrawElementsIndirectCommand*>(glMapBuffer(GL_DRAW_INDIRECT_BUFFER, GL_WRITE_ONLY));
+
     drawCallBuffer[index].count = count;
-    drawCallBuffer[index].instanceCount = 0;
+    drawCallBuffer[index].instanceCount = 1;
     drawCallBuffer[index].firstIndex = firstIndex;
-    drawCallBuffer[index].baseVertex = 0;
+    drawCallBuffer[index].baseVertex = baseVertex;
     drawCallBuffer[index].baseInstance = 0;
 
-    return {firstIndex, count, index};
+    std::cout << "Added draw call: " << index << std::endl;
+
+    glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
+
+    return {firstIndex, count, index, baseVertex};
 }
 
 void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
     if(loadedChunks.count(pos) != 0) return;
+    if(mesh.getVertices().size() == 0) return;
 
     /*
         Allocate space for vertex data and save it
     */
-    size_t vertexDataSize = mesh.getVertices().size() * sizeof(GLfloat);
-    GLfloat* vertexData = vertexAllocator->allocate(vertexDataSize);
-    memcpy(vertexData, mesh.getVertices().data(), vertexDataSize);
-
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    size_t vertexBufferOffset = vertexAllocator.allocate(mesh.getVertices().size());
+    glBufferSubData(GL_ARRAY_BUFFER, vertexBufferOffset * sizeof(float), mesh.getVertices().size() *  sizeof(float), mesh.getVertices().data());
+    //mappedVertexBuffer + vertexBufferOffset, mesh.getVertices().data(), mesh.getVertices().size() *  sizeof(GLfloat)
     /*
         Allocate data for index data, find position of vertex data and offset the indices
     */
-    size_t indexDataSize = mesh.getIndices().size() * sizeof(GLuint);
-    GLuint* indexData = indexAllocator->allocate(indexDataSize);
-    
-    size_t vertexDataOffset = vertexAllocator->getOffset(vertexData);
-    for(size_t i = 0;i < mesh.getIndices().size();i++){
-        indexData[i] = vertexDataOffset + mesh.getIndices()[i];
-    }
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+    size_t indexBufferOffset = indexAllocator.allocate(mesh.getIndices().size());
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, indexBufferOffset * sizeof(uint32_t), mesh.getIndices().size() * sizeof(uint32_t), mesh.getIndices().data());
 
     /*
         Register the chunks draw call and save it as loaded
     */
-    size_t indexDataOffset = indexAllocator->getOffset(indexData);
-    DrawCall call = addDrawCall(indexDataOffset, mesh.getIndices().size());
+    DrawCall call = addDrawCall(indexBufferOffset, mesh.getIndices().size(), vertexBufferOffset / vertexSize);
 
     loadedChunks[pos] = {
-        vertexData,
-        indexData,
+        vertexBufferOffset,
+        indexBufferOffset,
         call
     };
 }
@@ -245,6 +259,8 @@ void MultiChunkBuffer::draw(){
     glBindVertexArray(vao);
 
     int drawCalls = maxDrawCalls - freeDrawCallIndices.size();
-    
+    //std::cout << "Active draw calls: " << drawCalls << std::endl;
     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, drawCalls, sizeof(DrawElementsIndirectCommand));
+
+    CHECK_GL_ERROR();
 }

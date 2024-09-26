@@ -34,7 +34,6 @@ class World: public Collidable{
     private:
         std::unordered_map<glm::vec3, std::unique_ptr<Chunk>, Vec3Hash, Vec3Equal> chunks;
         std::vector<Entity> entities;
-        std::queue<glm::vec3> bufferLoadQue;
 
     public:
         bool updated = false;
@@ -43,8 +42,9 @@ class World: public Collidable{
         bool setBlock(int x, int y, int z, Block index);
 
         void generateChunk(int x, int y, int z);
+        void generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer);
+        
         Chunk* getChunk(int x, int y, int z);
-        Chunk* getChunkWithMesh(int x, int y, int z);
         Chunk* getChunkFromBlockPosition(int x, int y, int z);
         glm::vec3 getGetChunkRelativeBlockPosition(int x, int y, int z);
 
@@ -53,9 +53,7 @@ class World: public Collidable{
 
         RaycastResult raycast(float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance);
 
-        void drawChunks(Camera& camera, ShaderProgram& program, int renderDistance);
         void drawEntities(ModelManager& manager, Camera& camera, bool depthMode  = false);
-        void updateBuffers();
         void updateEntities();
 
         std::vector<Entity>& getEntities() {return entities;}

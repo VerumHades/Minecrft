@@ -36,7 +36,6 @@ static int maxThreads = 16;
 static int threadsTotal = 0;
 void generateChunkMeshThread(Chunk* chunk){
     //auto start = std::chrono::high_resolution_clock::now();
-
     //std::cout << "Generating mesh: " << &chunk <<  std::endl;
         
     chunk->generateMeshes();
@@ -52,15 +51,15 @@ void generateChunkMeshThread(Chunk* chunk){
     threadsTotal--;
 }
 
-Chunk* World::getChunkWithMesh(int x, int y, int z){
+void World::generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer){
     Chunk* chunk = this->getChunk(x, y, z);
-    if(!chunk) return nullptr;
+    if(!chunk) return;
 
     if(
         !getChunk(x - 1,y,z) ||
         !getChunk(x,y - 1,z) ||
         !getChunk(x,y,z - 1) 
-    ) return nullptr;
+    ) return;
 
     if(!chunk->meshGenerated && !chunk->meshGenerating && threadsTotal < maxThreads){
         threadsTotal++;
@@ -70,50 +69,21 @@ Chunk* World::getChunkWithMesh(int x, int y, int z){
 
         chunk->meshGenerating = true;
         //generateChunkMeshThread(chunk);
-        if(chunk->isDrawn) return chunk;
-        return nullptr;
+        return;
     } 
 
-    if(!chunk->buffersLoaded && !chunk->buffersInQue && chunk->meshGenerated){
+    if(!chunk->buffersLoaded && chunk->meshGenerated){
+        buffer.addChunkMesh(*chunk->solidMesh, chunk->getWorldPosition());
+        chunk->buffersLoaded = true;
+        return;
+    }
+    /*if(!chunk->buffersLoaded && !chunk->buffersInQue && chunk->meshGenerated){
         chunk->buffersInQue = true;
         this->bufferLoadQue.push(chunk->getWorldPosition());
         //printf("Vertices:%i Indices:%i\n", chunk->solidMesh->vertices_count, chunk->solidMesh->indices_count)
         updated = true;
         if(chunk->isDrawn) return chunk;
-    }
-
-   return chunk;
-}
-
-void World::updateBuffers(){
-    if(this->bufferLoadQue.empty()) return;
-    glm::vec3 currentPos = this->bufferLoadQue.front();
-
-    Chunk* chunk = this->getChunk((int) currentPos.x,(int) currentPos.y, (int) currentPos.z);
-
-    if(!chunk->solidBuffer){
-        chunk->solidBuffer = std::make_unique<GLDoubleBuffer>();
-    }
-
-    //std::cout << "Loading mesh: " << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
-
-    //printf("Loading meshes %2i:%2i (%i)...\n",x,z,chunk->buffersLoaded);
-    if (chunk->solidBuffer && chunk->solidMesh) {
-        GLDoubleBuffer& dbuffer = *chunk->solidBuffer;
-        
-        dbuffer.getBackBuffer().loadMesh(*chunk->solidMesh);
-        dbuffer.swap();
-        chunk->solidMesh = nullptr;
-
-        chunk->buffersLoaded = true;
-        chunk->buffersInQue = false;
-        chunk->isDrawn = true;
-
-        this->bufferLoadQue.pop();
-    }
-    else{
-        std::cerr << "Failed to load chunk buffer!" << std::endl;
-    }
+    }*/
 }
 
 CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bool includeRectangularColliderLess){
@@ -307,40 +277,6 @@ bool World::setBlock(int x, int y, int z, Block index){
     chunk->setBlock(ix, iy, iz, index);
 
     return true;
-}
-
-void World::drawChunks(Camera& camera, ShaderProgram& program, int renderDistance){
-    int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
-    int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
-    int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
-
-    for(int x = -renderDistance; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
-        int chunkX = x + camWorldX;
-        int chunkY = y + camWorldY;
-        int chunkZ = z + camWorldZ;
-
-        //std::cout << "Drawing chunk: " << chunkX << " " << chunkZ << " " << camera.getPosition().x << " " << camera.getPosition().z <<std::endl;
-
-        Chunk* meshlessChunk = this->getChunk(chunkX, chunkY, chunkZ);
-        if(!meshlessChunk) continue;
-
-        //std::cout << "Got chunk!" << std::endl;
-        if(!camera.isVisible(*meshlessChunk) && !(glm::length(glm::vec2(x,z)) <= 2)) continue;
-        Chunk* chunk = this->getChunkWithMesh(chunkX, chunkY, chunkZ);
-        
-        //std::cout << "Got meshed chunk!" << std::endl;
-        if(!chunk) continue;
-        if(!chunk->isDrawn || chunk->isEmpty) continue;
-
-        camera.setModelPosition( {
-            (float) chunkX * CHUNK_SIZE,
-            (float) chunkY * CHUNK_SIZE,
-            (float) chunkZ * CHUNK_SIZE
-        });
-        program.updateUniform("modelMatrix");
-
-        if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();
-    }
 }
 
 void World::drawEntities(ModelManager& manager, Camera& camera, bool depthMode){

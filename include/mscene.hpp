@@ -34,6 +34,8 @@ class MainScene: public Scene{
         GLSkybox skybox;
         World world;
 
+        MultiChunkBuffer chunkBuffer;
+
         int renderDistance = 4;
         int selectedBlock = 2;
         bool running = false;
@@ -59,6 +61,7 @@ class MainScene: public Scene{
 
         void physicsUpdate();
         void pregenUpdate();
+        void generateMeshes();
 
         double last = glfwGetTime();
         double current = glfwGetTime();

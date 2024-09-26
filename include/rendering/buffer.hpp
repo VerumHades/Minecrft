@@ -51,6 +51,8 @@ class MultiChunkBuffer{
         uint32_t maxVertices = 0;
         uint32_t maxIndices = 0;
 
+        uint32_t vertexSize = 10;
+
         std::queue<uint32_t> freeDrawCallIndices;
 
         uint32_t indirectBuffer;
@@ -58,8 +60,8 @@ class MultiChunkBuffer{
         uint32_t indexBuffer;
         uint32_t vao;
 
-        std::unique_ptr<Allocator<GLfloat>> vertexAllocator;
-        std::unique_ptr<Allocator<GLuint>> indexAllocator;
+        Allocator vertexAllocator;
+        Allocator indexAllocator;
     
         struct DrawElementsIndirectCommand {
             GLuint  count;      // Number of indices for the current draw call.
@@ -73,24 +75,25 @@ class MultiChunkBuffer{
             uint32_t firstIndex;
             uint32_t count;
             uint32_t index;
+            uint32_t baseVertex;
         };
 
         struct LoadedChunk{ 
-            GLfloat* vertexData;
-            GLuint* indexData;
+            size_t vertexData;
+            size_t indexData;
 
             DrawCall drawCall;
         };
 
         DrawElementsIndirectCommand* drawCallBuffer = nullptr;
-        DrawCall addDrawCall(uint32_t firstIndex, uint32_t count);
+        DrawCall addDrawCall(uint32_t firstIndex, uint32_t count, uint32_t baseVertex);
 
         std::unordered_map<glm::vec3, LoadedChunk, Vec3Hash, Vec3Equal> loadedChunks;
 
     public:
-        MultiChunkBuffer(uint32_t maxDrawCalls);
         ~MultiChunkBuffer();
-
+        
+        void initialize(uint32_t maxDrawCalls);
         void addChunkMesh(Mesh& mesh, const glm::vec3& pos);
         void draw();
 };
