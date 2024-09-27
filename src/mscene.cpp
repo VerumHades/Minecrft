@@ -188,6 +188,10 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
         if(!lineMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
+
+    if(key == GLFW_KEY_E && action == GLFW_PRESS){
+        world.save("worldsave.bin");
+    }
 }
 
 void MainScene::open(GLFWwindow* window){

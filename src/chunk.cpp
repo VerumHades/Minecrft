@@ -132,10 +132,6 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     return true;
 }
 
-inline int count_leading_zeros(uint64 x) {
-    return std::countl_zero(x);
-}
-
 std::vector<Face> greedyMeshPlane64(Plane64 rows){
     std::vector<Face> out = {};
     int currentRow = 0;
@@ -147,7 +143,7 @@ std::vector<Face> greedyMeshPlane64(Plane64 rows){
 
             'start' is 4
         */    
-        int start = count_leading_zeros(row); // Find the first
+        uint8_t start = count_leading_zeros(row); // Find the first
         if(start == 64){
             currentRow++;
             continue;
@@ -159,7 +155,7 @@ std::vector<Face> greedyMeshPlane64(Plane64 rows){
             'width' is 2
         */    
         row <<= start; // Shift so the faces start
-        int width = count_leading_zeros(~row); // Calculate width (negated counts '1') 
+        uint8_t width = count_leading_zeros(~row); // Calculate width (negated counts '1') 
         row >>= start; // Return to original position
 
         /*
@@ -193,9 +189,6 @@ std::vector<Face> greedyMeshPlane64(Plane64 rows){
     }
 
     return out;
-}
-inline uint64 bit_set(uint64 number, uint64 index) {
-    return number | ((uint64)1 << index);
 }
 /*
     TODO: 

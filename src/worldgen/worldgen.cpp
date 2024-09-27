@@ -78,7 +78,7 @@ std::mt19937 rng(dev());
 std::uniform_int_distribution<std::mt19937::result_type> dist6(1,10); // distribution in range [1, 6]
 
 void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
-    auto start = std::chrono::high_resolution_clock::now();
+    //auto start = std::chrono::high_resolution_clock::now();
 
     // Create and configure noise state
     fnl_state noise = fnlCreateState();
@@ -119,9 +119,9 @@ void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
 
 
       // End time point
-    auto end = std::chrono::high_resolution_clock::now();
+    //auto end = std::chrono::high_resolution_clock::now();
 
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
+    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    //std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
 
 }   

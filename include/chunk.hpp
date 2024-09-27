@@ -9,6 +9,7 @@
 #include <rendering/mesh.hpp>
 #include <rendering/camera.hpp>
 #include <rendering/model.hpp>
+#include <rendering/compression.hpp>
 
 #include <glm/glm.hpp>
 #include <map>
@@ -25,24 +26,18 @@
 
 #define CHUNK_SIZE 64
 
-struct ChunkTreeNode{
-    std::unique_ptr<ChunkTreeNode> children[2][2][2] = {};
-    short blockCounts[(size_t) BlockTypes::BLOCK_TYPES_TOTAL];
-    Block value = {BlockTypes::Air};
-    int size;
-    ChunkTreeNode* parent;
-};
-
 class World;
 
-typedef uint_fast64_t uint64;
-typedef std::array<uint64, 64> Plane64;
-typedef std::array<Plane64, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> PlaneArray64;
+struct SerializedChunkMask{
+    Block block = {BlockTypes::Air};
+    uint64 segments[64][64];
+    uint64 segmentsRotated[64][64];
+};
 
 struct ChunkMask{
     Block block = {BlockTypes::Air};
-    std::array<std::array<uint64,64>,64> segments = {0}; 
-    std::array<std::array<uint64,64>,64> segmentsRotated = {0}; 
+    std::array<std::array<uint64, 64>,64> segments = {0}; 
+    std::array<std::array<uint64, 64>,64> segmentsRotated = {0}; 
     
     void set(uint32_t x,uint32_t y,uint32_t z) {
         segments[z][y] |= (1ULL << (63 - x));
@@ -92,8 +87,8 @@ class Chunk: public Volume{
             return this->worldPosition;
         }
 
-        const ChunkMask& getSolidMask() {return solidMask;}
-        const std::unordered_map<BlockTypes,ChunkMask>& getMasks() {return masks;}
+        ChunkMask& getSolidMask() {return solidMask;}
+        std::unordered_map<BlockTypes,ChunkMask>& getMasks() {return masks;}
 
 }; 
 extern std::unordered_map<BlockTypes, BlockType> predefinedBlocks;
@@ -111,7 +106,6 @@ inline const BlockType& getBlockType(Block* block){
 
 
 std::string getBlockTypeName(BlockTypes type);
-
 
 struct Face{
     int x;

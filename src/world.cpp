@@ -40,7 +40,7 @@ void generateChunkMeshThread(Chunk* chunk){
         
     chunk->generateMeshes();
 
-    // End time point
+    //End time point
     //auto end = std::chrono::high_resolution_clock::now();
 
     //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -291,4 +291,23 @@ void World::updateEntities(){
     for (auto& entity: this->entities) { 
         entity.update(*this);
     }
+}
+
+void World::saveChunk(std::ofstream &file, Chunk& chunk){    
+    
+}
+
+void World::save(std::string filepath){
+    std::ofstream file(filepath, std::ios::binary);
+    if(!file.is_open()){
+        std::cout << "World save failed, cannot open file: " << filepath << std::endl;
+    }
+
+    SavedWorldMetadata metadata = {
+        chunks.size()
+    };
+
+    file.write(reinterpret_cast<const char*>(&metadata), sizeof(SavedWorldMetadata));
+
+    for(auto& [key,chunk]: chunks) saveChunk(file, *chunk);
 }

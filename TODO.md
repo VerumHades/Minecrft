@@ -14,8 +14,8 @@
   - [ ] Add ambient occlusion
   - [ ] Add support for transparency
 
-- [ ] Improve rendering
-  - [ ] Batch render chunks
+- [x] Improve rendering
+  - [x] Batch render chunks
 
 - [ ] Add missing features:
   - [ ] Add support for non solid blocks (Stairs and such)

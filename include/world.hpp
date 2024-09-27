@@ -12,10 +12,14 @@
 #include <chrono>
 #include <queue>
 
+#include <iostream>
+#include <fstream>
+#include <string>
+
 #include <entity.hpp>
 #include <vec_hash.hpp>
 
-typedef struct RaycastResult{
+struct RaycastResult{
     Block* hitBlock;
     bool hit;
     int x;
@@ -25,8 +29,7 @@ typedef struct RaycastResult{
     float lastX;
     float lastY;
     float lastZ;
-} RaycastResult;
-
+};
 
 class ModelManager;
 
@@ -35,9 +38,17 @@ class World: public Collidable{
         std::unordered_map<glm::vec3, std::unique_ptr<Chunk>, Vec3Hash, Vec3Equal> chunks;
         std::vector<Entity> entities;
 
-    public:
-        bool updated = false;
+        struct SavedWorldMetadata{
+            size_t chunk_saved_total;
+        };
+        struct SavedChunkMetadata{
+            size_t saved_layer_count;
+        };
 
+
+        void saveChunk(std::ofstream &file, Chunk& chunk);
+
+    public:
         Block* getBlock(int x, int y, int z);
         bool setBlock(int x, int y, int z, Block index);
 
@@ -57,6 +68,8 @@ class World: public Collidable{
         void updateEntities();
 
         std::vector<Entity>& getEntities() {return entities;}
+
+        void save(std::string filepath);
 };
 
 extern size_t predefinedBlocksTotal;
