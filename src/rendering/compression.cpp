@@ -36,12 +36,12 @@ std::vector<compressed_byte> bitworks::compress64Bits(uint64 bits){
         
         if(compressed_total + count > 64) count = 64 - compressed_total; // Dont go over 64 bit boundary
 
-        if(count <= 8){ // Compressing 8 bits or less into counts is not good, use a literal instead
+        if(count <= 8 && count >= 6){ // Compressing 8 bits or less into counts is not good, use a literal instead
             compressed_byte current = bits >> (64 - 6); // shift so that the first six bits are in the right place
             setMode(current, 2); // set the mode to literal
 
             //std::cout << std::bitset<64>(bits) << std::endl;
-            //std::cout << std::bitset<8>(current) << std::endl;
+           // std::cout << std::bitset<8>(current) << std::endl;
 
             bits <<= 6; // Shift by the 6 literal bits
             compressed_total += 6;
@@ -50,7 +50,7 @@ std::vector<compressed_byte> bitworks::compress64Bits(uint64 bits){
             continue;
         }
 
-        compressed_byte current = count;
+        compressed_byte current = count - 1;
         setMode(current, start_value); // set the mode
         
         bits <<= count;
@@ -73,26 +73,59 @@ uint64 bitworks::decompress64Bits(std::vector<compressed_byte> bytes){
         {
         case 0: // set zeroes
             out &= ~mask;
-            mask >>= getCount(value); 
-            currentShift += getCount(value); 
             break;
         case 1: // Set ones
             out |= mask;
-            mask >>= getCount(value); 
-            currentShift += getCount(value); 
+            break;
         case 2: // Set literal
             out &= ~mask;
             out |= (static_cast<uint64_t>(getCount(value)) << ((64 - 6) - currentShift));
             mask >>= 6;
             currentShift += 6;
+            continue;
         default:
             break;
         }
+
+        uint8_t count = getCount(value) + 1;
+        if(count != 0 && count != 64) mask >>= count; 
+        currentShift += count; 
     }
 
     return out;
 }
 
-std::vector<compressed_byte> bitworks::compressBitArray3D(std::array<std::array<uint64,64>,64> array){
+static uint32_t valueMask = ~0U >> 2;
+void compressed_24bit::setValue(uint32_t value){
+    bytes[0] = value;
+    bytes[1] = value >> 8;
+    bytes[2] = (value >> 16) & 0b00111111; // Leave mode  bits untouched
+}
+uint32_t compressed_24bit::getValue(){
+    uint32_t value = 0;
+
+    value |= static_cast<uint32_t>(bytes[2] & 0b00111111) << 16; // Make  sure to not consider the mode bytes
+    value |= static_cast<uint32_t>(bytes[1]) << 8;
+    value |= static_cast<uint32_t>(bytes[0]);
+
+    value &= valueMask; // Remove the mode bits
+
+    return value;
+}
+void compressed_24bit::setMode(uint8_t mode){
+    bytes[2] &= 0b00111111; // Reset the mode bits
+    bytes[2] |= mode << 6;
+}
+uint8_t compressed_24bit::getMode(){
+    return bytes[2] >> 6;
+}
+
+/*
+
+*/
+std::vector<compressed_24bit> bitworks::compressBitArray3D(BitArray3D array){
+    uint64* flatArray = array.getAsFlatArray();
+    std::vector<compressed_24bit> compressedOutput = {};
+
     return {};
 }

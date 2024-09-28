@@ -68,38 +68,6 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
 }
 
 int main() {
-
-    for(int i = 0;i < 1000;i++){
-        uint64_t test = rand() * 10000000;
-
-        auto start = std::chrono::high_resolution_clock::now();
-        
-        std::vector<compressed_byte> compressed = bitworks::compress64Bits(test);
-
-        //End time point
-        auto end = std::chrono::high_resolution_clock::now();
-
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-        std::cout << "Compression took: " << duration << " microseconds" << std::endl;
-        std::cout << "Size achieved to: " << ((compressed.size() * 8) / 64.0f) * 100  << "%" << std::endl;
-
-        start = std::chrono::high_resolution_clock::now();
-
-        uint64_t decompressed = bitworks::decompress64Bits(compressed);
-
-        end = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-        std::cout << "Decompression took: " << duration << " microseconds" << std::endl;
-
-        std::cout << "Decompressed to: " <<  std::bitset<64>(decompressed) << std::endl;
-
-        if(test != decompressed){
-            std::cout << "Decompression failed!" << std::endl;
-            break;
-        }
-    }
-
-    return 0;
     GLFWwindow* window;
 
     /* Initialize the library */

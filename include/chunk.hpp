@@ -36,8 +36,8 @@ struct SerializedChunkMask{
 
 struct ChunkMask{
     Block block = {BlockTypes::Air};
-    std::array<std::array<uint64, 64>,64> segments = {0}; 
-    std::array<std::array<uint64, 64>,64> segmentsRotated = {0}; 
+    BitArray3D segments = {}; 
+    BitArray3D segmentsRotated = {}; 
     
     void set(uint32_t x,uint32_t y,uint32_t z) {
         segments[z][y] |= (1ULL << (63 - x));
