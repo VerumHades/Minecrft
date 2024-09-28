@@ -15,9 +15,11 @@ typedef std::array<uint64, 64> Plane64;
 typedef std::array<Plane64, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> PlaneArray64;
 
 class BitArray3D{
-    uint64 values[64][64];
+    uint64 values[64][64] = {0};
 
     public:
+        static const size_t size = 64 * 64 * 64;
+        
         uint64* operator[] (int index)
         {
             return values[index];
@@ -52,6 +54,8 @@ struct compressed_24bit{
         uint32_t getValue();
         void setMode(uint8_t mode);
         uint8_t getMode();
+        
+        std::string to_string();
 };
 
 namespace bitworks{

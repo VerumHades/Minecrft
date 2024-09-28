@@ -8,6 +8,7 @@
 #include <queue>
 #include <glm/glm.hpp>
 #include <rendering/allocator.hpp>
+#include <unordered_map>
 
 void checkGLError(const char *file, int line);
 #define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
@@ -53,8 +54,6 @@ class MultiChunkBuffer{
 
         uint32_t vertexSize = 10;
 
-        std::queue<uint32_t> freeDrawCallIndices;
-
         uint32_t indirectBuffer;
         uint32_t vertexBuffer;
         uint32_t indexBuffer;
@@ -70,31 +69,35 @@ class MultiChunkBuffer{
             GLuint  baseVertex; // Base vertex for index calculations.
             GLuint  baseInstance; // Base instance for instanced rendering.
         };
-
-        struct DrawCall{ 
-            uint32_t firstIndex;
-            uint32_t count;
-            uint32_t index;
-            uint32_t baseVertex;
-        };
-
         struct LoadedChunk{ 
             size_t vertexData;
             size_t indexData;
 
-            DrawCall drawCall;
+            size_t firstIndex;
+            size_t count;
+            size_t baseVertex;
+
+            bool hasDrawCall;
+            size_t drawCallIndex;
         };
 
         DrawElementsIndirectCommand* drawCallBuffer = nullptr;
-        DrawCall addDrawCall(uint32_t firstIndex, uint32_t count, uint32_t baseVertex);
+
+        //void setDrawCall(size_t index, uint32_t firstIndex, uint32_t count, uint32_t baseVertex);
 
         std::unordered_map<glm::vec3, LoadedChunk, Vec3Hash, Vec3Equal> loadedChunks;
+        std::vector<DrawElementsIndirectCommand> drawCalls;
 
     public:
         ~MultiChunkBuffer();
         
         void initialize(uint32_t maxDrawCalls);
         void addChunkMesh(Mesh& mesh, const glm::vec3& pos);
+
+        void addDrawCall(const glm::vec3& position);
+        void removeDrawCall(const glm::vec3& position);
+        void updateDrawCalls();
+
         void draw();
 };
 

@@ -157,7 +157,7 @@ void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
     /*
         These values are gross estimates and will probably need dynamic adjusting later
     */
-    maxVertices = maxDrawCalls * 1000; // Estimate that every chunk has about 50000 vertices at max
+    maxVertices = maxDrawCalls * 5000; // Estimate that every chunk has about 50000 vertices at max
     maxIndices = maxDrawCalls * 500; // Same for indices
     vertexAllocator = Allocator(maxVertices);
     indexAllocator = Allocator(maxIndices);
@@ -170,8 +170,6 @@ void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
     glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(DrawElementsIndirectCommand) * maxDrawCalls, nullptr, GL_STATIC_DRAW);
 
     CHECK_GL_ERROR();
-
-    for(int i = 0;i < maxDrawCalls;i++) {freeDrawCallIndices.push(i);}
 
     /*
         Create and map vertex and index buffers
@@ -202,14 +200,11 @@ MultiChunkBuffer::~MultiChunkBuffer(){
     glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 }
 
-MultiChunkBuffer::DrawCall MultiChunkBuffer::addDrawCall(uint32_t firstIndex, uint32_t count, uint32_t baseVertex){
+/*void MultiChunkBuffer::setDrawCall(size_t index, uint32_t firstIndex, uint32_t count, uint32_t baseVertex){
     if(freeDrawCallIndices.empty()){
         std::cout << "MultiChunkBuffer cannot create any more draw calls, it completely full!" << std::endl;
-        return {0,0,0};
+        return;
     }
-
-    uint32_t index = freeDrawCallIndices.front();
-    freeDrawCallIndices.pop();
 
     drawCallBuffer = static_cast<DrawElementsIndirectCommand*>(glMapBuffer(GL_DRAW_INDIRECT_BUFFER, GL_WRITE_ONLY));
 
@@ -219,12 +214,8 @@ MultiChunkBuffer::DrawCall MultiChunkBuffer::addDrawCall(uint32_t firstIndex, ui
     drawCallBuffer[index].baseVertex = baseVertex;
     drawCallBuffer[index].baseInstance = 0;
 
-    std::cout << "Added draw call: " << index << std::endl;
-
     glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
-
-    return {firstIndex, count, index, baseVertex};
-}
+}*/
 
 void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
     if(loadedChunks.count(pos) != 0) return;
@@ -247,20 +238,50 @@ void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
     /*
         Register the chunks draw call and save it as loaded
     */
-    DrawCall call = addDrawCall(indexBufferOffset, mesh.getIndices().size(), vertexBufferOffset / vertexSize);
+    //DrawCall call = addDrawCall(indexBufferOffset, mesh.getIndices().size(), vertexBufferOffset / vertexSize);
 
     loadedChunks[pos] = {
         vertexBufferOffset,
         indexBufferOffset,
-        call
+
+        indexBufferOffset,
+        mesh.getIndices().size(),
+        vertexBufferOffset / vertexSize
     };
 }
+
+void MultiChunkBuffer::addDrawCall(const glm::vec3& position){
+    if(loadedChunks.count(position) == 0) return;
+
+    LoadedChunk& chunk = loadedChunks.at(position);
+    chunk.hasDrawCall = true;
+
+    DrawElementsIndirectCommand command = {chunk.count,1,chunk.firstIndex,chunk.baseVertex,0};
+    drawCalls.push_back(command);
+
+    //setDrawCall(index, chunk.firstIndex, chunk.count, chunk.baseVertex);
+}
+void MultiChunkBuffer::removeDrawCall(const glm::vec3& position){
+    if(loadedChunks.count(position) == 0) return;
+
+    LoadedChunk& chunk = loadedChunks.at(position);
+    if(!chunk.hasDrawCall) return;
+
+    //DrawElementsIndirectCommand command = {chunk.count,1,chunk.firstIndex,chunk.baseVertex,0};
+   // drawCalls.erase(command);
+}
+
+void MultiChunkBuffer::updateDrawCalls(){
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
+    glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(DrawElementsIndirectCommand) * drawCalls.size(), drawCalls.data(), GL_STATIC_DRAW);
+}
+
 void MultiChunkBuffer::draw(){
     glBindVertexArray(vao);
 
-    int drawCalls = maxDrawCalls - freeDrawCallIndices.size();
-    //std::cout << "Active draw calls: " << drawCalls << std::endl;
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, drawCalls, sizeof(DrawElementsIndirectCommand));
+    //int drawCalls = maxDrawCalls - freeDrawCallIndices.size();
+    //std::cout << "Active draw calls: " << lastDrawCall << std::endl;
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, drawCalls.size(), sizeof(DrawElementsIndirectCommand));
 
     CHECK_GL_ERROR();
 }

@@ -352,14 +352,26 @@ void Chunk::generateMeshes(){
     
 
     Chunk* nextX = world.getChunk(worldPosition.x - 1,worldPosition.y,worldPosition.z);
+    if(!nextX){
+        std::cout << "Mesh generating when chunks are missing?" << std::endl;
+        return;
+    }
     const ChunkMask& nextXSolid = nextX->getSolidMask();
     const auto& nextXmasks = nextX->getMasks();
 
     Chunk* nextY = world.getChunk(worldPosition.x,worldPosition.y - 1,worldPosition.z);
+    if(!nextY){
+        std::cout << "Mesh generating when chunks are missing?" << std::endl;
+        return;
+    }
     const ChunkMask& nextYSolid = nextY->getSolidMask();
     const auto& nextYmasks = nextY->getMasks();
 
     Chunk* nextZ = world.getChunk(worldPosition.x,worldPosition.y,worldPosition.z - 1);
+    if(!nextZ){
+        std::cout << "Mesh generating when chunks are missing?" << std::endl;
+        return;
+    }
     const ChunkMask& nextZSolid = nextZ->getSolidMask();
     const auto& nextZmasks = nextZ->getMasks();
 

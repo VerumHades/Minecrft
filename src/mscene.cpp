@@ -91,7 +91,7 @@ void MainScene::initialize(){
         {GLFW_KEY_D}
     };
 
-    chunkBuffer.initialize(pow(16*2, 3));
+    chunkBuffer.initialize(pow(8*2, 3));
 
     camera.setModelPosition({0,0,0});
     terrainProgram.updateUniform("modelMatrix");
@@ -308,7 +308,7 @@ void MainScene::generateMeshes(){
     int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
     int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
     int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
-
+    
     for(int x = -renderDistance; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
         int chunkX = x + camWorldX;
         int chunkY = y + camWorldY;
@@ -318,32 +318,16 @@ void MainScene::generateMeshes(){
 
         Chunk* meshlessChunk = world.getChunk(chunkX, chunkY, chunkZ);
         //std::cout << "Got chunk!" << std::endl;
+        if(!meshlessChunk) continue;
         if(!camera.isVisible(*meshlessChunk) && !(glm::length(glm::vec2(x,z)) <= 2)) continue;
-
         world.generateChunkMesh(chunkX,chunkY,chunkZ, chunkBuffer);
 
-        //std::cout << "Drawing chunk: " << chunkX << " " << chunkZ << " " << camera.getPosition().x << " " << camera.getPosition().z <<std::endl;
-
-        //Chunk* meshlessChunk = this->getChunk(chunkX, chunkY, chunkZ);
-        //if(!meshlessChunk) continue;
-
-        //std::cout << "Got chunk!" << std::endl;
-        //if(!camera.isVisible(*meshlessChunk) && !(glm::length(glm::vec2(x,z)) <= 2)) continue;
-        //Chunk* chunk = this->getChunkWithMesh(chunkX, chunkY, chunkZ);
-        
-        //std::cout << "Got meshed chunk!" << std::endl;
-        //if(!chunk) continue;
-        //if(!chunk->isDrawn || chunk->isEmpty) continue;
-
-        //camera.setModelPosition( {
-        //    (float) chunkX * CHUNK_SIZE,
-        //    (float) chunkY * CHUNK_SIZE,
-        //    (float) chunkZ * CHUNK_SIZE
-        //});
-        //program.updateUniform("modelMatrix");
-
+        glm::vec3 position = {chunkX,chunkY,chunkZ};
+        chunkBuffer.addDrawCall(position);
         //if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();
     }
+
+    chunkBuffer.updateDrawCalls();
 
     //std::cout << "Generating meshes" << std::endl;
 }

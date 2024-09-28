@@ -120,12 +120,58 @@ uint8_t compressed_24bit::getMode(){
     return bytes[2] >> 6;
 }
 
+std::string compressed_24bit::to_string(){
+    return 
+        std::bitset<2>(bytes[2] >> 6).to_string() + "[" + ((bytes[2] >> 6) ? "ONES  " : "ZEROES") + "]-" +
+        std::bitset<6>(bytes[2]).to_string() +
+        std::bitset<8>(bytes[1]).to_string() +
+        std::bitset<8>(bytes[0]).to_string() + "[" + std::to_string(getValue()) + "]";
+}
+
 /*
 
 */
 std::vector<compressed_24bit> bitworks::compressBitArray3D(BitArray3D array){
-    uint64* flatArray = array.getAsFlatArray();
     std::vector<compressed_24bit> compressedOutput = {};
+    uint64* flatArray = array.getAsFlatArray();
+    
+    uint64 currentBits = flatArray[0];
 
-    return {};
+    size_t currentIndex = 0;
+    size_t localBit = 0;
+    size_t globalBit = 0;
+
+    while(globalBit < BitArray3D::size){
+        uint8_t start_value = (firstBitMask & currentBits) >> 63; // Check what the current first value is
+        uint8_t count = count_leading_zeros(!start_value ? currentBits : ~currentBits);
+
+        std::cout << std::bitset<64>(currentBits) << std::endl;
+
+        if(localBit + count > 64) count = 64 - localBit;
+
+        currentBits <<= count;
+        localBit    +=  count;
+        globalBit   +=  count;
+
+        if(localBit == 64){ // Move on to the next number
+            localBit = 0;
+            currentBits = flatArray[currentIndex++];
+        }
+
+        if(compressedOutput.size() != 0){
+            compressed_24bit& last = compressedOutput.back();
+            if(start_value == last.getMode()){ // If possible save the same bits in the last compressed_24bit
+                last.setValue(last.getValue() + count);
+                continue;
+            }
+        }
+
+        compressed_24bit compressed = {};
+        compressed.setValue(count);
+        compressed.setMode(start_value);
+        
+        compressedOutput.push_back(compressed);
+    }   
+
+    return compressedOutput;
 }
