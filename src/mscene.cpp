@@ -298,16 +298,17 @@ void MainScene::render(){
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 
-    if(boundKeys[1].isDown) {
-        generateMeshes();
-    }
-    
+    generateMeshes();
 }
+
+std::unordered_set<glm::vec3, Vec3Hash, Vec3Equal> loadedPositions;
 
 void MainScene::generateMeshes(){
     int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
     int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
     int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
+
+    std::unordered_set<glm::vec3, Vec3Hash, Vec3Equal> currentPositions;
     
     for(int x = -renderDistance; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
         int chunkX = x + camWorldX;
@@ -322,14 +323,33 @@ void MainScene::generateMeshes(){
         if(!camera.isVisible(*meshlessChunk) && !(glm::length(glm::vec2(x,z)) <= 2)) continue;
         world.generateChunkMesh(chunkX,chunkY,chunkZ, chunkBuffer);
 
+        if(meshlessChunk->isEmpty) continue;
+
         glm::vec3 position = {chunkX,chunkY,chunkZ};
-        chunkBuffer.addDrawCall(position);
+        //chunkBuffer.addDrawCall(position);
+        currentPositions.emplace(position);
         //if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();
     }
 
-    chunkBuffer.updateDrawCalls();
+    bool changed = false;
 
-    //std::cout << "Generating meshes" << std::endl;
+    for(auto& pos: currentPositions){
+        if(loadedPositions.find(pos) != loadedPositions.end()) continue;
+
+        chunkBuffer.addDrawCall(pos);
+        changed = true;
+    }
+
+    for(auto& pos: loadedPositions){
+        if(currentPositions.find(pos) != currentPositions.end()) continue;
+
+        chunkBuffer.removeDrawCall(pos);
+        changed = true;
+    }
+
+    loadedPositions = currentPositions;
+
+    if(changed) chunkBuffer.updateDrawCalls();
 }
 
 void MainScene::physicsUpdate(){

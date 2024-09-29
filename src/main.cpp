@@ -68,29 +68,6 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
 }
 
 int main() {
-    BitArray3D temp = {};
-    temp[0][2] = ~0ULL;
-    temp[0][3] = 1;
-
-    auto compressed  = bitworks::compressBitArray3D(temp);
-    BitArray3D temp2 = bitworks::decompressBitArray3D(compressed);
-    auto recompressed  = bitworks::compressBitArray3D(temp2);
-
-    for(auto& t: compressed){
-        std::cout << t.to_string() << std::endl;
-    }
-    std::cout << std::endl;
-    for(auto& t: recompressed){
-        std::cout << t.to_string() << std::endl;
-    }
-
-    for(int i = 0;i < 64;i++) for(int j = 0;j < 64;j++){
-        if(temp[i][j] != temp2[i][j]){
-            std::cout << "Failiure!" << std::endl;
-            break;
-        }
-    }
-    return 0;
     GLFWwindow* window;
 
     /* Initialize the library */

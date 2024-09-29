@@ -273,6 +273,7 @@ void MultiChunkBuffer::removeDrawCall(const glm::vec3& position){
         if(drawCalls[i].firstIndex != chunk.firstIndex) continue;
 
         drawCalls.erase(drawCalls.begin() + i);
+        chunk.hasDrawCall = false;
         break;
     }
 }

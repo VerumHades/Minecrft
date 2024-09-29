@@ -15,6 +15,7 @@
 #include <ui/font.hpp>
 #include <entity.hpp>
 #include <scene.hpp>
+#include <set>
 
 struct BoundKey{
     int key;
