@@ -18,7 +18,8 @@ class BitArray3D{
     uint64 values[64][64] = {0};
 
     public:
-        static const size_t size = 64 * 64 * 64;
+        static const size_t size_bits = 64 * 64 * 64;
+        static const size_t size = 64 * 64;
         
         uint64* operator[] (int index)
         {
@@ -60,6 +61,7 @@ struct compressed_24bit{
 
 namespace bitworks{
     std::vector<compressed_24bit> compressBitArray3D(BitArray3D array);
+    BitArray3D decompressBitArray3D(std::vector<compressed_24bit> data);
 
     std::vector<compressed_byte> compress64Bits(uint64 bits);
     uint64 decompress64Bits(std::vector<compressed_byte> bytes);

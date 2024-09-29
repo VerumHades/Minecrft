@@ -1,6 +1,7 @@
 #include <rendering/compression.hpp>
 
 
+
 inline uint8_t getMode(compressed_byte member){
     return (0b11000000 & member) >> 6;
 }
@@ -141,11 +142,9 @@ std::vector<compressed_24bit> bitworks::compressBitArray3D(BitArray3D array){
     size_t localBit = 0;
     size_t globalBit = 0;
 
-    while(globalBit < BitArray3D::size){
+    while(globalBit < BitArray3D::size_bits){
         uint8_t start_value = (firstBitMask & currentBits) >> 63; // Check what the current first value is
         uint8_t count = count_leading_zeros(!start_value ? currentBits : ~currentBits);
-
-        std::cout << std::bitset<64>(currentBits) << std::endl;
 
         if(localBit + count > 64) count = 64 - localBit;
 
@@ -174,4 +173,47 @@ std::vector<compressed_24bit> bitworks::compressBitArray3D(BitArray3D array){
     }   
 
     return compressedOutput;
+}
+
+BitArray3D bitworks::decompressBitArray3D(std::vector<compressed_24bit> data){
+    BitArray3D output;
+    uint64* flatArray = output.getAsFlatArray();
+
+    size_t arrayIndex = 0;
+    size_t dataIndex  = 0;
+    size_t currentBit = 0;
+    
+    compressed_24bit cdata = data[0];
+    while(true){
+        size_t bitsLeft = 64 - currentBit; // Find the remaining amount of bits in the current 64bit
+        
+        if(bitsLeft == 0){ // If no bits are left move onto the next 
+            if(arrayIndex + 1 >= BitArray3D::size) break; // If there is no next number exit
+            currentBit = 0;
+            arrayIndex++;
+            continue;
+        }
+        
+        size_t count = std::min(bitsLeft, static_cast<size_t>(cdata.getValue()));
+        
+        uint64 mask = ~0ULL >> currentBit;
+            
+        if(cdata.getMode() == 0) flatArray[arrayIndex] &= ~mask;
+        else flatArray[arrayIndex] |= mask;
+
+        currentBit += count;
+
+        cdata.setValue(cdata.getValue() - count);
+        if(cdata.getValue() == 0){ // If the current compressed 24bit is completed move onto the next
+            if(dataIndex + 1 >= data.size()) break; // break if there is no next
+
+            cdata = data[++dataIndex];
+        }
+    }
+
+    for(int i = 0;i < BitArray3D::size;i++){
+        std::cout << std::bitset<64>(flatArray[i]) << std::endl;
+    }
+
+    return output;
 }

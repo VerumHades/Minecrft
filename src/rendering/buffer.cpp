@@ -254,6 +254,7 @@ void MultiChunkBuffer::addDrawCall(const glm::vec3& position){
     if(loadedChunks.count(position) == 0) return;
 
     LoadedChunk& chunk = loadedChunks.at(position);
+    if(chunk.hasDrawCall) return;
     chunk.hasDrawCall = true;
 
     DrawElementsIndirectCommand command = {chunk.count,1,chunk.firstIndex,chunk.baseVertex,0};
@@ -267,8 +268,13 @@ void MultiChunkBuffer::removeDrawCall(const glm::vec3& position){
     LoadedChunk& chunk = loadedChunks.at(position);
     if(!chunk.hasDrawCall) return;
 
-    //DrawElementsIndirectCommand command = {chunk.count,1,chunk.firstIndex,chunk.baseVertex,0};
-   // drawCalls.erase(command);
+
+    for(int i = 0;i < drawCalls.size();i++){
+        if(drawCalls[i].firstIndex != chunk.firstIndex) continue;
+
+        drawCalls.erase(drawCalls.begin() + i);
+        break;
+    }
 }
 
 void MultiChunkBuffer::updateDrawCalls(){
