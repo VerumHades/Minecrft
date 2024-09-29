@@ -154,7 +154,7 @@ std::vector<compressed_24bit> bitworks::compressBitArray3D(BitArray3D array){
 
         if(localBit == 64){ // Move on to the next number
             localBit = 0;
-            currentBits = flatArray[currentIndex++];
+            currentBits = flatArray[++currentIndex];
         }
 
         if(compressedOutput.size() != 0){
@@ -193,7 +193,8 @@ BitArray3D bitworks::decompressBitArray3D(std::vector<compressed_24bit> data){
             arrayIndex++;
             continue;
         }
-        
+        //if(cdata.getValue() < 1024) std::cout << cdata.to_string() << std::endl;
+
         size_t count = std::min(bitsLeft, static_cast<size_t>(cdata.getValue()));
         
         uint64 mask = ~0ULL >> currentBit;
@@ -211,9 +212,9 @@ BitArray3D bitworks::decompressBitArray3D(std::vector<compressed_24bit> data){
         }
     }
 
-    for(int i = 0;i < BitArray3D::size;i++){
+    /*for(int i = 0;i < BitArray3D::size;i++){
         std::cout << std::bitset<64>(flatArray[i]) << std::endl;
-    }
+    }*/
 
     return output;
 }

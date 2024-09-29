@@ -74,8 +74,13 @@ int main() {
 
     auto compressed  = bitworks::compressBitArray3D(temp);
     BitArray3D temp2 = bitworks::decompressBitArray3D(compressed);
+    auto recompressed  = bitworks::compressBitArray3D(temp2);
 
     for(auto& t: compressed){
+        std::cout << t.to_string() << std::endl;
+    }
+    std::cout << std::endl;
+    for(auto& t: recompressed){
         std::cout << t.to_string() << std::endl;
     }
 
