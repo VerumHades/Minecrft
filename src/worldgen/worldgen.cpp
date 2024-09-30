@@ -77,6 +77,13 @@ std::random_device dev;
 std::mt19937 rng(dev());
 std::uniform_int_distribution<std::mt19937::result_type> dist6(1,10); // distribution in range [1, 6]
 
+static inline float transcribeNoiseValue(float value, float ry){
+    value -= std::max(ry / 256, -100.0f);
+    value = std::max(0.0f, value);
+
+    return value;
+}
+
 void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
     //auto start = std::chrono::high_resolution_clock::now();
 
@@ -92,13 +99,11 @@ void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
         float ry = (float)(y + chunkY * CHUNK_SIZE);
         float rz = (float)(z + chunkZ * CHUNK_SIZE);
             
-        float value = fnlGetNoise3D(&noise, rx, ry, rz);
-
-        value -= std::max(ry / 256,-100.0f);
-        value = std::max(0.0f, value);
+        float value = transcribeNoiseValue(fnlGetNoise3D(&noise, rx, ry, rz),  ry);
+        bool top = transcribeNoiseValue(fnlGetNoise3D(&noise, rx, ry + 1, rz), ry + 1) <= 0.5;
 
         if(value > 0.5){
-            chunk.setBlock(x,y,z, {BlockTypes::Stone});
+            chunk.setBlock(x,y,z, {top ? BlockTypes::Grass : BlockTypes::Stone});
         }
     }
     

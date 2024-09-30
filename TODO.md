@@ -16,6 +16,7 @@
 
 - [x] Improve rendering
   - [x] Batch render chunks
+  - [ ] Add double buffering to batched chunks
 
 - [ ] Add missing features:
   - [ ] Add support for non solid blocks (Stairs and such)

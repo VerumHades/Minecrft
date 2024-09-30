@@ -38,14 +38,6 @@ class World: public Collidable{
         std::unordered_map<glm::vec3, std::unique_ptr<Chunk>, Vec3Hash, Vec3Equal> chunks;
         std::vector<Entity> entities;
 
-        struct SavedWorldMetadata{
-            size_t chunk_saved_total;
-        };
-        struct SavedChunkMetadata{
-            size_t saved_layer_count;
-        };
-
-
         void saveChunk(std::ofstream &file, Chunk& chunk);
 
     public:
@@ -70,6 +62,7 @@ class World: public Collidable{
         std::vector<Entity>& getEntities() {return entities;}
 
         void save(std::string filepath);
+        void load(std::string filepath);
 };
 
 extern size_t predefinedBlocksTotal;

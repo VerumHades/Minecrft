@@ -23,19 +23,16 @@ size_t Allocator::allocate(size_t size){
     if(selected_index == -1){
         std::cout << "Couldnt allocate: " << size << std::endl;
         std::cout << "Allocated at:" << blocks[selected_index].start << " of size: " << size << std::endl;
-        std::cout << "Current state:" << std::endl;
-        for(auto& block: blocks){
-            std::cout << "(" << block.start << ":" << block.size << ")[" << (block.used ? "used" : "unused") << "] ";
-        }
         std::cout << std::endl;
         return 0; // Failed to find block of desired size
     }
     
-    if(blocks[selected_index].size > size){ // Will fragment memory without regard, maybe update later?
+    size_t sizeLeft = blocks[selected_index].size - size;
+    if(blocks[selected_index].size > size && sizeLeft > 10000){ // Will fragment memory without regard, maybe update later?
         MemBlock newBlock;
 
         newBlock.start = blocks[selected_index].start + size;
-        newBlock.size = blocks[selected_index].size - size; // Give it the size left;
+        newBlock.size = sizeLeft; // Give it the size left;
         newBlock.used = false;
 
         blocks.insert(blocks.begin() + selected_index + 1, newBlock);

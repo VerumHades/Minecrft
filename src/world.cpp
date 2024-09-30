@@ -73,8 +73,10 @@ void World::generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer){
     } 
 
     if(!chunk->buffersLoaded && chunk->meshGenerated){
-        buffer.addChunkMesh(*chunk->solidMesh, chunk->getWorldPosition());
+        if(buffer.isChunkLoaded(chunk->getWorldPosition())) buffer.swapChunkMesh(*chunk->solidMesh, chunk->getWorldPosition());
+        else buffer.addChunkMesh(*chunk->solidMesh, chunk->getWorldPosition());
         chunk->buffersLoaded = true;
+        chunk->solidMesh = nullptr;
         return;
     }
     /*if(!chunk->buffersLoaded && !chunk->buffersInQue && chunk->meshGenerated){
@@ -293,8 +295,64 @@ void World::updateEntities(){
     }
 }
 
-void World::saveChunk(std::ofstream &file, Chunk& chunk){    
+
+template <typename T>
+static inline void saveValue(std::ofstream &file, T value){
+    file.write(reinterpret_cast<const char*>(&value), sizeof(T));
+}
+
+template <typename T>
+static inline T readValue(std::ifstream &file) {
+    T value;
+    file.read(reinterpret_cast<char*>(&value), sizeof(T));
+    return value;
+}
+
+static inline void saveBitArray3D(std::ofstream &file, BitArray3D& array){
+    std::vector<compressed_24bit> compressedMask        = bitworks::compressBitArray3D(array);
     
+    saveValue<size_t>(file, compressedMask.size());
+    for(auto& value: compressedMask) file.write(reinterpret_cast<const char*>(&value), sizeof(compressed_24bit));
+}
+
+static inline BitArray3D readBitArray3D(std::ifstream &file){
+    size_t count = readValue<size_t>(file);
+
+    std::cout << "Reading compressed array: " << count << std::endl;
+    std::vector<compressed_24bit> compressed = {};
+    for(int i = 0;i < count;i++) compressed.push_back(readValue<compressed_24bit>(file));
+
+    return bitworks::decompressBitArray3D(compressed);
+}
+/*
+    Saves a chunk mask in this format:
+
+    int type
+    size_t compressed_24bit_count, data...
+    size_t compressed_24bit_count_rotated, data...
+*/
+static inline void saveMask(std::ofstream &file, ChunkMask& mask, int type){
+    saveValue<int>(file, type);
+    saveBitArray3D(file, mask.segments);
+    saveBitArray3D(file, mask.segmentsRotated);
+}
+
+/*
+    Saved the chunk:
+    size_t layerCount
+    float x,y,z
+    saved masks using the above function..
+*/
+void World::saveChunk(std::ofstream &file, Chunk& chunk){  
+    size_t layer_count = chunk.getMasks().size() + 1; // Accomodate solid mask  
+    saveValue(file, layer_count);
+
+    saveValue(file, chunk.getWorldPosition().x);
+    saveValue(file, chunk.getWorldPosition().y);
+    saveValue(file, chunk.getWorldPosition().z);
+
+    saveMask(file, chunk.getSolidMask(), -1);
+    for(auto& [key, mask]: chunk.getMasks()) saveMask(file, mask, static_cast<int>(mask.block.type));
 }
 
 void World::save(std::string filepath){
@@ -303,11 +361,53 @@ void World::save(std::string filepath){
         std::cout << "World save failed, cannot open file: " << filepath << std::endl;
     }
 
-    SavedWorldMetadata metadata = {
-        chunks.size()
-    };
-
-    file.write(reinterpret_cast<const char*>(&metadata), sizeof(SavedWorldMetadata));
-
+    saveValue(file, chunks.size());
     for(auto& [key,chunk]: chunks) saveChunk(file, *chunk);
+}
+
+void World::load(std::string filepath){
+    std::unique_lock lock(chunkGenLock);
+
+    std::ifstream file(filepath, std::ios::binary);
+    if(!file.is_open()){
+        std::cout << "World save failed, cannot open file: " << filepath << std::endl;
+    }   
+
+    size_t chunkCount = readValue<size_t>(file);
+    std::cout << "Chunk count: " << chunkCount << std::endl;
+
+    for(size_t chunkIndex = 0;chunkIndex < chunkCount;chunkIndex++){
+        size_t layerCount = readValue<size_t>(file);
+
+        glm::vec3 position = {
+            readValue<float>(file),
+            readValue<float>(file),
+            readValue<float>(file)
+        };
+
+        std::cout << "Loading chunk: " << position.x << "," << position.y << "," << position.z << std::endl;
+        
+        chunks.emplace(position, std::make_unique<Chunk>(*this, position));
+        Chunk* chunk = chunks.at(position).get();
+
+        for(int layerIndex = 0; layerIndex < layerCount; layerIndex++){
+            int type = readValue<int>(file);
+            BitArray3D normal = readBitArray3D(file);
+            BitArray3D rotated = readBitArray3D(file);
+
+            if(layerIndex == 0){
+                chunk->getSolidMask().segments = normal;
+                chunk->getSolidMask().segmentsRotated = rotated;
+                continue;
+            }
+
+            std::cout << "Loading chunk layers: " << layerIndex << " " << getBlockTypeName(static_cast<BlockTypes>(type)) << std::endl;
+
+            ChunkMask mask;
+            mask.segments = normal;
+            mask.segmentsRotated = rotated;
+
+            chunk->getMasks()[static_cast<BlockTypes>(type)] = mask;
+        }
+    }
 }

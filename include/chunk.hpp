@@ -79,8 +79,6 @@ class Chunk: public Volume{
         bool setBlock(uint32_t x, uint32_t y, uint32_t z, Block value);
 
         void generateMeshes();
-        void regenerateMesh();
-        void regenerateMesh(glm::vec3 blockCoords);
 
         World& getWorld();
         const glm::vec3& getWorldPosition(){

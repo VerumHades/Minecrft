@@ -157,8 +157,8 @@ void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
     /*
         These values are gross estimates and will probably need dynamic adjusting later
     */
-    maxVertices = maxDrawCalls * 5000; // Estimate that every chunk has about 50000 vertices at max
-    maxIndices = maxDrawCalls * 500; // Same for indices
+    maxVertices = maxDrawCalls * vertexSize * 1000; // Estimate that every chunk has about 50000 vertices at max
+    maxIndices = maxDrawCalls * 6000; // Same for indices
     vertexAllocator = Allocator(maxVertices);
     indexAllocator = Allocator(maxIndices);
 
@@ -190,14 +190,10 @@ void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
 }
 
 MultiChunkBuffer::~MultiChunkBuffer(){
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
-    glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glUnmapBuffer(GL_ARRAY_BUFFER);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexBuffer);
-    glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+    glDeleteBuffers(1, &vertexBuffer);
+    glDeleteBuffers(1, &indexBuffer);
+    glDeleteBuffers(1,  &indirectBuffer);
+    glDeleteVertexArrays(1, &vao);
 }
 
 /*void MultiChunkBuffer::setDrawCall(size_t index, uint32_t firstIndex, uint32_t count, uint32_t baseVertex){
@@ -236,9 +232,8 @@ void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, indexBufferOffset * sizeof(uint32_t), mesh.getIndices().size() * sizeof(uint32_t), mesh.getIndices().data());
 
     /*
-        Register the chunks draw call and save it as loaded
+        Register the chunk save it as loaded
     */
-    //DrawCall call = addDrawCall(indexBufferOffset, mesh.getIndices().size(), vertexBufferOffset / vertexSize);
 
     loadedChunks[pos] = {
         vertexBufferOffset,
@@ -248,6 +243,53 @@ void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
         mesh.getIndices().size(),
         vertexBufferOffset / vertexSize
     };
+}
+void MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::vec3& pos){
+    if(loadedChunks.count(pos) == 0) return;
+    
+    LoadedChunk& chunk = loadedChunks.at(pos);
+    /*
+        Allocate space for new vertex data and save it
+    */
+    size_t vertexBufferOffset = vertexAllocator.allocate(mesh.getVertices().size());
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferSubData(GL_ARRAY_BUFFER, vertexBufferOffset * sizeof(float), mesh.getVertices().size() *  sizeof(float), mesh.getVertices().data());
+
+    size_t indexBufferOffset = indexAllocator.allocate(mesh.getIndices().size());
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, indexBufferOffset * sizeof(uint32_t), mesh.getIndices().size() * sizeof(uint32_t), mesh.getIndices().data());
+
+    /*
+        Change the draw call arguments
+    */
+    size_t oldVertexBufferOffset = chunk.vertexData;
+    size_t oldIndexBufferOffset = chunk.indexData;
+
+    chunk.vertexData = vertexBufferOffset;
+    chunk.indexData = indexBufferOffset;
+    
+    chunk.firstIndex = indexBufferOffset;
+    chunk.count = mesh.getIndices().size();
+    chunk.baseVertex = vertexBufferOffset / vertexSize;
+
+    if(chunk.hasDrawCall){
+        removeDrawCall(pos);
+        addDrawCall(pos);
+    }
+
+    /*
+        Free the old data
+    */
+
+    vertexAllocator.free(oldVertexBufferOffset);
+    indexAllocator.free(oldIndexBufferOffset);
+}
+void MultiChunkBuffer::unloadChunkMesh(const glm::vec3& pos){
+    if(loadedChunks.count(pos) == 0) return;
+    removeDrawCall(pos);
+    vertexAllocator.free(loadedChunks[pos].vertexData);
+    indexAllocator.free(loadedChunks[pos].indexData);
+    loadedChunks.erase(pos);
 }
 
 void MultiChunkBuffer::addDrawCall(const glm::vec3& position){

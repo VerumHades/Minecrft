@@ -53,34 +53,6 @@ World& Chunk::getWorld(){
     return this->world;
 }
 
-void Chunk::regenerateMesh(){
-    if(!this->buffersLoaded) return;
-    if(!this->isDrawn) return;
-    if(this->meshGenerating) return;
-
-    this->meshGenerated = 0;
-    this->meshGenerating = 0;
-    this->buffersLoaded = 0;
-}
-
-#define regenMesh(x,y,z) { \
-    Chunk* temp = this->world.getChunk(x, y, z);\
-    if(temp) temp->regenerateMesh();\
-}
-void Chunk::regenerateMesh(glm::vec3 blockCoords){
-    this->regenerateMesh();
-    if(blockCoords.x == 0)              regenMesh((int) this->worldPosition.x - 1, (int) this->worldPosition.y, (int) this->worldPosition.z);
-    if(blockCoords.x == CHUNK_SIZE - 1) regenMesh((int) this->worldPosition.x + 1, (int) this->worldPosition.y, (int) this->worldPosition.z);
-
-    if(blockCoords.y == 0)              regenMesh((int) this->worldPosition.x, (int) this->worldPosition.y - 1, (int) this->worldPosition.z);
-    if(blockCoords.y == CHUNK_SIZE - 1) regenMesh((int) this->worldPosition.x, (int) this->worldPosition.y + 1, (int) this->worldPosition.z);
-
-    if(blockCoords.z == 0)              regenMesh((int) this->worldPosition.x, (int) this->worldPosition.y, (int) this->worldPosition.z - 1);
-    if(blockCoords.z == CHUNK_SIZE - 1) regenMesh((int) this->worldPosition.x, (int) this->worldPosition.y, (int) this->worldPosition.z + 1);
-}
-#undef regenMesh
-
-
 static Block airBlock = {BlockTypes::Air};
 Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     if(x >= CHUNK_SIZE) return nullptr;
@@ -512,13 +484,12 @@ void Chunk::generateMeshes(){
 
 static inline bool isOnOrForwardPlane(const Plane& plane, glm::vec3 center){
     // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
-    const int wd = CHUNK_SIZE / 2;
-    const int h = CHUNK_SIZE / 2;
+    const float x = CHUNK_SIZE;
 
     const float r = 
-        std::abs(plane.normal.x) * (wd) +
-        std::abs(plane.normal.y) * (h) +
-        std::abs(plane.normal.z) * (wd);
+        std::abs(plane.normal.x) * (x) +
+        std::abs(plane.normal.y) * (x) +
+        std::abs(plane.normal.z) * (x);
 
     return -r <= plane.getSignedDistanceToPlane(center);
 }

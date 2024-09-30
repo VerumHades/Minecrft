@@ -67,6 +67,8 @@ class MainScene: public Scene{
         double last = glfwGetTime();
         double current = glfwGetTime();
         double deltatime;
+
+        std::unordered_set<glm::vec3, Vec3Hash, Vec3Equal> loadedPositions;
         
     public:
         void initialize();
@@ -74,6 +76,9 @@ class MainScene: public Scene{
         void open(GLFWwindow* window)  override;
         void close(GLFWwindow* window)  override;
         void resize(GLFWwindow* window, int width, int height)  override;
+
+        void regenerateChunkMesh(Chunk& chunk);
+        void regenerateChunkMesh(Chunk& chunk,glm::vec3 blockCoords);
 
         void mouseMove(GLFWwindow* window, int x, int y)  override;
         void mouseEvent(GLFWwindow* window, int button, int action, int mods)  override;

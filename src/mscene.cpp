@@ -91,10 +91,12 @@ void MainScene::initialize(){
         {GLFW_KEY_D}
     };
 
-    chunkBuffer.initialize(pow(8*2, 3));
+    chunkBuffer.initialize(pow(12*2, 3));
 
     camera.setModelPosition({0,0,0});
     terrainProgram.updateUniform("modelMatrix");
+
+    //world.load("saves/worldsave.bin");
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
@@ -142,7 +144,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
         auto chunk = world.getChunkFromBlockPosition(hit.x, hit.y, hit.z);
         if(!chunk) return;
-        chunk->regenerateMesh(world.getGetChunkRelativeBlockPosition(hit.x, hit.y, hit.z));
+        regenerateChunkMesh(*chunk,world.getGetChunkRelativeBlockPosition(hit.x, hit.y, hit.z));
         
     }
     else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hit){
@@ -159,7 +161,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
         auto chunk = world.getChunkFromBlockPosition(result.x, result.y,result.z);
         if(!chunk) return;
-        chunk->regenerateMesh(world.getGetChunkRelativeBlockPosition(result.x, result.y,result.z));
+        regenerateChunkMesh(*chunk,world.getGetChunkRelativeBlockPosition(result.x, result.y,result.z));
     }
 }
 
@@ -190,7 +192,10 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
     }
 
     if(key == GLFW_KEY_E && action == GLFW_PRESS){
-        world.save("worldsave.bin");
+        world.save("saves/worldsave.bin");
+    }
+    if(key == GLFW_KEY_Q && action == GLFW_PRESS){
+        world.load("saves/worldsave.bin");
     }
 }
 
@@ -301,7 +306,32 @@ void MainScene::render(){
     generateMeshes();
 }
 
-std::unordered_set<glm::vec3, Vec3Hash, Vec3Equal> loadedPositions;
+void MainScene::regenerateChunkMesh(Chunk& chunk){
+    if(!chunk.buffersLoaded) return;
+    if(chunk.meshGenerating) return;
+
+    chunk.meshGenerated = 0;
+    chunk.meshGenerating = 0;
+    chunk.buffersLoaded = 0;
+}
+
+
+#define regenMesh(x,y,z) { \
+    Chunk* temp = this->world.getChunk(x, y, z);\
+    if(temp) regenerateChunkMesh(*temp);\
+}
+void MainScene::regenerateChunkMesh(Chunk& chunk, glm::vec3 blockCoords){
+    regenerateChunkMesh(chunk);
+    if(blockCoords.x == 0)              regenMesh((int) chunk.getWorldPosition().x - 1, (int) chunk.getWorldPosition().y, (int) chunk.getWorldPosition().z);
+    if(blockCoords.x == CHUNK_SIZE - 1) regenMesh((int) chunk.getWorldPosition().x + 1, (int) chunk.getWorldPosition().y, (int) chunk.getWorldPosition().z);
+
+    if(blockCoords.y == 0)              regenMesh((int) chunk.getWorldPosition().x, (int) chunk.getWorldPosition().y - 1, (int) chunk.getWorldPosition().z);
+    if(blockCoords.y == CHUNK_SIZE - 1) regenMesh((int) chunk.getWorldPosition().x, (int) chunk.getWorldPosition().y + 1, (int) chunk.getWorldPosition().z);
+
+    if(blockCoords.z == 0)              regenMesh((int) chunk.getWorldPosition().x, (int) chunk.getWorldPosition().y, (int) chunk.getWorldPosition().z - 1);
+    if(blockCoords.z == CHUNK_SIZE - 1) regenMesh((int) chunk.getWorldPosition().x, (int) chunk.getWorldPosition().y, (int) chunk.getWorldPosition().z + 1);
+}
+#undef regenMesh
 
 void MainScene::generateMeshes(){
     int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
@@ -320,7 +350,7 @@ void MainScene::generateMeshes(){
         Chunk* meshlessChunk = world.getChunk(chunkX, chunkY, chunkZ);
         //std::cout << "Got chunk!" << std::endl;
         if(!meshlessChunk) continue;
-        if(!camera.isVisible(*meshlessChunk) && !(glm::length(glm::vec2(x,z)) <= 2)) continue;
+        if(!camera.isVisible(*meshlessChunk)) continue;
         world.generateChunkMesh(chunkX,chunkY,chunkZ, chunkBuffer);
 
         if(meshlessChunk->isEmpty) continue;
@@ -332,7 +362,6 @@ void MainScene::generateMeshes(){
     }
 
     bool changed = false;
-
     for(auto& pos: currentPositions){
         if(loadedPositions.find(pos) != loadedPositions.end()) continue;
 
@@ -398,7 +427,7 @@ void MainScene::physicsUpdate(){
 }
 
 void MainScene::pregenUpdate(){
-    int pregenDistance = renderDistance + 2;
+    int pregenDistance = renderDistance + 1;
 
     while(running){
         int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
@@ -419,7 +448,7 @@ void MainScene::pregenUpdate(){
                 std::thread t(&World::generateChunk, &world, chunkX, chunkY, chunkZ);
                 openThreads.push_back(move(t));
             }
-            if(openThreads.size() > 8) break;
+            if(openThreads.size() > 16) break;
         }
 
         for(auto& t: openThreads){

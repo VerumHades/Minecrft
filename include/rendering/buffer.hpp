@@ -78,7 +78,6 @@ class MultiChunkBuffer{
             size_t baseVertex;
 
             bool hasDrawCall;
-            size_t drawCallIndex;
         };
 
         DrawElementsIndirectCommand* drawCallBuffer = nullptr;
@@ -88,11 +87,19 @@ class MultiChunkBuffer{
         std::unordered_map<glm::vec3, LoadedChunk, Vec3Hash, Vec3Equal> loadedChunks;
         std::vector<DrawElementsIndirectCommand> drawCalls;
 
+        
+
     public:
         ~MultiChunkBuffer();
         
         void initialize(uint32_t maxDrawCalls);
+
         void addChunkMesh(Mesh& mesh, const glm::vec3& pos);
+        void swapChunkMesh(Mesh& mesh, const glm::vec3& pos);
+        void unloadChunkMesh(const glm::vec3& pos);
+        bool isChunkLoaded(const glm::vec3& pos){
+            return loadedChunks.find(pos) != loadedChunks.end();
+        }
 
         void addDrawCall(const glm::vec3& position);
         void removeDrawCall(const glm::vec3& position);
