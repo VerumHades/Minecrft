@@ -240,9 +240,9 @@ void MainScene::render(){
 
     //suncam.setPosition(c0,400, camera.getPosition().z);
     
-    int offsetX = (int) camera.getPosition().x;
-    int offsetY = (int) camera.getPosition().y;
-    int offsetZ = (int) camera.getPosition().z;
+    int offsetX = ((int) camera.getPosition().x / 64) * 64;
+    int offsetY = ((int) camera.getPosition().y / 64) * 64;
+    int offsetZ = ((int) camera.getPosition().z / 64) * 64;
 
     suncam.getTexture()->bind(1);
     
@@ -354,8 +354,9 @@ void MainScene::generateMeshes(){
         world.generateChunkMesh(chunkX,chunkY,chunkZ, chunkBuffer);
 
         if(meshlessChunk->isEmpty) continue;
-
         glm::vec3 position = {chunkX,chunkY,chunkZ};
+
+        if(!chunkBuffer.isChunkLoaded(position)) continue;
         //chunkBuffer.addDrawCall(position);
         currentPositions.emplace(position);
         //if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();

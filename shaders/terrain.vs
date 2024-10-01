@@ -29,7 +29,7 @@ void main()
     TexIndex = aTexIndex;
     occlusion = aOcclusion;
 
-    FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
+    FragPosLightSpace = lightSpaceMatrix * vec4(FragPos - aNormal * 0.01, 1.0);
     //gl_Position = vec4(aPos, 1.0);
     
     /*gl_Position = FragPosLightSpace;

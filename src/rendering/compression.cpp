@@ -98,9 +98,13 @@ uint64 bitworks::decompress64Bits(std::vector<compressed_byte> bytes){
 
 static uint32_t valueMask = ~0U >> 2;
 void compressed_24bit::setValue(uint32_t value){
+    uint8_t mode = getMode();
+
     bytes[0] = value;
     bytes[1] = value >> 8;
-    bytes[2] = (value >> 16) & 0b00111111; // Leave mode  bits untouched
+    bytes[2] = value >> 16; // Leave mode  bits untouched
+
+    setMode(mode);
 }
 uint32_t compressed_24bit::getValue(){
     uint32_t value = 0;
@@ -115,7 +119,7 @@ uint32_t compressed_24bit::getValue(){
 }
 void compressed_24bit::setMode(uint8_t mode){
     bytes[2] &= 0b00111111; // Reset the mode bits
-    bytes[2] |= mode << 6;
+    bytes[2] |= (mode << 6);
 }
 uint8_t compressed_24bit::getMode(){
     return bytes[2] >> 6;
@@ -158,9 +162,10 @@ std::vector<compressed_24bit> bitworks::compressBitArray3D(BitArray3D array){
         }
 
         if(compressedOutput.size() != 0){
-            compressed_24bit& last = compressedOutput.back();
+            compressed_24bit& last = compressedOutput[compressedOutput.size() - 1];
             if(start_value == last.getMode()){ // If possible save the same bits in the last compressed_24bit
                 last.setValue(last.getValue() + count);
+                //last.setMode(last.getMode());
                 continue;
             }
         }

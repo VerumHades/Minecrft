@@ -28,7 +28,7 @@ size_t Allocator::allocate(size_t size){
     }
     
     size_t sizeLeft = blocks[selected_index].size - size;
-    if(blocks[selected_index].size > size && sizeLeft > 10000){ // Will fragment memory without regard, maybe update later?
+    if(blocks[selected_index].size > size && blocks[selected_index].size > 100000 && sizeLeft >= 50000){ // Will fragment memory without regard, maybe update later?
         MemBlock newBlock;
 
         newBlock.start = blocks[selected_index].start + size;

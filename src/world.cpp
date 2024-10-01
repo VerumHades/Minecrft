@@ -310,9 +310,9 @@ static inline T readValue(std::ifstream &file) {
 
 static inline void saveBitArray3D(std::ofstream &file, BitArray3D& array){
     std::vector<compressed_24bit> compressedMask        = bitworks::compressBitArray3D(array);
-    
+
     saveValue<size_t>(file, compressedMask.size());
-    for(auto& value: compressedMask) file.write(reinterpret_cast<const char*>(&value), sizeof(compressed_24bit));
+    for(auto& value: compressedMask) saveValue(file,value);
 }
 
 static inline BitArray3D readBitArray3D(std::ifstream &file){
@@ -387,14 +387,14 @@ void World::load(std::string filepath){
 
         std::cout << "Loading chunk: " << position.x << "," << position.y << "," << position.z << std::endl;
         
-        chunks.emplace(position, std::make_unique<Chunk>(*this, position));
+        chunks[position] = std::make_unique<Chunk>(*this, position);
         Chunk* chunk = chunks.at(position).get();
 
         for(int layerIndex = 0; layerIndex < layerCount; layerIndex++){
             int type = readValue<int>(file);
             BitArray3D normal = readBitArray3D(file);
             BitArray3D rotated = readBitArray3D(file);
-
+            
             if(layerIndex == 0){
                 chunk->getSolidMask().segments = normal;
                 chunk->getSolidMask().segmentsRotated = rotated;

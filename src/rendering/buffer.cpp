@@ -265,16 +265,26 @@ void MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::vec3& pos){
     size_t oldVertexBufferOffset = chunk.vertexData;
     size_t oldIndexBufferOffset = chunk.indexData;
 
-    chunk.vertexData = vertexBufferOffset;
-    chunk.indexData = indexBufferOffset;
-    
-    chunk.firstIndex = indexBufferOffset;
-    chunk.count = mesh.getIndices().size();
-    chunk.baseVertex = vertexBufferOffset / vertexSize;
-
     if(chunk.hasDrawCall){
         removeDrawCall(pos);
+
+        chunk.vertexData = vertexBufferOffset;
+        chunk.indexData = indexBufferOffset;
+        
+        chunk.firstIndex = indexBufferOffset;
+        chunk.count = mesh.getIndices().size();
+        chunk.baseVertex = vertexBufferOffset / vertexSize;
+
+
         addDrawCall(pos);
+    }
+    else{
+        chunk.vertexData = vertexBufferOffset;
+        chunk.indexData = indexBufferOffset;
+        
+        chunk.firstIndex = indexBufferOffset;
+        chunk.count = mesh.getIndices().size();
+        chunk.baseVertex = vertexBufferOffset / vertexSize;
     }
 
     /*
@@ -310,14 +320,15 @@ void MultiChunkBuffer::removeDrawCall(const glm::vec3& position){
     LoadedChunk& chunk = loadedChunks.at(position);
     if(!chunk.hasDrawCall) return;
 
-
     for(int i = 0;i < drawCalls.size();i++){
         if(drawCalls[i].firstIndex != chunk.firstIndex) continue;
 
         drawCalls.erase(drawCalls.begin() + i);
         chunk.hasDrawCall = false;
-        break;
+        return;
     }
+
+    std::cout << "Draw call not found?" << std::endl;
 }
 
 void MultiChunkBuffer::updateDrawCalls(){

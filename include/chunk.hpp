@@ -28,12 +28,6 @@
 
 class World;
 
-struct SerializedChunkMask{
-    Block block = {BlockTypes::Air};
-    uint64 segments[64][64];
-    uint64 segmentsRotated[64][64];
-};
-
 struct ChunkMask{
     Block block = {BlockTypes::Air};
     BitArray3D segments = {}; 

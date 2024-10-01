@@ -14,6 +14,6 @@ void main()
     //gl_Position.xy /= 0.5;
 
     // Warp the shadow map to increase resolution close to the player
-    float dist = length(gl_Position.xy);
-    gl_Position.xy /= (dist+.1);
+    //float dist = length(gl_Position.xy);
+    //gl_Position.xy /= (dist+.1);
 }  
