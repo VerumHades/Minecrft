@@ -318,7 +318,6 @@ static inline void saveBitArray3D(std::ofstream &file, BitArray3D& array){
 static inline BitArray3D readBitArray3D(std::ifstream &file){
     size_t count = readValue<size_t>(file);
 
-    std::cout << "Reading compressed array: " << count << std::endl;
     std::vector<compressed_24bit> compressed = {};
     for(int i = 0;i < count;i++) compressed.push_back(readValue<compressed_24bit>(file));
 
@@ -344,7 +343,7 @@ static inline void saveMask(std::ofstream &file, ChunkMask& mask, int type){
     saved masks using the above function..
 */
 void World::saveChunk(std::ofstream &file, Chunk& chunk){  
-    size_t layer_count = chunk.getMasks().size() + 1; // Accomodate solid mask  
+    size_t layer_count = chunk.getMasks().size(); // Accomodate solid mask  
     saveValue(file, layer_count);
 
     saveValue(file, chunk.getWorldPosition().x);
@@ -374,7 +373,6 @@ void World::load(std::string filepath){
     }   
 
     size_t chunkCount = readValue<size_t>(file);
-    std::cout << "Chunk count: " << chunkCount << std::endl;
 
     for(size_t chunkIndex = 0;chunkIndex < chunkCount;chunkIndex++){
         size_t layerCount = readValue<size_t>(file);
@@ -385,27 +383,25 @@ void World::load(std::string filepath){
             readValue<float>(file)
         };
 
-        std::cout << "Loading chunk: " << position.x << "," << position.y << "," << position.z << std::endl;
-        
         chunks[position] = std::make_unique<Chunk>(*this, position);
         Chunk* chunk = chunks.at(position).get();
+
+        readValue<int>(file);
+        BitArray3D solidNormal = readBitArray3D(file);
+        BitArray3D solidRotated = readBitArray3D(file);
+
+        chunk->getSolidMask().segments = solidNormal;
+        chunk->getSolidMask().segmentsRotated = solidRotated;
 
         for(int layerIndex = 0; layerIndex < layerCount; layerIndex++){
             int type = readValue<int>(file);
             BitArray3D normal = readBitArray3D(file);
             BitArray3D rotated = readBitArray3D(file);
-            
-            if(layerIndex == 0){
-                chunk->getSolidMask().segments = normal;
-                chunk->getSolidMask().segmentsRotated = rotated;
-                continue;
-            }
-
-            std::cout << "Loading chunk layers: " << layerIndex << " " << getBlockTypeName(static_cast<BlockTypes>(type)) << std::endl;
 
             ChunkMask mask;
             mask.segments = normal;
             mask.segmentsRotated = rotated;
+            mask.block = {static_cast<BlockTypes>(type)};
 
             chunk->getMasks()[static_cast<BlockTypes>(type)] = mask;
         }

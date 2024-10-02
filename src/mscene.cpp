@@ -97,6 +97,7 @@ void MainScene::initialize(){
     terrainProgram.updateUniform("modelMatrix");
 
     //world.load("saves/worldsave.bin");
+    world.load("saves/worldsave.bin");
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
@@ -193,9 +194,6 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
 
     if(key == GLFW_KEY_E && action == GLFW_PRESS){
         world.save("saves/worldsave.bin");
-    }
-    if(key == GLFW_KEY_Q && action == GLFW_PRESS){
-        world.load("saves/worldsave.bin");
     }
 }
 
