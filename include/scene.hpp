@@ -10,8 +10,11 @@
 
 class Scene{
     public:
-        UIWindow window;
+        UIWindowIdentifier windowID;
         UIManager* manager;
+
+        void setUILayer(std::string name);
+        void addElement(std::unique_ptr<UIFrame> element);
         
         virtual void render() {};
         virtual void open(GLFWwindow* window)  {};
@@ -39,6 +42,7 @@ class SceneManager{
         void initialize();
         void addScene(std::string name, std::unique_ptr<Scene> scene);
         void setScene(std::string name);
+        Scene* getScene(std::string name);
         void setWindow(GLFWwindow* window) {this->window = window;}
 
         void resize(GLFWwindow* window, int width, int height);
@@ -49,7 +53,7 @@ class SceneManager{
         void scrollEvent(GLFWwindow* window, double xoffset, double yoffset);
 
         void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods);
-
+        void keyTypedEvent(GLFWwindow* window, unsigned int codepoint);
 };
 
 #endif

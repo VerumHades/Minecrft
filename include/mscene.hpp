@@ -40,7 +40,10 @@ class MainScene: public Scene{
         int renderDistance = 8;
         int selectedBlock = 2;
         bool running = false;
+        
         bool lineMode = true;
+        bool chatOpen = false;
+        UIInput* chatInput;
         //int sunDistance = ((CHUNK_SIZE * renderDistance) / 2) ;
         int sunDistance = 100;
         float sunAngle = 70.0f;

@@ -5,6 +5,19 @@ void MainScene::initialize(){
     camera.getProjectionUniform().attach(modelManager.getModelProgram());
     camera.getViewUniform().attach(modelManager.getModelProgram());
 
+
+    auto chatInput = std::make_unique<UIInput>(
+        TValue(PIXELS,0),
+        TValue(OPERATION_MINUS,{FRACTIONS, 100}, {MFRACTION, 100}),
+        glm::vec3(0,0,0)
+    );
+    this->chatInput = chatInput.get();
+
+    this->setUILayer("chat");
+    this->addElement(std::move(chatInput));
+    
+    this->setUILayer("default");
+
     Model& bob = modelManager.createModel("bob");
     bob.loadFromFile("models/test.gltf", "models/dio_brando");
     //bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
@@ -96,8 +109,10 @@ void MainScene::initialize(){
     camera.setModelPosition({0,0,0});
     terrainProgram.updateUniform("modelMatrix");
 
-    //world.load("saves/worldsave.bin");
     world.load("saves/worldsave.bin");
+
+    
+    //world.load("saves/worldsave.bin");
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
@@ -181,19 +196,30 @@ void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
 }
 
 void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
-    for(int i = 0; i < boundKeys.size();i++){
-        if(key == boundKeys[i].key && action == GLFW_PRESS) boundKeys[i].isDown = true; 
-        else if(key == boundKeys[i].key && action == GLFW_RELEASE) boundKeys[i].isDown = false; 
-    }
-
     if(key == GLFW_KEY_M && action == GLFW_PRESS){
         lineMode = !lineMode;
         if(!lineMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
+    if(key == GLFW_KEY_T && action == GLFW_PRESS){
+        chatOpen = !chatOpen;
+        if(chatOpen){
+            this->setUILayer("chat");
+            manager->setFocus(this->chatInput);
+        }
+        else this->setUILayer("default");
+    }
+
     if(key == GLFW_KEY_E && action == GLFW_PRESS){
         world.save("saves/worldsave.bin");
+    }
+    
+    if(chatOpen && action == GLFW_PRESS) return; 
+    
+    for(int i = 0; i < boundKeys.size();i++){
+        if(key == boundKeys[i].key && action == GLFW_PRESS) boundKeys[i].isDown = true; 
+        else if(key == boundKeys[i].key && action == GLFW_RELEASE) boundKeys[i].isDown = false; 
     }
 }
 

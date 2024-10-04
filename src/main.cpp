@@ -111,6 +111,9 @@ int main() {
     glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
         sceneManager.keyEvent(window, key, scancode, action, mods);
     });
+    glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int codepoint) {
+        sceneManager.keyTypedEvent(window, codepoint);
+    });
     
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -141,7 +144,14 @@ int main() {
     sceneManager.initialize();
 
     std::unique_ptr<Scene> mainMenu = std::make_unique<Scene>();
+    std::unique_ptr<MainScene> mainScene = std::make_unique<MainScene>();
+    MainScene* mainSceneTemp = mainScene.get();
 
+    sceneManager.addScene("game",std::move(mainScene));
+    sceneManager.addScene("menu",std::move(mainMenu));
+
+    mainSceneTemp->initialize();
+    
     auto background = std::make_unique<UIImage>(
         "textures/background.png", 
         TValue({PIXELS, 0}),
@@ -161,18 +171,13 @@ int main() {
         sceneManager.setScene("game");
     };
 
-    mainMenu->window.getCurrentLayer().elements.push_back(std::move(background));
-    mainMenu->window.getCurrentLayer().elements.push_back(std::move(startButton));
-
-    std::unique_ptr<MainScene> mainScene = std::make_unique<MainScene>();
-    mainScene->initialize();
+    sceneManager.getScene("menu")->addElement(std::move(background));
+    sceneManager.getScene("menu")->addElement(std::move(startButton));
     
+    sceneManager.setScene("game");
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    sceneManager.addScene("game",std::move(mainScene));
-    sceneManager.addScene("menu",std::move(mainMenu));
-    sceneManager.setScene("game");
 
     float deltatime;
     while (!glfwWindowShouldClose(window)) {

@@ -94,14 +94,16 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
 }
 
 void UIManager::update(){
+    if(currentWindow == (UIWindowIdentifier)-1) return;
+
+    //std::cout << getCurrentWindow().getCurrentLayer().getElements().size() << std::endl;
+
     uiProgram.use();
 
     Mesh temp = Mesh();
     temp.setVertexFormat({2,2,3,2,1,1,1});
 
-    if(!currentWindow) return;
-
-    for(auto& window: currentWindow->getCurrentLayer().elements){
+    for(auto& window: getCurrentWindow().getCurrentLayer().getElements()){
         std::vector<UIRenderInfo> winfo = window->getRenderingInformation(*this);
         for(auto& info: winfo) processRenderingInformation(info, *window, temp);
     }
@@ -183,14 +185,43 @@ void UIManager::mouseMove(int x, int y){
 void UIManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     if(!underHover) return;
     if(underHover->onMouseEvent) underHover->onMouseEvent(window,button,action,mods);
+    update();
+}
+
+void UIManager::keyTypedEvent(GLFWwindow* window, unsigned int codepoint){
+    if(!inFocus) return;
+    if(inFocus->onKeyTyped) inFocus->onKeyTyped(window,codepoint);
+    update();
+}
+void UIManager::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
+    if(!inFocus) return;
+    if(inFocus->onKeyEvent) inFocus->onKeyEvent(window,key,scancode,action,mods);
+    update();
+}
+
+void UIManager::setCurrentWindow(UIWindowIdentifier id){
+    inFocus = nullptr;
+    underHover = nullptr;
+    currentWindow = id;
+    update();
+}
+UIWindow& UIManager::getCurrentWindow(){
+    return windows[currentWindow];
+}
+UIWindow& UIManager::getWindow(UIWindowIdentifier id){
+    return windows[id];
+}
+UIWindowIdentifier UIManager::createWindow(){
+    windows[lastWindowIndentifier] = {};
+    return lastWindowIndentifier++;
 }
 
 UIFrame* UIManager::getElementUnder(int x, int y){
-    if(!currentWindow) return nullptr;
+    if(currentWindow == (UIWindowIdentifier)-1) return nullptr;
 
     std::queue<std::tuple<int, UIFrame*>> elements;
     
-    for(auto& window: currentWindow->getCurrentLayer().elements) elements.push({0,window.get()});
+    for(auto& window: getCurrentWindow().getCurrentLayer().getElements()) elements.push({0,window.get()});
     
 
     UIFrame* current = nullptr;
@@ -281,4 +312,42 @@ std::vector<UIRenderInfo> UIImage::getRenderingInformation(UIManager& manager){
 
 UIImage::UIImage(std::string path, TValue x, TValue y, TValue width, TValue height) : UIFrame(x,y,width,height,{0,0,0}), path(path){
     textures->addTexture(path);
+}
+
+UIInput::UIInput(TValue x, TValue y, glm::vec3 color): UILabel("Hello",x,y,color) {
+    width = {FRACTIONS, 100};
+    height = {PIXELS,30};
+    padding = {PIXELS, 4};
+
+    onKeyTyped = [this](GLFWwindow* window, unsigned int codepoint){
+        char typedChar = static_cast<char>(codepoint);
+
+        if (typedChar >= 32 && typedChar <= 126) {
+            this->text += typedChar;
+        }
+    };
+
+    onKeyEvent = [this](GLFWwindow* window, int key, int scancode, int action, int mods){
+        if(key == GLFW_KEY_BACKSPACE && action == GLFW_PRESS){
+            this->text = this->text.substr(0, this->text.size() - 1);
+        }
+    };
+}
+
+std::vector<UIRenderInfo> UIInput::getRenderingInformation(UIManager& manager){
+    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
+    int sw = manager.getScreenWidth();
+    int sh = manager.getScreenHeight();
+
+    int rxpadding = getValueInPixels(padding, true , sw);
+    int rypadding = getValueInPixels(padding, false, sh);
+
+    int rx = getValueInPixels(x, true , sw) + rxpadding;
+    int ry = getValueInPixels(y, false, sh) + rypadding;
+    
+    std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,rx,ry,1,{1,1,1});
+    out.insert(out.end(), temp.begin(), temp.end());
+
+    return out;
 }

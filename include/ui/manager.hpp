@@ -64,6 +64,8 @@ class UIFrame{
         virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
 
         std::function<void(GLFWwindow*, int, int, int)> onMouseEvent;
+        std::function<void(GLFWwindow*, unsigned int)> onKeyTyped;
+        std::function<void(GLFWwindow*, int key, int scancode, int action, int mods)> onKeyEvent;
 
         int getValueInPixels(TValue& value, bool horizontal, int container_size);
         bool pointWithin(glm::vec2 position, UIManager& manager);
@@ -72,7 +74,7 @@ class UIFrame{
 };
 
 class UILabel: public UIFrame{
-    private:
+    protected:
         std::string text;
         TValue padding = {PIXELS, 4};
 
@@ -81,6 +83,14 @@ class UILabel: public UIFrame{
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
         void setPadding(TValue value) {padding = value;}
+};
+
+class UIInput: public UILabel{
+    private:
+
+    public:
+        UIInput(TValue x, TValue y, glm::vec3 color);
+        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
 class UIImage: public UIFrame{
@@ -95,9 +105,17 @@ class UIImage: public UIFrame{
 };
 
 class UILayer{
-    public:
+    private:
         std::vector<std::unique_ptr<UIFrame>> elements;
+
+    public:
+        void addElement(std::unique_ptr<UIFrame> element){
+            elements.push_back(std::move(element));
+        }
+        std::vector<std::unique_ptr<UIFrame>>& getElements() {return elements;}
 };
+
+using UIWindowIdentifier = uint32_t;
 
 class UIWindow{
     private: 
@@ -105,7 +123,10 @@ class UIWindow{
         std::string currentLayer = "default";
 
     public:
+        void setCurrentLayer(std::string name) {currentLayer = name;};
+        std::string getCurrentLayerName(){return currentLayer;}
         UILayer& getCurrentLayer() {return layers[currentLayer];}
+        UILayer& getLayer(std::string name) {return layers[name];}
 };
 
 class UIManager{
@@ -121,7 +142,11 @@ class UIManager{
         int screenHeight = 1080;
 
         UIFrame* underHover;
-        UIWindow* currentWindow = nullptr;
+        UIFrame* inFocus;
+
+        UIWindowIdentifier currentWindow = -1;
+        UIWindowIdentifier lastWindowIndentifier = 0;
+        std::unordered_map<UIWindowIdentifier, UIWindow> windows;
 
         void processRenderingInformation(UIRenderInfo& info, UIFrame& frame, Mesh& output);
 
@@ -129,15 +154,19 @@ class UIManager{
         void initialize();
         void resize(int width, int height);
         void update();
+        void setFocus(UIFrame* ptr){inFocus = ptr;}
 
         void mouseMove(int x, int y);
         void mouseEvent(GLFWwindow* window, int button, int action, int mods);
+        void keyTypedEvent(GLFWwindow* window, unsigned int codepoint);
+        void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods);
         void scrollEvent(int yoffset);
 
-        void keyEvent(int key, int action);
-
         void render();
-        void setCurrentWindow(UIWindow* window) {currentWindow = window;};
+        void setCurrentWindow(UIWindowIdentifier id);
+        UIWindow& getCurrentWindow();
+        UIWindow& getWindow(UIWindowIdentifier id);
+        UIWindowIdentifier createWindow();
 
         UIFrame* getElementUnder(int x, int y);  
 

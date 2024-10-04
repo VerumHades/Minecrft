@@ -104,6 +104,8 @@ void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
 
         if(value > 0.5){
             chunk.setBlock(x,y,z, {top ? BlockTypes::Grass : BlockTypes::Stone});
+
+            if(top && rand() % 30 == 0) generateOakTree(chunk,x,y+1,z);
         }
     }
     

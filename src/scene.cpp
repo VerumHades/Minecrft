@@ -1,8 +1,21 @@
 #include <scene.hpp>
 
+void Scene::addElement(std::unique_ptr<UIFrame> element){
+    this->manager->getWindow(windowID).getCurrentLayer().addElement(std::move(element));
+    this->manager->update();
+}
+void Scene::setUILayer(std::string name){
+    this->manager->getWindow(windowID).setCurrentLayer(name);
+    this->manager->update();
+
+    std::cout << "UI layer selected: " << name << std::endl;
+}
+
 SceneManager::SceneManager(){
     std::unique_ptr<Scene> defaultScene = std::make_unique<Scene>();
-    
+    addScene("internal_default", std::move(defaultScene));
+    setScene("internal_default");
+
     auto label = std::make_unique<UILabel>(
         "This is the default scene, if you are seeing this something has gone wrong!", 
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
@@ -10,7 +23,7 @@ SceneManager::SceneManager(){
         glm::vec3(0,0,0)
     );
 
-    defaultScene->window.getCurrentLayer().elements.push_back(std::move(label));
+    getCurrentScene()->addElement(std::move(label));
 
     auto label2 = std::make_unique<UILabel>(
         "Or you could be a dev, in which case you should have intended this to happen.", 
@@ -23,10 +36,7 @@ SceneManager::SceneManager(){
         std::cout << "Hello World!" << std::endl;
     };*/
 
-    defaultScene->window.getCurrentLayer().elements.push_back(std::move(label2));
-
-    addScene("internal_default", std::move(defaultScene));
-    setScene("internal_default");
+    getCurrentScene()->addElement(std::move(label2));
 }
 
 void SceneManager::initialize(){
@@ -42,6 +52,14 @@ Scene* SceneManager::getCurrentScene(){
     return scenes.at(currentScene).get();
 }
 
+Scene* SceneManager::getScene(std::string name){
+    if(scenes.count(currentScene) == 0){
+        std::cout << "No scene: " << currentScene << " exists." << std::endl;
+    }
+
+    return scenes.at(currentScene).get();
+}
+
 void SceneManager::addScene(std::string name, std::unique_ptr<Scene> scene){
     if(scenes.count(name) != 0){
         std::cout << "Scene under name: " << currentScene << " already exists." << std::endl;
@@ -50,6 +68,7 @@ void SceneManager::addScene(std::string name, std::unique_ptr<Scene> scene){
 
     scenes[name] = std::move(scene);
     scenes[name]->manager = &manager;
+    scenes[name]->windowID = manager.createWindow();
 }
 
 void SceneManager::setScene(std::string name){
@@ -59,7 +78,7 @@ void SceneManager::setScene(std::string name){
     else return;
     currentScene = name;
     getCurrentScene()->open(window);
-    manager.setCurrentWindow(&getCurrentScene()->window);
+    manager.setCurrentWindow(getCurrentScene()->windowID);
 }
 
 void SceneManager::resize(GLFWwindow* window, int width, int height){
@@ -82,9 +101,14 @@ void SceneManager::scrollEvent(GLFWwindow* window, double xoffset, double yoffse
 
 void SceneManager::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
     getCurrentScene()->keyEvent(window,key,scancode,action,mods);
+    manager.keyEvent(window,key,scancode,action,mods);
 }
 
 void SceneManager::render(){
     getCurrentScene()->render();
     manager.render();
+}
+
+void SceneManager::keyTypedEvent(GLFWwindow* window, unsigned int codepoint){
+    manager.keyTypedEvent(window, codepoint);
 }
