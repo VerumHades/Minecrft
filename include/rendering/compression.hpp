@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 
-#include <blocks.hpp>
+#include <game/blocks.hpp>
 
 typedef uint_fast64_t uint64;
 typedef std::array<uint64, 64> Plane64;

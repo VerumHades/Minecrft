@@ -314,10 +314,9 @@ UIImage::UIImage(std::string path, TValue x, TValue y, TValue width, TValue heig
     textures->addTexture(path);
 }
 
-UIInput::UIInput(TValue x, TValue y, glm::vec3 color): UILabel("Hello",x,y,color) {
-    width = {FRACTIONS, 100};
-    height = {PIXELS,30};
-    padding = {PIXELS, 4};
+UIInput::UIInput(TValue x, TValue y, TValue width, TValue height, glm::vec3 color): UILabel("",x,y,color){
+    this->width = width;
+    this->height = height;
 
     onKeyTyped = [this](GLFWwindow* window, unsigned int codepoint){
         char typedChar = static_cast<char>(codepoint);
@@ -330,6 +329,10 @@ UIInput::UIInput(TValue x, TValue y, glm::vec3 color): UILabel("Hello",x,y,color
     onKeyEvent = [this](GLFWwindow* window, int key, int scancode, int action, int mods){
         if(key == GLFW_KEY_BACKSPACE && action == GLFW_PRESS){
             this->text = this->text.substr(0, this->text.size() - 1);
+        }
+
+        if(key == GLFW_KEY_ENTER && action == GLFW_PRESS){
+            if(this->onSubmit) this->onSubmit(this->text);
         }
     };
 }

@@ -1,7 +1,7 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <chunk.hpp>
+#include <game/chunk.hpp>
 #include <worldgen/worldgen.hpp>
 #include <thread>
 #include <glm/glm.hpp>
@@ -16,7 +16,7 @@
 #include <fstream>
 #include <string>
 
-#include <entity.hpp>
+#include <game/entity.hpp>
 #include <vec_hash.hpp>
 
 struct RaycastResult{

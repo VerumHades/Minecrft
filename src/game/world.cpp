@@ -1,4 +1,4 @@
-#include <world.hpp>
+#include <game/world.hpp>
 
 std::shared_mutex chunkGenLock;
 

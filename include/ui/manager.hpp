@@ -83,13 +83,18 @@ class UILabel: public UIFrame{
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
         void setPadding(TValue value) {padding = value;}
+        void setText(std::string text) {this->text = text;}
+        std::string& getText() {return text;}
 };
 
 class UIInput: public UILabel{
     private:
 
     public:
-        UIInput(TValue x, TValue y, glm::vec3 color);
+        UIInput(TValue x, TValue y, TValue width, TValue height, glm::vec3 color);
+
+        std::function<void(std::string)> onSubmit;
+
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 

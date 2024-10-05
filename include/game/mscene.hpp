@@ -6,14 +6,18 @@
 #include <iostream>
 #include <cmath>
 
-#include <world.hpp>
 #include <rendering/buffer.hpp>
 #include <rendering/shaders.hpp>
 #include <rendering/texture.hpp>
 #include <rendering/camera.hpp>
+
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
-#include <entity.hpp>
+
+#include <game/world.hpp>
+#include <game/entity.hpp>
+#include <game/commands.hpp>
+
 #include <scene.hpp>
 #include <set>
 
@@ -30,6 +34,7 @@ class MainScene: public Scene{
 
         ShaderProgram terrainProgram;
         ShaderProgram skyboxProgram;
+        CommandProcessor commandProcessor;
 
         GLTextureArray tilemap;
         GLSkybox skybox;

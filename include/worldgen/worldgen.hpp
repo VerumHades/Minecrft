@@ -1,7 +1,7 @@
 #ifndef WORLDGEN_H
 #define WORLDGEN_H
 
-#include <chunk.hpp>
+#include <game/chunk.hpp>
 #include <optional>
 #include <random>
 

@@ -165,6 +165,6 @@ class DepthCamera: public Camera{
 
         void setCaptureSize(float size) {this->size = size;};
 };
-#include <chunk.hpp>
+#include <game/chunk.hpp>
 
 #endif

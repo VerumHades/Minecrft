@@ -17,6 +17,8 @@ void Scene::setUILayer(std::string name){
     auto& layer = getCurrentUILayer();
     glfwSetInputMode(sceneManager->getGLFWWindow(), GLFW_CURSOR, layer.cursorMode);
     sceneManager->setEventLocks(layer.eventLocks);
+
+    uiManager->setFocus(nullptr);
 }
 UILayer& Scene::getCurrentUILayer(){
     return this->uiManager->getWindow(windowID).getCurrentLayer();

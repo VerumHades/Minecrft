@@ -1,4 +1,4 @@
-#include <entity.hpp>
+#include <game/entity.hpp>
 #include <iostream>
 Entity::Entity(glm::vec3 position, glm::vec3 colliderDimensions): position(position) {
     colliders.push_back({0,0,0,colliderDimensions.x,colliderDimensions.y,colliderDimensions.z});

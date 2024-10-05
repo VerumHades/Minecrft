@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
-#include <blocks.hpp>
+#include <game/blocks.hpp>
 #include <string>
 
 typedef struct CollisionCheckResult{
@@ -42,6 +42,7 @@ class Entity{
         void accelerate(glm::vec3 direction);
 
         const glm::vec3& getPosition() {return position;};
+        void setPosition(const glm::vec3& position) {this->position = position;}
         const glm::vec3& getVelocity() {return velocity;};
         const std::vector<RectangularCollider>& getColliders() {return colliders;}
         std::string getModelName() {return modelName;};

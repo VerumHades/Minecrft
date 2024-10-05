@@ -1,19 +1,38 @@
-#include <mscene.hpp>
+#include <game/mscene.hpp>
 
 void MainScene::initialize(){
     modelManager.initialize();
     camera.getProjectionUniform().attach(modelManager.getModelProgram());
     camera.getViewUniform().attach(modelManager.getModelProgram());
 
+
+    std::unique_ptr<Command> tpCommand = std::make_unique<Command>(
+        std::vector<CommandArgumentType>({INT,INT,INT}),
+        [this](std::vector<CommandArgument> arguments){
+            Entity& player = world.getEntities()[0];
+            std::cout << arguments[0].intValue << " " <<  arguments[1].intValue  << " " << arguments[3].intValue << std::endl;
+            player.setPosition({arguments[0].intValue,arguments[1].intValue,arguments[2].intValue});
+        }
+    );
+
+    commandProcessor.addCommand({"teleport","tp"},std::move(tpCommand));
+
     this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
     this->getUILayer("chat").eventLocks = {true, true, true, true};
 
-    auto chatInput = std::make_unique<UIInput>(
+    auto chatInput = std::make_unique<UICommandInput>(
         TValue(PIXELS,0),
         TValue(OPERATION_MINUS,{FRACTIONS, 100}, {MFRACTION, 100}),
+        TValue(FRACTIONS,100),
+        TValue(PIXELS,50),
         glm::vec3(0,0,0)
     );
     this->chatInput = chatInput.get();
+
+    this->chatInput->onSubmit = [this](std::string command) {
+        commandProcessor.processCommand(command);
+        this->chatInput->setText("");
+    };
     
     this->setUILayer("chat");
     this->addElement(std::move(chatInput));

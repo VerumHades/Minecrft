@@ -5,7 +5,7 @@
 
 #include <ui/manager.hpp>
 #include <scene.hpp>
-#include <mscene.hpp>
+#include <game/mscene.hpp>
 #include <rendering/allocator.hpp>
 
 SceneManager sceneManager;
