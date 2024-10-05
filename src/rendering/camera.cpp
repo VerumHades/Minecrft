@@ -92,9 +92,7 @@ void PerspectiveCamera::setRotation(float pitch_, float yaw_){
 
 
 void DepthCamera::updateProjection(){
-    float size = 256;
-
-    this->projectionMatrix = glm::ortho(-size, size, -size, size, this->zNear, this->zFar); 
+    this->projectionMatrix = glm::ortho(-size, size, -size, size, -size, size); 
     this->viewMatrix = glm::lookAt(this->position, this->target, glm::vec3(0,1,0));
     this->lightSpaceMatrix = this->projectionMatrix.getValue() * this->viewMatrix.getValue(); 
 }

@@ -8,12 +8,17 @@
 #include <ui/manager.hpp>
 #include <queue>
 
+class SceneManager;
+
 class Scene{
     public:
         UIWindowIdentifier windowID;
-        UIManager* manager;
+        UIManager* uiManager;
+        SceneManager* sceneManager;
 
         void setUILayer(std::string name);
+        UILayer& getCurrentUILayer();
+        UILayer& getUILayer(std::string name);
         void addElement(std::unique_ptr<UIFrame> element);
         
         virtual void render() {};
@@ -26,6 +31,10 @@ class Scene{
         virtual void scrollEvent(GLFWwindow* /*window*/, double /*xoffset*/, double /*yoffset*/) {};
 
         virtual void keyEvent(GLFWwindow* /*window*/, int /*key*/, int /*scancode*/, int /*action*/, int /*mods*/) {};
+        /*
+            This event cannot be locked by the ui manager and will always capture
+        */
+        virtual void unlockedKeyEvent(GLFWwindow* /*window*/, int /*key*/, int /*scancode*/, int /*action*/, int /*mods*/) {};
 };
 
 class SceneManager{
@@ -36,6 +45,8 @@ class SceneManager{
 
         UIManager manager;
         GLFWwindow* window;
+
+        UIEventLock eventLocks;
 
     public:
         SceneManager();
@@ -54,6 +65,9 @@ class SceneManager{
 
         void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods);
         void keyTypedEvent(GLFWwindow* window, unsigned int codepoint);
+
+        GLFWwindow* getGLFWWindow(){return window;}
+        void setEventLocks(const UIEventLock& locks) {eventLocks = locks;};
 };
 
 #endif

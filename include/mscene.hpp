@@ -88,6 +88,7 @@ class MainScene: public Scene{
         void scrollEvent(GLFWwindow* window, double xoffset, double yoffset) override;
 
         void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) override;
+        void unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) override;
 };
 
 #endif

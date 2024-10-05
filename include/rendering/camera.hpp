@@ -133,12 +133,11 @@ class DepthCamera: public Camera{
         glm::vec3 modelPosition = glm::vec3(0);
         glm::vec3 modelRotation = glm::vec3(0);
         
-        float zNear = -300.0f;
-        float zFar = 300.0f;
-
         uint32_t depthMapFBO;
         const uint32_t SHADOW_WIDTH = 1024 * 4, SHADOW_HEIGHT = 1024 * 4;
         uint32_t depthMap;
+
+        float size = 256;
 
     public:
         void updateProjection();
@@ -163,6 +162,8 @@ class DepthCamera: public Camera{
         Uniform<glm::mat4>& getProjectionUniform() {return projectionMatrix;}
         Uniform<glm::mat4>& getViewUniform() {return viewMatrix;}
         Uniform<glm::mat4>& getModelUniform() {return modelMatrix;}
+
+        void setCaptureSize(float size) {this->size = size;};
 };
 #include <chunk.hpp>
 

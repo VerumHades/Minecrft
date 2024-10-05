@@ -36,7 +36,7 @@ size_t Allocator::allocate(size_t size){
         newBlock.used = false;
 
         blocks.insert(blocks.begin() + selected_index + 1, newBlock);
-        std::cout << "Resized memory block: " << size << " New block: " << newBlock.size << std::endl;
+        //std::cout << "Resized memory block: " << size << " New block: " << newBlock.size << std::endl;
     }
 
     blocks[selected_index].size = size;

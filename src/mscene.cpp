@@ -5,6 +5,8 @@ void MainScene::initialize(){
     camera.getProjectionUniform().attach(modelManager.getModelProgram());
     camera.getViewUniform().attach(modelManager.getModelProgram());
 
+    this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
+    this->getUILayer("chat").eventLocks = {true, true, true, true};
 
     auto chatInput = std::make_unique<UIInput>(
         TValue(PIXELS,0),
@@ -12,14 +14,14 @@ void MainScene::initialize(){
         glm::vec3(0,0,0)
     );
     this->chatInput = chatInput.get();
-
+    
     this->setUILayer("chat");
     this->addElement(std::move(chatInput));
     
     this->setUILayer("default");
 
     Model& bob = modelManager.createModel("bob");
-    bob.loadFromFile("models/test.gltf", "models/dio_brando");
+    bob.loadFromFile("models/test.gltf", "");
     //bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
     
     std::array<std::string,6> skyboxPaths = {
@@ -111,7 +113,7 @@ void MainScene::initialize(){
 
     world.load("saves/worldsave.bin");
 
-    
+    suncam.setCaptureSize(renderDistance * 2 * CHUNK_SIZE);
     //world.load("saves/worldsave.bin");
 }
 
@@ -196,30 +198,31 @@ void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
 }
 
 void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
+    for(int i = 0; i < boundKeys.size();i++){
+        if(key == boundKeys[i].key && action == GLFW_PRESS) boundKeys[i].isDown = true; 
+        else if(key == boundKeys[i].key && action == GLFW_RELEASE) boundKeys[i].isDown = false; 
+    }
+
     if(key == GLFW_KEY_M && action == GLFW_PRESS){
         lineMode = !lineMode;
         if(!lineMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
-    if(key == GLFW_KEY_T && action == GLFW_PRESS){
-        chatOpen = !chatOpen;
-        if(chatOpen){
-            this->setUILayer("chat");
-            manager->setFocus(this->chatInput);
-        }
-        else this->setUILayer("default");
-    }
-
     if(key == GLFW_KEY_E && action == GLFW_PRESS){
         world.save("saves/worldsave.bin");
     }
-    
-    if(chatOpen && action == GLFW_PRESS) return; 
-    
-    for(int i = 0; i < boundKeys.size();i++){
-        if(key == boundKeys[i].key && action == GLFW_PRESS) boundKeys[i].isDown = true; 
-        else if(key == boundKeys[i].key && action == GLFW_RELEASE) boundKeys[i].isDown = false; 
+}
+
+void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
+    if(key == GLFW_KEY_T && action == GLFW_PRESS && !chatOpen){
+        chatOpen = true;
+        this->setUILayer("chat");
+        uiManager->setFocus(this->chatInput);
+    }
+    else if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS && chatOpen){
+        chatOpen = false;
+        this->setUILayer("default");
     }
 }
 
@@ -320,9 +323,9 @@ void MainScene::render(){
     glDisable( GL_CULL_FACE );
     glDisable(GL_DEPTH_TEST);
 
-    manager->getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
-    manager->getFontManager().renderText("Selected block: " + getBlockTypeName(static_cast<BlockTypes>(selectedBlock)), 10, 80, 1.0, {0,0,0}, testFont);
-    manager->getFontManager().renderText("X: " + std::to_string(playerPosition.x) + " Y: " + std::to_string(playerPosition.y) + "  Z: " + std::to_string(playerPosition.z), 10, 120, 1.0, {0,0,0}, testFont);
+    uiManager->getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
+    uiManager->getFontManager().renderText("Selected block: " + getBlockTypeName(static_cast<BlockTypes>(selectedBlock)), 10, 80, 1.0, {0,0,0}, testFont);
+    uiManager->getFontManager().renderText("X: " + std::to_string(playerPosition.x) + " Y: " + std::to_string(playerPosition.y) + "  Z: " + std::to_string(playerPosition.z), 10, 120, 1.0, {0,0,0}, testFont);
 
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );

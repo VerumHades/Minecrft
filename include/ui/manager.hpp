@@ -104,11 +104,21 @@ class UIImage: public UIFrame{
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
+struct UIEventLock{
+    bool keyEvent = false;
+    bool mouseEvent = false;
+    bool mouseMove = false;
+    bool scrollEvent = false;
+};
+
 class UILayer{
     private:
         std::vector<std::unique_ptr<UIFrame>> elements;
-
+        
     public:
+        uint32_t cursorMode =  GLFW_CURSOR_NORMAL;
+        UIEventLock eventLocks = {};
+
         void addElement(std::unique_ptr<UIFrame> element){
             elements.push_back(std::move(element));
         }
@@ -121,6 +131,7 @@ class UIWindow{
     private: 
         std::unordered_map<std::string, UILayer> layers;
         std::string currentLayer = "default";
+
 
     public:
         void setCurrentLayer(std::string name) {currentLayer = name;};

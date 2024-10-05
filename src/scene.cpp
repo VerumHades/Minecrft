@@ -1,14 +1,28 @@
 #include <scene.hpp>
 
+/*
+    Adds an element to the current selected ui layer
+*/
 void Scene::addElement(std::unique_ptr<UIFrame> element){
-    this->manager->getWindow(windowID).getCurrentLayer().addElement(std::move(element));
-    this->manager->update();
+    this->uiManager->getWindow(windowID).getCurrentLayer().addElement(std::move(element));
+    this->uiManager->update();
 }
+/*
+    Sets the current selected ui layer
+*/
 void Scene::setUILayer(std::string name){
-    this->manager->getWindow(windowID).setCurrentLayer(name);
-    this->manager->update();
+    this->uiManager->getWindow(windowID).setCurrentLayer(name);
+    this->uiManager->update();
 
-    std::cout << "UI layer selected: " << name << std::endl;
+    auto& layer = getCurrentUILayer();
+    glfwSetInputMode(sceneManager->getGLFWWindow(), GLFW_CURSOR, layer.cursorMode);
+    sceneManager->setEventLocks(layer.eventLocks);
+}
+UILayer& Scene::getCurrentUILayer(){
+    return this->uiManager->getWindow(windowID).getCurrentLayer();
+}
+UILayer& Scene::getUILayer(std::string name){
+    return this->uiManager->getWindow(windowID).getLayer(name);
 }
 
 SceneManager::SceneManager(){
@@ -67,7 +81,8 @@ void SceneManager::addScene(std::string name, std::unique_ptr<Scene> scene){
     }
 
     scenes[name] = std::move(scene);
-    scenes[name]->manager = &manager;
+    scenes[name]->uiManager = &manager;
+    scenes[name]->sceneManager = this;
     scenes[name]->windowID = manager.createWindow();
 }
 
@@ -79,6 +94,7 @@ void SceneManager::setScene(std::string name){
     currentScene = name;
     getCurrentScene()->open(window);
     manager.setCurrentWindow(getCurrentScene()->windowID);
+    getCurrentScene()->setUILayer("default");
 }
 
 void SceneManager::resize(GLFWwindow* window, int width, int height){
@@ -87,20 +103,21 @@ void SceneManager::resize(GLFWwindow* window, int width, int height){
     manager.resize(width,height);
 }
 void SceneManager::mouseMove(GLFWwindow* window, int x, int y){
-    getCurrentScene()->mouseMove(window, x,y);
+    if(!eventLocks.mouseMove) getCurrentScene()->mouseMove(window, x,y);
     manager.mouseMove(x,y);
 }
 
 void SceneManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
-    getCurrentScene()->mouseEvent(window,button,action,mods);
+    if(!eventLocks.mouseEvent) getCurrentScene()->mouseEvent(window,button,action,mods);
     manager.mouseEvent(window,button,action,mods);
 }
 void SceneManager::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
-    getCurrentScene()->scrollEvent(window, xoffset, yoffset);
+    if(!eventLocks.scrollEvent) getCurrentScene()->scrollEvent(window, xoffset, yoffset);
 }
 
 void SceneManager::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
-    getCurrentScene()->keyEvent(window,key,scancode,action,mods);
+    if(!eventLocks.keyEvent) getCurrentScene()->keyEvent(window,key,scancode,action,mods);
+    getCurrentScene()->unlockedKeyEvent(window,key,scancode,action,mods);
     manager.keyEvent(window,key,scancode,action,mods);
 }
 
