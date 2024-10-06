@@ -5,22 +5,49 @@ void MainScene::initialize(){
     camera.getProjectionUniform().attach(modelManager.getModelProgram());
     camera.getViewUniform().attach(modelManager.getModelProgram());
 
-
+    Entity& player = world.getEntities()[0];
+    
     std::unique_ptr<Command> tpCommand = std::make_unique<Command>(
         std::vector<CommandArgumentType>({INT,INT,INT}),
         [this](std::vector<CommandArgument> arguments){
             Entity& player = world.getEntities()[0];
+            
             std::cout << arguments[0].intValue << " " <<  arguments[1].intValue  << " " << arguments[3].intValue << std::endl;
             player.setPosition({arguments[0].intValue,arguments[1].intValue,arguments[2].intValue});
         }
     );
 
+    std::unique_ptr<Command> summonCommand = std::make_unique<Command>(
+        std::vector<CommandArgumentType>({STRING}),
+        [this](std::vector<CommandArgument> arguments){
+            Entity& player = world.getEntities()[0];
+            std::string& name = arguments[0].stringValue;
+
+            if(name == "bob"){
+                world.getEntities().emplace_back(player.getPosition(), glm::vec3(0.6, 1.8, 0.6));
+                world.getEntities()[world.getEntities().size() - 1].setModel("bob");
+            }
+        }
+    );
+
+    std::unique_ptr<Command> saveWorldCommand = std::make_unique<Command>(
+        std::vector<CommandArgumentType>({STRING}),
+        [this](std::vector<CommandArgument> arguments){
+            std::string& name = arguments[0].stringValue;
+
+            world.save("saves/" + name + ".bin");
+        }
+    );
+
     commandProcessor.addCommand({"teleport","tp"},std::move(tpCommand));
+    commandProcessor.addCommand({"summon"},std::move(summonCommand));
+    commandProcessor.addCommand({"save_world"}, std::move(saveWorldCommand));
 
     this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
     this->getUILayer("chat").eventLocks = {true, true, true, true};
 
     auto chatInput = std::make_unique<UICommandInput>(
+        &commandProcessor,
         TValue(PIXELS,0),
         TValue(OPERATION_MINUS,{FRACTIONS, 100}, {MFRACTION, 100}),
         TValue(FRACTIONS,100),
@@ -103,9 +130,6 @@ void MainScene::initialize(){
     camera.setPosition(0.0f,160.0f,0.0f);
 
     world.getEntities().emplace_back(glm::vec3(-1,0,0), glm::vec3(0.6, 1.8, 0.6));
-    
-    world.getEntities().emplace_back(glm::vec3(0,0,0), glm::vec3(0.6, 1.8, 0.6));
-    world.getEntities()[1].setModel("bob");
 
     sunDirUniform.setValue({ 
         cos(glm::radians(sunAngle)), // X position (cosine component)
@@ -226,10 +250,6 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
         lineMode = !lineMode;
         if(!lineMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
-
-    if(key == GLFW_KEY_E && action == GLFW_PRESS){
-        world.save("saves/worldsave.bin");
     }
 }
 

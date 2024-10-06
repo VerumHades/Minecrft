@@ -19,6 +19,8 @@
 #include <memory>
 #include <array>
 #include <game/blocks.hpp>
+#include <ranges>
+#include <iterator>
 
 #include <bit>
 #include <bitset>

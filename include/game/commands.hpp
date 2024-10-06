@@ -42,13 +42,15 @@ class CommandProcessor{
     public:
         void addCommand(std::vector<std::string> names, std::unique_ptr<Command> command);
         void processCommand(std::string);
+
+        const std::unordered_map<std::string, size_t>& getCommandIDs() {return commandsIDS;};
 };
 
 class UICommandInput: public UIInput{
     private:
-        
+        CommandProcessor* commandProcessor;
     public:
-        UICommandInput(TValue x, TValue y, TValue width, TValue height, glm::vec3 color);
+        UICommandInput(CommandProcessor* commandProcessor, TValue x, TValue y, TValue width, TValue height, glm::vec3 color);
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
 };

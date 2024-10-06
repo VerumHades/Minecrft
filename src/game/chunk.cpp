@@ -170,7 +170,14 @@ std::vector<Face> greedyMeshPlane64(Plane64 rows){
 
 */
 
-std::vector<Face> greedyMeshDualPlane64(Plane64 a, Plane64 b){
+static inline std::unordered_set<BlockTypes> mergeMaskKeys(const std::unordered_map<BlockTypes, ChunkMask>& a, const std::unordered_map<BlockTypes, ChunkMask>& b){
+    std::unordered_set<BlockTypes> out;
+    for(auto& [key,_]: a) out.emplace(key);
+    for(auto& [key,_]: b) out.emplace(key);
+    return out;
+}
+
+std::vector<Face> greedyMeshDualPlane64(const Plane64& a, const Plane64& b){
     std::vector<Face> vA = greedyMeshPlane64(a);
     std::vector<Face> vB = greedyMeshPlane64(b);
     vA.insert(vA.end(), vB.begin(), vB.end());
@@ -324,69 +331,70 @@ void Chunk::generateMeshes(){
     
 
     Chunk* nextX = world.getChunk(worldPosition.x - 1,worldPosition.y,worldPosition.z);
-    if(!nextX){
+    Chunk* nextY = world.getChunk(worldPosition.x,worldPosition.y - 1,worldPosition.z);
+    Chunk* nextZ = world.getChunk(worldPosition.x,worldPosition.y,worldPosition.z - 1);
+
+    if(!nextX || !nextY || !nextZ){
         std::cout << "Mesh generating when chunks are missing?" << std::endl;
         return;
     }
     const ChunkMask& nextXSolid = nextX->getSolidMask();
-    const auto& nextXmasks = nextX->getMasks();
-
-    Chunk* nextY = world.getChunk(worldPosition.x,worldPosition.y - 1,worldPosition.z);
-    if(!nextY){
-        std::cout << "Mesh generating when chunks are missing?" << std::endl;
-        return;
-    }
     const ChunkMask& nextYSolid = nextY->getSolidMask();
-    const auto& nextYmasks = nextY->getMasks();
-
-    Chunk* nextZ = world.getChunk(worldPosition.x,worldPosition.y,worldPosition.z - 1);
-    if(!nextZ){
-        std::cout << "Mesh generating when chunks are missing?" << std::endl;
-        return;
-    }
     const ChunkMask& nextZSolid = nextZ->getSolidMask();
-    const auto& nextZmasks = nextZ->getMasks();
+
+    auto& nextXmasks = nextX->getMasks();
+    auto& nextYmasks = nextY->getMasks();
+    auto& nextZmasks = nextZ->getMasks();
+    
+    std::unordered_set<BlockTypes> agregateTypesX = mergeMaskKeys(masks,nextXmasks);
+    std::unordered_set<BlockTypes> agregateTypesY = mergeMaskKeys(masks,nextYmasks);
+    std::unordered_set<BlockTypes> agregateTypesZ = mergeMaskKeys(masks,nextZmasks);
+
+    std::unordered_set<BlockTypes> fullAgregate;
+    fullAgregate.insert(agregateTypesX.begin(),agregateTypesX.end());
+    fullAgregate.insert(agregateTypesY.begin(),agregateTypesY.end());
+    fullAgregate.insert(agregateTypesZ.begin(),agregateTypesZ.end());
 
     for(int y = 0;y < CHUNK_SIZE;y++){
-        for(auto& [key,mask]: masks){
-            if(nextXmasks.count(key) != 0){
-                const auto& nextMask = nextXmasks.at(key);
-                uint64 allFacesX =  (mask.segmentsRotated[0][y] | nextMask.segmentsRotated[63][y]) & 
-                                      (solidMask.segmentsRotated[0][y] ^ nextXSolid.segmentsRotated[63][y]);
+        for(auto& key: agregateTypesX){
+            const uint64_t localMaskRow = masks.count(key)      != 0 ? masks.at(key)     .segmentsRotated[0] [y] : 0Ui64;
+            const uint64_t otherMaskRow = nextXmasks.count(key) != 0 ? nextXmasks.at(key).segmentsRotated[63][y] : 0Ui64;
+            
+            uint64 allFacesX =  (localMaskRow | otherMaskRow) & (solidMask.segmentsRotated[0][y] ^ nextXSolid.segmentsRotated[63][y]);
 
-                planesXforward[ (size_t) mask.block.type][y] =  solidMask.segmentsRotated[0][y] & allFacesX;
-                planesXbackward[(size_t) mask.block.type][y] =  nextXSolid.segmentsRotated[63][y] & allFacesX;
-            }
+            planesXforward[ (size_t)key][y] =  solidMask.segmentsRotated[0][y] & allFacesX;
+            planesXbackward[(size_t)key][y] =  nextXSolid.segmentsRotated[63][y] & allFacesX;
+        }
 
-            if(nextYmasks.count(key) != 0){
-                const auto& nextMask = nextYmasks.at(key);
-                uint64 allFacesY =  (mask.segments[y][0] | nextMask.segments[y][63]) & 
-                                    (solidMask.segments[y][0] ^ nextYSolid.segments[y][63]);
+        for(auto& key: agregateTypesY){
+            const uint64_t localMaskRow = masks.count(key)      != 0 ? masks.at(key)     .segments[y] [0] : 0Ui64;
+            const uint64_t otherMaskRow = nextYmasks.count(key) != 0 ? nextYmasks.at(key).segments[y][63] : 0Ui64;
+            
+            uint64 allFacesY =  (localMaskRow | otherMaskRow) & (solidMask.segments[y][0] ^ nextYSolid.segments[y][63]);
+
+            planesYforward[ (size_t) key][y] = solidMask.segments[y][0] & allFacesY;
+            planesYbackward[(size_t) key][y] = nextYSolid.segments[y][63] & allFacesY;
+        }
+
+        for(auto& key: agregateTypesZ){
+            const uint64_t localMaskRow = masks.count(key)      != 0 ? masks.at(key)     .segments[0] [y] : 0Ui64;
+            const uint64_t otherMaskRow = nextZmasks.count(key) != 0 ? nextZmasks.at(key).segments[63][y] : 0Ui64;
+            
+
+            uint64 allFacesZ =  (localMaskRow | otherMaskRow) & (solidMask.segments[0][y] ^ nextZSolid.segments[63][y]);
                 
-                planesYforward[ (size_t) mask.block.type][y] = solidMask.segments[y][0] & allFacesY;
-                planesYbackward[(size_t) mask.block.type][y] = nextYSolid.segments[y][63] & allFacesY;
-            }
-
-            if(nextZmasks.count(key) != 0){
-                const auto& nextMask = nextZmasks.at(key);
-                uint64 allFacesZ = (mask.segments[0][y] | nextMask.segments[63][y]) & 
-                                        (solidMask.segments[0][y] ^ nextZSolid.segments[63][y]);
-                
-                planesZforward[ (size_t) mask.block.type][y] =  solidMask.segments[0][y] & allFacesZ;
-                planesZbackward[(size_t) mask.block.type][y] =  nextZSolid.segments[63][y] & allFacesZ;
-            }
+            planesZforward[ (size_t) key][y] =  solidMask.segments[0][y] & allFacesZ;
+            planesZbackward[(size_t) key][y] =  nextZSolid.segments[63][y] & allFacesZ;
         }
     }
 
-    for(auto& [key,mask]: masks){
-        BlockType type = predefinedBlocks[mask.block.type];
+    for(auto& key: fullAgregate){
+        BlockType type = predefinedBlocks[key];
         if(type.untextured) continue;
-        //std::cout << "Solving plane: " << i << std::endl;
-        //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
         
-        std::vector<Face> facesX = greedyMeshDualPlane64(planesXforward[(size_t) mask.block.type], planesXbackward[(size_t) mask.block.type]);
-        std::vector<Face> facesY = greedyMeshDualPlane64(planesYforward[(size_t) mask.block.type], planesYbackward[(size_t) mask.block.type]);
-        std::vector<Face> facesZ = greedyMeshDualPlane64(planesZforward[(size_t) mask.block.type], planesZbackward[(size_t) mask.block.type]);
+        std::vector<Face> facesX = greedyMeshDualPlane64(planesXforward[(size_t) key], planesXbackward[(size_t) key]);
+        std::vector<Face> facesY = greedyMeshDualPlane64(planesYforward[(size_t) key], planesYbackward[(size_t) key]);
+        std::vector<Face> facesZ = greedyMeshDualPlane64(planesZforward[(size_t) key], planesZbackward[(size_t) key]);
 
         float occlusion[4] = {0,0,0,0};
 

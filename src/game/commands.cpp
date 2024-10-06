@@ -70,7 +70,7 @@ void CommandProcessor::processCommand(std::string raw){
 }
 
 
-UICommandInput::UICommandInput(TValue x, TValue y, TValue width, TValue height, glm::vec3 color): UIInput(x,y,width,height,color){
+UICommandInput::UICommandInput(CommandProcessor* commandProcessor, TValue x, TValue y, TValue width, TValue height, glm::vec3 color): UIInput(x,y,width,height,color), commandProcessor(commandProcessor){
     onKeyTyped = [this](GLFWwindow* window, unsigned int codepoint){
         char typedChar = static_cast<char>(codepoint);
 
@@ -100,21 +100,57 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
     int w = getValueInPixels(width, true , sw);
     int h = getValueInPixels(height, false, sh);
 
-    int txpadding = getValueInPixels(padding, true , sw);
-    int typadding = getValueInPixels(padding, false, sh);
-
-    int tx = rx + txpadding;
+    int suggestions_padding = 10;
+    
+    int tx = rx + suggestions_padding;
     int ty = ry + (h / 2) - textDimensions.y / 2;
     
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1});
+    
+    std::vector<std::string> suggestions;
+    for(auto& [key,value]: commandProcessor->getCommandIDs()){
+        if(key.starts_with(text)) suggestions.push_back(key);
+    }
+
+    int cursorW = 2;
+    int cursorH = h / 2;
+    
     out.push_back({
-        TValue(PIXELS,tx + textDimensions.x),
-        TValue(PIXELS,ty    ),
-        TValue(PIXELS,2     ),
-        TValue(PIXELS, textDimensions.y + 3),
+        TValue(PIXELS,tx + textDimensions.x    ),
+        TValue(PIXELS,ry + h / 2 - cursorH  / 2),
+        TValue(PIXELS,cursorW                  ),
+        TValue(PIXELS,cursorH                  ),
         {1,1,1}
     });
+
+    int suggestions_height = 0;
+    int suggestions_width = 0;
+    for(auto& s: suggestions){
+        glm::vec2 dm = manager.getMainFont().getTextDimensions(s);
+        suggestions_height += dm.y + suggestions_padding;
+        suggestions_width = std::max(static_cast<int>(dm.x), suggestions_width);
+    }
+
+    suggestions_width += suggestions_padding * 2;
+    
+    out.push_back({
+        TValue(PIXELS,rx                     ),
+        TValue(PIXELS,ry - suggestions_height),
+        TValue(PIXELS,suggestions_width      ),
+        TValue(PIXELS,suggestions_height     ),
+        {0,0,0}
+    });
+
+    int currentY = 0;
+    for(auto& s: suggestions){
+        std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(s,rx + suggestions_padding,ry - suggestions_height + currentY + suggestions_padding,1,{0.5,1,1});
+        glm::vec2 dm = manager.getMainFont().getTextDimensions(s);
+        currentY += dm.y + suggestions_padding;
+
+        out.insert(out.end(), temp.begin(), temp.end());
+    }
+
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1});
     out.insert(out.end(), temp.begin(), temp.end());
 
     return out;
