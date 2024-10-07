@@ -51,10 +51,25 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
         {x + w, y + h},
         {x    , y + h}
     };
-    
+
     uint32_t vecIndices[4];
 
-    const int vertexSize = 12;
+    const int vertexSize = 19;
+
+    glm::vec4 borderSize = {
+        frame.getValueInPixels(info.borderWidth[0], false, screenHeight),
+        frame.getValueInPixels(info.borderWidth[1], true,  screenWidth ),
+        frame.getValueInPixels(info.borderWidth[2], false, screenHeight),
+        frame.getValueInPixels(info.borderWidth[3], true,  screenWidth )
+    };
+
+    // Border width recalculated to be relative to the elements dimensions
+    if(borderSize.x != 0) borderSize.x /= static_cast<float>(h);
+    if(borderSize.y != 0) borderSize.y /= static_cast<float>(w);
+    if(borderSize.z != 0) borderSize.z /= static_cast<float>(h);
+    if(borderSize.w != 0) borderSize.w /= static_cast<float>(w);
+
+    std::cout << borderSize.x << " " << borderSize.y << " " << borderSize.z << " " << borderSize.w << std::endl;
 
     float vertex[vertexSize * 4];
     uint32_t startIndex = (uint32_t) output.getVertices().size() / vertexSize;
@@ -73,9 +88,9 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
             vertex[3 + offset] = textureCoordinates[i].y;
         }
 
-        vertex[4 + offset] = info.color.x;
-        vertex[5 + offset] = info.color.y;
-        vertex[6 + offset] = info.color.z;
+        vertex[4 + offset] = info.color.r;
+        vertex[5 + offset] = info.color.g;
+        vertex[6 + offset] = info.color.b;
 
         vertex[7 + offset] = static_cast<float>(w);
         vertex[8 + offset] = static_cast<float>(h);
@@ -83,7 +98,16 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
         vertex[9 + offset] = info.isText ? 1.0 : 0.0;
         vertex[10 + offset] = info.isTexture ? 1.0 : 0.0;
         vertex[11 + offset] = static_cast<float>(info.textureIndex);
-    
+
+        vertex[12 + offset] = borderSize.x;
+        vertex[13 + offset] = borderSize.y;
+        vertex[14 + offset] = borderSize.z;
+        vertex[15 + offset] = borderSize.w;
+
+        vertex[16 + offset] = info.borderColor.r;
+        vertex[17 + offset] = info.borderColor.g;
+        vertex[18 + offset] = info.borderColor.b;
+
         vecIndices[i] = startIndex + i;
     }
 
@@ -101,7 +125,7 @@ void UIManager::update(){
     uiProgram.use();
 
     Mesh temp = Mesh();
-    temp.setVertexFormat({2,2,3,2,1,1,1});
+    temp.setVertexFormat({2,2,3,2,1,1,1,4,3});
 
     for(auto& window: getCurrentWindow().getCurrentLayer().getElements()){
         std::vector<UIRenderInfo> winfo = window->getRenderingInformation(*this);
@@ -128,22 +152,19 @@ std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string t
 
         //ypos += textDimensions.y - h;
 
-        out.push_back({
+        out.push_back(UIRenderInfo::Text(
             {PIXELS, static_cast<int>(xpos)},
             {PIXELS, static_cast<int>(ypos)},
             {PIXELS, static_cast<int>(w)},
             {PIXELS, static_cast<int>(h)},
             color,
-            true, // Is text
-            false, // Isnt a texture
-            true, // Has tex coords
             {
                 {ch.TexCoordsMin.x, ch.TexCoordsMin.y},
                 {ch.TexCoordsMax.x, ch.TexCoordsMin.y},
                 {ch.TexCoordsMax.x, ch.TexCoordsMax.y},
                 {ch.TexCoordsMin.x, ch.TexCoordsMax.y}
             }
-        });
+        ));
 
         // Advance to next glyph
         x += (ch.Advance >> 6) * scale;  // Bitshift by 6 to get the value in pixels
@@ -256,10 +277,10 @@ bool UIFrame::pointWithin(glm::vec2 point, UIManager& manager){
 
 std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
     
-    auto clr = hover ? glm::vec3(0.0,0.1,0.5) : color;
+    auto clr = hover ? hoverColor : color;
     
     std::vector<UIRenderInfo> out = {
-        {x,y,width,height,clr}
+        UIRenderInfo::Rectangle(x,y,width,height,clr,borderWidth,borderColor)
     };
 
     for(auto& child: children){
@@ -297,15 +318,11 @@ std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
 std::unique_ptr<DynamicTextureArray> UIImage::textures;
 
 std::vector<UIRenderInfo> UIImage::getRenderingInformation(UIManager& manager){
-    std::vector<UIRenderInfo> out = {{
+    std::vector<UIRenderInfo> out = {UIRenderInfo::Texture(
         x,y,width,height,
-        color,
-        false, // Isnt text
-        true, // Is a texture
-        true, // Has tex coords
         textures->getTextureUVs(path),
         textures->getTextureIndex(path)
-    }};
+    )};
 
     return out;
 }

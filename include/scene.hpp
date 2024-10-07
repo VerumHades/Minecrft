@@ -16,6 +16,9 @@ class Scene{
         UIManager* uiManager;
         SceneManager* sceneManager;
 
+        bool fpsLock = true;
+        int targetFPS = 60;
+
         void setUILayer(std::string name);
         UILayer& getCurrentUILayer();
         UILayer& getUILayer(std::string name);
@@ -37,7 +40,7 @@ class Scene{
         virtual void unlockedKeyEvent(GLFWwindow* /*window*/, int /*key*/, int /*scancode*/, int /*action*/, int /*mods*/) {};
 };
 
-class SceneManager{
+class SceneManager{ 
     private:
         std::string currentScene = "internal_default";
         std::unordered_map<std::string, std::unique_ptr<Scene>> scenes;
@@ -68,6 +71,8 @@ class SceneManager{
 
         GLFWwindow* getGLFWWindow(){return window;}
         void setEventLocks(const UIEventLock& locks) {eventLocks = locks;};
+        float getTickTime() {return 1.0f / getCurrentScene()->targetFPS;};
+        bool isFPSLocked() {return getCurrentScene()->fpsLock;};
 };
 
 #endif

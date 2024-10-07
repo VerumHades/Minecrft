@@ -115,13 +115,13 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
     int cursorW = 2;
     int cursorH = h / 2;
     
-    out.push_back({
+    out.push_back(UIRenderInfo::Rectangle(
         TValue(PIXELS,tx + textDimensions.x    ),
         TValue(PIXELS,ry + h / 2 - cursorH  / 2),
         TValue(PIXELS,cursorW                  ),
         TValue(PIXELS,cursorH                  ),
         {1,1,1}
-    });
+    ));
 
     int suggestions_height = 0;
     int suggestions_width = 0;
@@ -133,13 +133,13 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
 
     suggestions_width += suggestions_padding * 2;
     
-    out.push_back({
+    out.push_back(UIRenderInfo::Rectangle(
         TValue(PIXELS,rx                     ),
         TValue(PIXELS,ry - suggestions_height),
         TValue(PIXELS,suggestions_width      ),
         TValue(PIXELS,suggestions_height     ),
         {0,0,0}
-    });
+    ));
 
     int currentY = 0;
     for(auto& s: suggestions){

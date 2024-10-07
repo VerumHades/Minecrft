@@ -69,11 +69,11 @@ Scene* SceneManager::getCurrentScene(){
 }
 
 Scene* SceneManager::getScene(std::string name){
-    if(scenes.count(currentScene) == 0){
+    if(scenes.count(name) == 0){
         std::cout << "No scene: " << currentScene << " exists." << std::endl;
     }
 
-    return scenes.at(currentScene).get();
+    return scenes.at(name).get();
 }
 
 void SceneManager::addScene(std::string name, std::unique_ptr<Scene> scene){
@@ -105,22 +105,22 @@ void SceneManager::resize(GLFWwindow* window, int width, int height){
     manager.resize(width,height);
 }
 void SceneManager::mouseMove(GLFWwindow* window, int x, int y){
-    if(!eventLocks.mouseMove) getCurrentScene()->mouseMove(window, x,y);
     manager.mouseMove(x,y);
+    if(!eventLocks.mouseMove) getCurrentScene()->mouseMove(window, x,y);
 }
 
 void SceneManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
-    if(!eventLocks.mouseEvent) getCurrentScene()->mouseEvent(window,button,action,mods);
     manager.mouseEvent(window,button,action,mods);
+    if(!eventLocks.mouseEvent) getCurrentScene()->mouseEvent(window,button,action,mods);
 }
 void SceneManager::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
     if(!eventLocks.scrollEvent) getCurrentScene()->scrollEvent(window, xoffset, yoffset);
 }
 
 void SceneManager::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
+    manager.keyEvent(window,key,scancode,action,mods);
     if(!eventLocks.keyEvent) getCurrentScene()->keyEvent(window,key,scancode,action,mods);
     getCurrentScene()->unlockedKeyEvent(window,key,scancode,action,mods);
-    manager.keyEvent(window,key,scancode,action,mods);
 }
 
 void SceneManager::render(){

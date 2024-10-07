@@ -48,6 +48,7 @@ class MainScene: public Scene{
         
         bool lineMode = true;
         bool chatOpen = false;
+        bool menuOpen = false;
         UIInput* chatInput;
         //int sunDistance = ((CHUNK_SIZE * renderDistance) / 2) ;
         int sunDistance = 100;

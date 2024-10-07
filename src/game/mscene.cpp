@@ -45,6 +45,7 @@ void MainScene::initialize(){
 
     this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
     this->getUILayer("chat").eventLocks = {true, true, true, true};
+    this->getUILayer("menu").eventLocks = {true, true, true, true};
 
     auto chatInput = std::make_unique<UICommandInput>(
         &commandProcessor,
@@ -64,6 +65,20 @@ void MainScene::initialize(){
     this->setUILayer("chat");
     this->addElement(std::move(chatInput));
     
+    this->setUILayer("menu");
+
+    auto exitButton = std::make_unique<UILabel>(
+        "Exit", 
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(OPERATION_MINUS,{FRACTIONS, 10}, {MFRACTION, 50}),
+        glm::vec3(0.3,0.3,0.3)
+    );
+    exitButton->onMouseEvent = [this](GLFWwindow* window, int button, int action, int mods) {
+        this->sceneManager->setScene("menu");
+    };
+
+    this->addElement(std::move(exitButton));
+
     this->setUILayer("default");
 
     Model& bob = modelManager.createModel("bob");
@@ -263,6 +278,11 @@ void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int 
         chatOpen = false;
         this->setUILayer("default");
     }
+    else if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
+        menuOpen = !menuOpen;
+        if(menuOpen) this->setUILayer("menu");
+        else this->setUILayer("default");
+    }
 }
 
 void MainScene::open(GLFWwindow* window){
@@ -271,8 +291,6 @@ void MainScene::open(GLFWwindow* window){
     std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread pregenThread(std::bind(&MainScene::physicsUpdate, this));
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
     std::cout << "Threads started" << std::endl;
     physicsThread.detach();
     pregenThread.detach();
@@ -280,7 +298,6 @@ void MainScene::open(GLFWwindow* window){
 
 void MainScene::close(GLFWwindow* window){
     running = false;
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 void MainScene::render(){
@@ -460,13 +477,13 @@ void MainScene::physicsUpdate(){
         current = glfwGetTime();
         deltatime = (float)(current - last);
 
-        int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
-        int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
-        int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
-
         //std::cout << deltatime << "/" << tickTime << std::endl;
         if(deltatime < tickTime) continue;
         last = current;
+
+        int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
+        int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
+        int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
 
         if(!world.getChunk(camWorldX, camWorldY,camWorldZ)) continue;
 

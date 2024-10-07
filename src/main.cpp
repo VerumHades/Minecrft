@@ -133,6 +133,10 @@ int main() {
     //glEnable(GL_FRAMEBUFFER_SRGB);
     glEnable(GL_MULTISAMPLE);  // Redundant perhaps
     //glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
 
     /*
     glEnable(GL_DEBUG_OUTPUT);
@@ -150,14 +154,6 @@ int main() {
     sceneManager.addScene("menu",std::move(mainMenu));
 
     mainSceneTemp->initialize();
-    
-    auto background = std::make_unique<UIImage>(
-        "textures/background.png", 
-        TValue({PIXELS, 0}),
-        TValue({PIXELS, 0}),
-        TValue({FRACTIONS, 100}),
-        TValue({FRACTIONS, 100})
-    );
 
     auto startButton = std::make_unique<UILabel>(
         "New Game", 
@@ -169,17 +165,23 @@ int main() {
     startButton->onMouseEvent = [](GLFWwindow* window, int button, int action, int mods) {
         sceneManager.setScene("game");
     };
-
-    sceneManager.getScene("menu")->addElement(std::move(background));
+    
+    sceneManager.getScene("menu")->setUILayer("default");
     sceneManager.getScene("menu")->addElement(std::move(startButton));
     
-    sceneManager.setScene("game");
+    sceneManager.setScene("menu");
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+    double last = glfwGetTime();
+    double current = glfwGetTime();
     float deltatime;
+
     while (!glfwWindowShouldClose(window)) {
+        current = glfwGetTime();
+        deltatime = (float)(current - last);
+
+        if(sceneManager.isFPSLocked() && deltatime < sceneManager.getTickTime()) continue;
+        last = current;
+
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
