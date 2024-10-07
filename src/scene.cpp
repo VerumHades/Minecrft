@@ -36,6 +36,8 @@ SceneManager::SceneManager(){
         "This is the default scene, if you are seeing this something has gone wrong!", 
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(PIXELS, 200),
+        TValue(PIXELS, 40),
         glm::vec4(0,0,0,1)
     );
 
@@ -45,6 +47,8 @@ SceneManager::SceneManager(){
         "Or you could be a dev, in which case you should have intended this to happen.", 
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(OPERATION_PLUS ,{FRACTIONS, 50}, {MFRACTION, 70}),
+        TValue(PIXELS, 200),
+        TValue(PIXELS, 40),
         glm::vec4(0,0,0,1)
     );
 

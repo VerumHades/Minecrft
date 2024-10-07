@@ -345,3 +345,12 @@ void MultiChunkBuffer::draw(){
 
     CHECK_GL_ERROR();
 }
+
+void MultiChunkBuffer::clear(){
+    vertexAllocator.clear();
+    indexAllocator.clear();
+    loadedChunks.clear();
+    drawCalls.clear();
+
+    updateDrawCalls();
+}

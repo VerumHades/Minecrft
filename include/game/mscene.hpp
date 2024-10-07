@@ -38,13 +38,15 @@ class MainScene: public Scene{
 
         GLTextureArray tilemap;
         GLSkybox skybox;
-        World world;
+        std::unique_ptr<World> world;
 
         MultiChunkBuffer chunkBuffer;
 
         int renderDistance = 8;
         int selectedBlock = 2;
+
         bool running = false;
+        int threadsStopped = 0;
         
         bool lineMode = true;
         bool chatOpen = false;

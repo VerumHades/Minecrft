@@ -40,10 +40,10 @@ void UIManager::resize(int width, int height){
 
 static const glm::vec2 textureCoordinates[4] = {{1, 1},{0, 1},{0, 0},{1, 0}};
 void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, Mesh& output){
-    int x = frame.getValueInPixels(info.x, true, screenWidth);
-    int y = frame.getValueInPixels(info.y, false, screenHeight);
-    int w = frame.getValueInPixels(info.width, true, screenWidth);
-    int h = frame.getValueInPixels(info.height, false, screenHeight);
+    int x = info.x;
+    int y = info.y;
+    int w = info.width;
+    int h = info.height;
 
     glm::vec2 vertices_[4] = {
         {x    , y    },
@@ -57,10 +57,10 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
     const int vertexSize = 21;
 
     glm::vec4 borderSize = {
-        frame.getValueInPixels(info.borderWidth[0], false, screenHeight),
-        frame.getValueInPixels(info.borderWidth[1], true,  screenWidth ),
-        frame.getValueInPixels(info.borderWidth[2], false, screenHeight),
-        frame.getValueInPixels(info.borderWidth[3], true,  screenWidth )
+        info.borderWidth.top,
+        info.borderWidth.right,
+        info.borderWidth.bottom,
+        info.borderWidth.left
     };
 
     // Border width recalculated to be relative to the elements dimensions
@@ -155,10 +155,10 @@ std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string t
         //ypos += textDimensions.y - h;
 
         out.push_back(UIRenderInfo::Text(
-            {PIXELS, static_cast<int>(xpos)},
-            {PIXELS, static_cast<int>(ypos)},
-            {PIXELS, static_cast<int>(w)},
-            {PIXELS, static_cast<int>(h)},
+            static_cast<int>(xpos),
+            static_cast<int>(ypos),
+            static_cast<int>(w),
+            static_cast<int>(h),
             color,
             {
                 {ch.TexCoordsMin.x, ch.TexCoordsMin.y},
@@ -184,6 +184,11 @@ int UIFrame::getValueInPixels(TValue& value, bool horizontal, int container_size
         case OPERATION_MINUS: return getValueInPixels(value.operands[0], horizontal, container_size) - getValueInPixels(value.operands[1], horizontal, container_size);
         case MFRACTION: 
             return static_cast<float>(horizontal ? getValueInPixels(width, horizontal, container_size) : getValueInPixels(height, horizontal, container_size)) / 100.0f * value.value;
+        case PFRACTION:
+            if(parent){
+                return static_cast<float>(horizontal ? getValueInPixels(parent->width, horizontal, container_size) : getValueInPixels(parent->height, horizontal, container_size)) / 100.0f * value.value;
+            }
+            else return (container_size / 100.0f) * value.value; // Fall back to container size
     }
 }
 
@@ -242,19 +247,19 @@ UIWindowIdentifier UIManager::createWindow(){
 UIFrame* UIManager::getElementUnder(int x, int y){
     if(currentWindow == (UIWindowIdentifier)-1) return nullptr;
 
-    std::queue<std::tuple<int, UIFrame*>> elements;
+    std::queue<std::tuple<int, UIFrame*, UIFrame*>> elements;
     
-    for(auto& window: getCurrentWindow().getCurrentLayer().getElements()) elements.push({0,window.get()});
+    for(auto& window: getCurrentWindow().getCurrentLayer().getElements()) elements.push({0,window.get(), nullptr});
     
 
     UIFrame* current = nullptr;
     int cdepth = -1;
 
     while(!elements.empty()){
-        auto [depth,element] = elements.front();
+        auto [depth,element,parent] = elements.front();
         elements.pop();
 
-        for(auto& child: element->getChildren()) elements.push({depth + 1, child.get()});
+        for(auto& child: element->getChildren()) elements.push({depth + 1, child.get(), element});
 
         if(cdepth >= depth) continue;
         if(!element->pointWithin({x,y}, *this)) continue;
@@ -268,21 +273,19 @@ bool UIFrame::pointWithin(glm::vec2 point, UIManager& manager){
     int sw = manager.getScreenWidth();
     int sh = manager.getScreenHeight();
 
-    int rx = getValueInPixels(x, true, sw);
-    int ry = getValueInPixels(y, false, sh);
-    int w = getValueInPixels(width, true, sw);
-    int h = getValueInPixels(height, false, sh);
+    auto t = getTransform(manager);
 
-    return  point.x > rx && point.x < rx + w &&
-            point.y > ry && point.y < ry + h;
+    return  point.x > t.x && point.x < t.x + t.width &&
+            point.y > t.y && point.y < t.y + t.height;
 }
 
 std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
-    
     auto clr = hover ? hoverColor : color;
     
+    auto t = getTransform(manager);
+
     std::vector<UIRenderInfo> out = {
-        UIRenderInfo::Rectangle(x,y,width,height,clr,borderWidth,borderColor)
+        UIRenderInfo::Rectangle(t.x,t.y,t.width,t.height,clr,getBorderSizes(manager),borderColor)
     };
 
     for(auto& child: children){
@@ -293,25 +296,46 @@ std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
     return out;
 };
 
-std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
-    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
+UITransform UIFrame::getTransform(UIManager& manager){
     int sw = manager.getScreenWidth();
     int sh = manager.getScreenHeight();
 
-    int rxpadding = getValueInPixels(padding, true , sw);
-    int rypadding = getValueInPixels(padding, false, sh);
+    int ox = 0, oy = 0;
+    if(parent){
+        auto t = parent->getTransform(manager);
+        ox = t.x;
+        oy = t.y;
+    }
 
-    int rx = getValueInPixels(x, true , sw) + rxpadding;
-    int ry = getValueInPixels(y, false, sh) + rypadding;
-    
-    int w = textDimensions.x + rxpadding * 2;
-    int h = textDimensions.y + rypadding * 2;
+    return {
+        getValueInPixels(x     , true , sw) + ox,
+        getValueInPixels(y     , false, sh) + oy,
+        getValueInPixels(width , true , sw),
+        getValueInPixels(height, false, sh),
+    };
+}
+UIBorderSizes UIFrame::getBorderSizes(UIManager& manager){
+    int sw = manager.getScreenWidth();
+    int sh = manager.getScreenHeight();
 
-    width = {PIXELS, w};
-    height ={PIXELS, h};
+    return {
+        getValueInPixels(borderWidth[0], false, sh),
+        getValueInPixels(borderWidth[1], true , sw),
+        getValueInPixels(borderWidth[2], false, sh),
+        getValueInPixels(borderWidth[3], true , sw)
+    };
+}
+
+std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
+    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
+
+    auto t = getTransform(manager);
+
+    int tx = t.x + t.width  / 2 - textDimensions.x / 2;
+    int ty = t.y + t.height / 2 - textDimensions.y / 2;
     
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,rx,ry,1,{1,1,1,1});
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1,1});
     out.insert(out.end(), temp.begin(), temp.end());
 
     return out;
@@ -320,8 +344,10 @@ std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
 std::unique_ptr<DynamicTextureArray> UIImage::textures;
 
 std::vector<UIRenderInfo> UIImage::getRenderingInformation(UIManager& manager){
+    auto t = getTransform(manager);
+
     std::vector<UIRenderInfo> out = {UIRenderInfo::Texture(
-        x,y,width,height,
+        t.x,t.y,t.width,t.height,
         textures->getTextureUVs(path),
         textures->getTextureIndex(path)
     )};
@@ -333,7 +359,7 @@ UIImage::UIImage(std::string path, TValue x, TValue y, TValue width, TValue heig
     textures->addTexture(path);
 }
 
-UIInput::UIInput(TValue x, TValue y, TValue width, TValue height, UIColor color): UILabel("",x,y,color){
+UIInput::UIInput(TValue x, TValue y, TValue width, TValue height, UIColor color): UILabel("",x,y,width,height,color){
     this->width = width;
     this->height = height;
 
@@ -358,17 +384,14 @@ UIInput::UIInput(TValue x, TValue y, TValue width, TValue height, UIColor color)
 
 std::vector<UIRenderInfo> UIInput::getRenderingInformation(UIManager& manager){
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
-    int sw = manager.getScreenWidth();
-    int sh = manager.getScreenHeight();
 
-    int rxpadding = getValueInPixels(padding, true , sw);
-    int rypadding = getValueInPixels(padding, false, sh);
+    auto t = getTransform(manager);
 
-    int rx = getValueInPixels(x, true , sw) + rxpadding;
-    int ry = getValueInPixels(y, false, sh) + rypadding;
+    int tx = t.x + t.width  / 2 - textDimensions.x / 2;
+    int ty = t.y + t.height / 2 - textDimensions.y / 2;
     
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,rx,ry,1,{1,1,1,1});
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1,1});
     out.insert(out.end(), temp.begin(), temp.end());
 
     return out;

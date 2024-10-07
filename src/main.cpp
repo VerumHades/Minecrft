@@ -136,8 +136,6 @@ int main() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
-
     /*
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -159,9 +157,11 @@ int main() {
         "New Game", 
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(PIXELS, 200),
+        TValue(PIXELS, 40),
         glm::vec4(0.3,0.3,0.3,1.0)
     );
-    startButton->setPadding({PIXELS, 10});
+
     startButton->onMouseEvent = [](GLFWwindow* window, int button, int action, int mods) {
         sceneManager.setScene("game");
     };

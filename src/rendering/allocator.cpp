@@ -52,6 +52,10 @@ size_t Allocator::allocate(size_t size){
     return blocks[selected_index].start;
 }   
 
+void Allocator::clear(){
+    blocks = {{0, memsize, false}};
+}
+
 void Allocator::free(size_t start){
     for(auto& block: blocks){
         if(block.start != start) continue;

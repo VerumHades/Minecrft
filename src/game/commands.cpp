@@ -116,10 +116,10 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
     int cursorH = h / 2;
     
     out.push_back(UIRenderInfo::Rectangle(
-        TValue(PIXELS,tx + textDimensions.x    ),
-        TValue(PIXELS,ry + h / 2 - cursorH  / 2),
-        TValue(PIXELS,cursorW                  ),
-        TValue(PIXELS,cursorH                  ),
+        tx + textDimensions.x    ,
+        ry + h / 2 - cursorH  / 2,
+        cursorW                  ,
+        cursorH                  ,
         {1,1,1,1}
     ));
 
@@ -134,10 +134,10 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
     suggestions_width += suggestions_padding * 2;
     
     out.push_back(UIRenderInfo::Rectangle(
-        TValue(PIXELS,rx                     ),
-        TValue(PIXELS,ry - suggestions_height),
-        TValue(PIXELS,suggestions_width      ),
-        TValue(PIXELS,suggestions_height     ),
+        rx                     ,
+        ry - suggestions_height,
+        suggestions_width      ,
+        suggestions_height     ,
         {0,0,0,1}
     ));
 

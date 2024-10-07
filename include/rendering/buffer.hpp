@@ -97,6 +97,7 @@ class MultiChunkBuffer{
         void addChunkMesh(Mesh& mesh, const glm::vec3& pos);
         void swapChunkMesh(Mesh& mesh, const glm::vec3& pos);
         void unloadChunkMesh(const glm::vec3& pos);
+        void clear();
         bool isChunkLoaded(const glm::vec3& pos){
             return loadedChunks.find(pos) != loadedChunks.end();
         }

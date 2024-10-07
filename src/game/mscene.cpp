@@ -4,13 +4,11 @@ void MainScene::initialize(){
     modelManager.initialize();
     camera.getProjectionUniform().attach(modelManager.getModelProgram());
     camera.getViewUniform().attach(modelManager.getModelProgram());
-
-    Entity& player = world.getEntities()[0];
     
     std::unique_ptr<Command> tpCommand = std::make_unique<Command>(
         std::vector<CommandArgumentType>({INT,INT,INT}),
         [this](std::vector<CommandArgument> arguments){
-            Entity& player = world.getEntities()[0];
+            Entity& player = world->getEntities()[0];
             
             std::cout << arguments[0].intValue << " " <<  arguments[1].intValue  << " " << arguments[3].intValue << std::endl;
             player.setPosition({arguments[0].intValue,arguments[1].intValue,arguments[2].intValue});
@@ -20,12 +18,12 @@ void MainScene::initialize(){
     std::unique_ptr<Command> summonCommand = std::make_unique<Command>(
         std::vector<CommandArgumentType>({STRING}),
         [this](std::vector<CommandArgument> arguments){
-            Entity& player = world.getEntities()[0];
+            Entity& player = world->getEntities()[0];
             std::string& name = arguments[0].stringValue;
 
             if(name == "bob"){
-                world.getEntities().emplace_back(player.getPosition(), glm::vec3(0.6, 1.8, 0.6));
-                world.getEntities()[world.getEntities().size() - 1].setModel("bob");
+                world->getEntities().emplace_back(player.getPosition(), glm::vec3(0.6, 1.8, 0.6));
+                world->getEntities()[world->getEntities().size() - 1].setModel("bob");
             }
         }
     );
@@ -35,7 +33,7 @@ void MainScene::initialize(){
         [this](std::vector<CommandArgument> arguments){
             std::string& name = arguments[0].stringValue;
 
-            world.save("saves/" + name + ".bin");
+            world->save("saves/" + name + ".bin");
         }
     );
 
@@ -65,20 +63,38 @@ void MainScene::initialize(){
     this->setUILayer("chat");
     this->addElement(std::move(chatInput));
     
+    /*
+        Create the pause menu
+    */
     this->setUILayer("menu");
+
+    auto pauseMenuFrame = std::make_unique<UIFrame>(
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(PIXELS, 400),
+        TValue(PIXELS, 700),
+        glm::vec4(0,0,0,0.5)
+    );
 
     auto exitButton = std::make_unique<UILabel>(
         "Exit", 
-        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
-        TValue(OPERATION_MINUS,{FRACTIONS, 10}, {MFRACTION, 50}),
+        TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
+        TValue(OPERATION_MINUS,{PFRACTION, 10}, {MFRACTION, 50}),
+        TValue(PIXELS, 200),
+        TValue(PIXELS, 40),
         glm::vec4(0.3,0.3,0.3,1)
     );
     exitButton->onMouseEvent = [this](GLFWwindow* window, int button, int action, int mods) {
         this->sceneManager->setScene("menu");
     };
 
-    this->addElement(std::move(exitButton));
+    pauseMenuFrame->appendChild(std::move(exitButton));
 
+    this->addElement(std::move(pauseMenuFrame));
+
+    /*
+        ======
+    */
     this->setUILayer("default");
 
     Model& bob = modelManager.createModel("bob");
@@ -144,8 +160,6 @@ void MainScene::initialize(){
     camera.initialize({skyboxProgram, terrainProgram, modelManager.getModelProgram()});
     camera.setPosition(0.0f,160.0f,0.0f);
 
-    world.getEntities().emplace_back(glm::vec3(-1,0,0), glm::vec3(0.6, 1.8, 0.6));
-
     sunDirUniform.setValue({ 
         cos(glm::radians(sunAngle)), // X position (cosine component)
         sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
@@ -169,10 +183,8 @@ void MainScene::initialize(){
     camera.setModelPosition({0,0,0});
     terrainProgram.updateUniform("modelMatrix");
 
-    world.load("saves/worldsave.bin");
-
     suncam.setCaptureSize(renderDistance * 2 * CHUNK_SIZE);
-    //world.load("saves/worldsave.bin");
+    //world->load("saves/worldsave.bin");
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
@@ -211,33 +223,33 @@ void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
 void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     glm::vec3& camDirection = camera.getDirection();
     glm::vec3 camPosition = camera.getPosition();
-    Entity& player = world.getEntities()[0];
+    Entity& player = world->getEntities()[0];
 
-    RaycastResult hit = world.raycast(camPosition.x,camPosition.y,camPosition.z,camDirection.x, camDirection.y, camDirection.z,10);
+    RaycastResult hit = world->raycast(camPosition.x,camPosition.y,camPosition.z,camDirection.x, camDirection.y, camDirection.z,10);
     
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && hit.hit){
-        world.setBlock(hit.x, hit.y, hit.z, {BlockTypes::Air});
+        world->setBlock(hit.x, hit.y, hit.z, {BlockTypes::Air});
 
-        auto chunk = world.getChunkFromBlockPosition(hit.x, hit.y, hit.z);
+        auto chunk = world->getChunkFromBlockPosition(hit.x, hit.y, hit.z);
         if(!chunk) return;
-        regenerateChunkMesh(*chunk,world.getGetChunkRelativeBlockPosition(hit.x, hit.y, hit.z));
+        regenerateChunkMesh(*chunk,world->getGetChunkRelativeBlockPosition(hit.x, hit.y, hit.z));
         
     }
     else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hit){
-        CollisionCheckResult result = world.checkForPointCollision(hit.lastX, hit.lastY, hit.lastZ, 1);
+        CollisionCheckResult result = world->checkForPointCollision(hit.lastX, hit.lastY, hit.lastZ, 1);
 
-        world.setBlock(result.x,  result.y,  result.z, {static_cast<BlockTypes>(selectedBlock)});
+        world->setBlock(result.x,  result.y,  result.z, {static_cast<BlockTypes>(selectedBlock)});
         if(
-            player.checkForCollision(world, false).collision ||
-            player.checkForCollision(world, true).collision
+            player.checkForCollision(*world, false).collision ||
+            player.checkForCollision(*world, true).collision
         ){
-            world.setBlock(result.x,  result.y,  result.z, {BlockTypes::Air});
+            world->setBlock(result.x,  result.y,  result.z, {BlockTypes::Air});
             return;
         }
 
-        auto chunk = world.getChunkFromBlockPosition(result.x, result.y,result.z);
+        auto chunk = world->getChunkFromBlockPosition(result.x, result.y,result.z);
         if(!chunk) return;
-        regenerateChunkMesh(*chunk,world.getGetChunkRelativeBlockPosition(result.x, result.y,result.z));
+        regenerateChunkMesh(*chunk,world->getGetChunkRelativeBlockPosition(result.x, result.y,result.z));
     }
 }
 
@@ -288,6 +300,10 @@ void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int 
 void MainScene::open(GLFWwindow* window){
     running = true;
 
+    world = std::make_unique<World>();
+    world->getEntities().emplace_back(glm::vec3(-1,0,0), glm::vec3(0.6, 1.8, 0.6));
+    world->load("saves/worldsave.bin");
+
     std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread pregenThread(std::bind(&MainScene::physicsUpdate, this));
 
@@ -297,7 +313,15 @@ void MainScene::open(GLFWwindow* window){
 }
 
 void MainScene::close(GLFWwindow* window){
+    threadsStopped = 0;
     running = false;
+
+    while(threadsStopped < 2){
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    } 
+
+    world = nullptr;
+    chunkBuffer.clear();
 }
 
 void MainScene::render(){
@@ -308,7 +332,7 @@ void MainScene::render(){
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 
-    Entity& player = world.getEntities()[0];
+    Entity& player = world->getEntities()[0];
     const glm::vec3& playerPosition = player.getPosition();
     glm::vec3 camPosition = playerPosition + camOffset;
     glm::vec3 camDir = glm::normalize(camera.getDirection());
@@ -348,7 +372,7 @@ void MainScene::render(){
     suncam.prepareForRender();
     chunkBuffer.draw();
     
-    world.drawEntities(modelManager, suncam, true);
+    world->drawEntities(modelManager, suncam, true);
     glEnable( GL_CULL_FACE );
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -370,7 +394,7 @@ void MainScene::render(){
     terrainProgram.updateUniform("modelMatrix");
     chunkBuffer.draw();
 
-    world.drawEntities(modelManager, camera);
+    world->drawEntities(modelManager, camera);
     //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
     /* Swap front and back buffers */
 
@@ -400,7 +424,7 @@ void MainScene::regenerateChunkMesh(Chunk& chunk){
 
 
 #define regenMesh(x,y,z) { \
-    Chunk* temp = this->world.getChunk(x, y, z);\
+    Chunk* temp = this->world->getChunk(x, y, z);\
     if(temp) regenerateChunkMesh(*temp);\
 }
 void MainScene::regenerateChunkMesh(Chunk& chunk, glm::vec3 blockCoords){
@@ -430,11 +454,11 @@ void MainScene::generateMeshes(){
 
         //std::cout << "Drawing chunk: " << chunkX << " " << chunkZ << " " << camera.getPosition().x << " " << camera.getPosition().z <<std::endl;
 
-        Chunk* meshlessChunk = world.getChunk(chunkX, chunkY, chunkZ);
+        Chunk* meshlessChunk = world->getChunk(chunkX, chunkY, chunkZ);
         //std::cout << "Got chunk!" << std::endl;
         if(!meshlessChunk) continue;
         if(!camera.isVisible(*meshlessChunk)) continue;
-        world.generateChunkMesh(chunkX,chunkY,chunkZ, chunkBuffer);
+        world->generateChunkMesh(chunkX,chunkY,chunkZ, chunkBuffer);
 
         if(meshlessChunk->isEmpty) continue;
         glm::vec3 position = {chunkX,chunkY,chunkZ};
@@ -485,9 +509,9 @@ void MainScene::physicsUpdate(){
         int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
         int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
 
-        if(!world.getChunk(camWorldX, camWorldY,camWorldZ)) continue;
+        if(!world->getChunk(camWorldX, camWorldY,camWorldZ)) continue;
 
-        Entity& player = world.getEntities()[0];
+        Entity& player = world->getEntities()[0];
 
         glm::vec3 camDir = glm::normalize(camera.getDirection());
         glm::vec3 horizontalDir = glm::normalize(glm::vec3(camDir.x, 0, camDir.z));
@@ -506,8 +530,10 @@ void MainScene::physicsUpdate(){
             && player.getVelocity().y == 0
         ) player.accelerate(camera.getUp() * 0.2f);*/
 
-        world.updateEntities();
+        world->updateEntities();
     }
+
+    threadsStopped++;
 }
 
 void MainScene::pregenUpdate(){
@@ -525,11 +551,11 @@ void MainScene::pregenUpdate(){
             int chunkY = camWorldY + y;
             int chunkZ = camWorldZ + z;
 
-            Chunk* meshlessChunk = world.getChunk(chunkX, chunkY, chunkZ);
+            Chunk* meshlessChunk = world->getChunk(chunkX, chunkY, chunkZ);
             if(!meshlessChunk){
-                //meshlessChunk = world.generateAndGetChunk(chunkX, chunkY, chunkZ);
+                //meshlessChunk = world->generateAndGetChunk(chunkX, chunkY, chunkZ);
 
-                std::thread t(&World::generateChunk, &world, chunkX, chunkY, chunkZ);
+                std::thread t(&World::generateChunk, world.get(), chunkX, chunkY, chunkZ);
                 openThreads.push_back(move(t));
             }
             if(openThreads.size() > 16) break;
@@ -539,4 +565,6 @@ void MainScene::pregenUpdate(){
             t.join();
         }
     }
+
+    threadsStopped++;
 }

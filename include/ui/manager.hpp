@@ -14,8 +14,9 @@ enum Units{
     PIXELS,
     FRACTIONS, // Percentage of the window
     OPERATION_PLUS, // TValue + TValue (resolved to pixels)
-    OPERATION_MINUS, // TValue - TValue
-    MFRACTION // Percentage of the size of the widget
+    OPERATION_MINUS, // TValue - TValue (resolved to pixels)
+    MFRACTION, // Percentage of the size of the widget
+    PFRACTION // Percentage of parrent
 };
 
 struct TValue{
@@ -31,14 +32,28 @@ struct TValue{
     }
 };
 
+struct UITransform{
+    int x;
+    int y;
+    int width;
+    int height;
+};
+
+struct UIBorderSizes{
+    int top;
+    int right;
+    int bottom;
+    int left;
+};
+
 struct UIRenderInfo{
     public:
-        TValue x;
-        TValue y;
-        TValue width;
-        TValue height;
+        int x;
+        int y;
+        int width;
+        int height;
 
-        std::vector<TValue> borderWidth; // clockwise from the top
+        UIBorderSizes borderWidth; // clockwise from the top
         UIColor borderColor;
 
         UIColor color;
@@ -50,15 +65,15 @@ struct UIRenderInfo{
         std::vector<glm::vec2> texCoords;
         int textureIndex;
 
-        static UIRenderInfo Rectangle(TValue x, TValue y, TValue width, TValue height, UIColor color, std::vector<TValue> borderWidth = {{PIXELS, 0},{PIXELS, 0},{PIXELS, 0},{PIXELS, 0}},UIColor borderColor = {1,1,1,1}){
+        static UIRenderInfo Rectangle(int x, int y, int width, int height, UIColor color, UIBorderSizes borderWidth = {0,0,0,0},UIColor borderColor = {1,1,1,1}){
             return {
                 x,y,width,height,borderWidth,borderColor,color
             };
         }
-        static UIRenderInfo Text(TValue x, TValue y, TValue width, TValue height, UIColor color, std::vector<glm::vec2> texCoords){
+        static UIRenderInfo Text(int x, int y, int width, int height, UIColor color, std::vector<glm::vec2> texCoords){
             return {
                 x,y,width,height,
-                {{PIXELS, 0},{PIXELS, 0},{PIXELS, 0},{PIXELS, 0}}, // Border thickness
+                {0,0,0,0}, // Border thickness
                 {0,0,0,1}, // Border color
                 color,
                 true, // Is text
@@ -67,10 +82,10 @@ struct UIRenderInfo{
                 texCoords
             };
         }
-        static UIRenderInfo Texture(TValue x, TValue y, TValue width, TValue height, std::vector<glm::vec2> texCoords, int textureIndex){
+        static UIRenderInfo Texture(int x, int y, int width, int height, std::vector<glm::vec2> texCoords, int textureIndex){
             return {
                 x,y,width,height,
-                {{PIXELS, 0},{PIXELS, 0},{PIXELS, 0},{PIXELS, 0}},
+                {0,0,0,0},
                 {0,0,0,1},
                 {0,0,0,1},
                 false, // Isnt text
@@ -96,13 +111,14 @@ class UIFrame{
         bool hover = false;
 
         UIColor color;
-        UIColor hoverColor = glm::vec4(0.0,0.1,0.5,1.0);
+        UIColor hoverColor = glm::vec4(0.0,0.1,0.5,0.0);
         UIColor borderColor = glm::vec4(0.5,0.1,0.5,0.4);
 
         std::vector<std::unique_ptr<UIFrame>> children;
+        UIFrame* parent = nullptr;
 
     public:
-        UIFrame(TValue x, TValue y, TValue width, TValue height,UIColor color): x(x), y(y), width(width), height(height), color(color) {}
+        UIFrame(TValue x, TValue y, TValue width, TValue height, UIColor color): x(x), y(y), width(width), height(height), color(color), hoverColor(color) {}
         virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
 
         std::function<void(GLFWwindow*, int, int, int)> onMouseEvent;
@@ -110,21 +126,26 @@ class UIFrame{
         std::function<void(GLFWwindow*, int key, int scancode, int action, int mods)> onKeyEvent;
 
         int getValueInPixels(TValue& value, bool horizontal, int container_size);
+        UITransform getTransform(UIManager& manager);
+        UIBorderSizes getBorderSizes(UIManager& manager);
+
         bool pointWithin(glm::vec2 position, UIManager& manager);
         void setHover(bool value) {hover = value;}
+        void appendChild(std::unique_ptr<UIFrame> child){
+            child->parent = this;
+            children.push_back(std::move(child));
+        }
         std::vector<std::unique_ptr<UIFrame>>& getChildren() {return children;}
 };
 
 class UILabel: public UIFrame{
     protected:
         std::string text;
-        TValue padding = {PIXELS, 4};
 
     public:
-        UILabel(std::string text, TValue x, TValue y, UIColor color): UIFrame(x,y,{PIXELS, 0},{PIXELS, 0},color), text(text) {}
+        UILabel(std::string text, TValue x, TValue y, TValue width, TValue height, UIColor color): UIFrame(x,y,width,height,color), text(text) {}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
-        void setPadding(TValue value) {padding = value;}
         void setText(std::string text) {this->text = text;}
         std::string& getText() {return text;}
 };

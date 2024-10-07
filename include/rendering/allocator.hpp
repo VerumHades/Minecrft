@@ -27,6 +27,7 @@ class Allocator{
 
         size_t allocate(size_t size);
         void free(size_t location);
+        void clear();
 };
 
 #endif
