@@ -159,7 +159,7 @@ int main() {
         "New Game", 
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
-        glm::vec3(0.3,0.3,0.3)
+        glm::vec4(0.3,0.3,0.3,1.0)
     );
     startButton->setPadding({PIXELS, 10});
     startButton->onMouseEvent = [](GLFWwindow* window, int button, int action, int mods) {

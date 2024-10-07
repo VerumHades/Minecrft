@@ -54,7 +54,7 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
 
     uint32_t vecIndices[4];
 
-    const int vertexSize = 19;
+    const int vertexSize = 21;
 
     glm::vec4 borderSize = {
         frame.getValueInPixels(info.borderWidth[0], false, screenHeight),
@@ -69,7 +69,7 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
     if(borderSize.z != 0) borderSize.z /= static_cast<float>(h);
     if(borderSize.w != 0) borderSize.w /= static_cast<float>(w);
 
-    std::cout << borderSize.x << " " << borderSize.y << " " << borderSize.z << " " << borderSize.w << std::endl;
+    //std::cout << borderSize.x << " " << borderSize.y << " " << borderSize.z << " " << borderSize.w << std::endl;
 
     float vertex[vertexSize * 4];
     uint32_t startIndex = (uint32_t) output.getVertices().size() / vertexSize;
@@ -91,22 +91,24 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
         vertex[4 + offset] = info.color.r;
         vertex[5 + offset] = info.color.g;
         vertex[6 + offset] = info.color.b;
+        vertex[7 + offset] = info.color.a;
 
-        vertex[7 + offset] = static_cast<float>(w);
-        vertex[8 + offset] = static_cast<float>(h);
+        vertex[8 + offset] = static_cast<float>(w);
+        vertex[9 + offset] = static_cast<float>(h);
 
-        vertex[9 + offset] = info.isText ? 1.0 : 0.0;
-        vertex[10 + offset] = info.isTexture ? 1.0 : 0.0;
-        vertex[11 + offset] = static_cast<float>(info.textureIndex);
+        vertex[10 + offset] = info.isText ? 1.0 : 0.0;
+        vertex[11 + offset] = info.isTexture ? 1.0 : 0.0;
+        vertex[12 + offset] = static_cast<float>(info.textureIndex);
 
-        vertex[12 + offset] = borderSize.x;
-        vertex[13 + offset] = borderSize.y;
-        vertex[14 + offset] = borderSize.z;
-        vertex[15 + offset] = borderSize.w;
+        vertex[13 + offset] = borderSize.x;
+        vertex[14 + offset] = borderSize.y;
+        vertex[15 + offset] = borderSize.z;
+        vertex[16 + offset] = borderSize.w;
 
-        vertex[16 + offset] = info.borderColor.r;
-        vertex[17 + offset] = info.borderColor.g;
-        vertex[18 + offset] = info.borderColor.b;
+        vertex[17 + offset] = info.borderColor.r;
+        vertex[18 + offset] = info.borderColor.g;
+        vertex[19 + offset] = info.borderColor.b;
+        vertex[20 + offset] = info.borderColor.a;
 
         vecIndices[i] = startIndex + i;
     }
@@ -125,7 +127,7 @@ void UIManager::update(){
     uiProgram.use();
 
     Mesh temp = Mesh();
-    temp.setVertexFormat({2,2,3,2,1,1,1,4,3});
+    temp.setVertexFormat({2,2,4,2,1,1,1,4,4});
 
     for(auto& window: getCurrentWindow().getCurrentLayer().getElements()){
         std::vector<UIRenderInfo> winfo = window->getRenderingInformation(*this);
@@ -135,7 +137,7 @@ void UIManager::update(){
     drawBuffer->loadMesh(temp);
 }
 
-std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string text, float x, float y, float scale, glm::vec3 color){
+std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string text, float x, float y, float scale, UIColor color){
     std::vector<UIRenderInfo> out = {};
 
     glm::vec2 textDimensions = mainFont->getTextDimensions(text);
@@ -309,7 +311,7 @@ std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
     height ={PIXELS, h};
     
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,rx,ry,1,{1,1,1});
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,rx,ry,1,{1,1,1,1});
     out.insert(out.end(), temp.begin(), temp.end());
 
     return out;
@@ -327,11 +329,11 @@ std::vector<UIRenderInfo> UIImage::getRenderingInformation(UIManager& manager){
     return out;
 }
 
-UIImage::UIImage(std::string path, TValue x, TValue y, TValue width, TValue height) : UIFrame(x,y,width,height,{0,0,0}), path(path){
+UIImage::UIImage(std::string path, TValue x, TValue y, TValue width, TValue height) : UIFrame(x,y,width,height,{0,0,0,0}), path(path){
     textures->addTexture(path);
 }
 
-UIInput::UIInput(TValue x, TValue y, TValue width, TValue height, glm::vec3 color): UILabel("",x,y,color){
+UIInput::UIInput(TValue x, TValue y, TValue width, TValue height, UIColor color): UILabel("",x,y,color){
     this->width = width;
     this->height = height;
 
@@ -366,7 +368,7 @@ std::vector<UIRenderInfo> UIInput::getRenderingInformation(UIManager& manager){
     int ry = getValueInPixels(y, false, sh) + rypadding;
     
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,rx,ry,1,{1,1,1});
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,rx,ry,1,{1,1,1,1});
     out.insert(out.end(), temp.begin(), temp.end());
 
     return out;

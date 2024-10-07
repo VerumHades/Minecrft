@@ -50,7 +50,7 @@ class UICommandInput: public UIInput{
     private:
         CommandProcessor* commandProcessor;
     public:
-        UICommandInput(CommandProcessor* commandProcessor, TValue x, TValue y, TValue width, TValue height, glm::vec3 color);
+        UICommandInput(CommandProcessor* commandProcessor, TValue x, TValue y, TValue width, TValue height, UIColor  color);
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
 };

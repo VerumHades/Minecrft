@@ -36,7 +36,7 @@ SceneManager::SceneManager(){
         "This is the default scene, if you are seeing this something has gone wrong!", 
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
-        glm::vec3(0,0,0)
+        glm::vec4(0,0,0,1)
     );
 
     getCurrentScene()->addElement(std::move(label));
@@ -45,7 +45,7 @@ SceneManager::SceneManager(){
         "Or you could be a dev, in which case you should have intended this to happen.", 
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(OPERATION_PLUS ,{FRACTIONS, 50}, {MFRACTION, 70}),
-        glm::vec3(0,0,0)
+        glm::vec4(0,0,0,1)
     );
 
     /*label2->onMouseEvent = [](GLFWwindow* window, int button, int action, int mods) {

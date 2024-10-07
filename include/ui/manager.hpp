@@ -8,6 +8,8 @@
 #include <queue>
 #include <functional>
 
+using UIColor = glm::vec4;
+
 enum Units{
     PIXELS,
     FRACTIONS, // Percentage of the window
@@ -37,9 +39,9 @@ struct UIRenderInfo{
         TValue height;
 
         std::vector<TValue> borderWidth; // clockwise from the top
-        glm::vec3 borderColor;
+        UIColor borderColor;
 
-        glm::vec3 color;
+        UIColor color;
 
         bool isText = false;
         bool isTexture = false;
@@ -48,16 +50,16 @@ struct UIRenderInfo{
         std::vector<glm::vec2> texCoords;
         int textureIndex;
 
-        static UIRenderInfo Rectangle(TValue x, TValue y, TValue width, TValue height, glm::vec3 color, std::vector<TValue> borderWidth = {{PIXELS, 0},{PIXELS, 0},{PIXELS, 0},{PIXELS, 0}},glm::vec3 borderColor = {1,1,1}){
+        static UIRenderInfo Rectangle(TValue x, TValue y, TValue width, TValue height, UIColor color, std::vector<TValue> borderWidth = {{PIXELS, 0},{PIXELS, 0},{PIXELS, 0},{PIXELS, 0}},UIColor borderColor = {1,1,1,1}){
             return {
                 x,y,width,height,borderWidth,borderColor,color
             };
         }
-        static UIRenderInfo Text(TValue x, TValue y, TValue width, TValue height, glm::vec3 color, std::vector<glm::vec2> texCoords){
+        static UIRenderInfo Text(TValue x, TValue y, TValue width, TValue height, UIColor color, std::vector<glm::vec2> texCoords){
             return {
                 x,y,width,height,
                 {{PIXELS, 0},{PIXELS, 0},{PIXELS, 0},{PIXELS, 0}}, // Border thickness
-                {0,0,0}, // Border color
+                {0,0,0,1}, // Border color
                 color,
                 true, // Is text
                 false, // Isnt a texture
@@ -69,8 +71,8 @@ struct UIRenderInfo{
             return {
                 x,y,width,height,
                 {{PIXELS, 0},{PIXELS, 0},{PIXELS, 0},{PIXELS, 0}},
-                {0,0,0},
-                {0,0,0},
+                {0,0,0,1},
+                {0,0,0,1},
                 false, // Isnt text
                 true, // Is a texture
                 true, // Has tex coords
@@ -89,18 +91,18 @@ class UIFrame{
         TValue width;
         TValue height;
 
-        std::vector<TValue> borderWidth = {{PIXELS,0},{PIXELS,5},{PIXELS,2},{PIXELS,0}};
+        std::vector<TValue> borderWidth = {{PIXELS,3},{PIXELS,3},{PIXELS,3},{PIXELS,3}};
 
         bool hover = false;
 
-        glm::vec3 color;
-        glm::vec3 hoverColor = glm::vec3(0.0,0.1,0.5);
-        glm::vec3 borderColor = glm::vec3(0.5,0.1,0.5);
+        UIColor color;
+        UIColor hoverColor = glm::vec4(0.0,0.1,0.5,1.0);
+        UIColor borderColor = glm::vec4(0.5,0.1,0.5,0.4);
 
         std::vector<std::unique_ptr<UIFrame>> children;
 
     public:
-        UIFrame(TValue x, TValue y, TValue width, TValue height,glm::vec3 color): x(x), y(y), width(width), height(height), color(color) {}
+        UIFrame(TValue x, TValue y, TValue width, TValue height,UIColor color): x(x), y(y), width(width), height(height), color(color) {}
         virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
 
         std::function<void(GLFWwindow*, int, int, int)> onMouseEvent;
@@ -119,7 +121,7 @@ class UILabel: public UIFrame{
         TValue padding = {PIXELS, 4};
 
     public:
-        UILabel(std::string text, TValue x, TValue y, glm::vec3 color): UIFrame(x,y,{PIXELS, 0},{PIXELS, 0},color), text(text) {}
+        UILabel(std::string text, TValue x, TValue y, UIColor color): UIFrame(x,y,{PIXELS, 0},{PIXELS, 0},color), text(text) {}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
         void setPadding(TValue value) {padding = value;}
@@ -131,7 +133,7 @@ class UIInput: public UILabel{
     private:
 
     public:
-        UIInput(TValue x, TValue y, TValue width, TValue height, glm::vec3 color);
+        UIInput(TValue x, TValue y, TValue width, TValue height, UIColor color);
 
         std::function<void(std::string)> onSubmit;
 
@@ -226,7 +228,7 @@ class UIManager{
 
         UIFrame* getElementUnder(int x, int y);  
 
-        std::vector<UIRenderInfo> buildTextRenderingInformation(std::string text, float x, float y, float scale, glm::vec3 color);
+        std::vector<UIRenderInfo> buildTextRenderingInformation(std::string text, float x, float y, float scale, UIColor color);
 
         Uniform<glm::mat4>& getProjectionMatrix(){return projectionMatrix;}
         FontManager& getFontManager() {return fontManager;};

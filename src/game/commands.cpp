@@ -70,7 +70,7 @@ void CommandProcessor::processCommand(std::string raw){
 }
 
 
-UICommandInput::UICommandInput(CommandProcessor* commandProcessor, TValue x, TValue y, TValue width, TValue height, glm::vec3 color): UIInput(x,y,width,height,color), commandProcessor(commandProcessor){
+UICommandInput::UICommandInput(CommandProcessor* commandProcessor, TValue x, TValue y, TValue width, TValue height, UIColor color): UIInput(x,y,width,height,color), commandProcessor(commandProcessor){
     onKeyTyped = [this](GLFWwindow* window, unsigned int codepoint){
         char typedChar = static_cast<char>(codepoint);
 
@@ -120,7 +120,7 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
         TValue(PIXELS,ry + h / 2 - cursorH  / 2),
         TValue(PIXELS,cursorW                  ),
         TValue(PIXELS,cursorH                  ),
-        {1,1,1}
+        {1,1,1,1}
     ));
 
     int suggestions_height = 0;
@@ -138,19 +138,19 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
         TValue(PIXELS,ry - suggestions_height),
         TValue(PIXELS,suggestions_width      ),
         TValue(PIXELS,suggestions_height     ),
-        {0,0,0}
+        {0,0,0,1}
     ));
 
     int currentY = 0;
     for(auto& s: suggestions){
-        std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(s,rx + suggestions_padding,ry - suggestions_height + currentY + suggestions_padding,1,{0.5,1,1});
+        std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(s,rx + suggestions_padding,ry - suggestions_height + currentY + suggestions_padding,1,{0.5,1,1,1});
         glm::vec2 dm = manager.getMainFont().getTextDimensions(s);
         currentY += dm.y + suggestions_padding;
 
         out.insert(out.end(), temp.begin(), temp.end());
     }
 
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1});
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1,1});
     out.insert(out.end(), temp.begin(), temp.end());
 
     return out;

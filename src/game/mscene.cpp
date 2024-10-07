@@ -53,7 +53,7 @@ void MainScene::initialize(){
         TValue(OPERATION_MINUS,{FRACTIONS, 100}, {MFRACTION, 100}),
         TValue(FRACTIONS,100),
         TValue(PIXELS,50),
-        glm::vec3(0,0,0)
+        glm::vec4(0,0,0,1)
     );
     this->chatInput = chatInput.get();
 
@@ -71,7 +71,7 @@ void MainScene::initialize(){
         "Exit", 
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(OPERATION_MINUS,{FRACTIONS, 10}, {MFRACTION, 50}),
-        glm::vec3(0.3,0.3,0.3)
+        glm::vec4(0.3,0.3,0.3,1)
     );
     exitButton->onMouseEvent = [this](GLFWwindow* window, int button, int action, int mods) {
         this->sceneManager->setScene("menu");
