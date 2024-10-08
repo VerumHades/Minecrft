@@ -54,7 +54,7 @@ struct UIRenderInfo{
         int height;
 
         UIBorderSizes borderWidth; // clockwise from the top
-        UIColor borderColor;
+        std::array<UIColor,4> borderColor;
 
         UIColor color;
 
@@ -65,16 +65,19 @@ struct UIRenderInfo{
         std::vector<glm::vec2> texCoords;
         int textureIndex;
 
-        static UIRenderInfo Rectangle(int x, int y, int width, int height, UIColor color, UIBorderSizes borderWidth = {0,0,0,0},UIColor borderColor = {1,1,1,1}){
+        static UIRenderInfo Rectangle(int x, int y, int width, int height, UIColor color, UIBorderSizes borderWidth = {0,0,0,0},std::array<UIColor,4> borderColor = {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}}){
             return {
                 x,y,width,height,borderWidth,borderColor,color
             };
+        }
+        static UIRenderInfo Rectangle(UITransform t, UIColor color, UIBorderSizes borderWidth = {0,0,0,0},std::array<UIColor,4> borderColor = {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}}){
+            return UIRenderInfo::Rectangle(t.x,t.y,t.width,t.height,color, borderWidth, borderColor);
         }
         static UIRenderInfo Text(int x, int y, int width, int height, UIColor color, std::vector<glm::vec2> texCoords){
             return {
                 x,y,width,height,
                 {0,0,0,0}, // Border thickness
-                {0,0,0,1}, // Border color
+                {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}}, // Border color
                 color,
                 true, // Is text
                 false, // Isnt a texture
@@ -86,13 +89,31 @@ struct UIRenderInfo{
             return {
                 x,y,width,height,
                 {0,0,0,0},
-                {0,0,0,1},
+                {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}},
                 {0,0,0,1},
                 false, // Isnt text
                 true, // Is a texture
                 true, // Has tex coords
                 texCoords,
                 textureIndex
+            };
+        }
+
+        static std::array<UIColor, 4> generateBorderColors(UIColor base){
+            return {
+                base + 0.1f,
+                base + 0.1f,
+                base - 0.1f,
+                base - 0.1f
+            };
+        }
+
+        static std::array<UIColor, 4> generateBorderColorsMaxOpacity(UIColor base){
+            return {
+                UIColor(glm::vec3(base) + 0.1f, 1.0),
+                UIColor(glm::vec3(base) + 0.1f, 1.0),
+                UIColor(glm::vec3(base) - 0.1f, 1.0),
+                UIColor(glm::vec3(base) - 0.1f, 1.0)
             };
         }
 };
@@ -112,24 +133,42 @@ class UIFrame{
 
         UIColor color;
         UIColor hoverColor = glm::vec4(0.0,0.1,0.5,0.0);
-        UIColor borderColor = glm::vec4(0.5,0.1,0.5,0.4);
+        std::array<UIColor,4> borderColor = {
+            glm::vec4(0.5,0.1,0.5,0.4),
+            glm::vec4(0.5,0.1,0.5,0.4),
+            glm::vec4(0.5,0.1,0.5,0.4),
+            glm::vec4(0.5,0.1,0.5,0.4)
+        };
 
         std::vector<std::unique_ptr<UIFrame>> children;
         UIFrame* parent = nullptr;
 
     public:
-        UIFrame(TValue x, TValue y, TValue width, TValue height, UIColor color): x(x), y(y), width(width), height(height), color(color), hoverColor(color) {}
+        UIFrame(TValue x, TValue y, TValue width, TValue height, UIColor color): x(x), y(y), width(width), height(height), color(color), hoverColor(color){
+            borderColor = UIRenderInfo::generateBorderColorsMaxOpacity(color);
+        }
         virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
 
-        std::function<void(GLFWwindow*, int, int, int)> onMouseEvent;
+        std::function<void(UIManager& manager, int, int, int)> onMouseEvent;
+        std::function<void(UIManager& manager, int, int)> onMouseMove;
         std::function<void(GLFWwindow*, unsigned int)> onKeyTyped;
         std::function<void(GLFWwindow*, int key, int scancode, int action, int mods)> onKeyEvent;
+
+        std::function<void(UIManager& manager)> onMouseLeave;
+        std::function<void(UIManager& manager)> onMouseEnter;
 
         int getValueInPixels(TValue& value, bool horizontal, int container_size);
         UITransform getTransform(UIManager& manager);
         UIBorderSizes getBorderSizes(UIManager& manager);
 
+        void setHoverColor(UIColor color) {hoverColor = color;}
+        void setBorderColor(std::array<UIColor,4> borderColor) {this->borderColor = borderColor;}
+
         bool pointWithin(glm::vec2 position, UIManager& manager);
+        bool pointWithinBounds(glm::vec2 position, UITransform transform);
+
+        void setBorderWidth(std::vector<TValue> borderWidth) {this->borderWidth = borderWidth;}
+
         void setHover(bool value) {hover = value;}
         void appendChild(std::unique_ptr<UIFrame> child){
             child->parent = this;
@@ -169,6 +208,29 @@ class UIImage: public UIFrame{
         static std::unique_ptr<DynamicTextureArray> textures;
 
         UIImage(std::string path, TValue x, TValue y, TValue width, TValue height);
+        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
+};
+
+class UISlider: public UIFrame{
+    private:
+        int* value;
+        uint32_t min;
+        uint32_t max;
+
+        bool displayValue = true;
+        int valueDisplayOffset = 10;
+
+        bool grabbed = false;
+
+        uint32_t handleWidth = 15;
+        UIColor handleColor = glm::vec4(0.361, 0.443, 0.741,1.0);
+
+        UITransform getHandleTransform(UIManager& manager);
+
+    public:
+        static std::unique_ptr<DynamicTextureArray> textures;
+
+        UISlider(TValue x, TValue y, TValue width, TValue height, int* value, uint32_t min, uint32_t max, UIColor color);
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
@@ -220,6 +282,8 @@ class UIManager{
         int screenWidth = 1920;
         int screenHeight = 1080;
 
+        glm::ivec2 mousePosition = {0,0};
+
         UIFrame* underHover;
         UIFrame* inFocus;
 
@@ -254,6 +318,8 @@ class UIManager{
         Uniform<glm::mat4>& getProjectionMatrix(){return projectionMatrix;}
         FontManager& getFontManager() {return fontManager;};
         Font& getMainFont(){return *mainFont;}
+
+        glm::ivec2 getMousePosition(){return mousePosition;}
 
         int getScreenWidth() {return screenWidth;}
         int getScreenHeight() {return screenHeight;}

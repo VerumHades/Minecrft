@@ -59,8 +59,6 @@ class Chunk: public Volume{
     public:
         bool meshGenerating = false;
         bool meshGenerated = false;
-
-        bool buffersLoaded = false;
         
         std::unique_ptr<Mesh> solidMesh;
         //std::optional<Mesh> transparentMesh;

@@ -77,6 +77,9 @@ class MultiChunkBuffer{
             size_t count;
             size_t baseVertex;
 
+            size_t vertexDataSize;
+            size_t indexDataSize;
+            
             bool hasDrawCall;
         };
 

@@ -44,6 +44,7 @@ void MainScene::initialize(){
     this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
     this->getUILayer("chat").eventLocks = {true, true, true, true};
     this->getUILayer("menu").eventLocks = {true, true, true, true};
+    this->getUILayer("settings").eventLocks = {true, true, true, true};
 
     auto chatInput = std::make_unique<UICommandInput>(
         &commandProcessor,
@@ -73,28 +74,96 @@ void MainScene::initialize(){
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(PIXELS, 400),
         TValue(PIXELS, 700),
-        glm::vec4(0,0,0,0.5)
+        glm::vec4(0.1,0.1,0.1,0.8)
     );
 
     auto exitButton = std::make_unique<UILabel>(
         "Exit", 
         TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
-        TValue(OPERATION_MINUS,{PFRACTION, 10}, {MFRACTION, 50}),
+        TValue(OPERATION_MINUS,{PFRACTION, 100}, {MFRACTION, 200}),
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
         glm::vec4(0.3,0.3,0.3,1)
     );
-    exitButton->onMouseEvent = [this](GLFWwindow* window, int button, int action, int mods) {
+    exitButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+    exitButton->onMouseEvent = [this](UIManager& manager, int button, int action, int mods) {
         this->sceneManager->setScene("menu");
     };
 
+    auto resumeButton = std::make_unique<UILabel>(
+        "Resume", 
+        TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
+        TValue(MFRACTION, 100),
+        TValue(PIXELS, 200),
+        TValue(PIXELS, 40),
+        glm::vec4(0.3,0.3,0.3,1)
+    );
+    resumeButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+    resumeButton->onMouseEvent = [this](UIManager& manager, int button, int action, int mods) {
+        this->setUILayer("default");
+        menuOpen = false;
+    };
+
+    auto settingsButton = std::make_unique<UILabel>(
+        "Settings", 
+        TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
+        TValue(MFRACTION, 300),
+        TValue(PIXELS, 200),
+        TValue(PIXELS, 40),
+        glm::vec4(0.3,0.3,0.3,1)
+    );
+    settingsButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+    settingsButton->onMouseEvent = [this](UIManager& manager, int button, int action, int mods) {
+        this->setUILayer("settings");
+    };
+
+    pauseMenuFrame->setBorderWidth({{PIXELS,8},{PIXELS,8},{PIXELS,8},{PIXELS,8}});
+
     pauseMenuFrame->appendChild(std::move(exitButton));
+    pauseMenuFrame->appendChild(std::move(resumeButton));
+    pauseMenuFrame->appendChild(std::move(settingsButton));
 
     this->addElement(std::move(pauseMenuFrame));
 
     /*
         ======
     */
+    this->setUILayer("settings");
+
+    auto settingsMenuFrame = std::make_unique<UIFrame>(
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(PIXELS, 700),
+        TValue(PIXELS, 700),
+        glm::vec4(0.1,0.1,0.1,0.8)
+    );
+
+    auto renderDistanceSlider = std::make_unique<UISlider>(
+        TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
+        TValue(MFRACTION, 300),
+        TValue(PFRACTION, 80),
+        TValue(PIXELS, 40),
+        &renderDistance,
+        static_cast<uint32_t>(4), static_cast<uint32_t>(33),
+        glm::vec4(0.3,0.3,0.3,1)
+    );
+
+    auto renderDistanceLabel = std::make_unique<UILabel>(
+        "Render distance: ", 
+        TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
+        TValue(MFRACTION, 200),
+        TValue(PFRACTION, 80),
+        TValue(PIXELS, 40),
+        glm::vec4(0.3,0.3,0.3,0.0)
+    );
+    renderDistanceLabel->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
+
+    settingsMenuFrame->setBorderWidth({{PIXELS,8},{PIXELS,8},{PIXELS,8},{PIXELS,8}});
+    settingsMenuFrame->appendChild(std::move(renderDistanceSlider));
+    settingsMenuFrame->appendChild(std::move(renderDistanceLabel));
+
+    this->addElement(std::move(settingsMenuFrame));
+
     this->setUILayer("default");
 
     Model& bob = modelManager.createModel("bob");
@@ -414,12 +483,10 @@ void MainScene::render(){
 }
 
 void MainScene::regenerateChunkMesh(Chunk& chunk){
-    if(!chunk.buffersLoaded) return;
     if(chunk.meshGenerating) return;
 
     chunk.meshGenerated = 0;
     chunk.meshGenerating = 0;
-    chunk.buffersLoaded = 0;
 }
 
 
@@ -537,14 +604,14 @@ void MainScene::physicsUpdate(){
 }
 
 void MainScene::pregenUpdate(){
-    int pregenDistance = renderDistance + 1;
-
     while(running){
         int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
         int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
         int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
 
         std::vector<std::thread> openThreads = {};
+
+        int pregenDistance = renderDistance + 1; 
         
         for(int x = -pregenDistance; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
             int chunkX = camWorldX + x;
@@ -556,7 +623,7 @@ void MainScene::pregenUpdate(){
                 //meshlessChunk = world->generateAndGetChunk(chunkX, chunkY, chunkZ);
 
                 std::thread t(&World::generateChunk, world.get(), chunkX, chunkY, chunkZ);
-                openThreads.push_back(move(t));
+                openThreads.push_back(std::move(t));
             }
             if(openThreads.size() > 16) break;
         }

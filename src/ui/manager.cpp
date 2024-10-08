@@ -54,7 +54,7 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
 
     uint32_t vecIndices[4];
 
-    const int vertexSize = 21;
+    const int vertexSize = 2 + 2 + 4 + 2 + 1 + 1 + 1 + 4 + 4 + 4 + 4 + 4;
 
     glm::vec4 borderSize = {
         info.borderWidth.top,
@@ -105,10 +105,12 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
         vertex[15 + offset] = borderSize.z;
         vertex[16 + offset] = borderSize.w;
 
-        vertex[17 + offset] = info.borderColor.r;
-        vertex[18 + offset] = info.borderColor.g;
-        vertex[19 + offset] = info.borderColor.b;
-        vertex[20 + offset] = info.borderColor.a;
+        for(int j  = 0;j < 4; j++){
+            vertex[17 + offset + j * 4] = info.borderColor[i].r;
+            vertex[18 + offset + j * 4] = info.borderColor[i].g;
+            vertex[19 + offset + j * 4] = info.borderColor[i].b;
+            vertex[20 + offset + j * 4] = info.borderColor[i].a;
+        }
 
         vecIndices[i] = startIndex + i;
     }
@@ -127,7 +129,7 @@ void UIManager::update(){
     uiProgram.use();
 
     Mesh temp = Mesh();
-    temp.setVertexFormat({2,2,4,2,1,1,1,4,4});
+    temp.setVertexFormat({2,2,4,2,1,1,1,4,4,4,4,4});
 
     for(auto& window: getCurrentWindow().getCurrentLayer().getElements()){
         std::vector<UIRenderInfo> winfo = window->getRenderingInformation(*this);
@@ -203,16 +205,27 @@ void UIManager::render(){
 }
 
 void UIManager::mouseMove(int x, int y){
+    mousePosition.x = x;
+    mousePosition.y = y;
+
     UIFrame* element = getElementUnder(x,y);
-    if(element != underHover && underHover != nullptr) underHover->setHover(false);   
-    if(element != nullptr) element->setHover(true);
+    if(element != underHover && underHover != nullptr){
+        underHover->setHover(false);   
+        if(underHover->onMouseLeave) underHover->onMouseLeave(*this);
+    }
+    if(element != nullptr){
+        element->setHover(true);
+        if(element->onMouseEnter) element->onMouseEnter(*this);
+    }
     underHover = element;
+
+    if(underHover && underHover->onMouseMove) underHover->onMouseMove(*this,x,y);
     update();
 }
 
 void UIManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     if(!underHover) return;
-    if(underHover->onMouseEvent) underHover->onMouseEvent(window,button,action,mods);
+    if(underHover->onMouseEvent) underHover->onMouseEvent(*this,button,action,mods);
     update();
 }
 
@@ -228,6 +241,10 @@ void UIManager::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 void UIManager::setCurrentWindow(UIWindowIdentifier id){
+    if(underHover){
+        underHover->setHover(false);
+        if(underHover->onMouseLeave) underHover->onMouseLeave(*this);
+    }
     inFocus = nullptr;
     underHover = nullptr;
     currentWindow = id;
@@ -269,19 +286,17 @@ UIFrame* UIManager::getElementUnder(int x, int y){
     return current;
 }
 
-bool UIFrame::pointWithin(glm::vec2 point, UIManager& manager){
-    int sw = manager.getScreenWidth();
-    int sh = manager.getScreenHeight();
-
-    auto t = getTransform(manager);
-
+bool UIFrame::pointWithinBounds(glm::vec2 point, UITransform t){
     return  point.x > t.x && point.x < t.x + t.width &&
             point.y > t.y && point.y < t.y + t.height;
 }
 
+bool UIFrame::pointWithin(glm::vec2 point, UIManager& manager){
+    return pointWithinBounds(point, getTransform(manager));
+}
+
 std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
     auto clr = hover ? hoverColor : color;
-    
     auto t = getTransform(manager);
 
     std::vector<UIRenderInfo> out = {
@@ -393,6 +408,66 @@ std::vector<UIRenderInfo> UIInput::getRenderingInformation(UIManager& manager){
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
     std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1,1});
     out.insert(out.end(), temp.begin(), temp.end());
+
+    return out;
+}
+
+UISlider::UISlider(TValue x, TValue y, TValue width, TValue height, int* value, uint32_t min, uint32_t max, UIColor color): UIFrame(x,y,width,height,color), min(min), max(max), value(value) {
+    onMouseEvent = [this](UIManager& manager, int button, int action, int mods){
+        if(!this->hover) return;
+        if(button != GLFW_MOUSE_BUTTON_1) return;
+
+        auto t = this->getHandleTransform(manager);
+        grabbed = pointWithinBounds(manager.getMousePosition(), t) && action == GLFW_PRESS;
+    };
+    
+    onMouseMove = [this](UIManager& manager, int x, int y){
+        if(!grabbed) return;
+    
+        auto t = this->getTransform(manager);
+        float percentage = static_cast<float>(x - t.x) / static_cast<float>(t.width);
+
+        *this->value = (this->max - this->min) * percentage + this->min;
+    };
+
+    onMouseLeave = [this](UIManager& manager){
+        grabbed = false;
+    };
+}
+
+UITransform UISlider::getHandleTransform(UIManager& manager){
+    auto t = this->getTransform(manager);
+
+    float percentage = static_cast<float>(*this->value - this->min) / static_cast<float>(this->max - this->min);
+    int handlePos = t.width * percentage;
+
+    return{
+        t.x + handlePos - static_cast<int>(handleWidth) / 2,
+        t.y,
+        static_cast<int>(handleWidth),
+        t.height
+    };
+}
+
+std::vector<UIRenderInfo> UISlider::getRenderingInformation(UIManager& manager){
+    auto t = getTransform(manager);
+
+    std::vector<UIRenderInfo> out = {
+        UIRenderInfo::Rectangle(t.x, t.y + t.height / 3, t.width, t.height / 3, color, {3,3,3,3},UIRenderInfo::generateBorderColors(color))
+    };
+
+    out.push_back(UIRenderInfo::Rectangle(getHandleTransform(manager), handleColor, {3,3,3,3},UIRenderInfo::generateBorderColors(handleColor)));
+    
+    std::string text = std::to_string(*value);
+    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
+
+    if(displayValue){
+        int tx = t.x + t.width + valueDisplayOffset;
+        int ty = t.y + t.height / 2 - textDimensions.y / 2;
+
+        std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1,1});
+        out.insert(out.end(), temp.begin(), temp.end());
+    }
 
     return out;
 }

@@ -1,22 +1,30 @@
 #version 330 core
 layout (location = 0) in vec2  aPos; 
 layout (location = 1) in vec2  aTexCoords; 
-layout (location = 2) in vec3  aColor; 
+layout (location = 2) in vec4  aColor; 
 layout (location = 3) in vec2  aSize; 
 layout (location = 4) in float aIsText; 
 layout (location = 5) in float aIsTexture; 
 layout (location = 6) in float aTextureIndex; 
 layout (location = 7) in vec4  aBorderWidth; 
-layout (location = 8) in vec3  aBorderColor; 
+
+layout (location = 8)  in vec4  aBorderColorTop; 
+layout (location = 9)  in vec4  aBorderColorRight; 
+layout (location = 10) in vec4  aBorderColorBottom; 
+layout (location = 11) in vec4  aBorderColorLeft; 
 
 out vec2 TexCoords;
 out vec2 Size;
 out float isText;
-out vec3 Color;
+out vec4 Color;
 out float isTexture;
 out float textureIndex;
 out vec4 borderWidth;
-out vec3 borderColor;
+
+out vec4 borderColorTop;
+out vec4 borderColorRight;
+out vec4 borderColorBottom;
+out vec4 borderColorLeft;
 
 uniform mat4 projectionMatrix;
 
@@ -30,5 +38,9 @@ void main()
     isTexture = aIsTexture;
     textureIndex = aTextureIndex;
     borderWidth = aBorderWidth;
-    borderColor = aBorderColor;
+
+    borderColorTop = aBorderColorTop;
+    borderColorRight = aBorderColorRight;
+    borderColorBottom = aBorderColorBottom;
+    borderColorLeft = aBorderColorLeft;
 }

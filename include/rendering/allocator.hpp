@@ -3,6 +3,9 @@
 
 #include <vector>
 #include <iostream>
+#include <functional>
+
+using AllocatorMemoryRequest = std::function<size_t(size_t)>;
 
 class Allocator{
     private:
@@ -17,8 +20,10 @@ class Allocator{
 
         std::vector<MemBlock> blocks;
 
+        AllocatorMemoryRequest requestMemory;
+
     public:
-        Allocator(size_t memsize):  memsize(memsize) {
+        Allocator(size_t memsize, AllocatorMemoryRequest requestMemory):  memsize(memsize), requestMemory(requestMemory) {
             blocks.push_back({0, memsize, false});
         };
         Allocator(){
@@ -28,6 +33,13 @@ class Allocator{
         size_t allocate(size_t size);
         void free(size_t location);
         void clear();
+        size_t appendBlock(size_t size){
+            blocks.push_back({memsize, size, false});
+            memsize += size;
+            return memsize - size;
+        }
+
+        size_t getSize(){return memsize;}
 };
 
 #endif

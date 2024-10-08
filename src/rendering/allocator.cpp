@@ -24,7 +24,7 @@ size_t Allocator::allocate(size_t size){
         std::cout << "Couldnt allocate: " << size << std::endl;
         std::cout << "Allocated at:" << blocks[selected_index].start << " of size: " << size << std::endl;
         std::cout << std::endl;
-        return 0; // Failed to find block of desired size
+        return requestMemory(size);
     }
     
     size_t sizeLeft = blocks[selected_index].size - size;
@@ -57,7 +57,8 @@ void Allocator::clear(){
 }
 
 void Allocator::free(size_t start){
-    for(auto& block: blocks){
+    for(int i = 0;i < blocks.size();i++){
+        auto& block = blocks[i];
         if(block.start != start) continue;
 
         if(!block.used){
@@ -65,6 +66,18 @@ void Allocator::free(size_t start){
         }
 
         block.used = false;
+
+        if(i > 0 && !blocks[i - 1].used){ // Merge with the preceding block
+            blocks[i - 1].size += block.size;
+            blocks.erase(blocks.begin() + i);
+            std::cout << "Merged memory blocks!" << std::endl;
+        } 
+        else if(i + 1 < blocks.size() && !blocks[i + 1].used){ // Merge the following block
+            block.size += blocks[i + 1].size;
+            blocks.erase(blocks.begin() + i + 1);
+            std::cout << "Merged memory blocks!" << std::endl;
+        }
+        
         return;
     }
 

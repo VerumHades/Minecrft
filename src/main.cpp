@@ -161,15 +161,16 @@ int main() {
         TValue(PIXELS, 40),
         glm::vec4(0.3,0.3,0.3,1.0)
     );
+    startButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
 
-    startButton->onMouseEvent = [](GLFWwindow* window, int button, int action, int mods) {
+    startButton->onMouseEvent = [](UIManager& manager, int button, int action, int mods) {
         sceneManager.setScene("game");
     };
     
     sceneManager.getScene("menu")->setUILayer("default");
     sceneManager.getScene("menu")->addElement(std::move(startButton));
     
-    sceneManager.setScene("menu");
+    sceneManager.setScene("game");
 
     double last = glfwGetTime();
     double current = glfwGetTime();
