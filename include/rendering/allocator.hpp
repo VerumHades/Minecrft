@@ -10,6 +10,7 @@ using AllocatorMemoryRequest = std::function<size_t(size_t)>;
 class Allocator{
     private:
         size_t memsize;
+        size_t lookupStart = 0;
 
         struct MemBlock{
             size_t start;

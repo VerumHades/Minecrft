@@ -90,8 +90,6 @@ class MultiChunkBuffer{
         std::unordered_map<glm::vec3, LoadedChunk, Vec3Hash, Vec3Equal> loadedChunks;
         std::vector<DrawElementsIndirectCommand> drawCalls;
 
-        
-
     public:
         ~MultiChunkBuffer();
         
@@ -108,6 +106,8 @@ class MultiChunkBuffer{
         void addDrawCall(const glm::vec3& position);
         void removeDrawCall(const glm::vec3& position);
         void updateDrawCalls();
+        void purgeUndrawnChunks();
+
 
         void draw();
 };

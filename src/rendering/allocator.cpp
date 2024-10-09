@@ -8,14 +8,16 @@ size_t Allocator::allocate(size_t size){
     int selected_index = -1;
 
     for(int i = 0; i < blocks.size(); i++){
-        MemBlock& block = blocks[i];
+        int index = (lookupStart + i) % blocks.size();
+
+        MemBlock& block = blocks[index];
 
         if(block.used) continue; // Block is allocated
 
         size_t distance = block.size > size ? block.size - size : size - block.size;
         if(distance >= current_distance) continue; // Block is not closer to the desired size
 
-        selected_index = i;
+        selected_index = index;
         current_distance = distance;
     }
 
@@ -24,7 +26,7 @@ size_t Allocator::allocate(size_t size){
         std::cout << "Couldnt allocate: " << size << std::endl;
         std::cout << "Allocated at:" << blocks[selected_index].start << " of size: " << size << std::endl;
         std::cout << std::endl;
-        return requestMemory(size);
+        return 0; // Failed to find block of desired size
     }
     
     size_t sizeLeft = blocks[selected_index].size - size;
@@ -49,6 +51,8 @@ size_t Allocator::allocate(size_t size){
     //}
     //std::cout << std::endl;
 
+    lookupStart = selected_index;
+
     return blocks[selected_index].start;
 }   
 
@@ -57,8 +61,7 @@ void Allocator::clear(){
 }
 
 void Allocator::free(size_t start){
-    for(int i = 0;i < blocks.size();i++){
-        auto& block = blocks[i];
+    for(auto& block: blocks){
         if(block.start != start) continue;
 
         if(!block.used){
@@ -66,18 +69,6 @@ void Allocator::free(size_t start){
         }
 
         block.used = false;
-
-        if(i > 0 && !blocks[i - 1].used){ // Merge with the preceding block
-            blocks[i - 1].size += block.size;
-            blocks.erase(blocks.begin() + i);
-            std::cout << "Merged memory blocks!" << std::endl;
-        } 
-        else if(i + 1 < blocks.size() && !blocks[i + 1].used){ // Merge the following block
-            block.size += blocks[i + 1].size;
-            blocks.erase(blocks.begin() + i + 1);
-            std::cout << "Merged memory blocks!" << std::endl;
-        }
-        
         return;
     }
 

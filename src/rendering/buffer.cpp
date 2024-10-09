@@ -165,6 +165,13 @@ static void resizeBuffer(uint32_t* buffer, size_t currentSize, size_t newSize){
     *buffer = newBuffer;
 }
 
+void MultiChunkBuffer::purgeUndrawnChunks(){
+    for(auto& [position, chunk]: this->loadedChunks){
+        if(chunk.hasDrawCall) continue;
+        unloadChunkMesh(position);
+    }
+}
+
 void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
     maxDrawCalls = maxDrawCalls_;
     glGenVertexArrays(1, &vao);
@@ -178,15 +185,7 @@ void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
     maxIndices = maxDrawCalls * 6000; // Same for indices
     vertexAllocator = Allocator(maxVertices, [this](size_t requested){
         // Atempt to trash unused chunks
-
-        for(auto& [position, chunk]: this->loadedChunks){
-            if(chunk.hasDrawCall) continue;
-            if(chunk.vertexDataSize < requested) continue;
-            size_t pos = chunk.vertexData;
-            unloadChunkMesh(position);
-            return pos;
-        }
-
+        this->purgeUndrawnChunks();
         maxVertices += requested;
         resizeBuffer(&this->vertexBuffer, this->vertexAllocator.getSize(), maxVertices);
         
@@ -194,15 +193,7 @@ void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
     });
     indexAllocator = Allocator(maxIndices, [this](size_t requested){
         // Atempt to trash unused chunks
-
-        for(auto& [position, chunk]: this->loadedChunks){
-            if(chunk.hasDrawCall) continue;
-            if(chunk.indexDataSize < requested) continue;
-            size_t pos = chunk.indexData;
-            unloadChunkMesh(position);
-            return pos;
-        }
-
+        this->purgeUndrawnChunks();
         maxIndices += requested;
         resizeBuffer(&this->indexBuffer, this->indexAllocator.getSize(), maxIndices);
 
