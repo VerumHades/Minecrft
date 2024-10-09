@@ -507,6 +507,8 @@ void MainScene::regenerateChunkMesh(Chunk& chunk, glm::vec3 blockCoords){
 }
 #undef regenMesh
 
+const double sqrtof3 = sqrt(3);
+
 void MainScene::generateMeshes(){
     int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
     int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
@@ -553,7 +555,11 @@ void MainScene::generateMeshes(){
 
     loadedPositions = currentPositions;
 
-    if(changed) chunkBuffer.updateDrawCalls();
+    if(changed){
+        chunkBuffer.updateDrawCalls();
+        //circumscribed sphere of the render distance
+        //chunkBuffer.unloadFarawayChunks({camWorldX, camWorldY, camWorldZ}, (renderDistance * sqrtof3) / 2);
+    }
 }
 
 void MainScene::physicsUpdate(){

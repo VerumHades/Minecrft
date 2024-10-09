@@ -5,12 +5,11 @@
 #include <iostream>
 #include <functional>
 
-using AllocatorMemoryRequest = std::function<size_t(size_t)>;
+using AllocatorMemoryRequest = std::function<bool(size_t)>;
 
 class Allocator{
     private:
         size_t memsize;
-        size_t lookupStart = 0;
 
         struct MemBlock{
             size_t start;
@@ -19,13 +18,20 @@ class Allocator{
             bool used;
         };
 
+        struct FreeBlock{
+            size_t index;
+            size_t size;
+        };
+
         std::vector<MemBlock> blocks;
+        std::vector<FreeBlock> freeBlocks;
 
         AllocatorMemoryRequest requestMemory;
 
     public:
         Allocator(size_t memsize, AllocatorMemoryRequest requestMemory):  memsize(memsize), requestMemory(requestMemory) {
             blocks.push_back({0, memsize, false});
+            freeBlocks.push_back({0, memsize});
         };
         Allocator(){
             memsize = 0;

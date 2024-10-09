@@ -6,29 +6,33 @@
 size_t Allocator::allocate(size_t size){
     size_t current_distance = (size_t)-1; // Max 
     int selected_index = -1;
+    int freeBlockIndex = -1;
 
-    for(int i = 0; i < blocks.size(); i++){
-        int index = (lookupStart + i) % blocks.size();
+    for(int i = 0;i < freeBlocks.size();i++){
+        FreeBlock& freeBlock = freeBlocks[i];
 
-        MemBlock& block = blocks[index];
-
-        if(block.used) continue; // Block is allocated
-
-        size_t distance = block.size > size ? block.size - size : size - block.size;
+        size_t distance = freeBlock.size > size ? freeBlock.size - size : size - freeBlock.size;
         if(distance >= current_distance) continue; // Block is not closer to the desired size
 
-        selected_index = index;
+        selected_index = freeBlock.index;
+        freeBlockIndex = i;
         current_distance = distance;
     }
 
     
     if(selected_index == -1){
-        std::cout << "Couldnt allocate: " << size << std::endl;
-        std::cout << "Allocated at:" << blocks[selected_index].start << " of size: " << size << std::endl;
-        std::cout << std::endl;
-        return 0; // Failed to find block of desired size
+        //std::cout << "Couldnt allocate: " << size << std::endl;
+        //std::cout << "Allocated at:" << blocks[selected_index].start << " of size: " << size << std::endl;
+        if(requestMemory(size)){ // Failed to find block of desired size
+            return allocate(size);
+        }
+        else{
+            return 0;
+        }
     }
-    
+
+    freeBlocks.erase(freeBlocks.begin() + freeBlockIndex);
+
     size_t sizeLeft = blocks[selected_index].size - size;
     if(blocks[selected_index].size > size && blocks[selected_index].size > 100000 && sizeLeft >= 50000){ // Will fragment memory without regard, maybe update later?
         MemBlock newBlock;
@@ -38,21 +42,18 @@ size_t Allocator::allocate(size_t size){
         newBlock.used = false;
 
         blocks.insert(blocks.begin() + selected_index + 1, newBlock);
+        freeBlocks.push_back({static_cast<size_t>(selected_index + 1), newBlock.size});
         //std::cout << "Resized memory block: " << size << " New block: " << newBlock.size << std::endl;
     }
 
     blocks[selected_index].size = size;
     blocks[selected_index].used = true;
-
     //std::cout << "Allocated at:" << blocks[selected_index].start << " of size: " << size << std::endl;
     //std::cout << "Current state:" << std::endl;
     //for(auto& block: blocks){
     //    std::cout << "(" << block.start << ":" << block.size << ")[" << (block.used ? "used" : "unused") << "] ";
     //}
     //std::cout << std::endl;
-
-    lookupStart = selected_index;
-
     return blocks[selected_index].start;
 }   
 

@@ -153,7 +153,7 @@ static void resizeBuffer(uint32_t* buffer, size_t currentSize, size_t newSize){
     glGenBuffers(1, &newBuffer);
     glBindBuffer(GL_COPY_WRITE_BUFFER, newBuffer);
     glBufferData(GL_COPY_WRITE_BUFFER, newSize, nullptr, GL_STATIC_DRAW);
-
+    
     glBindBuffer(GL_COPY_READ_BUFFER, *buffer);
     glBindBuffer(GL_COPY_WRITE_BUFFER, newBuffer); 
 
@@ -164,10 +164,9 @@ static void resizeBuffer(uint32_t* buffer, size_t currentSize, size_t newSize){
 
     *buffer = newBuffer;
 }
-
-void MultiChunkBuffer::purgeUndrawnChunks(){
+void MultiChunkBuffer::unloadFarawayChunks(const glm::vec3& from, float treshold){
     for(auto& [position, chunk]: this->loadedChunks){
-        if(chunk.hasDrawCall) continue;
+        if(glm::distance(from, position) <= treshold) continue;
         unloadChunkMesh(position);
     }
 }
@@ -181,23 +180,15 @@ void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
     /*
         These values are gross estimates and will probably need dynamic adjusting later
     */
-    maxVertices = maxDrawCalls * vertexSize * 1000; // Estimate that every chunk has about 50000 vertices at max
-    maxIndices = maxDrawCalls * 6000; // Same for indices
+    maxVertices = maxDrawCalls * vertexSize * 100 * 10; // Estimate that every chunk has about 50000 vertices at max
+    maxIndices = maxDrawCalls * 600 * 10; // Same for indices
     vertexAllocator = Allocator(maxVertices, [this](size_t requested){
         // Atempt to trash unused chunks
-        this->purgeUndrawnChunks();
-        maxVertices += requested;
-        resizeBuffer(&this->vertexBuffer, this->vertexAllocator.getSize(), maxVertices);
+        return false;
         
-        return this->vertexAllocator.appendBlock(requested);
     });
     indexAllocator = Allocator(maxIndices, [this](size_t requested){
-        // Atempt to trash unused chunks
-        this->purgeUndrawnChunks();
-        maxIndices += requested;
-        resizeBuffer(&this->indexBuffer, this->indexAllocator.getSize(), maxIndices);
-
-        return this->indexAllocator.appendBlock(requested);
+        return false;
     });
 
     /*
