@@ -4,25 +4,11 @@
     Allocates memory to the block of closest size, resizes blocks to be exactly the size of the allocation.
 */
 size_t Allocator::allocate(size_t size){
-    size_t current_distance = (size_t)-1; // Max 
-    int selected_index = -1;
-    int freeBlockIndex = -1;
+    auto it = freeBlocks.lower_bound(size);
 
-    for(int i = 0;i < freeBlocks.size();i++){
-        FreeBlock& freeBlock = freeBlocks[i];
-
-        size_t distance = freeBlock.size > size ? freeBlock.size - size : size - freeBlock.size;
-        if(distance >= current_distance) continue; // Block is not closer to the desired size
-
-        selected_index = freeBlock.index;
-        freeBlockIndex = i;
-        current_distance = distance;
-    }
-
-    
-    if(selected_index == -1){
-        //std::cout << "Couldnt allocate: " << size << std::endl;
-        //std::cout << "Allocated at:" << blocks[selected_index].start << " of size: " << size << std::endl;
+    if(it == freeBlocks.end()){
+        std::cout << "Couldnt allocate: " << size << std::endl;
+        //std::cout << "Allocated at:" << selectedBlock->start << " of size: " << size << std::endl;
         if(requestMemory(size)){ // Failed to find block of desired size
             return allocate(size);
         }
@@ -31,45 +17,73 @@ size_t Allocator::allocate(size_t size){
         }
     }
 
-    freeBlocks.erase(freeBlocks.begin() + freeBlockIndex);
+    freeBlocks.erase(it);
+    auto [actual_size, selectedBlock] = *it;
 
-    size_t sizeLeft = blocks[selected_index].size - size;
-    if(blocks[selected_index].size > size && blocks[selected_index].size > 100000 && sizeLeft >= 50000){ // Will fragment memory without regard, maybe update later?
+    selectedBlock->used = true;
+
+    size_t sizeLeft = selectedBlock->size - size;
+    if(selectedBlock->size > size){ // Will fragment memory without regard, maybe update later?
         MemBlock newBlock;
 
-        newBlock.start = blocks[selected_index].start + size;
+        newBlock.start = selectedBlock->start + size;
         newBlock.size = sizeLeft; // Give it the size left;
-        newBlock.used = false;
 
-        blocks.insert(blocks.begin() + selected_index + 1, newBlock);
-        freeBlocks.push_back({static_cast<size_t>(selected_index + 1), newBlock.size});
+        auto iter = blocks.insert(std::next(selectedBlock), newBlock);
+        markFree(iter);
         //std::cout << "Resized memory block: " << size << " New block: " << newBlock.size << std::endl;
     }
 
-    blocks[selected_index].size = size;
-    blocks[selected_index].used = true;
-    //std::cout << "Allocated at:" << blocks[selected_index].start << " of size: " << size << std::endl;
+    selectedBlock->size = size;
+    //std::cout << "Allocated at:" << selectedBlock->start << " of size: " << size << std::endl;
     //std::cout << "Current state:" << std::endl;
     //for(auto& block: blocks){
     //    std::cout << "(" << block.start << ":" << block.size << ")[" << (block.used ? "used" : "unused") << "] ";
     //}
     //std::cout << std::endl;
-    return blocks[selected_index].start;
+    return selectedBlock->start;
 }   
 
 void Allocator::clear(){
-    blocks = {{0, memsize, false}};
+    blocks = {};
+    freeBlocks = {};
+
+    markFree(blocks.insert(blocks.end(),{0, memsize, false}));
 }
 
 void Allocator::free(size_t start){
-    for(auto& block: blocks){
-        if(block.start != start) continue;
+    for(auto block = blocks.begin(); block != blocks.end(); ++block){
+        if(block->start != start) continue;
 
-        if(!block.used){
+        if(!block->used){
             std::cout << "Double free in allocator!" << std::endl;
         }
 
-        block.used = false;
+        /*if(std::next(block) != blocks.end()){
+            auto nextBlock = std::next(block);
+            if(!nextBlock->used){
+                std::cout << "Merged blocks" << std::endl;
+
+                block->size += nextBlock->size;
+                freeBlocks.erase(nextBlock->freeRegistery);
+                blocks.erase(nextBlock);
+            }
+        }
+        else if(block != blocks.begin()){
+            auto previousBlock = std::prev(block);
+            if(!previousBlock->used){
+                std::cout << "Merged blocks" << std::endl;
+
+                block->start = previousBlock->start;
+                block->size += previousBlock->size;
+
+                freeBlocks.erase(previousBlock->freeRegistery);
+                blocks.erase(previousBlock);
+            }
+        }*/
+
+        markFree(block);
+        
         return;
     }
 

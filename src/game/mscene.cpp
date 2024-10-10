@@ -166,6 +166,27 @@ void MainScene::initialize(){
 
     this->setUILayer("default");
 
+    auto allocatorVisVertex = std::make_unique<UIAllocatorVisualizer>(
+        TValue(PIXELS,10),
+        TValue(PIXELS,10),
+        TValue(FRACTIONS, 33),
+        TValue(PIXELS, 20),
+        glm::vec4(0.3,0.3,0.3,0.0),
+        &chunkBuffer.getVertexAllocator()
+    );
+
+    auto allocatorVisIndex = std::make_unique<UIAllocatorVisualizer>(
+        TValue(PIXELS,10),
+        TValue(PIXELS,40),
+        TValue(FRACTIONS, 33),
+        TValue(PIXELS, 20),
+        glm::vec4(0.3,0.3,0.3,0.0),
+        &chunkBuffer.getIndexAllocator()
+    );
+
+    this->addElement(std::move(allocatorVisVertex));
+    this->addElement(std::move(allocatorVisIndex));
+
     Model& bob = modelManager.createModel("bob");
     bob.loadFromFile("models/test.gltf", "");
     //bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
@@ -483,10 +504,7 @@ void MainScene::render(){
 }
 
 void MainScene::regenerateChunkMesh(Chunk& chunk){
-    if(chunk.meshGenerating) return;
-
-    chunk.meshGenerated = 0;
-    chunk.meshGenerating = 0;
+    chunkBuffer.unloadChunkMesh(chunk.getWorldPosition());
 }
 
 
@@ -558,7 +576,11 @@ void MainScene::generateMeshes(){
     if(changed){
         chunkBuffer.updateDrawCalls();
         //circumscribed sphere of the render distance
-        //chunkBuffer.unloadFarawayChunks({camWorldX, camWorldY, camWorldZ}, (renderDistance * sqrtof3) / 2);
+
+        glm::vec3 camWorldPosition = {camWorldX, camWorldY, camWorldZ};
+        float radius = glm::distance(camWorldPosition, camWorldPosition + static_cast<float>(renderDistance));
+        
+        chunkBuffer.unloadFarawayChunks(camWorldPosition, radius);
     }
 }
 
@@ -640,4 +662,23 @@ void MainScene::pregenUpdate(){
     }
 
     threadsStopped++;
+}
+
+std::vector<UIRenderInfo> UIAllocatorVisualizer::getRenderingInformation(UIManager& manager){
+    std::vector<UIRenderInfo> out = {};
+
+    auto memsize = watched->getMemorySize();
+    auto t = getTransform(manager);
+    int currentPosition = 0;
+
+    for(auto& block: watched->getBlocks()){
+        size_t bw = round((static_cast<float>(block.size) / static_cast<float>(memsize)) * static_cast<float>(t.width));
+        
+        UIColor color = block.used ? UIColor(1,0,0,1) : UIColor(0,1,0,1);
+
+        out.push_back(UIRenderInfo::Rectangle(t.x + currentPosition, t.y, bw, t.height, color));
+        currentPosition += bw;
+    }
+
+    return out;
 }

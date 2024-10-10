@@ -99,4 +99,12 @@ class MainScene: public Scene{
         void unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) override;
 };
 
+class UIAllocatorVisualizer: public UIFrame{
+    private:
+        Allocator* watched;
+    public:
+        UIAllocatorVisualizer(TValue x, TValue y, TValue width, TValue height, UIColor color, Allocator* watched): UIFrame(x,y,width,height,color), watched(watched) {};
+        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
+};
+
 #endif

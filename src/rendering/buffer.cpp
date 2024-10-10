@@ -166,7 +166,8 @@ static void resizeBuffer(uint32_t* buffer, size_t currentSize, size_t newSize){
 }
 void MultiChunkBuffer::unloadFarawayChunks(const glm::vec3& from, float treshold){
     for(auto& [position, chunk]: this->loadedChunks){
-        if(glm::distance(from, position) <= treshold) continue;
+        float distance = glm::distance(from, position);
+        if(distance <= treshold) continue;
         unloadChunkMesh(position);
     }
 }

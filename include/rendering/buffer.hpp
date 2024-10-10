@@ -107,9 +107,10 @@ class MultiChunkBuffer{
         void addDrawCall(const glm::vec3& position);
         void removeDrawCall(const glm::vec3& position);
         void updateDrawCalls();
-
-
         void draw();
+
+        Allocator& getVertexAllocator() {return vertexAllocator;};
+        Allocator& getIndexAllocator() {return indexAllocator;};
 };
 
 #include <rendering/mesh.hpp>
