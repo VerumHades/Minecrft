@@ -220,12 +220,19 @@ void UIManager::mouseMove(int x, int y){
     underHover = element;
 
     if(underHover && underHover->onMouseMove) underHover->onMouseMove(*this,x,y);
+    if(inFocus && inFocus != underHover && inFocus->onMouseMove) inFocus->onMouseMove(*this,x,y);
+
     update();
 }
 
 void UIManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
-    if(!underHover) return;
-    if(underHover->onMouseEvent) underHover->onMouseEvent(*this,button,action,mods);
+    if(button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS){
+        if(inFocus != underHover) inFocus = underHover;
+    }
+
+    if(underHover && underHover->onMouseEvent) underHover->onMouseEvent(*this,button,action,mods);
+    if(inFocus && inFocus != underHover && inFocus->onMouseEvent) inFocus->onMouseEvent(*this,button,action,mods);
+
     update();
 }
 
@@ -286,13 +293,13 @@ UIFrame* UIManager::getElementUnder(int x, int y){
     return current;
 }
 
-bool UIFrame::pointWithinBounds(glm::vec2 point, UITransform t){
-    return  point.x > t.x && point.x < t.x + t.width &&
-            point.y > t.y && point.y < t.y + t.height;
+bool UIFrame::pointWithinBounds(glm::vec2 point, UITransform t, int padding){
+    return  point.x > t.x - padding && point.x < t.x + t.width  + padding &&
+            point.y > t.y - padding && point.y < t.y + t.height + padding;
 }
 
-bool UIFrame::pointWithin(glm::vec2 point, UIManager& manager){
-    return pointWithinBounds(point, getTransform(manager));
+bool UIFrame::pointWithin(glm::vec2 point, UIManager& manager, int padding){
+    return pointWithinBounds(point, getTransform(manager), padding);
 }
 
 std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
@@ -377,6 +384,7 @@ UIImage::UIImage(std::string path, TValue x, TValue y, TValue width, TValue heig
 UIInput::UIInput(TValue x, TValue y, TValue width, TValue height, UIColor color): UILabel("",x,y,width,height,color){
     this->width = width;
     this->height = height;
+    this->focusable = true;
 
     onKeyTyped = [this](GLFWwindow* window, unsigned int codepoint){
         char typedChar = static_cast<char>(codepoint);
@@ -413,26 +421,33 @@ std::vector<UIRenderInfo> UIInput::getRenderingInformation(UIManager& manager){
 }
 
 UISlider::UISlider(TValue x, TValue y, TValue width, TValue height, int* value, uint32_t min, uint32_t max, UIColor color): UIFrame(x,y,width,height,color), min(min), max(max), value(value) {
+    this->focusable = true;
+    
     onMouseEvent = [this](UIManager& manager, int button, int action, int mods){
         if(!this->hover) return;
         if(button != GLFW_MOUSE_BUTTON_1) return;
 
         auto t = this->getHandleTransform(manager);
-        grabbed = pointWithinBounds(manager.getMousePosition(), t) && action == GLFW_PRESS;
+        if(action == GLFW_RELEASE){
+            grabbed = false;
+        }
+        else if(pointWithinBounds(manager.getMousePosition(), t, 5) && action == GLFW_PRESS){
+            grabbed = true;
+        }
+        else if(action == GLFW_PRESS){
+            moveTo(manager,manager.getMousePosition().x);
+        }
     };
     
     onMouseMove = [this](UIManager& manager, int x, int y){
         if(!grabbed) return;
     
-        auto t = this->getTransform(manager);
-        float percentage = static_cast<float>(x - t.x) / static_cast<float>(t.width);
-
-        *this->value = (this->max - this->min) * percentage + this->min;
+        moveTo(manager,x);
     };
 
-    onMouseLeave = [this](UIManager& manager){
-        grabbed = false;
-    };
+    //onMouseLeave = [this](UIManager& manager){
+    //    grabbed = false;
+    //};
 }
 
 UITransform UISlider::getHandleTransform(UIManager& manager){
@@ -447,6 +462,16 @@ UITransform UISlider::getHandleTransform(UIManager& manager){
         static_cast<int>(handleWidth),
         t.height
     };
+}
+
+void  UISlider::moveTo(UIManager& manager, int x){
+    auto t = this->getTransform(manager);
+    float percentage = static_cast<float>(x - t.x) / static_cast<float>(t.width);
+
+    if(percentage > 1.0) percentage = 1.0;
+    if(percentage < 0.0) percentage = 0.0;
+
+    *this->value = (this->max - this->min) * percentage + this->min;
 }
 
 std::vector<UIRenderInfo> UISlider::getRenderingInformation(UIManager& manager){

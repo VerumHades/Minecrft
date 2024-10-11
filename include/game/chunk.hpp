@@ -91,7 +91,7 @@ extern std::mutex predefinedBlockMutex;
 inline const BlockType& getBlockType(Block* block){
     if (block->type < BlockTypes::Air || block->type > BlockTypes::Sand) {
         std::cerr << "Error: Invalid BlockTypes value: " << static_cast<int>(block->type) << std::endl;
-        std::terminate(); // Or handle the error appropriately
+        std::terminate(); 
     }
     
     //std::lock_guard<std::mutex> lock(predefinedBlockMutex);

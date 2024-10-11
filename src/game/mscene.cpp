@@ -144,7 +144,7 @@ void MainScene::initialize(){
         TValue(PFRACTION, 80),
         TValue(PIXELS, 40),
         &renderDistance,
-        static_cast<uint32_t>(4), static_cast<uint32_t>(33),
+        static_cast<uint32_t>(4), static_cast<uint32_t>(32),
         glm::vec4(0.3,0.3,0.3,1)
     );
 

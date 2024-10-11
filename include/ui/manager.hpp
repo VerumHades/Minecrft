@@ -130,6 +130,7 @@ class UIFrame{
         std::vector<TValue> borderWidth = {{PIXELS,3},{PIXELS,3},{PIXELS,3},{PIXELS,3}};
 
         bool hover = false;
+        bool focusable = false;
 
         UIColor color;
         UIColor hoverColor = glm::vec4(0.0,0.1,0.5,0.0);
@@ -164,12 +165,15 @@ class UIFrame{
         void setHoverColor(UIColor color) {hoverColor = color;}
         void setBorderColor(std::array<UIColor,4> borderColor) {this->borderColor = borderColor;}
 
-        bool pointWithin(glm::vec2 position, UIManager& manager);
-        bool pointWithinBounds(glm::vec2 position, UITransform transform);
+        bool pointWithin(glm::vec2 position, UIManager& manager, int padding = 0);
+        bool pointWithinBounds(glm::vec2 position, UITransform transform, int padding = 0);
 
         void setBorderWidth(std::vector<TValue> borderWidth) {this->borderWidth = borderWidth;}
 
         void setHover(bool value) {hover = value;}
+        void setFocusable(bool value) {focusable = value;}
+        bool isFocusable(){return focusable;}
+
         void appendChild(std::unique_ptr<UIFrame> child){
             child->parent = this;
             children.push_back(std::move(child));
@@ -226,6 +230,7 @@ class UISlider: public UIFrame{
         UIColor handleColor = glm::vec4(0.361, 0.443, 0.741,1.0);
 
         UITransform getHandleTransform(UIManager& manager);
+        void moveTo(UIManager& manager, int x);
 
     public:
         static std::unique_ptr<DynamicTextureArray> textures;
@@ -303,7 +308,7 @@ class UIManager{
         void mouseEvent(GLFWwindow* window, int button, int action, int mods);
         void keyTypedEvent(GLFWwindow* window, unsigned int codepoint);
         void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods);
-        void scrollEvent(int yoffset);
+        //void scrollEvent(int yoffset);
 
         void render();
         void setCurrentWindow(UIWindowIdentifier id);
