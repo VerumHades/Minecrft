@@ -36,12 +36,12 @@ struct ChunkMask{
     BitArray3D segmentsRotated = {}; 
     
     void set(uint32_t x,uint32_t y,uint32_t z) {
-        segments[z][y] |= (1Ui64 << (63 - x));
-        segmentsRotated[x][y] |= (1Ui64 << (63 - z));
+        segments[z][y] |= (1_uint64 << (63 - x));
+        segmentsRotated[x][y] |= (1_uint64 << (63 - z));
     }
     void reset(uint32_t x,uint32_t y,uint32_t z) {
-        segments[z][y] &= ~(1Ui64 << (63 - x));
-        segmentsRotated[x][y] &= ~(1Ui64 << (63 - z));
+        segments[z][y] &= ~(1_uint64 << (63 - x));
+        segmentsRotated[x][y] &= ~(1_uint64 << (63 - z));
     }
 };
 

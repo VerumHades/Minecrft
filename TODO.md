@@ -3,9 +3,9 @@
 - [ ] Finish making UI
   - [ ] Main Menu
     - [ ] World creation menu
-  - [ ] Pause Menu
-    - [ ] Pause Settings
-    - [ ] Exit
+  - [x] Pause Menu
+    - [x] Pause Settings
+    - [x] Exit
   - [ ] Settings
     - [ ] Graphics Settings
   - [ ] Console
@@ -16,12 +16,18 @@
   - [ ] Add ambient occlusion
   - [ ] Add support for transparency
 
+- [ ] Improve world saving
+  - [ ] Flexibly save and load chunks
+  
 - [ ] Improve rendering
   - [x] Batch render chunks
   - [x] Add double buffering to batched chunks
   - [ ] Fix mesh buffer running out of memory
-    - [ ] Free meshes when out of view if neccesary
-  - [ ] Free chunk meshes that are far away
+    - [x] Free meshes when out of view if neccesary
+  - [x] Free chunk meshes that are far away
+  - [ ] Add LOD
+    - [ ] Add meshing for different chunk sizes
+    - [ ] Make something to approximate distant chunks
 
 - [ ] Add missing features:
   - [ ] Add support for non solid blocks (Stairs and such)

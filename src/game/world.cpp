@@ -301,73 +301,14 @@ void World::updateEntities(){
     }
 }
 
-
-template <typename T>
-static inline void saveValue(std::ofstream &file, T value){
-    file.write(reinterpret_cast<const char*>(&value), sizeof(T));
-}
-
-template <typename T>
-static inline T readValue(std::ifstream &file) {
-    T value;
-    file.read(reinterpret_cast<char*>(&value), sizeof(T));
-    return value;
-}
-
-static inline void saveBitArray3D(std::ofstream &file, BitArray3D& array){
-    std::vector<compressed_24bit> compressedMask        = bitworks::compressBitArray3D(array);
-
-    saveValue<size_t>(file, compressedMask.size());
-    for(auto& value: compressedMask) saveValue(file,value);
-}
-
-static inline BitArray3D readBitArray3D(std::ifstream &file){
-    size_t count = readValue<size_t>(file);
-
-    std::vector<compressed_24bit> compressed = {};
-    for(int i = 0;i < count;i++) compressed.push_back(readValue<compressed_24bit>(file));
-
-    return bitworks::decompressBitArray3D(compressed);
-}
-/*
-    Saves a chunk mask in this format:
-
-    int type
-    size_t compressed_24bit_count, data...
-    size_t compressed_24bit_count_rotated, data...
-*/
-static inline void saveMask(std::ofstream &file, ChunkMask& mask, int type){
-    saveValue<int>(file, type);
-    saveBitArray3D(file, mask.segments);
-    saveBitArray3D(file, mask.segmentsRotated);
-}
-
-/*
-    Saved the chunk:
-    size_t layerCount
-    float x,y,z
-    saved masks using the above function..
-*/
-void World::saveChunk(std::ofstream &file, Chunk& chunk){  
-    size_t layer_count = chunk.getMasks().size(); // Accomodate solid mask  
-    saveValue(file, layer_count);
-
-    saveValue(file, chunk.getWorldPosition().x);
-    saveValue(file, chunk.getWorldPosition().y);
-    saveValue(file, chunk.getWorldPosition().z);
-
-    saveMask(file, chunk.getSolidMask(), -1);
-    for(auto& [key, mask]: chunk.getMasks()) saveMask(file, mask, static_cast<int>(mask.block.type));
-}
-
 void World::save(std::string filepath){
-    std::ofstream file(filepath, std::ios::binary);
+    /*std::ofstream file(filepath, std::ios::binary);
     if(!file.is_open()){
         std::cout << "World save failed, cannot open file: " << filepath << std::endl;
     }
 
     saveValue(file, chunks.size());
-    for(auto& [key,chunk]: chunks) saveChunk(file, *chunk);
+    for(auto& [key,chunk]: chunks) saveChunk(file, *chunk);*/
 }
 
 void World::load(std::string filepath){
@@ -378,7 +319,7 @@ void World::load(std::string filepath){
         std::cout << "World save failed, cannot open file: " << filepath << std::endl;
     }   
 
-    size_t chunkCount = readValue<size_t>(file);
+    /*size_t chunkCount = readValue<size_t>(file);
 
     for(size_t chunkIndex = 0;chunkIndex < chunkCount;chunkIndex++){
         size_t layerCount = readValue<size_t>(file);
@@ -411,5 +352,5 @@ void World::load(std::string filepath){
 
             chunk->getMasks()[static_cast<BlockTypes>(type)] = mask;
         }
-    }
+    }*/
 }

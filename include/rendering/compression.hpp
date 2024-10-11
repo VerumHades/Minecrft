@@ -1,5 +1,4 @@
-#ifndef COMPRESSION_H
-#define COMPRESSION_H
+#pragma once
 
 #include <bit>
 #include <bitset>
@@ -14,6 +13,8 @@
 typedef uint_fast64_t uint64;
 typedef std::array<uint64, 64> Plane64;
 typedef std::array<Plane64, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> PlaneArray64;
+
+uint64_t operator"" _uint64(unsigned long long value);
 
 class BitArray3D{
     uint64 values[64][64] = {0};
@@ -71,5 +72,3 @@ namespace bitworks{
 inline uint8_t count_leading_zeros(uint64 x) {
     return std::countl_zero(x);
 }
-
-#endif

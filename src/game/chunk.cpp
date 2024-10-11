@@ -59,7 +59,7 @@ Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     if(y >= CHUNK_SIZE) return nullptr;
     if(z >= CHUNK_SIZE) return nullptr;
     
-    uint64 checkMask = (1Ui64 << (63 - x));
+    uint64 checkMask = (1_uint64 << (63 - x));
     
     for(auto& [key,mask]: masks){
         uint64 row = mask.segments[z][y];
@@ -77,7 +77,7 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     if(y >= CHUNK_SIZE) return false;
     if(z >= CHUNK_SIZE) return false;
 
-    uint64 currentMask = (1Ui64 << (63 - x));
+    uint64 currentMask = (1_uint64 << (63 - x));
     
     if(value.type != BlockTypes::Air){
         if(masks.count(value.type) == 0){
@@ -140,7 +140,7 @@ std::vector<Face> greedyMeshPlane64(Plane64 rows){
 
                 4. 0b00001100 AND with the row to create the faces mask
         */
-        uint64 mask = ~0Ui64;
+        uint64 mask = ~0_uint64;
 
         //  Shifting by 64 is undefined behaviour for some reason ¯\_(ツ)_/¯
         if((start + width) != 64) mask = ~(mask >> (start + width));
@@ -239,7 +239,7 @@ void Chunk::generateMeshes(){
                     glm::vec3(worldX + z + 1, worldY + face.y              , worldZ + face.x             )
                 };
 
-                int direction = (solidMask.segmentsRotated[z + 1][face.y] >> (63 - face.x)) & 1Ui64;
+                int direction = (solidMask.segmentsRotated[z + 1][face.y] >> (63 - face.x)) & 1_uint64;
                 int texture = type.repeatTexture ? type.textures[0] : type.textures[4 + direction];
 
                 std::array<glm::vec3, 4> normals = {
@@ -268,7 +268,7 @@ void Chunk::generateMeshes(){
                     glm::vec3(worldX + face.x             , worldY + z + 1, worldZ + face.y + face.height)
                 };
 
-                int direction = (solidMask.segments[face.y][z + 1] >> (63 - face.x)) & 1Ui64;
+                int direction = (solidMask.segments[face.y][z + 1] >> (63 - face.x)) & 1_uint64;
                 int texture = type.repeatTexture ? type.textures[0] : type.textures[direction];
 
                 std::array<glm::vec3, 4> normals = {
@@ -297,7 +297,7 @@ void Chunk::generateMeshes(){
                     glm::vec3(worldX + face.x              , worldY + face.y              , worldZ + z + 1)
                 };
 
-                int direction = (solidMask.segments[z + 1][face.y] >> (63 - face.x)) & 1Ui64;
+                int direction = (solidMask.segments[z + 1][face.y] >> (63 - face.x)) & 1_uint64;
                 int texture = type.repeatTexture ? type.textures[0] : type.textures[2 + direction];
 
                 std::array<glm::vec3, 4> normals = {
@@ -357,8 +357,8 @@ void Chunk::generateMeshes(){
 
     for(int y = 0;y < CHUNK_SIZE;y++){
         for(auto& key: agregateTypesX){
-            const uint64_t localMaskRow = masks.count(key)      != 0 ? masks.at(key)     .segmentsRotated[0] [y] : 0Ui64;
-            const uint64_t otherMaskRow = nextXmasks.count(key) != 0 ? nextXmasks.at(key).segmentsRotated[63][y] : 0Ui64;
+            const uint64_t localMaskRow = masks.count(key)      != 0 ? masks.at(key)     .segmentsRotated[0] [y] : 0_uint64;
+            const uint64_t otherMaskRow = nextXmasks.count(key) != 0 ? nextXmasks.at(key).segmentsRotated[63][y] : 0_uint64;
             
             uint64 allFacesX =  (localMaskRow | otherMaskRow) & (solidMask.segmentsRotated[0][y] ^ nextXSolid.segmentsRotated[63][y]);
 
@@ -367,8 +367,8 @@ void Chunk::generateMeshes(){
         }
 
         for(auto& key: agregateTypesY){
-            const uint64_t localMaskRow = masks.count(key)      != 0 ? masks.at(key)     .segments[y] [0] : 0Ui64;
-            const uint64_t otherMaskRow = nextYmasks.count(key) != 0 ? nextYmasks.at(key).segments[y][63] : 0Ui64;
+            const uint64_t localMaskRow = masks.count(key)      != 0 ? masks.at(key)     .segments[y] [0] : 0_uint64;
+            const uint64_t otherMaskRow = nextYmasks.count(key) != 0 ? nextYmasks.at(key).segments[y][63] : 0_uint64;
             
             uint64 allFacesY =  (localMaskRow | otherMaskRow) & (solidMask.segments[y][0] ^ nextYSolid.segments[y][63]);
 
@@ -377,8 +377,8 @@ void Chunk::generateMeshes(){
         }
 
         for(auto& key: agregateTypesZ){
-            const uint64_t localMaskRow = masks.count(key)      != 0 ? masks.at(key)     .segments[0] [y] : 0Ui64;
-            const uint64_t otherMaskRow = nextZmasks.count(key) != 0 ? nextZmasks.at(key).segments[63][y] : 0Ui64;
+            const uint64_t localMaskRow = masks.count(key)      != 0 ? masks.at(key)     .segments[0] [y] : 0_uint64;
+            const uint64_t otherMaskRow = nextZmasks.count(key) != 0 ? nextZmasks.at(key).segments[63][y] : 0_uint64;
             
 
             uint64 allFacesZ =  (localMaskRow | otherMaskRow) & (solidMask.segments[0][y] ^ nextZSolid.segments[63][y]);
@@ -406,7 +406,7 @@ void Chunk::generateMeshes(){
                 glm::vec3(worldX, worldY + face.y              , worldZ + face.x             )
             };
 
-            int direction = (solidMask.segmentsRotated[0][face.y] >> (63 - face.x)) & 1Ui64;
+            int direction = (solidMask.segmentsRotated[0][face.y] >> (63 - face.x)) & 1_uint64;
             int texture = type.repeatTexture ? type.textures[0] : type.textures[4];
 
             std::array<glm::vec3, 4> normals = {
@@ -435,7 +435,7 @@ void Chunk::generateMeshes(){
                 glm::vec3(worldX + face.x             , worldY, worldZ + face.y + face.height)
             };
 
-            int direction = ((solidMask.segments[face.y][0] >> (63 - face.x)) & 1Ui64);
+            int direction = ((solidMask.segments[face.y][0] >> (63 - face.x)) & 1_uint64);
 
             std::array<glm::vec3, 4> normals = {
                 glm::vec3(0, direction ? 1 : -1,0),
@@ -463,7 +463,7 @@ void Chunk::generateMeshes(){
                 glm::vec3(worldX + face.x              , worldY + face.y              , worldZ)
             };
             
-            int direction = (solidMask.segments[0][face.y] >> (63 - face.x)) & 1Ui64;
+            int direction = (solidMask.segments[0][face.y] >> (63 - face.x)) & 1_uint64;
             int texture = type.repeatTexture ? type.textures[0] : type.textures[2];
 
             std::array<glm::vec3, 4> normals = {

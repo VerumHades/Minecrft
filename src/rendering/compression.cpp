@@ -1,6 +1,8 @@
 #include <rendering/compression.hpp>
 
-
+uint64_t operator"" _uint64(unsigned long long value) {
+    return value;
+}
 
 inline uint8_t getMode(compressed_byte member){
     return (0b11000000 & member) >> 6;
@@ -12,7 +14,7 @@ inline void setMode(compressed_byte& member, uint8_t mode){
     member |= (mode << 6);
 }
 
-uint64_t firstBitMask = (1Ui64 << 63);
+uint64_t firstBitMask = (1_uint64 << 63);
 /*
     Compresses a 64 bit uint into an array of 8 bits, will almost never go over the original size only in the worst case scenario of alternating bits.
     
@@ -66,7 +68,7 @@ std::vector<compressed_byte> bitworks::compress64Bits(uint64 bits){
 }
 uint64 bitworks::decompress64Bits(std::vector<compressed_byte> bytes){
     uint64 out = 0;
-    uint64 mask = ~0Ui64;
+    uint64 mask = ~0_uint64;
 
     uint8_t currentShift = 0;
     for(auto& value: bytes){
@@ -202,7 +204,7 @@ BitArray3D bitworks::decompressBitArray3D(std::vector<compressed_24bit> data){
 
         size_t count = std::min(bitsLeft, static_cast<size_t>(cdata.getValue()));
         
-        uint64 mask = ~0Ui64 >> currentBit;
+        uint64 mask = ~0_uint64 >> currentBit;
             
         if(cdata.getMode() == 0) flatArray[arrayIndex] &= ~mask;
         else flatArray[arrayIndex] |= mask;
