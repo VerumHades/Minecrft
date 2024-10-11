@@ -21,16 +21,18 @@ class Allocator{
             size_t size;
             
             bool used;
+            std::multimap<size_t,MemBlockIterator>::iterator freeRegistery;
         };
 
         std::list<MemBlock> blocks = {};
-        std::map<size_t,MemBlockIterator> freeBlocks = {};
+        std::multimap<size_t,MemBlockIterator> freeBlocks = {};
+        std::unordered_map<size_t,MemBlockIterator> takenBlocks = {};
 
         AllocatorMemoryRequest requestMemory;
 
         void markFree(MemBlockIterator block){
             block->used = false;
-            freeBlocks[block->size] = block;
+            block->freeRegistery = freeBlocks.insert({block->size,block});
         }
 
     public:

@@ -504,7 +504,7 @@ void MainScene::render(){
 }
 
 void MainScene::regenerateChunkMesh(Chunk& chunk){
-    chunkBuffer.unloadChunkMesh(chunk.getWorldPosition());
+    //chunkBuffer.unloadChunkMesh(chunk.getWorldPosition());
 }
 
 
@@ -574,13 +574,13 @@ void MainScene::generateMeshes(){
     loadedPositions = currentPositions;
 
     if(changed){
-        chunkBuffer.updateDrawCalls();
         //circumscribed sphere of the render distance
 
         glm::vec3 camWorldPosition = {camWorldX, camWorldY, camWorldZ};
         float radius = glm::distance(camWorldPosition, camWorldPosition + static_cast<float>(renderDistance));
         
         chunkBuffer.unloadFarawayChunks(camWorldPosition, radius);
+        chunkBuffer.updateDrawCalls();
     }
 }
 
@@ -679,6 +679,9 @@ std::vector<UIRenderInfo> UIAllocatorVisualizer::getRenderingInformation(UIManag
         out.push_back(UIRenderInfo::Rectangle(t.x + currentPosition, t.y, bw, t.height, color));
         currentPosition += bw;
     }
+
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation("Blocks total: " + std::to_string(watched->getBlocks().size()),t.x + t.width, t.y,1,{1,1,1,1});
+    out.insert(out.end(), temp.begin(), temp.end());
 
     return out;
 }

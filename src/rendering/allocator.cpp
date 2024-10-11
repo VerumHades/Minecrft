@@ -20,7 +20,6 @@ size_t Allocator::allocate(size_t size){
     freeBlocks.erase(it);
     auto [actual_size, selectedBlock] = *it;
 
-    selectedBlock->used = true;
 
     size_t sizeLeft = selectedBlock->size - size;
     if(selectedBlock->size > size){ // Will fragment memory without regard, maybe update later?
@@ -34,7 +33,9 @@ size_t Allocator::allocate(size_t size){
         //std::cout << "Resized memory block: " << size << " New block: " << newBlock.size << std::endl;
     }
 
+    selectedBlock->used = true;
     selectedBlock->size = size;
+    takenBlocks[selectedBlock->start] = selectedBlock;
     //std::cout << "Allocated at:" << selectedBlock->start << " of size: " << size << std::endl;
     //std::cout << "Current state:" << std::endl;
     //for(auto& block: blocks){
@@ -47,45 +48,46 @@ size_t Allocator::allocate(size_t size){
 void Allocator::clear(){
     blocks = {};
     freeBlocks = {};
+    takenBlocks = {};
 
     markFree(blocks.insert(blocks.end(),{0, memsize, false}));
 }
 
 void Allocator::free(size_t start){
-    for(auto block = blocks.begin(); block != blocks.end(); ++block){
-        if(block->start != start) continue;
-
-        if(!block->used){
-            std::cout << "Double free in allocator!" << std::endl;
-        }
-
-        /*if(std::next(block) != blocks.end()){
-            auto nextBlock = std::next(block);
-            if(!nextBlock->used){
-                std::cout << "Merged blocks" << std::endl;
-
-                block->size += nextBlock->size;
-                freeBlocks.erase(nextBlock->freeRegistery);
-                blocks.erase(nextBlock);
-            }
-        }
-        else if(block != blocks.begin()){
-            auto previousBlock = std::prev(block);
-            if(!previousBlock->used){
-                std::cout << "Merged blocks" << std::endl;
-
-                block->start = previousBlock->start;
-                block->size += previousBlock->size;
-
-                freeBlocks.erase(previousBlock->freeRegistery);
-                blocks.erase(previousBlock);
-            }
-        }*/
-
-        markFree(block);
-        
+    if(takenBlocks.count(start) == 0) {
+        std::cout << "Free of unlocatable block: " << start << std::endl;
         return;
     }
+    auto& block = takenBlocks[start];
+    takenBlocks.erase(start);
 
-    std::cout << "Free of unlocatable block: " << start << std::endl;
+    std::cout << takenBlocks.size() << std::endl;
+
+    if(std::next(block) != blocks.end()){
+        auto nextBlock = std::next(block);
+        if(!nextBlock->used){
+            //std::cout << "Merged blocks" << std::endl;
+
+            block->size += nextBlock->size;
+            std::cout << "Removing: " << &(*nextBlock->freeRegistery) << std::endl;;
+            freeBlocks.erase(nextBlock->freeRegistery);
+            blocks.erase(nextBlock);
+        }
+    }
+    else if(block != blocks.begin()){
+        auto previousBlock = std::prev(block);
+        if(!previousBlock->used){
+            std::cout << "Merged blocks" << std::endl;
+
+            std::cout << "Merging: " << block->start << " "  << previousBlock->start << ":" << block->start - previousBlock->start << std::endl;
+
+            block->start = previousBlock->start;
+            block->size += previousBlock->size;
+
+            freeBlocks.erase(previousBlock->freeRegistery);
+            blocks.erase(previousBlock);
+        }
+    }
+
+    markFree(block);
 }

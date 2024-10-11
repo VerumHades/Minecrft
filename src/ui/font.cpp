@@ -100,7 +100,7 @@ void Font::createAtlas(){
         xOffset += face->glyph->bitmap.width;
     }
 
-    saveRedComponentTexture(atlas->getID(), atlasWidth, atlasHeight, "temp.png");
+    //saveRedComponentTexture(atlas->getID(), atlasWidth, atlasHeight, "temp.png");
 }
 
 void FontManager::initialize(){
