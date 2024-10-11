@@ -264,7 +264,6 @@ void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
     /*
         Register the chunk save it as loaded
     */
-
     loadedChunks[pos] = {
         vertexBufferOffset,
         indexBufferOffset,
@@ -298,34 +297,26 @@ void MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::vec3& pos){
     size_t oldVertexBufferOffset = chunk.vertexData;
     size_t oldIndexBufferOffset = chunk.indexData;
 
-    if(chunk.hasDrawCall){
-        removeDrawCall(pos);
+    bool drawCall = chunk.hasDrawCall;
 
-        chunk.vertexData = vertexBufferOffset;
-        chunk.indexData = indexBufferOffset;
-        
-        chunk.firstIndex = indexBufferOffset;
-        chunk.count = mesh.getIndices().size();
-        chunk.baseVertex = vertexBufferOffset / vertexSize;
+    if(drawCall) removeDrawCall(pos);
 
+    chunk.vertexData = vertexBufferOffset;
+    chunk.indexData = indexBufferOffset;
+    
+    chunk.firstIndex = indexBufferOffset;
+    chunk.count = mesh.getIndices().size();
+    chunk.baseVertex = vertexBufferOffset / vertexSize;
 
-        addDrawCall(pos);
-    }
-    else{
-        chunk.vertexData = vertexBufferOffset;
-        chunk.indexData = indexBufferOffset;
-        
-        chunk.firstIndex = indexBufferOffset;
-        chunk.count = mesh.getIndices().size();
-        chunk.baseVertex = vertexBufferOffset / vertexSize;
-    }
-
+    if(drawCall) addDrawCall(pos);
     /*
         Free the old data
     */
 
     vertexAllocator.free(oldVertexBufferOffset);
     indexAllocator.free(oldIndexBufferOffset);
+
+    updateDrawCalls();
 }
 void MultiChunkBuffer::unloadChunkMesh(const glm::vec3& pos){
     if(loadedChunks.count(pos) == 0) return;

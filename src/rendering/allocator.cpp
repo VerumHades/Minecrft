@@ -22,7 +22,7 @@ size_t Allocator::allocate(size_t size){
 
 
     size_t sizeLeft = selectedBlock->size - size;
-    if(selectedBlock->size > size){ // Will fragment memory without regard, maybe update later?
+    if(selectedBlock->size > size){ // Defragmented when freeing
         MemBlock newBlock;
 
         newBlock.start = selectedBlock->start + size;
@@ -60,16 +60,11 @@ void Allocator::free(size_t start){
     }
     auto& block = takenBlocks[start];
     takenBlocks.erase(start);
-
-    std::cout << takenBlocks.size() << std::endl;
-
+    
     if(std::next(block) != blocks.end()){
         auto nextBlock = std::next(block);
         if(!nextBlock->used){
-            //std::cout << "Merged blocks" << std::endl;
-
             block->size += nextBlock->size;
-            std::cout << "Removing: " << &(*nextBlock->freeRegistery) << std::endl;;
             freeBlocks.erase(nextBlock->freeRegistery);
             blocks.erase(nextBlock);
         }
@@ -77,10 +72,6 @@ void Allocator::free(size_t start){
     else if(block != blocks.begin()){
         auto previousBlock = std::prev(block);
         if(!previousBlock->used){
-            std::cout << "Merged blocks" << std::endl;
-
-            std::cout << "Merging: " << block->start << " "  << previousBlock->start << ":" << block->start - previousBlock->start << std::endl;
-
             block->start = previousBlock->start;
             block->size += previousBlock->size;
 

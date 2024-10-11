@@ -504,6 +504,7 @@ void MainScene::render(){
 }
 
 void MainScene::regenerateChunkMesh(Chunk& chunk){
+    chunk.reloadMesh = true;
     //chunkBuffer.unloadChunkMesh(chunk.getWorldPosition());
 }
 

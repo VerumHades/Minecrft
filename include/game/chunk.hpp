@@ -57,6 +57,8 @@ class Chunk: public Volume{
         //std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
         
     public:
+        bool reloadMesh = false;
+
         bool meshGenerating = false;
         bool meshGenerated = false;
         

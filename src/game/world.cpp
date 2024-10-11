@@ -61,7 +61,11 @@ void World::generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer){
         !getChunk(x,y,z - 1) 
     ) return;
 
-    if(!chunk->meshGenerated && !chunk->meshGenerating && !buffer.isChunkLoaded({x,y,z}) && threadsTotal < maxThreads){
+    if(
+        !chunk->meshGenerated && !chunk->meshGenerating &&
+        (!buffer.isChunkLoaded({x,y,z}) || chunk->reloadMesh) // If chunk isnt loaded at all
+        && threadsTotal < maxThreads // Dont deploy any more threads
+    ){
         threadsTotal++;
         std::thread t1(generateChunkMeshThread, chunk);
         t1.detach();
@@ -72,7 +76,10 @@ void World::generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer){
     } 
 
     if(chunk->meshGenerated){
-        if(buffer.isChunkLoaded(chunk->getWorldPosition())) buffer.swapChunkMesh(*chunk->solidMesh, chunk->getWorldPosition());
+        if(chunk->reloadMesh){
+            buffer.swapChunkMesh(*chunk->solidMesh, chunk->getWorldPosition());
+            chunk->reloadMesh = false;
+        }
         else buffer.addChunkMesh(*chunk->solidMesh, chunk->getWorldPosition());
         chunk->solidMesh = nullptr;
         chunk->meshGenerated = false;
