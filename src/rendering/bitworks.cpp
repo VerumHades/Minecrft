@@ -228,7 +228,7 @@ BitArray3D bitworks::decompressBitArray3D(std::vector<compressed_24bit> data){
 
 void ByteArray::write(std::fstream &file){
     bitworks::saveValue<char>(file,'|'); // Magic start character
-    std::cout << data.size() << std::endl;
+    //std::cout << data.size() << std::endl;
     bitworks::saveValue<size_t>(file, data.size());
     file.write(reinterpret_cast<const char*>(data.data()), data.size());
 }
@@ -236,6 +236,7 @@ void ByteArray::write(std::fstream &file){
 void ByteArray::read(std::fstream &file){
     if(bitworks::readValue<char>(file) != '|'){ // Check for magic start character
         std::cout << "Invalid start of byte array." << std::endl;
+        return;
     }
     size_t size = bitworks::readValue<size_t>(file);
     data.resize(size);

@@ -1,5 +1,9 @@
 #include <game/world.hpp>
 
+World::World(std::string filepath){
+    stream = std::make_unique<WorldStream>(filepath);
+}
+
 std::shared_mutex chunkGenLock;
 
 void World::generateChunk(int x, int y, int z){
@@ -16,6 +20,7 @@ void World::generateChunk(int x, int y, int z){
 
     std::unique_lock lock(chunkGenLock);
     this->chunks.emplace(key, std::move(chunk));
+    this->stream->save(*chunks[key]);
 }
 
 Chunk* World::getChunk(int x, int y, int z){
@@ -30,6 +35,18 @@ Chunk* World::getChunk(int x, int y, int z){
 
     return nullptr;
 }
+
+bool World::isChunkLoadable(int x, int y, int z){
+    return stream->hasChunkAt({x,y,z});
+}
+void World::loadChunk(int x, int y, int z){
+    const glm::vec3 position = glm::vec3(x,y,z);
+
+    std::unique_lock lock(chunkGenLock);
+    chunks[position] = std::make_unique<Chunk>(*this, position);
+    stream->load(chunks[position].get());
+}
+        
 
 static int maxThreads = 16;
 //const auto maxThreads = 1;
@@ -300,61 +317,6 @@ void World::updateEntities(){
         entity.update(*this);
     }
 }
-
-void World::save(std::string filepath){
-    /*std::ofstream file(filepath, std::ios::binary);
-    if(!file.is_open()){
-        std::cout << "World save failed, cannot open file: " << filepath << std::endl;
-    }
-
-    saveValue(file, chunks.size());
-    for(auto& [key,chunk]: chunks) saveChunk(file, *chunk);*/
-}
-
-void World::load(std::string filepath){
-    std::unique_lock lock(chunkGenLock);
-
-    std::ifstream file(filepath, std::ios::binary);
-    if(!file.is_open()){
-        std::cout << "World save failed, cannot open file: " << filepath << std::endl;
-    }   
-
-    /*size_t chunkCount = readValue<size_t>(file);
-
-    for(size_t chunkIndex = 0;chunkIndex < chunkCount;chunkIndex++){
-        size_t layerCount = readValue<size_t>(file);
-
-        glm::vec3 position = {
-            readValue<float>(file),
-            readValue<float>(file),
-            readValue<float>(file)
-        };
-
-        chunks[position] = std::make_unique<Chunk>(*this, position);
-        Chunk* chunk = chunks.at(position).get();
-
-        readValue<int>(file);
-        BitArray3D solidNormal = readBitArray3D(file);
-        BitArray3D solidRotated = readBitArray3D(file);
-
-        chunk->getSolidMask().segments = solidNormal;
-        chunk->getSolidMask().segmentsRotated = solidRotated;
-
-        for(int layerIndex = 0; layerIndex < layerCount; layerIndex++){
-            int type = readValue<int>(file);
-            BitArray3D normal = readBitArray3D(file);
-            BitArray3D rotated = readBitArray3D(file);
-
-            ChunkMask mask;
-            mask.segments = normal;
-            mask.segmentsRotated = rotated;
-            mask.block = {static_cast<BlockTypes>(type)};
-
-            chunk->getMasks()[static_cast<BlockTypes>(type)] = mask;
-        }
-    }*/
-}
-
 /*
     Saves a chunk mask in this format:
 
@@ -379,6 +341,7 @@ WorldStream::WorldStream(std::string filepath){
         }
         file.close();
         newlyCreated = true;
+        std::cout << "Created missing world file." << std::endl;
     }
 
     file_stream = std::fstream(filepath, std::ios::in | std::ios::out | std::ios::binary);
@@ -389,10 +352,17 @@ WorldStream::WorldStream(std::string filepath){
     }
 
     if(newlyCreated){
+        header.chunk_table_start = sizeof(Header);
+        header.chunk_data_start = 20 * 1000; // Reserve ahead for about 1000 chunks
+        header.chunk_data_end = 20 * 1000;
+        header.chunk_table_size = 0;
         saveHeader();
         saveTable();
     } // Create the header table if its a new save file
-    else loadTable();
+    else{
+        loadHeader();
+        loadTable();
+    }
 }
 
 void WorldStream::saveHeader(){
@@ -405,6 +375,8 @@ void WorldStream::loadHeader(){
     file_stream.seekg(0, std::ios::beg); // Move cursor to the file start
     
     header = bitworks::readValue<Header>(file_stream);
+
+    std::cout << "Table start: " << header.chunk_table_start << " Chunk data start: " << header.chunk_data_start << std::endl;
 }
 
 void WorldStream::loadTable(){
@@ -415,6 +387,7 @@ void WorldStream::loadTable(){
     tableData.read(file_stream);
 
     size_t size = tableData.read<size_t>();
+    std::cout << "Chunks total: " << size << std::endl;
     for(int i = 0;i < size;i++){
         glm::vec3 position = {
             tableData.read<float>(),
@@ -422,7 +395,10 @@ void WorldStream::loadTable(){
             tableData.read<float>()
         };
         size_t start = tableData.read<size_t>();
-
+        if(start > header.chunk_data_end) {
+            std::cout << "Corrupted chunk data, disposing." << std::endl;
+            continue; 
+        }
         chunkTable[position] = start;
     }
 }
@@ -442,17 +418,17 @@ ByteArray WorldStream::serializeTableData(){
 }
 
 void WorldStream::saveTable(){
-    file_stream.seekp(header.chunk_table_start, std::ios::beg); // Mover cursor to beggining
-
     ByteArray tableData = serializeTableData();
-    while(tableData.getFullSize() >= header.chunk_data_start){
+    while(header.chunk_table_start + tableData.getFullSize() >= header.chunk_data_start){
         size_t movedSize = moveChunk(header.chunk_data_start, header.chunk_data_end); // Move the first chunk to the end
 
+        std::cout << movedSize << " > " << tableData.getFullSize() << std::endl;
         header.chunk_data_start += movedSize;
         header.chunk_data_end += movedSize;
     }
     tableData = serializeTableData();
 
+    file_stream.seekp(header.chunk_table_start, std::ios::beg);
     tableData.write(file_stream);
     saveHeader();
 }
@@ -485,6 +461,7 @@ size_t WorldStream::moveChunk(size_t from, size_t to){
     saved masks using the above function..
 */
 void WorldStream::save(Chunk& chunk){
+    if(hasChunkAt(chunk.getWorldPosition())) return;
     ByteArray out;
 
     out.append(chunk.getWorldPosition().x);
@@ -542,8 +519,15 @@ void WorldStream::load(Chunk* chunk){
 
         chunk->getMasks()[static_cast<BlockTypes>(type)] = mask;
     }
+    
+    //std::cout << "Loaded: " << position.x << " " << position.y << " " << position.z << std::endl;
 }
 
 bool WorldStream::hasChunkAt(glm::vec3 position){
     return chunkTable.count(position) != 0;
+}
+
+WorldStream::~WorldStream(){
+    saveHeader();
+    saveTable();
 }

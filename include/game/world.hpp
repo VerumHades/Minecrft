@@ -32,39 +32,11 @@ struct RaycastResult{
     float lastZ;
 };
 
-class ModelManager;
-
-class World: public Collidable{
-    private:
-        std::unordered_map<glm::vec3, std::unique_ptr<Chunk>, Vec3Hash, Vec3Equal> chunks;
-        std::vector<Entity> entities;
-
-    public:
-        Block* getBlock(int x, int y, int z);
-        bool setBlock(int x, int y, int z, Block index);
-
-        void generateChunk(int x, int y, int z);
-        void generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer);
-        
-        Chunk* getChunk(int x, int y, int z);
-        Chunk* getChunkFromBlockPosition(int x, int y, int z);
-        glm::vec3 getGetChunkRelativeBlockPosition(int x, int y, int z);
-
-        CollisionCheckResult checkForPointCollision(float x, float y, float z, bool includeRectangularColliderLess);
-        CollisionCheckResult checkForRectangularCollision(float x, float y, float z, RectangularCollider* collider);
-
-        RaycastResult raycast(float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance);
-
-        void drawEntities(ModelManager& manager, Camera& camera, bool depthMode  = false);
-        void updateEntities();
-
-        std::vector<Entity>& getEntities() {return entities;}
-};
 
 class WorldStream{
     private:
         std::fstream file_stream;
-        std::unordered_map<glm::vec3, size_t, Vec3Hash, Vec3Equal> chunkTable; // Chunk locations in the file
+        std::unordered_map<glm::vec3, size_t, Vec3Hash, Vec3Equal> chunkTable = {}; // Chunk locations in the file
 
         struct Header{
             size_t chunk_table_start;
@@ -87,10 +59,44 @@ class WorldStream{
 
     public:
         WorldStream(std::string filepath);
+        ~WorldStream();
         void save(Chunk& chunk);
         void load(Chunk* chunk);
         bool hasChunkAt(glm::vec3 position);
 };
 
-extern size_t predefinedBlocksTotal;
+class ModelManager;
+
+class World: public Collidable{
+    private:
+        std::unordered_map<glm::vec3, std::unique_ptr<Chunk>, Vec3Hash, Vec3Equal> chunks;
+        std::vector<Entity> entities;
+
+        std::unique_ptr<WorldStream> stream;
+
+    public:
+        World(std::string filepath);
+        Block* getBlock(int x, int y, int z);
+        bool setBlock(int x, int y, int z, Block index);
+
+        void generateChunk(int x, int y, int z);
+        void generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer);
+
+        bool isChunkLoadable(int x, int y, int z);
+        void loadChunk(int x, int y, int z);
+        
+        Chunk* getChunk(int x, int y, int z);
+        Chunk* getChunkFromBlockPosition(int x, int y, int z);
+        glm::vec3 getGetChunkRelativeBlockPosition(int x, int y, int z);
+
+        CollisionCheckResult checkForPointCollision(float x, float y, float z, bool includeRectangularColliderLess);
+        CollisionCheckResult checkForRectangularCollision(float x, float y, float z, RectangularCollider* collider);
+
+        RaycastResult raycast(float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance);
+
+        void drawEntities(ModelManager& manager, Camera& camera, bool depthMode  = false);
+        void updateEntities();
+
+        std::vector<Entity>& getEntities() {return entities;}
+};
 #endif

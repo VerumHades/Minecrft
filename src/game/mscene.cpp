@@ -33,7 +33,7 @@ void MainScene::initialize(){
         [this](std::vector<CommandArgument> arguments){
             std::string& name = arguments[0].stringValue;
 
-            world->save("saves/" + name + ".bin");
+            //world->save("saves/" + name + ".bin");
         }
     );
 
@@ -390,9 +390,8 @@ void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int 
 void MainScene::open(GLFWwindow* window){
     running = true;
 
-    world = std::make_unique<World>();
+    world = std::make_unique<World>("saves/worldsave.bin");
     world->getEntities().emplace_back(glm::vec3(-1,0,0), glm::vec3(0.6, 1.8, 0.6));
-    world->load("saves/worldsave.bin");
 
     std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread pregenThread(std::bind(&MainScene::physicsUpdate, this));
@@ -650,6 +649,12 @@ void MainScene::pregenUpdate(){
             Chunk* meshlessChunk = world->getChunk(chunkX, chunkY, chunkZ);
             if(!meshlessChunk){
                 //meshlessChunk = world->generateAndGetChunk(chunkX, chunkY, chunkZ);
+
+                if(world->isChunkLoadable(chunkX,chunkY,chunkZ)){
+                    world->loadChunk(chunkX,chunkY,chunkZ);
+                    continue;
+                }
+
 
                 std::thread t(&World::generateChunk, world.get(), chunkX, chunkY, chunkZ);
                 openThreads.push_back(std::move(t));

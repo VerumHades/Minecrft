@@ -117,7 +117,7 @@ class ByteArray{
         template <typename T, typename = std::enable_if_t<std::is_trivially_copyable<T>::value>>
         T read(){
             T out;
-            if(cursor + sizeof(T) >= data.size()){
+            if(cursor + sizeof(T) > data.size()){
                 std::cerr << "Invalid bytearray read: " << sizeof(T) << std::endl; 
                 return out;
             }

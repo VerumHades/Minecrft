@@ -42,7 +42,7 @@ class MainScene: public Scene{
 
         MultiChunkBuffer chunkBuffer;
 
-        int renderDistance = 8;
+        int renderDistance = 4;
         int selectedBlock = 2;
 
         bool running = false;
