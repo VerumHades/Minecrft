@@ -1,8 +1,6 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <game/chunk.hpp>
-#include <worldgen/worldgen.hpp>
 #include <thread>
 #include <glm/glm.hpp>
 #include <unordered_map>
@@ -17,6 +15,9 @@
 #include <string>
 
 #include <game/entity.hpp>
+#include <game/world_saving.hpp>
+#include <game/chunk.hpp>
+#include <worldgen/worldgen.hpp>
 #include <vec_hash.hpp>
 
 struct RaycastResult{
@@ -63,7 +64,10 @@ class World: public Collidable{
 
         void save(std::string filepath);
         void load(std::string filepath);
+        void loadChunk(ByteArray& source);
 };
+
+ByteArray serializeChunk(Chunk& chunk);
 
 extern size_t predefinedBlocksTotal;
 #endif

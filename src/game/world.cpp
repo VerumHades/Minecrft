@@ -354,3 +354,71 @@ void World::load(std::string filepath){
         }
     }*/
 }
+
+/*
+    Saves a chunk mask in this format:
+
+    int type
+    size_t compressed_24bit_count, data...
+    size_t compressed_24bit_count_rotated, data...
+*/
+static inline void saveMask(ByteArray& out, ChunkMask& mask, int type){
+    out.append<int>(type);
+    out.append(bitworks::compressBitArray3D(mask.segments));
+    out.append(bitworks::compressBitArray3D(mask.segmentsRotated));
+}
+
+/*
+    Saved the chunk:
+    size_t layerCount
+    float x,y,z
+    saved masks using the above function..
+*/
+ByteArray serializeChunk(Chunk& chunk){  
+    ByteArray out;
+
+    size_t layer_count = chunk.getMasks().size();
+    out.append(layer_count);
+
+    out.append(chunk.getWorldPosition().x);
+    out.append(chunk.getWorldPosition().y);
+    out.append(chunk.getWorldPosition().z);
+
+    saveMask(out, chunk.getSolidMask(), -1);
+    for(auto& [key, mask]: chunk.getMasks()) saveMask(out, mask, static_cast<int>(mask.block.type));
+
+    return out;
+}
+
+void World::loadChunk(ByteArray& source){
+    size_t layerCount = source.read<size_t>();
+
+    glm::vec3 position = {
+        source.read<float>(),
+        source.read<float>(),
+        source.read<float>()
+    };
+
+    this->chunks[position] = std::make_unique<Chunk>(*this, position);
+    Chunk* chunk = chunks.at(position).get();
+
+    source.read<int>();
+    BitArray3D solidNormal = bitworks::decompressBitArray3D(source.vread<compressed_24bit>());
+    BitArray3D solidRotated = bitworks::decompressBitArray3D(source.vread<compressed_24bit>());
+
+    chunk->getSolidMask().segments = solidNormal;
+    chunk->getSolidMask().segmentsRotated = solidRotated;
+
+    for(int layerIndex = 0; layerIndex < layerCount; layerIndex++){
+        int type = source.read<int>();
+        BitArray3D normal = bitworks::decompressBitArray3D(source.vread<compressed_24bit>());
+        BitArray3D rotated = bitworks::decompressBitArray3D(source.vread<compressed_24bit>());
+
+        ChunkMask mask;
+        mask.segments = normal;
+        mask.segmentsRotated = rotated;
+        mask.block = {static_cast<BlockTypes>(type)};
+
+        chunk->getMasks()[static_cast<BlockTypes>(type)] = mask;
+    }
+}
