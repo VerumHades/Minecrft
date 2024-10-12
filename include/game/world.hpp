@@ -39,8 +39,6 @@ class World: public Collidable{
         std::unordered_map<glm::vec3, std::unique_ptr<Chunk>, Vec3Hash, Vec3Equal> chunks;
         std::vector<Entity> entities;
 
-        void saveChunk(std::ofstream &file, Chunk& chunk);
-
     public:
         Block* getBlock(int x, int y, int z);
         bool setBlock(int x, int y, int z, Block index);
@@ -61,13 +59,38 @@ class World: public Collidable{
         void updateEntities();
 
         std::vector<Entity>& getEntities() {return entities;}
-
-        void save(std::string filepath);
-        void load(std::string filepath);
-        void loadChunk(ByteArray& source);
 };
 
-ByteArray serializeChunk(Chunk& chunk);
+class WorldStream{
+    private:
+        std::fstream file_stream;
+        std::unordered_map<glm::vec3, size_t, Vec3Hash, Vec3Equal> chunkTable; // Chunk locations in the file
+
+        struct Header{
+            size_t chunk_table_start;
+            size_t chunk_table_size;
+
+            size_t chunk_data_start;
+            size_t chunk_data_end;
+        };
+
+        Header header;
+
+        ByteArray serializeTableData();
+        void saveHeader();
+        void loadHeader();
+
+        void loadTable();
+        void saveTable();
+
+        size_t moveChunk(size_t from, size_t to);
+
+    public:
+        WorldStream(std::string filepath);
+        void save(Chunk& chunk);
+        void load(Chunk* chunk);
+        bool hasChunkAt(glm::vec3 position);
+};
 
 extern size_t predefinedBlocksTotal;
 #endif

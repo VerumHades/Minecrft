@@ -1,4 +1,4 @@
-#include <rendering/compression.hpp>
+#include <rendering/bitworks.hpp>
 
 uint64_t operator"" _uint64(unsigned long long value) {
     return value;
@@ -224,4 +224,25 @@ BitArray3D bitworks::decompressBitArray3D(std::vector<compressed_24bit> data){
     }*/
 
     return output;
+}
+
+void ByteArray::write(std::fstream &file){
+    bitworks::saveValue<char>(file,'|'); // Magic start character
+    std::cout << data.size() << std::endl;
+    bitworks::saveValue<size_t>(file, data.size());
+    file.write(reinterpret_cast<const char*>(data.data()), data.size());
+}
+
+void ByteArray::read(std::fstream &file){
+    if(bitworks::readValue<char>(file) != '|'){ // Check for magic start character
+        std::cout << "Invalid start of byte array." << std::endl;
+    }
+    size_t size = bitworks::readValue<size_t>(file);
+    data.resize(size);
+    file.read(reinterpret_cast<char*>(data.data()), size);
+}
+
+bool ByteArray::operator== (const ByteArray& array){
+    if(data.size() != array.data.size()) return false;
+    return std::memcmp(data.data(), array.data.data(), data.size()) == 0;
 }

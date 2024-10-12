@@ -368,39 +368,160 @@ static inline void saveMask(ByteArray& out, ChunkMask& mask, int type){
     out.append(bitworks::compressBitArray3D(mask.segmentsRotated));
 }
 
+WorldStream::WorldStream(std::string filepath){
+    bool newlyCreated = false;
+    
+    if(!std::filesystem::exists(filepath)){
+        std::ofstream file(filepath, std::ios::binary);
+        if(!file.is_open()){
+            std::cout << "World stream opening failed, cannot create file: " << filepath << std::endl;
+            std::terminate();
+        }
+        file.close();
+        newlyCreated = true;
+    }
+
+    file_stream = std::fstream(filepath, std::ios::in | std::ios::out | std::ios::binary);
+
+    if(!file_stream.is_open()){
+        std::cout << "Failed to open world file!" << std::endl;
+        std::terminate();
+    }
+
+    if(newlyCreated){
+        saveHeader();
+        saveTable();
+    } // Create the header table if its a new save file
+    else loadTable();
+}
+
+void WorldStream::saveHeader(){
+    file_stream.seekp(0, std::ios::beg); // Move cursor to the file start
+    
+    bitworks::saveValue(file_stream, header);
+}
+
+void WorldStream::loadHeader(){
+    file_stream.seekg(0, std::ios::beg); // Move cursor to the file start
+    
+    header = bitworks::readValue<Header>(file_stream);
+}
+
+void WorldStream::loadTable(){
+    file_stream.seekg(header.chunk_table_start, std::ios::beg); // Move cursor to the tables start
+    chunkTable.clear();
+
+    ByteArray tableData;
+    tableData.read(file_stream);
+
+    size_t size = tableData.read<size_t>();
+    for(int i = 0;i < size;i++){
+        glm::vec3 position = {
+            tableData.read<float>(),
+            tableData.read<float>(),
+            tableData.read<float>()
+        };
+        size_t start = tableData.read<size_t>();
+
+        chunkTable[position] = start;
+    }
+}
+
+ByteArray WorldStream::serializeTableData(){
+    ByteArray tableData;
+    tableData.append<size_t>(chunkTable.size());
+
+    for(auto& [position, start]: chunkTable){
+        tableData.append<float>(position.x);
+        tableData.append<float>(position.y);
+        tableData.append<float>(position.z);
+        tableData.append<size_t>(start);
+    }
+
+    return tableData;
+}
+
+void WorldStream::saveTable(){
+    file_stream.seekp(header.chunk_table_start, std::ios::beg); // Mover cursor to beggining
+
+    ByteArray tableData = serializeTableData();
+    while(tableData.getFullSize() >= header.chunk_data_start){
+        size_t movedSize = moveChunk(header.chunk_data_start, header.chunk_data_end); // Move the first chunk to the end
+
+        header.chunk_data_start += movedSize;
+        header.chunk_data_end += movedSize;
+    }
+    tableData = serializeTableData();
+
+    tableData.write(file_stream);
+    saveHeader();
+}
+
+size_t WorldStream::moveChunk(size_t from, size_t to){
+    file_stream.seekg(from, std::ios::beg); // Move to the position
+    
+    ByteArray fromData;
+    fromData.read(file_stream);
+
+    glm::vec3 position = {
+        fromData.read<float>(),
+        fromData.read<float>(),
+        fromData.read<float>()
+    };
+
+    file_stream.seekp(to, std::ios::beg); 
+    fromData.write(file_stream);
+
+    chunkTable[position] = to;
+
+    return fromData.getFullSize();
+}
+
+
 /*
     Saved the chunk:
-    size_t layerCount
     float x,y,z
+    size_t layerCount
     saved masks using the above function..
 */
-ByteArray serializeChunk(Chunk& chunk){  
+void WorldStream::save(Chunk& chunk){
     ByteArray out;
-
-    size_t layer_count = chunk.getMasks().size();
-    out.append(layer_count);
 
     out.append(chunk.getWorldPosition().x);
     out.append(chunk.getWorldPosition().y);
     out.append(chunk.getWorldPosition().z);
 
+    size_t layer_count = chunk.getMasks().size();
+    out.append(layer_count);
+
     saveMask(out, chunk.getSolidMask(), -1);
     for(auto& [key, mask]: chunk.getMasks()) saveMask(out, mask, static_cast<int>(mask.block.type));
 
-    return out;
+    file_stream.seekp(header.chunk_data_end, std::ios::beg);
+    out.write(file_stream);
+
+    chunkTable[chunk.getWorldPosition()] = header.chunk_data_end;
+    header.chunk_data_end += out.getFullSize();
+
+    saveHeader();
+    saveTable();
 }
 
-void World::loadChunk(ByteArray& source){
-    size_t layerCount = source.read<size_t>();
+void WorldStream::load(Chunk* chunk){
+    if(!hasChunkAt(chunk->getWorldPosition())){
+        return;
+    }
+    
+    file_stream.seekg(chunkTable[chunk->getWorldPosition()], std::ios::beg);
+    ByteArray source;
+    source.read(file_stream);
 
     glm::vec3 position = {
         source.read<float>(),
         source.read<float>(),
         source.read<float>()
     };
-
-    this->chunks[position] = std::make_unique<Chunk>(*this, position);
-    Chunk* chunk = chunks.at(position).get();
+    size_t layerCount = source.read<size_t>();
 
     source.read<int>();
     BitArray3D solidNormal = bitworks::decompressBitArray3D(source.vread<compressed_24bit>());
@@ -421,4 +542,8 @@ void World::loadChunk(ByteArray& source){
 
         chunk->getMasks()[static_cast<BlockTypes>(type)] = mask;
     }
+}
+
+bool WorldStream::hasChunkAt(glm::vec3 position){
+    return chunkTable.count(position) != 0;
 }

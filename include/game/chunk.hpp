@@ -9,7 +9,7 @@
 #include <rendering/mesh.hpp>
 #include <rendering/camera.hpp>
 #include <rendering/model.hpp>
-#include <rendering/compression.hpp>
+#include <rendering/bitworks.hpp>
 
 #include <glm/glm.hpp>
 #include <map>
