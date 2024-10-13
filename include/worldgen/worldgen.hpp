@@ -1,12 +1,17 @@
 #ifndef WORLDGEN_H
 #define WORLDGEN_H
 
-#include <game/chunk.hpp>
 #include <optional>
 #include <random>
+#include <game/blocks.hpp>
+#include <memory>
+
+#include "FastNoiseLite.h" 
+
+class Chunk;
 
 struct Biome {
-     BlockTypes topBlock;
+    BlockTypes topBlock;
     BlockTypes secondaryTopBlock;
     BlockTypes undergroundBlock;
 
@@ -24,6 +29,16 @@ struct Biome {
     GenerateTreeFunc generateTree;
 };
 
-void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ);
+class WorldGenerator{
+    private:
+        FastNoiseLite noise;
+        int seed;
+    public:
+        WorldGenerator(int seed);
+        WorldGenerator(){seed = 1948;}
+        void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ);
+};
+
+#include <game/chunk.hpp>
 
 #endif

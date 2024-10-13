@@ -39,6 +39,9 @@ class WorldStream{
         std::unordered_map<glm::vec3, size_t, Vec3Hash, Vec3Equal> chunkTable = {}; // Chunk locations in the file
 
         struct Header{
+            char name[256];
+            int seed;
+
             size_t chunk_table_start;
             size_t chunk_table_size;
 
@@ -63,6 +66,7 @@ class WorldStream{
         void save(Chunk& chunk);
         void load(Chunk* chunk);
         bool hasChunkAt(glm::vec3 position);
+        int getSeed() {return header.seed;};
 };
 
 class ModelManager;
@@ -73,6 +77,7 @@ class World: public Collidable{
         std::vector<Entity> entities;
 
         std::unique_ptr<WorldStream> stream;
+        WorldGenerator generator;
 
     public:
         World(std::string filepath);

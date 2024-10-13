@@ -79,7 +79,7 @@ void main()
 */
 
     vec4 full_color = texture(textureArray, vec3(TexCoords, TexIndex));
-    if(full_color.a == 0) discard;
+    //if(full_color.a == 0) discard;
     vec3 color = full_color.rgb;
 
     vec3 normal = normalize(-Normal);

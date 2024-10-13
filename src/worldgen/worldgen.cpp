@@ -1,4 +1,5 @@
 #include <worldgen/worldgen.hpp>
+
 #define FNL_IMPL
 #include <FastNoiseLite.h>
 
@@ -84,23 +85,25 @@ static inline float transcribeNoiseValue(float value, float ry){
     return value;
 }
 
-void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
+WorldGenerator::WorldGenerator(int seed){
+    //noise = std::make_unique<FastNoiseLite>();
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    noise.SetFrequency(0.001f);
+    noise.SetFractalOctaves(3);
+    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+    noise.SetSeed(seed);
+}
+    
+void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
     //auto start = std::chrono::high_resolution_clock::now();
-
-    // Create and configure noise state
-    fnl_state noise = fnlCreateState();
-    noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
-    noise.frequency = 0.001f;
-    noise.octaves = 3;
-    noise.fractal_type = FNL_FRACTAL_FBM;
 
     for(int x = 0;x < CHUNK_SIZE;x++) for(int y = 0;y < CHUNK_SIZE;y++) for(int z = 0;z < CHUNK_SIZE;z++){
         float rx = (float)(x + chunkX * CHUNK_SIZE);
         float ry = (float)(y + chunkY * CHUNK_SIZE);
         float rz = (float)(z + chunkZ * CHUNK_SIZE);
-            
-        float value = transcribeNoiseValue(fnlGetNoise3D(&noise, rx, ry, rz),  ry);
-        bool top = transcribeNoiseValue(fnlGetNoise3D(&noise, rx, ry + 1, rz), ry + 1) <= 0.5;
+        
+        float value = transcribeNoiseValue(noise.GetNoise(rx, ry, rz),  ry);
+        bool top = transcribeNoiseValue(noise.GetNoise(rx, ry + 1, rz), ry + 1) <= 0.5;
 
         if(value > 0.5){
             chunk.setBlock(x,y,z, {top ? BlockTypes::Grass : BlockTypes::Stone});

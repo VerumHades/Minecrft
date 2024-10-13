@@ -2,6 +2,7 @@
 
 World::World(std::string filepath){
     stream = std::make_unique<WorldStream>(filepath);
+    generator = WorldGenerator(stream->getSeed());
 }
 
 std::shared_mutex chunkGenLock;
@@ -16,7 +17,7 @@ void World::generateChunk(int x, int y, int z){
     }
 
     std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(*this, key);
-    generateTerrainChunk(*chunk,x,y,z);
+    generator.generateTerrainChunk(*chunk,x,y,z);
 
     std::unique_lock lock(chunkGenLock);
     this->chunks.emplace(key, std::move(chunk));
@@ -352,10 +353,17 @@ WorldStream::WorldStream(std::string filepath){
     }
 
     if(newlyCreated){
+        std::strcpy(header.name,"World");
+
+        std::random_device rd;
+        header.seed = rd(); 
+        
         header.chunk_table_start = sizeof(Header);
         header.chunk_data_start = 20 * 1000; // Reserve ahead for about 1000 chunks
         header.chunk_data_end = 20 * 1000;
         header.chunk_table_size = 0;
+
+
         saveHeader();
         saveTable();
     } // Create the header table if its a new save file
