@@ -63,30 +63,21 @@ void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layer
     int size = (int)filenames.size();
 
     int mipLevels = (int) floor(log2(fmax(layerWidth, layerHeight))) + 1;
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, GL_RGB8, layerWidth, layerHeight,  size);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, GL_RGBA8, layerWidth, layerHeight,  size);
 
     int width = 0, height = 0, nrChannels = 0;
     unsigned char *data;  
     for(int i = 0; i < size; i++)
     {   
         std::cout << "Loaded texture: " << filenames[i] << "Channels: " << nrChannels << std::endl;
-        data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 0);
+        data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 4);
     
         if (!data) {
             throw std::runtime_error("Failed to load texture '%s'\n");
         }
 
-        if(nrChannels == 3){
-            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, layerWidth, layerHeight, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
-            stbi_image_free(data);
-        }
-        else if(nrChannels == 4){
-            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, layerWidth, layerHeight, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
-            stbi_image_free(data);
-        }
-        else{
-            throw std::runtime_error("Invalid number of channels: '%i' in texture image '%s' (4 required).\n");
-        }
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, layerWidth, layerHeight, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        stbi_image_free(data);
     }
 
     CHECK_GL_ERROR();;

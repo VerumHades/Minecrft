@@ -390,7 +390,7 @@ void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int 
 void MainScene::open(GLFWwindow* window){
     running = true;
 
-    world = std::make_unique<World>("saves/worldsave.bin");
+    world = std::make_unique<World>(worldPath);
     world->getEntities().emplace_back(glm::vec3(-1,0,0), glm::vec3(0.6, 1.8, 0.6));
 
     std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));

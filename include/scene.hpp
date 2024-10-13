@@ -73,6 +73,8 @@ class SceneManager{
         void setEventLocks(const UIEventLock& locks) {eventLocks = locks;};
         float getTickTime() {return 1.0f / getCurrentScene()->targetFPS;};
         bool isFPSLocked() {return getCurrentScene()->fpsLock;};
+
+        UIManager& getUIManager();
 };
 
 #endif

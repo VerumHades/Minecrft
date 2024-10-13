@@ -153,6 +153,8 @@ int main() {
 
     mainSceneTemp->initialize();
 
+    Scene* menuScene = sceneManager.getScene("menu");
+
     auto startButton = std::make_unique<UILabel>(
         "New Game", 
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
@@ -163,14 +165,55 @@ int main() {
     );
     startButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
 
-    startButton->onMouseEvent = [](UIManager& manager, int button, int action, int mods) {
-        sceneManager.setScene("game");
+    auto worldSelection = std::make_unique<UIFrame>(
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(FRACTIONS, 5),
+        TValue(FRACTIONS, 80),
+        TValue(FRACTIONS, 80),
+        glm::vec4(0.1,0.1,0.1,1.0)
+    );
+    worldSelection->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
+
+    UIFrame* worldSelectionRaw = worldSelection.get();
+
+    startButton->onMouseEvent = [menuScene, worldSelectionRaw, mainSceneTemp](UIManager& manager, int button, int action, int mods) {
+        if(button != GLFW_MOUSE_BUTTON_1 || action != GLFW_PRESS) return;
+        //sceneManager.setScene("game");
+        menuScene->setUILayer("world_menu");
+        worldSelectionRaw->clearChildren();
+
+        int offset = 5;
+        for (const auto& dirEntry : std::filesystem::recursive_directory_iterator("saves")){
+            std::string filename = dirEntry.path().filename();
+            std::string filepath = dirEntry.path();
+
+            auto temp = std::make_unique<UILabel>(
+                filename,
+                TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
+                TValue(PIXELS, offset),
+                TValue(PIXELS, 800),
+                TValue(PIXELS, 40),
+                glm::vec4(0.3,0.3,0.3,1.0)
+            );
+            temp->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+            temp->onMouseEvent = [menuScene, worldSelectionRaw, mainSceneTemp, filepath](UIManager& manager, int button, int action, int mods) {
+                if(button != GLFW_MOUSE_BUTTON_1 || action != GLFW_PRESS) return;
+                mainSceneTemp->setWorldPath(filepath);
+                sceneManager.setScene("game");
+            };
+
+            worldSelectionRaw->appendChild(std::move(temp));
+
+            offset += 50;
+        }
     };
     
-    sceneManager.getScene("menu")->setUILayer("default");
-    sceneManager.getScene("menu")->addElement(std::move(startButton));
+    menuScene->setUILayer("world_menu");
+    menuScene->addElement(std::move(worldSelection));
+    menuScene->setUILayer("default");
+    menuScene->addElement(std::move(startButton));
     
-    sceneManager.setScene("game");
+    sceneManager.setScene("menu");
 
     double last = glfwGetTime();
     double current = glfwGetTime();

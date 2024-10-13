@@ -178,6 +178,9 @@ class UIFrame{
             child->parent = this;
             children.push_back(std::move(child));
         }
+        void clearChildren(){
+            children.clear();
+        }
         std::vector<std::unique_ptr<UIFrame>>& getChildren() {return children;}
 };
 
@@ -254,6 +257,7 @@ class UILayer{
         uint32_t cursorMode =  GLFW_CURSOR_NORMAL;
         UIEventLock eventLocks = {};
 
+        void clear(){elements.clear();}
         void addElement(std::unique_ptr<UIFrame> element){
             elements.push_back(std::move(element));
         }

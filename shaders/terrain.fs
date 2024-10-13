@@ -78,7 +78,10 @@ void main()
     FragColor = vec4(vec3(depthValue), 1.0);
 */
 
-    vec3 color = texture(textureArray, vec3(TexCoords, TexIndex)).rgb;
+    vec4 full_color = texture(textureArray, vec3(TexCoords, TexIndex));
+    if(full_color.a == 0) discard;
+    vec3 color = full_color.rgb;
+
     vec3 normal = normalize(-Normal);
     vec3 lightColor = vec3(1.0);
     // ambient

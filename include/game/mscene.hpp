@@ -42,6 +42,7 @@ class MainScene: public Scene{
 
         MultiChunkBuffer chunkBuffer;
 
+        std::string worldPath = "saves/worldsave.bin";
         int renderDistance = 4;
         int selectedBlock = 2;
 
@@ -83,6 +84,8 @@ class MainScene: public Scene{
         
     public:
         void initialize();
+        void setWorldPath(std::string path) {worldPath = path;}
+
         void render() override;
         void open(GLFWwindow* window)  override;
         void close(GLFWwindow* window)  override;
