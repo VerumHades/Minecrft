@@ -17,6 +17,7 @@
 #include <game/world.hpp>
 #include <game/entity.hpp>
 #include <game/commands.hpp>
+#include <game/threadpool.hpp>
 
 #include <scene.hpp>
 #include <set>
@@ -31,6 +32,8 @@ class MainScene: public Scene{
         PerspectiveCamera camera;
         DepthCamera suncam;
         ModelManager modelManager;
+
+        ThreadPool threadPool = ThreadPool(8);
 
         ShaderProgram terrainProgram;
         ShaderProgram skyboxProgram;

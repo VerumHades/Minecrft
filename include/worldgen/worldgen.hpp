@@ -6,7 +6,7 @@
 #include <game/blocks.hpp>
 #include <memory>
 
-#include "FastNoiseLite.h" 
+#include <FastNoiseLite.h> 
 
 class Chunk;
 

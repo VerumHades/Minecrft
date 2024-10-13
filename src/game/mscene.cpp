@@ -655,15 +655,12 @@ void MainScene::pregenUpdate(){
                     continue;
                 }
 
-
-                std::thread t(&World::generateChunk, world.get(), chunkX, chunkY, chunkZ);
-                openThreads.push_back(std::move(t));
+                World* worldp = world.get();
+                
+                threadPool.deploy([worldp,chunkX,chunkY,chunkZ](){
+                    worldp->generateChunk(chunkX, chunkY, chunkZ);
+                });
             }
-            if(openThreads.size() > 16) break;
-        }
-
-        for(auto& t: openThreads){
-            t.join();
         }
     }
 
