@@ -274,6 +274,8 @@ void MainScene::initialize(){
     terrainProgram.updateUniform("modelMatrix");
 
     suncam.setCaptureSize(renderDistance * 2 * CHUNK_SIZE);
+
+    threadPool = std::make_unique<ThreadPool>(12);
     //world->load("saves/worldsave.bin");
 }
 
@@ -545,7 +547,7 @@ void MainScene::generateMeshes(){
         //std::cout << "Got chunk!" << std::endl;
         if(!meshlessChunk) continue;
         if(!camera.isVisible(*meshlessChunk)) continue;
-        world->generateChunkMesh(chunkX,chunkY,chunkZ, chunkBuffer);
+        world->generateChunkMesh(chunkX,chunkY,chunkZ, chunkBuffer, *threadPool);
 
         if(meshlessChunk->isEmpty) continue;
         glm::vec3 position = {chunkX,chunkY,chunkZ};
@@ -657,7 +659,7 @@ void MainScene::pregenUpdate(){
 
                 World* worldp = world.get();
                 
-                threadPool.deploy([worldp,chunkX,chunkY,chunkZ](){
+                threadPool->deploy([worldp,chunkX,chunkY,chunkZ](){
                     worldp->generateChunk(chunkX, chunkY, chunkZ);
                 });
             }

@@ -21,6 +21,7 @@
 
 #include <scene.hpp>
 #include <set>
+#include <memory>
 
 struct BoundKey{
     int key;
@@ -33,7 +34,7 @@ class MainScene: public Scene{
         DepthCamera suncam;
         ModelManager modelManager;
 
-        ThreadPool threadPool = ThreadPool(8);
+        std::unique_ptr<ThreadPool> threadPool;
 
         ShaderProgram terrainProgram;
         ShaderProgram skyboxProgram;

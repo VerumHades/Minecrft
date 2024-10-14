@@ -184,8 +184,8 @@ int main() {
 
         int offset = 5;
         for (const auto& dirEntry : std::filesystem::recursive_directory_iterator("saves")){
-            std::string filename = dirEntry.path().filename();
-            std::string filepath = dirEntry.path();
+            std::string filename = dirEntry.path().filename().string();
+            std::string filepath = dirEntry.path().string();
 
             auto temp = std::make_unique<UILabel>(
                 filename,

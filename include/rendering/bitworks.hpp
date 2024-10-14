@@ -1,5 +1,9 @@
 #pragma once
 
+
+#include <fstream>
+#include <cstring>
+#include <iomanip>
 #include <bit>
 #include <bitset>
 #include <cstdint>
@@ -85,10 +89,6 @@ inline uint8_t count_leading_zeros(uint64 x) {
     return std::countl_zero(x);
 }
 
-#include <fstream>
-#include <cstring>
-#include <iomanip>
-
 using byte = uint8_t;
 
 class ByteArray{
@@ -105,14 +105,11 @@ class ByteArray{
         template <typename T, typename = std::enable_if_t<std::is_trivially_copyable<T>::value>>
         void append(std::vector<T> source){
             size_t totalSize = source.size() * sizeof(T);
-            size_t currentSize = data.size();
+            append<size_t>(source.size()); 
 
-            append<size_t>(source.size());
-            
-            data.reserve(currentSize + totalSize);
-
+            data.resize(data.size() + totalSize);
             byte* sourceArray = reinterpret_cast<byte*>(source.data());
-            data.insert(data.end(), sourceArray, sourceArray + totalSize);
+            std::memcpy(data.data() + data.size() - totalSize, sourceArray, totalSize);
         }
         template <typename T, typename = std::enable_if_t<std::is_trivially_copyable<T>::value>>
         T read(){
@@ -132,14 +129,13 @@ class ByteArray{
             size_t arraySize = size * sizeof(T);
 
             if(cursor + arraySize > data.size()){
-                std::cerr << "Invalid bytearray read: " << arraySize << " at " << cursor << std::endl; 
+                std::cerr << "Invalid bytearray read: " << arraySize << " at " << cursor << " which is: " << (cursor + arraySize) << " over the total size: " << data.size() << std::endl; 
                 return {};
             }
             std::vector<T> out;
             out.resize(size);
 
-            T* array = reinterpret_cast<T*>(data.data() + cursor);
-            out.insert(out.end(), array, array + arraySize);
+            std::memcpy(out.data(), data.data() + cursor, arraySize);
 
             cursor += arraySize;
 

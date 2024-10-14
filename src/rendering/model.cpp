@@ -218,7 +218,7 @@ bool Model::loadFromFile( const std::string& pFile, const std::string& rootPath)
                             //aiProcess_JoinIdenticalVertices |
                             //aiProcess_SortByPType |
                             aiProcess_OptimizeMeshes |
-                            aiProcess_OptimizeGraph |
+                            //aiProcess_OptimizeGraph |
                             aiProcess_FlipUVs;
                            //aiProcess_ConvertToLeftHanded;
 

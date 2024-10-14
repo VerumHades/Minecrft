@@ -47,29 +47,8 @@ void World::loadChunk(int x, int y, int z){
     chunks[position] = std::make_unique<Chunk>(*this, position);
     stream->load(chunks[position].get());
 }
-        
 
-static int maxThreads = 16;
-//const auto maxThreads = 1;
-static int threadsTotal = 0;
-void generateChunkMeshThread(Chunk* chunk){
-    //auto start = std::chrono::high_resolution_clock::now();
-    //std::cout << "Generating mesh: " << &chunk <<  std::endl;
-        
-    chunk->generateMeshes();
-
-    //End time point
-    //auto end = std::chrono::high_resolution_clock::now();
-
-    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    //std::cout << "Execution time: " << duration << " microseconds" << std::endl;
-
-    chunk->meshGenerating = false;
-    chunk->meshGenerated = true;
-    threadsTotal--;
-}
-
-void World::generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer){
+void World::generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer, ThreadPool& pool){
     Chunk* chunk = this->getChunk(x, y, z);
     if(!chunk) return;
 
@@ -82,11 +61,20 @@ void World::generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer){
     if(
         !chunk->meshGenerated && !chunk->meshGenerating &&
         (!buffer.isChunkLoaded({x,y,z}) || chunk->reloadMesh) // If chunk isnt loaded at all
-        && threadsTotal < maxThreads // Dont deploy any more threads
     ){
-        threadsTotal++;
-        std::thread t1(generateChunkMeshThread, chunk);
-        t1.detach();
+        bool success = pool.deploy([chunk](){
+            chunk->generateMeshes();
+
+            //End time point
+            //auto end = std::chrono::high_resolution_clock::now();
+
+            //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+            //std::cout << "Execution time: " << duration << " microseconds" << std::endl;
+
+            chunk->meshGenerating = false;
+            chunk->meshGenerated = true;
+        });
+        if(!success) return;
 
         chunk->meshGenerating = true;
         //generateChunkMeshThread(chunk);
@@ -430,7 +418,7 @@ void WorldStream::saveTable(){
     while(header.chunk_table_start + tableData.getFullSize() >= header.chunk_data_start){
         size_t movedSize = moveChunk(header.chunk_data_start, header.chunk_data_end); // Move the first chunk to the end
 
-        std::cout << movedSize << " > " << tableData.getFullSize() << std::endl;
+        //std::cout << movedSize << " > " << tableData.getFullSize() << std::endl;
         header.chunk_data_start += movedSize;
         header.chunk_data_end += movedSize;
     }
@@ -496,10 +484,13 @@ void WorldStream::load(Chunk* chunk){
     if(!hasChunkAt(chunk->getWorldPosition())){
         return;
     }
-    
+
+    //std::cout << "Loadeding: " << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
+    //std::cout << "Located at: " << chunkTable[chunk->getWorldPosition()] << std::endl;
     file_stream.seekg(chunkTable[chunk->getWorldPosition()], std::ios::beg);
     ByteArray source;
     source.read(file_stream);
+    //std::cout << source << std::endl;
 
     glm::vec3 position = {
         source.read<float>(),
@@ -507,6 +498,9 @@ void WorldStream::load(Chunk* chunk){
         source.read<float>()
     };
     size_t layerCount = source.read<size_t>();
+
+    //std::cout << "Found: " << position.x << " " << position.y << " " << position.z << std::endl;
+    //std::cout << "With total layers: " << layerCount << std::endl;
 
     source.read<int>();
     BitArray3D solidNormal = bitworks::decompressBitArray3D(source.vread<compressed_24bit>());

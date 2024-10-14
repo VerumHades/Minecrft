@@ -19,6 +19,7 @@
 #include <game/chunk.hpp>
 #include <worldgen/worldgen.hpp>
 #include <vec_hash.hpp>
+#include <game/threadpool.hpp>
 
 struct RaycastResult{
     Block* hitBlock;
@@ -37,6 +38,7 @@ class WorldStream{
     private:
         std::fstream file_stream;
         std::unordered_map<glm::vec3, size_t, Vec3Hash, Vec3Equal> chunkTable = {}; // Chunk locations in the file
+        std::shared_mutex mutex;
 
         struct Header{
             char name[256];
@@ -85,7 +87,7 @@ class World: public Collidable{
         bool setBlock(int x, int y, int z, Block index);
 
         void generateChunk(int x, int y, int z);
-        void generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer);
+        void generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer, ThreadPool& pool);
 
         bool isChunkLoadable(int x, int y, int z);
         void loadChunk(int x, int y, int z);

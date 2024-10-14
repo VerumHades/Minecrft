@@ -47,7 +47,7 @@ ThreadPool::ThreadPool(size_t mthreads){
         t->onAvailable = [this,i]{
             std::lock_guard<std::mutex> lock(this->updateMutex);
             this->nextThread.push(i);
-            std::cout << "Thread made available: " << i << std::endl;
+            //std::cout << "Thread made available: " << i << std::endl;
         };
         this->nextThread.push(i);
         threads.push_back(std::move(t));
@@ -56,6 +56,8 @@ ThreadPool::ThreadPool(size_t mthreads){
 
 bool ThreadPool::deploy(std::function<void(void)> func){
     if(nextThread.empty()) return false;
+
+    //std::cout << "Deploying thread!" << std::endl;
 
     auto& next = threads[nextThread.front()];
     nextThread.pop();

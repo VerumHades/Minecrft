@@ -35,7 +35,19 @@ FetchContent_Declare(
   assimp
   GIT_REPOSITORY https://github.com/assimp/assimp.git
 )
+# Set CMake options to reduce Assimp to only GLTF
+set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)  # Disable all importers by default
+set(ASSIMP_BUILD_GLTF_IMPORTER ON CACHE BOOL "" FORCE)              # Enable only GLTF importer
+set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)                        # Disable exporters (optional, if not needed)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)              # Disable tools like assimp viewer
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)                     # Disable unit tests to reduce size
+set(ASSIMP_BUILD_FBX_IMPORTER OFF CACHE BOOL "" FORCE)                     # Disable unit tests to reduce size
+set(ASSIMP_BUILD_OBJ_IMPORTER OFF CACHE BOOL "" FORCE)                     # Disable unit tests to reduce size
+set(ASSIMP_BUILD_TYPE "Release" CACHE STRING "Build type for Assimp" FORCE)
+
 FetchContent_MakeAvailable(assimp)
+
+set_target_properties(assimp PROPERTIES MAP_IMPORTED_CONFIG_DEBUG Release)
 
 # Declare FreeType as a dependency
 FetchContent_Declare(
