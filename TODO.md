@@ -16,8 +16,8 @@
   - [ ] Add ambient occlusion
   - [ ] Add support for transparency
 
-- [ ] Improve world saving
-  - [ ] Flexibly save and load chunks
+- [x] Improve world saving
+  - [x] Flexibly save and load chunks
   
 - [ ] Improve rendering
   - [x] Batch render chunks

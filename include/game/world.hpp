@@ -68,7 +68,8 @@ class WorldStream{
         void save(Chunk& chunk);
         void load(Chunk* chunk);
         bool hasChunkAt(glm::vec3 position);
-        int getSeed() {return header.seed;};
+        int getSeed() const {return header.seed;};
+        std::string getName() const {return std::string(header.name);}
 };
 
 class ModelManager;

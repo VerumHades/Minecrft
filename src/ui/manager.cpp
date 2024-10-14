@@ -1,5 +1,9 @@
 #include <ui/manager.hpp>
 
+TValue operator"" px(unsigned long long value){return TValue(PIXELS, value);}
+TValue operator"" ps(unsigned long long value){return TValue(PFRACTION, value);}
+TValue operator"" ws(unsigned long long value){return TValue(MFRACTION, value);}
+
 void UIManager::initialize(){
     uiProgram.initialize();
     uiProgram.addShader("shaders/ui/ui.vs", GL_VERTEX_SHADER);
@@ -349,18 +353,31 @@ UIBorderSizes UIFrame::getBorderSizes(UIManager& manager){
 }
 
 std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
+    auto t = getTextPosition(manager);
+    
+    std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,t.x,t.y,1,{1,1,1,1});
+    out.insert(out.end(), temp.begin(), temp.end());
+
+    return out;
+}
+
+UITransform UILabel::getTextPosition(UIManager& manager){
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
 
     auto t = getTransform(manager);
 
-    int tx = t.x + t.width  / 2 - textDimensions.x / 2;
-    int ty = t.y + t.height / 2 - textDimensions.y / 2;
-    
-    std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1,1});
-    out.insert(out.end(), temp.begin(), temp.end());
+    int tx = 0;
+    if     (textPosition == LEFT  ) tx = t.x + textPadding;
+    else if(textPosition == CENTER) tx = t.x + t.width  / 2 - textDimensions.x / 2;
+    else if(textPosition == RIGHT ) tx = t.x + t.width - textDimensions.x - textPadding;
 
-    return out;
+    int ty = t.y + t.height / 2 - textDimensions.y / 2;
+
+    return {
+        tx,
+        ty
+    };
 }
 
 std::unique_ptr<DynamicTextureArray> UIImage::textures;

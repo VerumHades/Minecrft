@@ -30,7 +30,22 @@ struct TValue{
         operands.push_back(op1);
         operands.push_back(op2);
     }
+
+    TValue operator-(const TValue& other) const {
+        return TValue(OPERATION_MINUS, *this, other);
+    }
+
+    TValue operator-() const {
+        return TValue(unit, -value);
+    }
 };
+
+// Pixels
+TValue operator"" px(unsigned long long value);
+// Percent of parent
+TValue operator"" ps(unsigned long long value);
+// Percent of widget
+TValue operator"" ws(unsigned long long value);
 
 struct UITransform{
     int x;
@@ -169,6 +184,7 @@ class UIFrame{
         bool pointWithinBounds(glm::vec2 position, UITransform transform, int padding = 0);
 
         void setBorderWidth(std::vector<TValue> borderWidth) {this->borderWidth = borderWidth;}
+        void setBorderWidth(TValue borderWidth) {this->borderWidth = {borderWidth,borderWidth,borderWidth,borderWidth};}
 
         void setHover(bool value) {hover = value;}
         void setFocusable(bool value) {focusable = value;}
@@ -184,15 +200,27 @@ class UIFrame{
         std::vector<std::unique_ptr<UIFrame>>& getChildren() {return children;}
 };
 
+enum UITextPosition{
+    LEFT,
+    RIGHT,
+    CENTER
+};
+
 class UILabel: public UIFrame{
     protected:
         std::string text;
+        int textPadding = 5;
+        UITextPosition textPosition = CENTER;
+
+        UITransform getTextPosition(UIManager& manager);
 
     public:
         UILabel(std::string text, TValue x, TValue y, TValue width, TValue height, UIColor color): UIFrame(x,y,width,height,color), text(text) {}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
         void setText(std::string text) {this->text = text;}
+        void setTextPosition(UITextPosition position) {this->textPosition = position;}
+        void setTextPadding(int padding) {this->textPadding = padding;}
         std::string& getText() {return text;}
 };
 

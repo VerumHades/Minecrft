@@ -184,17 +184,27 @@ int main() {
 
         int offset = 5;
         for (const auto& dirEntry : std::filesystem::recursive_directory_iterator("saves")){
-            std::string filename = dirEntry.path().filename().string();
             std::string filepath = dirEntry.path().string();
+            WorldStream stream(filepath);
+            
+            auto frame = std::make_unique<UIFrame>(
+                50ps - 50ws,
+                TValue(PIXELS, offset),
+                800px,
+                100px,
+                glm::vec4(0.2,0.2,0.2,2.0)
+            );
 
             auto temp = std::make_unique<UILabel>(
-                filename,
-                TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
-                TValue(PIXELS, offset),
-                TValue(PIXELS, 800),
-                TValue(PIXELS, 40),
-                glm::vec4(0.3,0.3,0.3,1.0)
+                stream.getName(),
+                10px,
+                10px,
+                100ps - 20px,
+                50ps,
+                glm::vec4(0.0,0.0,0.0,0.0)
             );
+            temp->setTextPosition(LEFT);
+            temp->setBorderWidth(0px);
             temp->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
             temp->onMouseEvent = [menuScene, worldSelectionRaw, mainSceneTemp, filepath](UIManager& manager, int button, int action, int mods) {
                 if(button != GLFW_MOUSE_BUTTON_1 || action != GLFW_PRESS) return;
@@ -202,9 +212,10 @@ int main() {
                 sceneManager.setScene("game");
             };
 
-            worldSelectionRaw->appendChild(std::move(temp));
+            frame->appendChild(std::move(temp));
+            worldSelectionRaw->appendChild(std::move(frame));
 
-            offset += 50;
+            offset += 100;
         }
     };
     
@@ -213,7 +224,7 @@ int main() {
     menuScene->setUILayer("default");
     menuScene->addElement(std::move(startButton));
     
-    sceneManager.setScene("game");
+    sceneManager.setScene("menu");
 
     double last = glfwGetTime();
     double current = glfwGetTime();
