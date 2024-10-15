@@ -28,7 +28,7 @@ uint64_t firstBitMask = (1_uint64 << 63);
 
     The remaining bits are a count max at 64  
 */
-std::vector<compressed_byte> bitworks::compress64Bits(uint64 bits){
+std::vector<compressed_byte> bitworks::compress64Bits(uint64_f bits){
     std::vector<compressed_byte> out;
     out.reserve(10);
     uint8_t compressed_total = 0;
@@ -66,9 +66,9 @@ std::vector<compressed_byte> bitworks::compress64Bits(uint64 bits){
 
     return out;
 }
-uint64 bitworks::decompress64Bits(std::vector<compressed_byte> bytes){
-    uint64 out = 0;
-    uint64 mask = ~0_uint64;
+uint64_f bitworks::decompress64Bits(std::vector<compressed_byte> bytes){
+    uint64_f out = 0;
+    uint64_f mask = ~0_uint64;
 
     uint8_t currentShift = 0;
     for(auto& value: bytes){
@@ -140,9 +140,9 @@ std::string compressed_24bit::to_string(){
 */
 std::vector<compressed_24bit> bitworks::compressBitArray3D(BitArray3D array){
     std::vector<compressed_24bit> compressedOutput = {};
-    uint64* flatArray = array.getAsFlatArray();
+    uint64_f* flatArray = array.getAsFlatArray();
     
-    uint64 currentBits = flatArray[0];
+    uint64_f currentBits = flatArray[0];
 
     size_t currentIndex = 0;
     size_t localBit = 0;
@@ -184,7 +184,7 @@ std::vector<compressed_24bit> bitworks::compressBitArray3D(BitArray3D array){
 
 BitArray3D bitworks::decompressBitArray3D(std::vector<compressed_24bit> data){
     BitArray3D output;
-    uint64* flatArray = output.getAsFlatArray();
+    uint64_f* flatArray = output.getAsFlatArray();
 
     size_t arrayIndex = 0;
     size_t dataIndex  = 0;
@@ -204,7 +204,7 @@ BitArray3D bitworks::decompressBitArray3D(std::vector<compressed_24bit> data){
 
         size_t count = std::min(bitsLeft, static_cast<size_t>(cdata.getValue()));
         
-        uint64 mask = ~0_uint64 >> currentBit;
+        uint64_f mask = ~0_uint64 >> currentBit;
             
         if(cdata.getMode() == 0) flatArray[arrayIndex] &= ~mask;
         else flatArray[arrayIndex] |= mask;
@@ -225,6 +225,27 @@ BitArray3D bitworks::decompressBitArray3D(std::vector<compressed_24bit> data){
 
     return output;
 }
+
+BitArray3D BitArray3D::rotate(){
+    BitArray3D rotated;
+
+    for(int z = 0;z < 64;z++){
+        for(int y = 0; y < 64;y++){
+            uint64_f value = this->values[z][y];
+
+            for(int x = 0;x < 64;x++){
+                uint64_f mask = 1_uint64 << (63 - x);
+
+                if(!(value & mask)) continue;
+
+                rotated[x][y] |= (1_uint64 << (63 - z));
+            }
+        }
+    }
+
+    return rotated;
+}
+
 
 void ByteArray::write(std::fstream &file){
     bitworks::saveValue<char>(file,'|'); // Magic start character

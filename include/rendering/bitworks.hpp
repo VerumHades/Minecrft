@@ -14,28 +14,34 @@
 
 #include <game/blocks.hpp>
 
-typedef uint_fast64_t uint64;
-typedef std::array<uint64, 64> Plane64;
+typedef uint_fast64_t uint64_f;
+typedef std::array<uint64_f, 64> Plane64;
 typedef std::array<Plane64, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> PlaneArray64;
 
 uint64_t operator"" _uint64(unsigned long long value);
 
 class BitArray3D{
-    uint64 values[64][64] = {0};
+    uint64_f values[64][64] = {0};
 
     public:
         static const size_t size_bits = 64 * 64 * 64;
         static const size_t size = 64 * 64;
         
-        uint64* operator[] (int index)
+        uint64_f* operator[] (int index)
         {
             return values[index];
         }
-        const uint64* operator[](int index) const {
+        const uint64_f* operator[](int index) const {
             return values[index];  
         }
-        uint64* getAsFlatArray(){
-            return reinterpret_cast<uint64*>(values); 
+        uint64_f* getAsFlatArray(){
+            return reinterpret_cast<uint64_f*>(values); 
+        }
+
+        BitArray3D rotate();
+
+        bool operator == (const BitArray3D& array) const {
+            return std::memcmp(values, array.values, size * sizeof(uint64_t)) == 0;
         }
 };
 
@@ -69,8 +75,8 @@ namespace bitworks{
     std::vector<compressed_24bit> compressBitArray3D(BitArray3D array);
     BitArray3D decompressBitArray3D(std::vector<compressed_24bit> data);
 
-    std::vector<compressed_byte> compress64Bits(uint64 bits);
-    uint64 decompress64Bits(std::vector<compressed_byte> bytes);
+    std::vector<compressed_byte> compress64Bits(uint64_f bits);
+    uint64_f decompress64Bits(std::vector<compressed_byte> bytes);
 
     template <typename T>
     static inline void saveValue(std::fstream &file, T value){
@@ -85,7 +91,7 @@ namespace bitworks{
     }
 };
 
-inline uint8_t count_leading_zeros(uint64 x) {
+inline uint8_t count_leading_zeros(uint64_f x) {
     return std::countl_zero(x);
 }
 

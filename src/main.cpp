@@ -224,7 +224,7 @@ int main() {
     menuScene->setUILayer("default");
     menuScene->addElement(std::move(startButton));
     
-    sceneManager.setScene("menu");
+    sceneManager.setScene("game");
 
     double last = glfwGetTime();
     double current = glfwGetTime();

@@ -59,10 +59,10 @@ Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     if(y >= CHUNK_SIZE) return nullptr;
     if(z >= CHUNK_SIZE) return nullptr;
     
-    uint64 checkMask = (1_uint64 << (63 - x));
+    uint64_f checkMask = (1_uint64 << (63 - x));
     
     for(auto& [key,mask]: masks){
-        uint64 row = mask.segments[z][y];
+        uint64_f row = mask.segments[z][y];
 
         if(row & checkMask){
             return &mask.block;
@@ -77,7 +77,7 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     if(y >= CHUNK_SIZE) return false;
     if(z >= CHUNK_SIZE) return false;
 
-    uint64 currentMask = (1_uint64 << (63 - x));
+    uint64_f currentMask = (1_uint64 << (63 - x));
     
     if(value.type != BlockTypes::Air){
         if(masks.count(value.type) == 0){
@@ -89,7 +89,7 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     }
 
     for(auto& [key,mask]: masks){
-        uint64 row = mask.segments[z][y];
+        uint64_f row = mask.segments[z][y];
 
         if(!(row & currentMask)) continue;
         if(mask.block.type == value.type) continue;
@@ -109,7 +109,7 @@ std::vector<Face> greedyMeshPlane64(Plane64 rows){
     int currentRow = 0;
     
     while(currentRow < 64){
-        uint64 row = rows[currentRow];
+        uint64_f row = rows[currentRow];
         /*
             0b00001101
 
@@ -140,7 +140,7 @@ std::vector<Face> greedyMeshPlane64(Plane64 rows){
 
                 4. 0b00001100 AND with the row to create the faces mask
         */
-        uint64 mask = ~0_uint64;
+        uint64_f mask = ~0_uint64;
 
         //  Shifting by 64 is undefined behaviour for some reason ¯\_(ツ)_/¯
         if((start + width) != 64) mask = ~(mask >> (start + width));
@@ -204,15 +204,15 @@ void Chunk::generateMeshes(){
         
         for(int y = 0;y < CHUNK_SIZE;y++){
             for(auto& [key,mask]: masks){
-                uint64 allFacesX = (mask.segmentsRotated[z][y] | mask.segmentsRotated[z + 1][y]) & (solidMask.segmentsRotated[z][y] ^ solidMask.segmentsRotated[z + 1][y]);
+                uint64_f allFacesX = (mask.segmentsRotated[z][y] | mask.segmentsRotated[z + 1][y]) & (solidMask.segmentsRotated[z][y] ^ solidMask.segmentsRotated[z + 1][y]);
                 planesXforward[ (size_t) mask.block.type][y] = solidMask.segmentsRotated[z][y] & allFacesX;
                 planesXbackward[(size_t) mask.block.type][y] = solidMask.segmentsRotated[z + 1][y] & allFacesX;
 
-                uint64 allFacesY = (mask.segments[y][z] | mask.segments[y][z + 1]) & (solidMask.segments[y][z] ^ solidMask.segments[y][z + 1]);
+                uint64_f allFacesY = (mask.segments[y][z] | mask.segments[y][z + 1]) & (solidMask.segments[y][z] ^ solidMask.segments[y][z + 1]);
                 planesYforward[ (size_t) mask.block.type][y] = solidMask.segments[y][z] & allFacesY;
                 planesYbackward[(size_t) mask.block.type][y] = solidMask.segments[y][z + 1] & allFacesY;
 
-                uint64 allFacesZ = (mask.segments[z][y] | mask.segments[z + 1][y]) & (solidMask.segments[z][y] ^ solidMask.segments[z + 1][y]);
+                uint64_f allFacesZ = (mask.segments[z][y] | mask.segments[z + 1][y]) & (solidMask.segments[z][y] ^ solidMask.segments[z + 1][y]);
                 planesZforward[ (size_t) mask.block.type][y] = solidMask.segments[z][y] & allFacesZ;
                 planesZbackward[(size_t) mask.block.type][y] = solidMask.segments[z + 1][y] & allFacesZ;
             }
@@ -360,7 +360,7 @@ void Chunk::generateMeshes(){
             const uint64_t localMaskRow = masks.count(key)      != 0 ? masks.at(key)     .segmentsRotated[0] [y] : 0_uint64;
             const uint64_t otherMaskRow = nextXmasks.count(key) != 0 ? nextXmasks.at(key).segmentsRotated[63][y] : 0_uint64;
             
-            uint64 allFacesX =  (localMaskRow | otherMaskRow) & (solidMask.segmentsRotated[0][y] ^ nextXSolid.segmentsRotated[63][y]);
+            uint64_f allFacesX =  (localMaskRow | otherMaskRow) & (solidMask.segmentsRotated[0][y] ^ nextXSolid.segmentsRotated[63][y]);
 
             planesXforward[ (size_t)key][y] =  solidMask.segmentsRotated[0][y] & allFacesX;
             planesXbackward[(size_t)key][y] =  nextXSolid.segmentsRotated[63][y] & allFacesX;
@@ -370,7 +370,7 @@ void Chunk::generateMeshes(){
             const uint64_t localMaskRow = masks.count(key)      != 0 ? masks.at(key)     .segments[y] [0] : 0_uint64;
             const uint64_t otherMaskRow = nextYmasks.count(key) != 0 ? nextYmasks.at(key).segments[y][63] : 0_uint64;
             
-            uint64 allFacesY =  (localMaskRow | otherMaskRow) & (solidMask.segments[y][0] ^ nextYSolid.segments[y][63]);
+            uint64_f allFacesY =  (localMaskRow | otherMaskRow) & (solidMask.segments[y][0] ^ nextYSolid.segments[y][63]);
 
             planesYforward[ (size_t) key][y] = solidMask.segments[y][0] & allFacesY;
             planesYbackward[(size_t) key][y] = nextYSolid.segments[y][63] & allFacesY;
@@ -381,7 +381,7 @@ void Chunk::generateMeshes(){
             const uint64_t otherMaskRow = nextZmasks.count(key) != 0 ? nextZmasks.at(key).segments[63][y] : 0_uint64;
             
 
-            uint64 allFacesZ =  (localMaskRow | otherMaskRow) & (solidMask.segments[0][y] ^ nextZSolid.segments[63][y]);
+            uint64_f allFacesZ =  (localMaskRow | otherMaskRow) & (solidMask.segments[0][y] ^ nextZSolid.segments[63][y]);
                 
             planesZforward[ (size_t) key][y] =  solidMask.segments[0][y] & allFacesZ;
             planesZbackward[(size_t) key][y] =  nextZSolid.segments[63][y] & allFacesZ;

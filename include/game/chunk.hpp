@@ -108,7 +108,7 @@ struct Face{
     int height;
 };
 
-//std::vector<Face> greedyMeshPlane64(std::array<uint64, 64> rows);
+//std::vector<Face> greedyMeshPlane64(std::array<uint64_f, 64> rows);
 
 #include <game/world.hpp>
 
