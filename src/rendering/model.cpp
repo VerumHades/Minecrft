@@ -51,7 +51,7 @@ void Model::processNode(aiNode *node, const aiScene *scene)
 
 Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
     Mesh outMesh = Mesh();
-    outMesh.setVertexFormat({3,3,2});
+    outMesh.setVertexFormat(VertexFormat({3,3,2}));
     const int size = 8;
 
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)

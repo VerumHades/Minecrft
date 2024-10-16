@@ -133,7 +133,7 @@ void UIManager::update(){
     uiProgram.use();
 
     Mesh temp = Mesh();
-    temp.setVertexFormat({2,2,4,2,1,1,1,4,4,4,4,4});
+    temp.setVertexFormat(VertexFormat({2,2,4,2,1,1,1,4,4,4,4,4}));
 
     for(auto& window: getCurrentWindow().getCurrentLayer().getElements()){
         std::vector<UIRenderInfo> winfo = window->getRenderingInformation(*this);

@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 #include <rendering/allocator.hpp>
 #include <unordered_map>
+#include <rendering/mesh.hpp>
 
 #include <chrono>
 
@@ -54,8 +55,7 @@ class MultiChunkBuffer{
         uint32_t maxVertices = 0;
         uint32_t maxIndices = 0;
 
-        std::vector<uint32_t> vertexFormat = {3,1,2,1,1};
-        uint32_t vertexSize = 8;
+        VertexFormat vertexFormat;
 
         uint32_t indirectBuffer;
         uint32_t vertexBuffer;

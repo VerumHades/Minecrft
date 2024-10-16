@@ -45,6 +45,13 @@ class BitArray3D{
         }
 };
 
+class BitPlane{
+    std::unique_ptr<std::array<uint_fast8_t,8>>  array8;
+    std::unique_ptr<std::array<uint_fast16_t,16>> array16;
+    std::unique_ptr<std::array<uint_fast32_t,32>> array32;
+    std::unique_ptr<std::array<uint_fast64_t,64>> array64;
+};
+
 typedef uint8_t compressed_byte;
 
 /*

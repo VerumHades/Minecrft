@@ -7,13 +7,26 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
+class VertexFormat{
+    private:
+        std::vector<uint32_t> sizes = {};
+        uint32_t totalSize = 0;
+    public:
+        VertexFormat(){};
+        VertexFormat(std::vector<uint32_t> sizes);
+        void apply();
+        uint32_t getVertexSize(){return totalSize;}
+};
+
 class Mesh{
     private:
         std::vector<float> vertices;
         std::vector<uint32_t> indices;
-        std::vector<int> format;
+        VertexFormat format;
 
-        bool formatSet = false;
         int textureIndex = -1;
 
     public:
@@ -21,13 +34,13 @@ class Mesh{
 
         Mesh();
 
-        void setVertexFormat(const std::vector<int>& format);
+        void setVertexFormat(const VertexFormat& format) {this->format = format;};
         void addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height);
         void addQuadFace(glm::vec3 vertices[4], glm::vec3 normals[4], int clockwise);
 
         std::vector<float>& getVertices() {return this->vertices;}
         std::vector<uint32_t>& getIndices() {return this->indices;}
-        std::vector<int>& getFormat() {return this->format;}
+        VertexFormat& getFormat() {return this->format;}
 
         void setTextureIndex(int index){textureIndex = index;}
         int getTextureIndex(){return textureIndex;};

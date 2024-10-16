@@ -33,28 +33,6 @@ GLBuffer::~GLBuffer(){
 
     //std::cerr << "GLBuffer destructor called for object at " << this << std::endl;
 }
-void setupFormat(std::vector<int> format){
-    int vertexSize = 0;
-    for(auto& sz: format) vertexSize += sz;
-
-    size_t stride =  vertexSize * sizeof(float);
-
-    size_t size_to_now = 0;
-    for(int i = 0;i < format.size();i++){
-        size_t current_size = format[i];
-        
-        uintptr_t pointer = size_to_now * sizeof(float);
-
-        //printf("Size: %lu Pointer: %lu Stride: %lu\n",current_size,pointer,stride);
-
-        glVertexAttribPointer(i, (int) current_size, GL_FLOAT, GL_FALSE, (int)stride, (void*)pointer);
-        glEnableVertexAttribArray(i);
-
-        CHECK_GL_ERROR();;
-
-        size_to_now += current_size;
-    }
-}
 
 void GLBuffer::loadMesh(Mesh& mesh){
     uint32_t buffer = this->data;
@@ -74,7 +52,7 @@ void GLBuffer::loadMesh(Mesh& mesh){
     
     CHECK_GL_ERROR();;
 
-    setupFormat(mesh.getFormat());
+    mesh.getFormat().apply();
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -173,7 +151,9 @@ void MultiChunkBuffer::unloadFarawayChunks(const glm::vec3& from, float treshold
 }
 
 void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
+    vertexFormat = VertexFormat({3,1,2,1,1});
     maxDrawCalls = maxDrawCalls_;
+
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     
@@ -181,7 +161,7 @@ void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
     /*
         These values are gross estimates and will probably need dynamic adjusting later
     */
-    maxVertices = maxDrawCalls * vertexSize * 100 * 10; // Estimate that every chunk has about 50000 vertices at max
+    maxVertices = maxDrawCalls * vertexFormat.getVertexSize() * 100 * 10; // Estimate that every chunk has about 50000 vertices at max
     maxIndices = maxDrawCalls * 1200; // Same for indices
     vertexAllocator = Allocator(maxVertices, [this](size_t requested){
         // Atempt to trash unused chunks
@@ -216,7 +196,7 @@ void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
 
     CHECK_GL_ERROR();
 
-    setupFormat(vertexFormat);
+    vertexFormat.apply();
 }
 
 MultiChunkBuffer::~MultiChunkBuffer(){
@@ -272,7 +252,7 @@ void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
 
         indexBufferOffset,
         mesh.getIndices().size(),
-        vertexBufferOffset / vertexSize,
+        vertexBufferOffset / vertexFormat.getVertexSize(),
 
         mesh.getVertices().size(),
         mesh.getIndices().size()
@@ -313,7 +293,7 @@ void MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::vec3& pos){
     
     chunk.firstIndex = indexBufferOffset;
     chunk.count = mesh.getIndices().size();
-    chunk.baseVertex = vertexBufferOffset / vertexSize;
+    chunk.baseVertex = vertexBufferOffset / vertexFormat.getVertexSize();
 
     if(drawCall) addDrawCall(pos);
     /*

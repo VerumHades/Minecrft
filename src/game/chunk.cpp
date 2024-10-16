@@ -104,6 +104,9 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     return true;
 }
 
+/*
+    Generate greedy meshed faces from a plane of bits
+*/
 std::vector<Face> greedyMeshPlane64(Plane64 rows){
     std::vector<Face> out = {};
     int currentRow = 0;
@@ -186,7 +189,7 @@ std::vector<Face> greedyMeshDualPlane64(const Plane64& a, const Plane64& b){
 
 void Chunk::generateMeshes(){
     this->solidMesh = std::make_unique<Mesh>();
-    this->solidMesh->setVertexFormat({3,1,2,1,1}); 
+    //this->solidMesh->setVertexFormat(VertexFormat({3,1,2,1,1}));  // Unused
 
     float worldX = getWorldPosition().x * CHUNK_SIZE;
     float worldY = getWorldPosition().y * CHUNK_SIZE;
