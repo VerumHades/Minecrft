@@ -63,25 +63,21 @@ void World::generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer, Thr
         (!buffer.isChunkLoaded({x,y,z}) || chunk->reloadMesh) // If chunk isnt loaded at all
     ){
         bool success = pool.deploy([chunk](){
-            std::cout << "Generating mesh: " << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
-
-            auto start = std::chrono::high_resolution_clock::now();
+            //auto start = std::chrono::high_resolution_clock::now();
 
             chunk->generateMeshes();
 
             //End time point
-            auto end = std::chrono::high_resolution_clock::now();
+            //auto end = std::chrono::high_resolution_clock::now();
 
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-            std::cout << "Execution time: " << duration << " microseconds" << std::endl;
+            //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+            //std::cout << "Execution time: " << duration << " microseconds" << std::endl;
 
             chunk->meshGenerating = false;
             chunk->meshGenerated = true;
             chunk->pendingUpload = true;
         });
         if(!success) return;
-
-        std::cout << "Generating mesh: " <<  x << " " << y << " " << z << std::endl;
 
         chunk->meshGenerating = true;
         //generateChunkMeshThread(chunk);

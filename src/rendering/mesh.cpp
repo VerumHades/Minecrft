@@ -13,8 +13,9 @@ void Mesh::setVertexFormat(const std::vector<int>& format_){
     for(const int& i: this->format) this->vertexSize += i;
 }
 
-static const int greedyVertexSize = 10;
-void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals[4], float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height){
+void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height){
+    const int greedyVertexSize = 8;
+    
     // Precalculate texture coordinates
     float textureX = 1.0;
     float textureY = 1.0;
@@ -44,16 +45,14 @@ void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], glm::vec3 normals[4], float
         vertex[2 + offset] = vertices_[i].z;
 
         // Normals
-        vertex[3 + offset] = normals[i].x;
-        vertex[4 + offset] = normals[i].y;
-        vertex[5 + offset] = normals[i].z;
+        vertex[3 + offset] = static_cast<float>(normal);
 
         // Texture coordinates
-        vertex[6 + offset] = textureCoordinates[i].x;
-        vertex[7 + offset] = textureCoordinates[i].y;
+        vertex[4 + offset] = textureCoordinates[i].x;
+        vertex[5 + offset] = textureCoordinates[i].y;
 
-        vertex[8 + offset] = textureIndex;
-        vertex[9 + offset] = vertexOcclusion[i];
+        vertex[6 + offset] = textureIndex;
+        vertex[7 + offset] = vertexOcclusion[i];
         // Store the vertex index and add the vertex to the vertices array
         vecIndices[i] = startIndex + i;
     }

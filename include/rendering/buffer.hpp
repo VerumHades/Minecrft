@@ -54,7 +54,8 @@ class MultiChunkBuffer{
         uint32_t maxVertices = 0;
         uint32_t maxIndices = 0;
 
-        uint32_t vertexSize = 10;
+        std::vector<uint32_t> vertexFormat = {3,1,2,1,1};
+        uint32_t vertexSize = 8;
 
         uint32_t indirectBuffer;
         uint32_t vertexBuffer;

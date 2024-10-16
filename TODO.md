@@ -28,6 +28,7 @@
   - [ ] Add LOD
     - [ ] Add meshing for different chunk sizes
     - [ ] Make something to approximate distant chunks
+  - [ ] Make chunk buffer check for mesh format correctness
 
 - [ ] Add missing features:
   - [ ] Add support for non solid blocks (Stairs and such)

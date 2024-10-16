@@ -216,7 +216,7 @@ void MultiChunkBuffer::initialize(uint32_t maxDrawCalls_){
 
     CHECK_GL_ERROR();
 
-    setupFormat({3,3,2,1,1});
+    setupFormat(vertexFormat);
 }
 
 MultiChunkBuffer::~MultiChunkBuffer(){
@@ -247,7 +247,7 @@ void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
     if(loadedChunks.count(pos) != 0) return;
     if(mesh.getVertices().size() == 0) return;
     
-    auto start  = std::chrono::high_resolution_clock::now();
+    //auto start  = std::chrono::high_resolution_clock::now();
 
     /*
         Allocate space for vertex data and save it
@@ -278,10 +278,10 @@ void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
         mesh.getIndices().size()
     };
 
-    auto end = std::chrono::high_resolution_clock::now();
+    //auto end = std::chrono::high_resolution_clock::now();
 
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Mesh allocated and updated in: " << duration << " microseconds" << std::endl;
+    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    //std::cout << "Mesh allocated and updated in: " << duration << " microseconds" << std::endl;
 }
 void MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::vec3& pos){
     if(loadedChunks.count(pos) == 0) return;
