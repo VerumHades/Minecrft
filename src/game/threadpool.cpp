@@ -14,8 +14,11 @@ void SleepyThread::run(){
 
         if(stopThread) break;
 
-        func();
-        func = nullptr;
+        if (func) {
+            func();
+            func = nullptr;
+        }
+
         isAwake = false;
         onAvailable();
     }
@@ -63,4 +66,6 @@ bool ThreadPool::deploy(std::function<void(void)> func){
     nextThread.pop();
 
     next->awake(func);
+
+    return true;
 }

@@ -10,6 +10,8 @@
 #include <rendering/allocator.hpp>
 #include <unordered_map>
 
+#include <chrono>
+
 void checkGLError(const char *file, int line);
 #define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
 class Mesh;

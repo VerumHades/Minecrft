@@ -58,6 +58,7 @@ class Chunk: public Volume{
         
     public:
         bool reloadMesh = false;
+        bool pendingUpload = false;
 
         bool meshGenerating = false;
         bool meshGenerated = false;
