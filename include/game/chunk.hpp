@@ -30,29 +30,30 @@
 
 class World;
 
+template <typename T>
 struct ChunkMask{
     Block block = {BlockTypes::Air};
-    BitArray3D segments = {}; 
-    BitArray3D segmentsRotated = {}; 
+    BitArray3D<T> segments = {}; 
+    BitArray3D<T> segmentsRotated = {}; 
     
     void set(uint32_t x,uint32_t y,uint32_t z) {
-        segments[z][y] |= (1_uint64 << (63 - x));
-        segmentsRotated[x][y] |= (1_uint64 << (63 - z));
+        segments[z][y] |= (1_uint64 << (BitArray3D<T>::T_bits_total - 1 - x));
+        segmentsRotated[x][y] |= (1_uint64 << (BitArray3D<T>::T_bits_total - 1 - z));
     }
     void reset(uint32_t x,uint32_t y,uint32_t z) {
-        segments[z][y] &= ~(1_uint64 << (63 - x));
-        segmentsRotated[x][y] &= ~(1_uint64 << (63 - z));
+        segments[z][y] &= ~(1_uint64 << (BitArray3D<T>::T_bits_total - 1 - x));
+        segmentsRotated[x][y] &= ~(1_uint64 << (BitArray3D<T>::T_bits_total - 1 - z));
     }
 };
 
 class Chunk: public Volume{
     private:
         glm::vec3 worldPosition = glm::vec3(0,0,0);
-        World& world;
+        World& world; 
 
         //Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {};
-        ChunkMask solidMask;
-        std::unordered_map<BlockTypes,ChunkMask> masks;
+        ChunkMask<uint64_f> solidMask;
+        std::unordered_map<BlockTypes,ChunkMask<uint64_f>> masks;
         //unsigned char lightArray[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE][3];
         //std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
         
@@ -82,8 +83,8 @@ class Chunk: public Volume{
             return this->worldPosition;
         }
 
-        ChunkMask& getSolidMask() {return solidMask;}
-        std::unordered_map<BlockTypes,ChunkMask>& getMasks() {return masks;}
+        ChunkMask<uint64_f>& getSolidMask() {return solidMask;}
+        std::unordered_map<BlockTypes,ChunkMask<uint64_f>>& getMasks() {return masks;}
 
 }; 
 extern std::unordered_map<BlockTypes, BlockType> predefinedBlocks;

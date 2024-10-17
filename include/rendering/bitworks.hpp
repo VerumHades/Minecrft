@@ -20,36 +20,52 @@ typedef std::array<Plane64, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> PlaneArray64
 
 uint64_t operator"" _uint64(unsigned long long value);
 
+template <typename T>
 class BitArray3D{
-    uint64_f values[64][64] = {0};
+    public:
+        static const size_t T_bits_total = sizeof(T) * 8;
+
+    private:
+        T values[T_bits_total][T_bits_total] = {0};
 
     public:
-        static const size_t size_bits = 64 * 64 * 64;
-        static const size_t size = 64 * 64;
+        static const size_t size_bits = T_bits_total * T_bits_total * T_bits_total;
+        static const size_t size = T_bits_total * T_bits_total;
         
-        uint64_f* operator[] (int index)
+        T* operator[] (int index)
         {
             return values[index];
         }
-        const uint64_f* operator[](int index) const {
+        const T* operator[](int index) const {
             return values[index];  
         }
-        uint64_f* getAsFlatArray(){
-            return reinterpret_cast<uint64_f*>(values); 
+        T* getAsFlatArray(){
+            return reinterpret_cast<T*>(values); 
         }
 
-        BitArray3D rotate();
+        BitArray3D<T> rotate(){
+            BitArray3D<T> rotated;
 
-        bool operator == (const BitArray3D& array) const {
-            return std::memcmp(values, array.values, size * sizeof(uint64_t)) == 0;
+            for(int z = 0;z < T_bits_total;z++){
+                for(int y = 0; y < T_bits_total;y++){
+                    T value = this->values[z][y];
+
+                    for(int x = 0;x < T_bits_total;x++){
+                        T mask = 1_uint64 << (T_bits_total - 1 - x);
+
+                        if(!(value & mask)) continue;
+
+                        rotated[x][y] |= (1_uint64 << (T_bits_total - 1 - z));
+                    }
+                }
+            }
+
+            return rotated;
         }
-};
 
-class BitPlane{
-    std::unique_ptr<std::array<uint_fast8_t,8>>  array8;
-    std::unique_ptr<std::array<uint_fast16_t,16>> array16;
-    std::unique_ptr<std::array<uint_fast32_t,32>> array32;
-    std::unique_ptr<std::array<uint_fast64_t,64>> array64;
+        bool operator == (const BitArray3D<T>& array) const {
+            return std::memcmp(values, array.values, size * sizeof(T)) == 0;
+        }
 };
 
 typedef uint8_t compressed_byte;
@@ -79,8 +95,10 @@ struct compressed_24bit{
 };
 
 namespace bitworks{
-    std::vector<compressed_24bit> compressBitArray3D(BitArray3D array);
-    BitArray3D decompressBitArray3D(std::vector<compressed_24bit> data);
+    template <typename T>
+    std::vector<compressed_24bit> compressBitArray3D(BitArray3D<T> array);
+    template <typename T>
+    BitArray3D<T> decompressBitArray3D(std::vector<compressed_24bit> data);
 
     std::vector<compressed_byte> compress64Bits(uint64_f bits);
     uint64_f decompress64Bits(std::vector<compressed_byte> bytes);
@@ -182,3 +200,5 @@ inline std::ostream& operator<<(std::ostream & Str, const ByteArray& v) {
     Str << "\033[0m";  // Reset the color after printing
     return Str;
 }
+
+#include <rendering/compression.tpp>

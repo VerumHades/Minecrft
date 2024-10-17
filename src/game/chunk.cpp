@@ -173,7 +173,7 @@ std::vector<Face> greedyMeshPlane64(Plane64 rows){
 
 */
 
-static inline std::unordered_set<BlockTypes> mergeMaskKeys(const std::unordered_map<BlockTypes, ChunkMask>& a, const std::unordered_map<BlockTypes, ChunkMask>& b){
+static inline std::unordered_set<BlockTypes> mergeMaskKeys(const std::unordered_map<BlockTypes, ChunkMask<uint64_f>>& a, const std::unordered_map<BlockTypes, ChunkMask<uint64_f>>& b){
     std::unordered_set<BlockTypes> out;
     for(auto& [key,_]: a) out.emplace(key);
     for(auto& [key,_]: b) out.emplace(key);
@@ -326,9 +326,9 @@ void Chunk::generateMeshes(){
         std::cout << "Mesh generating when chunks are missing?" << std::endl;
         return;
     }
-    const ChunkMask& nextXSolid = nextX->getSolidMask();
-    const ChunkMask& nextYSolid = nextY->getSolidMask();
-    const ChunkMask& nextZSolid = nextZ->getSolidMask();
+    const ChunkMask<uint64_f>& nextXSolid = nextX->getSolidMask();
+    const ChunkMask<uint64_f>& nextYSolid = nextY->getSolidMask();
+    const ChunkMask<uint64_f>& nextZSolid = nextZ->getSolidMask();
 
     auto& nextXmasks = nextX->getMasks();
     auto& nextYmasks = nextY->getMasks();

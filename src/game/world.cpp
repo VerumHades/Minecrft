@@ -448,9 +448,9 @@ size_t WorldStream::moveChunk(size_t from, size_t to){
     size_t compressed_24bit_count, data...
     size_t compressed_24bit_count_rotated, data...
 */
-static inline void saveMask(ByteArray& out, ChunkMask& mask, int type){
+static inline void saveMask(ByteArray& out, ChunkMask<uint64_f>& mask, int type){
     out.append<int>(type);
-    out.append(bitworks::compressBitArray3D(mask.segments));
+    out.append(bitworks::compressBitArray3D<uint64_f>(mask.segments));
 }
 
 /*
@@ -506,18 +506,18 @@ void WorldStream::load(Chunk* chunk){
     //std::cout << "With total layers: " << layerCount << std::endl;
 
     source.read<int>();
-    BitArray3D solidNormal = bitworks::decompressBitArray3D(source.vread<compressed_24bit>());
-    BitArray3D solidRotated = solidNormal.rotate();
+    BitArray3D<uint64_f> solidNormal = bitworks::decompressBitArray3D<uint64_f>(source.vread<compressed_24bit>());
+    BitArray3D<uint64_f> solidRotated = solidNormal.rotate();
 
     chunk->getSolidMask().segments = solidNormal;
     chunk->getSolidMask().segmentsRotated = solidRotated;
 
     for(int layerIndex = 0; layerIndex < layerCount; layerIndex++){
         int type = source.read<int>();
-        BitArray3D normal = bitworks::decompressBitArray3D(source.vread<compressed_24bit>());
-        BitArray3D rotated = normal.rotate();
+        BitArray3D<uint64_f> normal = bitworks::decompressBitArray3D<uint64_f>(source.vread<compressed_24bit>());
+        BitArray3D<uint64_f> rotated = normal.rotate();
 
-        ChunkMask mask;
+        ChunkMask<uint64_f> mask;
         mask.segments = normal;
         mask.segmentsRotated = rotated;
         mask.block = {static_cast<BlockTypes>(type)};
