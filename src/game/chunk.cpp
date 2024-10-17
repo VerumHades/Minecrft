@@ -103,7 +103,6 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
 
     return true;
 }
-
 /*
     Generate greedy meshed faces from a plane of bits
 */
@@ -457,8 +456,6 @@ void Chunk::generateMeshes(){
             );
         }
     }
-
-    isEmpty = this->solidMesh.get()->getVertices().size() == 0;
     //std::cout << "Vertices:" << this->solidMesh.get()->getIndices().size() << std::endl;
 }
 

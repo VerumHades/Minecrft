@@ -60,7 +60,7 @@ void World::generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer, Thr
 
     if(
         !chunk->meshGenerated && !chunk->meshGenerating && !chunk->pendingUpload &&
-        ((!buffer.isChunkLoaded({x,y,z}) && !chunk->isEmpty) || chunk->reloadMesh) // If chunk isnt loaded at all
+        ((!buffer.isChunkLoaded({x,y,z}) && !chunk->isEmpty()) || chunk->reloadMesh) // If chunk isnt loaded at all
     ){
         bool success = pool.deploy([chunk](){
             //auto start = std::chrono::high_resolution_clock::now();
@@ -85,11 +85,13 @@ void World::generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer, Thr
     } 
 
     if(chunk->meshGenerated){
-        if(chunk->reloadMesh){
+        if(chunk->solidMesh->getVertices().size() == 0);
+        else if(chunk->reloadMesh){
             buffer.swapChunkMesh(*chunk->solidMesh, chunk->getWorldPosition());
             chunk->reloadMesh = false;
         }
         else buffer.addChunkMesh(*chunk->solidMesh, chunk->getWorldPosition());
+        
         chunk->solidMesh = nullptr;
         chunk->meshGenerated = false;
         chunk->pendingUpload = false;

@@ -40,3 +40,4 @@
   - [ ] Add caves
   - [ ] Improve everything
   - [ ] Add biomes
+  - [ ] Generate in a spiral from the player outwards

@@ -4,6 +4,8 @@ void MainScene::initialize(){
     modelManager.initialize();
     camera.getProjectionUniform().attach(modelManager.getModelProgram());
     camera.getViewUniform().attach(modelManager.getModelProgram());
+
+    fpsLock = false;
     
     std::unique_ptr<Command> tpCommand = std::make_unique<Command>(
         std::vector<CommandArgumentType>({INT,INT,INT}),
@@ -275,7 +277,7 @@ void MainScene::initialize(){
 
     suncam.setCaptureSize(renderDistance * 2 * CHUNK_SIZE);
 
-    threadPool = std::make_unique<ThreadPool>(12);
+    threadPool = std::make_unique<ThreadPool>(10);
     //world->load("saves/worldsave.bin");
 }
 
@@ -549,7 +551,7 @@ void MainScene::generateMeshes(){
         if(!camera.isVisible(*meshlessChunk)) continue;
         world->generateChunkMesh(chunkX,chunkY,chunkZ, chunkBuffer, *threadPool);
 
-        if(meshlessChunk->isEmpty) continue;
+        if(meshlessChunk->isEmpty()) continue;
         glm::vec3 position = {chunkX,chunkY,chunkZ};
 
         if(!chunkBuffer.isChunkLoaded(position)) continue;
