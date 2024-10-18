@@ -77,7 +77,7 @@ class Chunk: public Volume{
         //unsigned char lightArray[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE][3];
         //std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
         
-        void generateMeshes();
+        void generateMeshes() {this->solidMesh = std::make_unique<Mesh>();};
 
         bool generatedEmptyMesh = false;
         bool reloadMesh = false;
