@@ -90,7 +90,7 @@ class MultiChunkBuffer{
 
         //void setDrawCall(size_t index, uint32_t firstIndex, uint32_t count, uint32_t baseVertex);
 
-        std::unordered_map<glm::vec3, LoadedChunk, Vec3Hash, Vec3Equal> loadedChunks;
+        std::unordered_map<glm::ivec3, LoadedChunk, IVec3Hash, IVec3Equal> loadedChunks;
         std::vector<DrawElementsIndirectCommand> drawCalls;
 
     public:
@@ -98,17 +98,17 @@ class MultiChunkBuffer{
         
         void initialize(uint32_t maxDrawCalls);
 
-        void addChunkMesh(Mesh& mesh, const glm::vec3& pos);
-        void swapChunkMesh(Mesh& mesh, const glm::vec3& pos);
-        void unloadChunkMesh(const glm::vec3& pos);
-        void unloadFarawayChunks(const glm::vec3& from, float treshold);
+        void addChunkMesh(Mesh& mesh, const glm::ivec3& pos);
+        void swapChunkMesh(Mesh& mesh, const glm::ivec3& pos);
+        void unloadChunkMesh(const glm::ivec3& pos);
+        void unloadFarawayChunks(const glm::ivec3& from, float treshold);
         void clear();
-        bool isChunkLoaded(const glm::vec3& pos){
+        bool isChunkLoaded(const glm::ivec3& pos){
             return loadedChunks.find(pos) != loadedChunks.end();
         }
 
-        void addDrawCall(const glm::vec3& position);
-        void removeDrawCall(const glm::vec3& position);
+        void addDrawCall(const glm::ivec3& position);
+        void removeDrawCall(const glm::ivec3& position);
         void updateDrawCalls();
         void draw();
 

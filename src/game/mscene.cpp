@@ -277,7 +277,7 @@ void MainScene::initialize(){
 
     suncam.setCaptureSize(renderDistance * 2 * CHUNK_SIZE);
 
-    threadPool = std::make_unique<ThreadPool>(10);
+    threadPool = std::make_unique<ThreadPool>(8);
     //world->load("saves/worldsave.bin");
 }
 
@@ -507,7 +507,7 @@ void MainScene::render(){
 }
 
 void MainScene::regenerateChunkMesh(Chunk& chunk){
-    chunk.reloadMesh = true;
+    chunk.updateMesh();
     //chunkBuffer.unloadChunkMesh(chunk.getWorldPosition());
 }
 
@@ -549,9 +549,10 @@ void MainScene::generateMeshes(){
         //std::cout << "Got chunk!" << std::endl;
         if(!meshlessChunk) continue;
         if(!camera.isVisible(*meshlessChunk)) continue;
-        world->generateChunkMesh(chunkX,chunkY,chunkZ, chunkBuffer, *threadPool);
-
         if(meshlessChunk->isEmpty()) continue;
+
+        meshlessChunk->generateMesh(chunkBuffer, *threadPool);
+
         glm::vec3 position = {chunkX,chunkY,chunkZ};
 
         if(!chunkBuffer.isChunkLoaded(position)) continue;
@@ -581,7 +582,7 @@ void MainScene::generateMeshes(){
         //circumscribed sphere of the render distance
 
         glm::vec3 camWorldPosition = {camWorldX, camWorldY, camWorldZ};
-        float radius = glm::distance(camWorldPosition, camWorldPosition + static_cast<float>(renderDistance));
+        float radius = glm::distance(glm::vec3(0,0,0), glm::vec3(static_cast<float>(renderDistance)));
         
         chunkBuffer.unloadFarawayChunks(camWorldPosition, radius);
         chunkBuffer.updateDrawCalls();

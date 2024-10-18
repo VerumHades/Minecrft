@@ -103,22 +103,88 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
 
     return true;
 }
+
+void Chunk::updateMesh(){
+    reloadMesh = true;
+    generatedEmptyMesh = false;
+}
+
+void Chunk::generateMesh(MultiChunkBuffer& buffer, ThreadPool& pool){
+    if(
+        !world.getChunk(worldPosition.x - 1,worldPosition.y,worldPosition.z) ||
+        !world.getChunk(worldPosition.x,worldPosition.y - 1,worldPosition.z) ||
+        !world.getChunk(worldPosition.x,worldPosition.y,worldPosition.z - 1) 
+    ) return;
+
+    if(
+        !meshGenerated && !meshGenerating && !pendingUpload && !generatedEmptyMesh && 
+        ((!buffer.isChunkLoaded(worldPosition) && !isEmpty()) || reloadMesh) // If chunk isnt loaded at all
+    ){
+        bool success = pool.deploy([this](){
+            //auto start = std::chrono::high_resolution_clock::now();
+
+            generateMeshes();
+
+            //End time point
+            //auto end = std::chrono::high_resolution_clock::now();
+
+            //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+            //std::cout << "Execution time: " << duration << " microseconds" << std::endl;
+
+            meshGenerating = false;
+            meshGenerated = true;
+            pendingUpload = true;
+        });
+        if(!success) return;
+
+        meshGenerating = true;
+        //generateChunkMeshThread(chunk);
+        return;
+    } 
+
+    if(meshGenerated){
+        if(solidMesh->getVertices().size() == 0){
+            generatedEmptyMesh = true;
+        }
+        else if(reloadMesh){
+            buffer.swapChunkMesh(*solidMesh, getWorldPosition());
+            reloadMesh = false;
+        }
+        else buffer.addChunkMesh(*solidMesh, getWorldPosition());
+        
+        solidMesh = nullptr;
+        meshGenerated = false;
+        pendingUpload = false;
+        return;
+    }
+    /*if(!buffersLoaded && !buffersInQue && meshGenerated){
+        buffersInQue = true;
+        this->bufferLoadQue.push(getWorldPosition());
+        //printf("Vertices:%i Indices:%i\n", solidMesh->vertices_count, solidMesh->indices_count)
+        updated = true;
+        if(isDrawn) return chunk;
+    }*/
+}
+
 /*
     Generate greedy meshed faces from a plane of bits
 */
-std::vector<Face> greedyMeshPlane64(Plane64 rows){
+template <typename T>
+std::vector<Face> greedyMeshPlane(std::array<T, sizeof(T) * 8> rows){
     std::vector<Face> out = {};
+    const uint8_t bitsTotal = sizeof(T) * 8;
+
     int currentRow = 0;
     
-    while(currentRow < 64){
-        uint64_f row = rows[currentRow];
+    while(currentRow < bitsTotal){
+        T row = rows[currentRow];
         /*
             0b00001101
 
             'start' is 4
         */    
         uint8_t start = count_leading_zeros(row); // Find the first
-        if(start == 64){
+        if(start == bitsTotal){
             currentRow++;
             continue;
         }
@@ -142,14 +208,14 @@ std::vector<Face> greedyMeshPlane64(Plane64 rows){
 
                 4. 0b00001100 AND with the row to create the faces mask
         */
-        uint64_f mask = ~0_uint64;
+        T mask = ~0_uint64;
 
         //  Shifting by 64 is undefined behaviour for some reason ¯\_(ツ)_/¯
-        if((start + width) != 64) mask = ~(mask >> (start + width));
+        if((start + width) != bitsTotal) mask = ~(mask >> (start + width));
         mask &= row;
 
         int height = 0; 
-        while(currentRow + height < 64 && (mask & rows[currentRow + height]) == mask){
+        while(currentRow + height < bitsTotal && (mask & rows[currentRow + height]) == mask){
             rows[currentRow + height]  &= ~mask; // Remove this face part from the rows
             height++;
         }
@@ -179,9 +245,9 @@ static inline std::unordered_set<BlockTypes> mergeMaskKeys(const std::unordered_
     return out;
 }
 
-std::vector<Face> greedyMeshDualPlane64(const Plane64& a, const Plane64& b){
-    std::vector<Face> vA = greedyMeshPlane64(a);
-    std::vector<Face> vB = greedyMeshPlane64(b);
+static inline std::vector<Face> greedyMeshDualPlane64(const Plane64& a, const Plane64& b){
+    std::vector<Face> vA = greedyMeshPlane<uint64_f>(a);
+    std::vector<Face> vB = greedyMeshPlane<uint64_f>(b);
     vA.insert(vA.end(), vB.begin(), vB.end());
     return vA;
 }

@@ -10,6 +10,8 @@
 #include <rendering/camera.hpp>
 #include <rendering/model.hpp>
 #include <rendering/bitworks.hpp>
+#include <game/threadpool.hpp>
+
 
 #include <glm/glm.hpp>
 #include <map>
@@ -48,7 +50,7 @@ struct ChunkMask{
 
 class Chunk: public Volume{
     private:
-        glm::vec3 worldPosition = glm::vec3(0,0,0);
+        glm::ivec3 worldPosition = glm::ivec3(0,0,0);
         World& world; 
 
         //Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {};
@@ -57,7 +59,9 @@ class Chunk: public Volume{
         //unsigned char lightArray[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE][3];
         //std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
         
-    public:
+        void generateMeshes();
+
+        bool generatedEmptyMesh = false;
         bool reloadMesh = false;
         bool pendingUpload = false;
 
@@ -65,9 +69,10 @@ class Chunk: public Volume{
         bool meshGenerated = false;
         
         std::unique_ptr<Mesh> solidMesh;
+        
+    public:
         //std::optional<Mesh> transparentMesh;
 
-        bool isDrawn = false;
         bool isEmpty() const {return masks.size() == 0;}
         bool isOnFrustum(PerspectiveCamera& cam) const;
 
@@ -75,11 +80,12 @@ class Chunk: public Volume{
 
         Block* getBlock(uint32_t x, uint32_t y, uint32_t z);
         bool setBlock(uint32_t x, uint32_t y, uint32_t z, Block value);
-
-        void generateMeshes();
+        
+        void generateMesh(MultiChunkBuffer& buffer, ThreadPool& pool);
+        void updateMesh(); // Marks the mesh for updating
 
         World& getWorld();
-        const glm::vec3& getWorldPosition(){
+        const glm::ivec3& getWorldPosition(){
             return this->worldPosition;
         }
 

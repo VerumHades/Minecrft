@@ -142,9 +142,9 @@ static void resizeBuffer(uint32_t* buffer, size_t currentSize, size_t newSize){
 
     *buffer = newBuffer;
 }
-void MultiChunkBuffer::unloadFarawayChunks(const glm::vec3& from, float treshold){
+void MultiChunkBuffer::unloadFarawayChunks(const glm::ivec3& from, float treshold){
     for(auto& [position, chunk]: this->loadedChunks){
-        float distance = glm::distance(from, position);
+        float distance = glm::distance(glm::vec3(from), glm::vec3(position));
         if(distance <= treshold) continue;
         unloadChunkMesh(position);
     }
@@ -223,7 +223,7 @@ MultiChunkBuffer::~MultiChunkBuffer(){
     glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
 }*/
 
-void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
+void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::ivec3& pos){
     if(loadedChunks.count(pos) != 0) return;
     if(mesh.getVertices().size() == 0) return;
     
@@ -263,7 +263,7 @@ void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::vec3& pos){
     //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     //std::cout << "Mesh allocated and updated in: " << duration << " microseconds" << std::endl;
 }
-void MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::vec3& pos){
+void MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::ivec3& pos){
     if(loadedChunks.count(pos) == 0) return;
     
     LoadedChunk& chunk = loadedChunks.at(pos);
@@ -305,7 +305,7 @@ void MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::vec3& pos){
 
     updateDrawCalls();
 }
-void MultiChunkBuffer::unloadChunkMesh(const glm::vec3& pos){
+void MultiChunkBuffer::unloadChunkMesh(const glm::ivec3& pos){
     if(loadedChunks.count(pos) == 0) return;
     removeDrawCall(pos);
     vertexAllocator.free(loadedChunks[pos].vertexData);
@@ -313,7 +313,7 @@ void MultiChunkBuffer::unloadChunkMesh(const glm::vec3& pos){
     loadedChunks.erase(pos);
 }
 
-void MultiChunkBuffer::addDrawCall(const glm::vec3& position){
+void MultiChunkBuffer::addDrawCall(const glm::ivec3& position){
     if(loadedChunks.count(position) == 0) return;
 
     LoadedChunk& chunk = loadedChunks.at(position);
@@ -325,7 +325,7 @@ void MultiChunkBuffer::addDrawCall(const glm::vec3& position){
 
     //setDrawCall(index, chunk.firstIndex, chunk.count, chunk.baseVertex);
 }
-void MultiChunkBuffer::removeDrawCall(const glm::vec3& position){
+void MultiChunkBuffer::removeDrawCall(const glm::ivec3& position){
     if(loadedChunks.count(position) == 0) return;
 
     LoadedChunk& chunk = loadedChunks.at(position);

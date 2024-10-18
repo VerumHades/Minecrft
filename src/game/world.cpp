@@ -48,64 +48,6 @@ void World::loadChunk(int x, int y, int z){
     stream->load(chunks[position].get());
 }
 
-void World::generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer, ThreadPool& pool){
-    Chunk* chunk = this->getChunk(x, y, z);
-    if(!chunk) return;
-
-    if(
-        !getChunk(x - 1,y,z) ||
-        !getChunk(x,y - 1,z) ||
-        !getChunk(x,y,z - 1) 
-    ) return;
-
-    if(
-        !chunk->meshGenerated && !chunk->meshGenerating && !chunk->pendingUpload &&
-        ((!buffer.isChunkLoaded({x,y,z}) && !chunk->isEmpty()) || chunk->reloadMesh) // If chunk isnt loaded at all
-    ){
-        bool success = pool.deploy([chunk](){
-            //auto start = std::chrono::high_resolution_clock::now();
-
-            chunk->generateMeshes();
-
-            //End time point
-            //auto end = std::chrono::high_resolution_clock::now();
-
-            //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-            //std::cout << "Execution time: " << duration << " microseconds" << std::endl;
-
-            chunk->meshGenerating = false;
-            chunk->meshGenerated = true;
-            chunk->pendingUpload = true;
-        });
-        if(!success) return;
-
-        chunk->meshGenerating = true;
-        //generateChunkMeshThread(chunk);
-        return;
-    } 
-
-    if(chunk->meshGenerated){
-        if(chunk->solidMesh->getVertices().size() == 0);
-        else if(chunk->reloadMesh){
-            buffer.swapChunkMesh(*chunk->solidMesh, chunk->getWorldPosition());
-            chunk->reloadMesh = false;
-        }
-        else buffer.addChunkMesh(*chunk->solidMesh, chunk->getWorldPosition());
-        
-        chunk->solidMesh = nullptr;
-        chunk->meshGenerated = false;
-        chunk->pendingUpload = false;
-        return;
-    }
-    /*if(!chunk->buffersLoaded && !chunk->buffersInQue && chunk->meshGenerated){
-        chunk->buffersInQue = true;
-        this->bufferLoadQue.push(chunk->getWorldPosition());
-        //printf("Vertices:%i Indices:%i\n", chunk->solidMesh->vertices_count, chunk->solidMesh->indices_count)
-        updated = true;
-        if(chunk->isDrawn) return chunk;
-    }*/
-}
-
 CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bool includeRectangularColliderLess){
     CollisionCheckResult result = {nullptr, false, 0,0,0};
     int range = 3;

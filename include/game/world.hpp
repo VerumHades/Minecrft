@@ -76,7 +76,7 @@ class ModelManager;
 
 class World: public Collidable{
     private:
-        std::unordered_map<glm::vec3, std::unique_ptr<Chunk>, Vec3Hash, Vec3Equal> chunks;
+        std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>, IVec3Hash, IVec3Equal> chunks;
         std::vector<Entity> entities;
 
         std::unique_ptr<WorldStream> stream;
@@ -88,7 +88,6 @@ class World: public Collidable{
         bool setBlock(int x, int y, int z, Block index);
 
         void generateChunk(int x, int y, int z);
-        void generateChunkMesh(int x, int y, int z, MultiChunkBuffer& buffer, ThreadPool& pool);
 
         bool isChunkLoadable(int x, int y, int z);
         void loadChunk(int x, int y, int z);
