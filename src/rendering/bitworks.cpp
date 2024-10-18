@@ -104,7 +104,7 @@ void compressed_24bit::setValue(uint32_t value){
 
     bytes[0] = value;
     bytes[1] = value >> 8;
-    bytes[2] = value >> 16; // Leave mode  bits untouched
+    bytes[2] = value >> 16;
 
     setMode(mode);
 }

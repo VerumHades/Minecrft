@@ -2,6 +2,10 @@
 #define BLOCKS_H
 
 #include <vector>
+#include <string>
+#include <unordered_map>
+#include <mutex>
+#include <iostream>
 
 struct RectangularCollider {
     float x, y, z;
@@ -43,5 +47,21 @@ struct BlockType {
         : transparent(transparent), untextured(untextured), repeatTexture(repeatTexture),
           textures(std::move(textures)) {}
 };
+
+
+extern std::unordered_map<BlockTypes, BlockType> predefinedBlocks;
+extern std::mutex predefinedBlockMutex;
+
+inline const BlockType& getBlockType(Block* block){
+    if (block->type < BlockTypes::Air || block->type > BlockTypes::Sand) {
+        std::cerr << "Error: Invalid BlockTypes value: " << static_cast<int>(block->type) << std::endl;
+        std::terminate(); 
+    }
+    
+    //std::lock_guard<std::mutex> lock(predefinedBlockMutex);
+    return predefinedBlocks[block->type];
+}
+
+std::string getBlockTypeName(BlockTypes type);
 
 #endif

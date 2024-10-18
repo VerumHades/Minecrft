@@ -48,11 +48,29 @@ struct ChunkMask{
     }
 };
 
+template <typename T>
+struct ChunkMaskGroup{
+    ChunkMask<T> solidMask;
+    std::unordered_map<BlockTypes,ChunkMask<T>> masks;
+};
+
 class Chunk: public Volume{
     private:
         glm::ivec3 worldPosition = glm::ivec3(0,0,0);
         World& world; 
 
+        enum Resolution{
+            RES_8,
+            RES_16,
+            RES_32,
+            RES_64
+        };
+        Resolution lodResolution = RES_64;
+
+        std::unique_ptr<ChunkMaskGroup<uint_fast8_t >> maskGroup8 ;
+        std::unique_ptr<ChunkMaskGroup<uint_fast16_t>> maskGroup16;
+        std::unique_ptr<ChunkMaskGroup<uint_fast32_t>> maskGroup32;
+        std::unique_ptr<ChunkMaskGroup<uint_fast64_t>> maskGroup64;
         //Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {};
         ChunkMask<uint64_f> solidMask;
         std::unordered_map<BlockTypes,ChunkMask<uint64_f>> masks;
@@ -93,21 +111,6 @@ class Chunk: public Volume{
         std::unordered_map<BlockTypes,ChunkMask<uint64_f>>& getMasks() {return masks;}
 
 }; 
-extern std::unordered_map<BlockTypes, BlockType> predefinedBlocks;
-extern std::mutex predefinedBlockMutex;
-
-inline const BlockType& getBlockType(Block* block){
-    if (block->type < BlockTypes::Air || block->type > BlockTypes::Sand) {
-        std::cerr << "Error: Invalid BlockTypes value: " << static_cast<int>(block->type) << std::endl;
-        std::terminate(); 
-    }
-    
-    //std::lock_guard<std::mutex> lock(predefinedBlockMutex);
-    return predefinedBlocks[block->type];
-}
-
-
-std::string getBlockTypeName(BlockTypes type);
 
 struct Face{
     int x;

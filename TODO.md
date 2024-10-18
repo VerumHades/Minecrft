@@ -10,6 +10,7 @@
     - [ ] Graphics Settings
   - [ ] Console
     - [ ] Add relevant normal and debug commands
+  - [ ] Refactor UI units (change split each into vertical and horizontal parts: parent width/height)
 
 - [ ] Improve Graphics
   - [x] Fix shadows
