@@ -15,8 +15,6 @@
 #include <game/blocks.hpp>
 
 typedef uint_fast64_t uint64_f;
-typedef std::array<uint64_f, 64> Plane64;
-typedef std::array<Plane64, (size_t) BlockTypes::BLOCK_TYPES_TOTAL> PlaneArray64;
 
 uint64_t operator"" _uint64(unsigned long long value);
 
@@ -67,6 +65,12 @@ class BitArray3D{
             return std::memcmp(values, array.values, size * sizeof(T)) == 0;
         }
 };
+
+template <typename T>
+using BitPlane = std::array<T, sizeof(T) * 8>;
+
+template <typename T>
+using BlockBitPlanes = std::array<BitPlane<T>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL>;
 
 typedef uint8_t compressed_byte;
 
