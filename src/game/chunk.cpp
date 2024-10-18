@@ -29,7 +29,7 @@ Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     
     uint64_f checkMask = (1_uint64 << (63 - x));
     
-    for(auto& [key,mask]: masks){
+    for(auto& [key,mask]: mainGroup.masks){
         uint64_f row = mask.segments[z][y];
 
         if(row & checkMask){
@@ -48,15 +48,15 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     uint64_f currentMask = (1_uint64 << (63 - x));
     
     if(value.type != BlockTypes::Air){
-        if(masks.count(value.type) == 0){
-            masks[value.type] = {};
-            masks[value.type].block = value;
+        if(mainGroup.masks.count(value.type) == 0){
+            mainGroup.masks[value.type] = {};
+            mainGroup.masks[value.type].block = value;
         }
 
-        masks[value.type].set(x,y,z);
+        mainGroup.masks[value.type].set(x,y,z);
     }
 
-    for(auto& [key,mask]: masks){
+    for(auto& [key,mask]: mainGroup.masks){
         uint64_f row = mask.segments[z][y];
 
         if(!(row & currentMask)) continue;
@@ -66,8 +66,8 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
         break;
     }
 
-    if(getBlockType(&value).untextured) solidMask.reset(x,y,z);
-    else solidMask.set(x,y,z);
+    if(getBlockType(&value).untextured) mainGroup.solidMask.reset(x,y,z);
+    else mainGroup.solidMask.set(x,y,z);
 
     return true;
 }
@@ -230,6 +230,7 @@ static inline void processFaces(std::vector<Face> faces, FaceDirection direction
     std::array<glm::vec3, 4> vertices;
     int texture = 0;
     int normal;
+    bool clockwise;
 
     float occlusion[4] = {0,0,0,0};
 
@@ -243,7 +244,8 @@ static inline void processFaces(std::vector<Face> faces, FaceDirection direction
                     glm::vec3(worldX + layer + 1, worldY + face.y              , worldZ + face.x             )
                 };
                 texture = type.repeatTexture ? type.textures[0] : type.textures[4 + forward];
-                normal = forward ? 2 : 3;
+                normal = forward ? 3 : 2;
+                clockwise = forward;
                 break;
             case Y:
                 vertices = {
@@ -253,8 +255,9 @@ static inline void processFaces(std::vector<Face> faces, FaceDirection direction
                     glm::vec3(worldX + face.x             , worldY + layer + 1, worldZ + face.y + face.height)
                 };
 
-                texture = type.repeatTexture ? type.textures[0] : type.textures[forward];
-                normal = forward ? 0 : 1;
+                texture = type.repeatTexture ? type.textures[0] : type.textures[!forward];
+                normal = forward ? 1 : 0;
+                clockwise = !forward;
                 break;
             case Z:
                 vertices = {
@@ -265,7 +268,8 @@ static inline void processFaces(std::vector<Face> faces, FaceDirection direction
                 };
 
                 texture = type.repeatTexture ? type.textures[0] : type.textures[2 + forward];
-                normal = forward ? 4 : 5;
+                normal = forward ? 5 : 4;
+                clockwise = !forward;
                 break;
         }
 
@@ -274,7 +278,7 @@ static inline void processFaces(std::vector<Face> faces, FaceDirection direction
             normal,
             occlusion,
             static_cast<float>(texture),
-            !direction,
+            clockwise,
             face.width,
             face.height
         );
@@ -282,8 +286,8 @@ static inline void processFaces(std::vector<Face> faces, FaceDirection direction
 }   
 
 template <typename T>
-void generateMesh(World& world, glm::ivec3 worldPosition, ChunkMaskGroup<T> group){
-    this->solidMesh = std::make_unique<Mesh>();
+std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, ChunkMaskGroup<T> group){
+    auto solidMesh = std::make_unique<Mesh>();
     //this->solidMesh->setVertexFormat(VertexFormat({3,1,2,1,1}));  // Unused
     const int totalSize = sizeof(T) * 8;
 
@@ -322,22 +326,19 @@ void generateMesh(World& world, glm::ivec3 worldPosition, ChunkMaskGroup<T> grou
             if(type.untextured) continue;
             //std::cout << "Solving plane: " << i << std::endl;
             //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
-            
-            //std::vector<Face> facesX = greedyMeshDualPlane<T>(planesXforward[(size_t) mask.block.type], planesXbackward[(size_t) mask.block.type]);
-           // std::vector<Face> facesY = greedyMeshDualPlane<T>(planesYforward[(size_t) mask.block.type], planesYbackward[(size_t) mask.block.type]);
-            //std::vector<Face> facesZ = greedyMeshDualPlane<T>(planesZforward[(size_t) mask.block.type], planesZbackward[(size_t) mask.block.type]);
 
-            processFaces(greedyMeshPlane<T>(planesXforward ), X, true , type, this->solidMesh.get(), worldX, worldY, worldZ, z);
-            processFaces(greedyMeshPlane<T>(planesXbackward), X, false, type, this->solidMesh.get(), worldX, worldY, worldZ, z);
+            processFaces(greedyMeshPlane<T>(planesXforward [static_cast<size_t>(mask.block.type)]), X, true , type, solidMesh.get(), worldX, worldY, worldZ, z);
+            processFaces(greedyMeshPlane<T>(planesXbackward[static_cast<size_t>(mask.block.type)]), X, false, type, solidMesh.get(), worldX, worldY, worldZ, z);
 
-            processFaces(greedyMeshPlane<T>(planesYforward ), Y, true , type, this->solidMesh.get(), worldX, worldY, worldZ, z);
-            processFaces(greedyMeshPlane<T>(planesYbackward), Y, false, type, this->solidMesh.get(), worldX, worldY, worldZ, z);
+            processFaces(greedyMeshPlane<T>(planesYforward [static_cast<size_t>(mask.block.type)]), Y, true , type, solidMesh.get(), worldX, worldY, worldZ, z);
+            processFaces(greedyMeshPlane<T>(planesYbackward[static_cast<size_t>(mask.block.type)]), Y, false, type, solidMesh.get(), worldX, worldY, worldZ, z);
 
-            processFaces(greedyMeshPlane<T>(planesZforward ), Z, true , type, this->solidMesh.get(), worldX, worldY, worldZ, z);
-            processFaces(greedyMeshPlane<T>(planesZbackward), Z, false, type, this->solidMesh.get(), worldX, worldY, worldZ, z);
+            processFaces(greedyMeshPlane<T>(planesZforward [static_cast<size_t>(mask.block.type)]), Z, true , type, solidMesh.get(), worldX, worldY, worldZ, z);
+            processFaces(greedyMeshPlane<T>(planesZbackward[static_cast<size_t>(mask.block.type)]), Z, false, type, solidMesh.get(), worldX, worldY, worldZ, z);
         }
     }
 
+    /*
     BlockBitPlanes<T> planesXforward = {0};
     BlockBitPlanes<T> planesXbackward = {0};
 
@@ -410,18 +411,23 @@ void generateMesh(World& world, glm::ivec3 worldPosition, ChunkMaskGroup<T> grou
         BlockType type = predefinedBlocks[key];
         if(type.untextured) continue;
 
-        processFaces(greedyMeshPlane<T>(planesXforward ), X, true , type, this->solidMesh.get(), worldX, worldY, worldZ, 0);
-        processFaces(greedyMeshPlane<T>(planesXbackward), X, false, type, this->solidMesh.get(), worldX, worldY, worldZ, 0);
+        processFaces(greedyMeshPlane<T>(planesXforward [static_cast<size_t>(mask.block.type)]), X, true , type, solidMesh.get(), worldX, worldY, worldZ, 0);
+        processFaces(greedyMeshPlane<T>(planesXbackward[static_cast<size_t>(mask.block.type)]), X, false, type, solidMesh.get(), worldX, worldY, worldZ, 0);
 
-        processFaces(greedyMeshPlane<T>(planesYforward ), Y, true , type, this->solidMesh.get(), worldX, worldY, worldZ, 0);
-        processFaces(greedyMeshPlane<T>(planesYbackward), Y, false, type, this->solidMesh.get(), worldX, worldY, worldZ, 0);
+        processFaces(greedyMeshPlane<T>(planesYforward [static_cast<size_t>(mask.block.type)]), Y, true , type, solidMesh.get(), worldX, worldY, worldZ, 0);
+        processFaces(greedyMeshPlane<T>(planesYbackward[static_cast<size_t>(mask.block.type)]), Y, false, type, solidMesh.get(), worldX, worldY, worldZ, 0);
 
-        processFaces(greedyMeshPlane<T>(planesZforward ), Z, true , type, this->solidMesh.get(), worldX, worldY, worldZ, 0);
-        processFaces(greedyMeshPlane<T>(planesZbackward), Z, false, type, this->solidMesh.get(), worldX, worldY, worldZ, 0);
-    }
-    //std::cout << "Vertices:" << this->solidMesh.get()->getIndices().size() << std::endl;
+        processFaces(greedyMeshPlane<T>(planesZforward [static_cast<size_t>(mask.block.type)]), Z, true , type, solidMesh.get(), worldX, worldY, worldZ, 0);
+        processFaces(greedyMeshPlane<T>(planesZbackward[static_cast<size_t>(mask.block.type)]), Z, false, type, solidMesh.get(), worldX, worldY, worldZ, 0);
+    }*/
+    //std::cout << "Vertices:" << solidMesh.get()->getIndices().size() << std::endl;
+
+    return solidMesh;
 }
 
+void Chunk::generateMeshes(){
+    solidMesh = generateChunkMesh<uint64_f>(world, worldPosition, mainGroup);
+}
 
 static inline bool isOnOrForwardPlane(const Plane& plane, glm::vec3 center){
     // Compute the projection interval radius of b onto L(t) = b.c + t * p.n

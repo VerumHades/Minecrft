@@ -72,12 +72,11 @@ class Chunk: public Volume{
         std::unique_ptr<ChunkMaskGroup<uint_fast32_t>> maskGroup32;
         std::unique_ptr<ChunkMaskGroup<uint_fast64_t>> maskGroup64;
         //Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {};
-        ChunkMask<uint64_f> solidMask;
-        std::unordered_map<BlockTypes,ChunkMask<uint64_f>> masks;
+        ChunkMaskGroup<uint64_f> mainGroup;
         //unsigned char lightArray[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE][3];
         //std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
         
-        void generateMeshes() {this->solidMesh = std::make_unique<Mesh>();};
+        void generateMeshes();
 
         bool generatedEmptyMesh = false;
         bool reloadMesh = false;
@@ -91,7 +90,7 @@ class Chunk: public Volume{
     public:
         //std::optional<Mesh> transparentMesh;
 
-        bool isEmpty() const {return masks.size() == 0;}
+        bool isEmpty() const {return mainGroup.masks.size() == 0;}
         bool isOnFrustum(PerspectiveCamera& cam) const;
 
         Chunk(World& world, const glm::vec3& pos);
@@ -107,8 +106,8 @@ class Chunk: public Volume{
             return this->worldPosition;
         }
 
-        ChunkMask<uint64_f>& getSolidMask() {return solidMask;}
-        std::unordered_map<BlockTypes,ChunkMask<uint64_f>>& getMasks() {return masks;}
+        ChunkMask<uint64_f>& getSolidMask() {return mainGroup.solidMask;}
+        std::unordered_map<BlockTypes,ChunkMask<uint64_f>>& getMasks() {return mainGroup.masks;}
 
 }; 
 
