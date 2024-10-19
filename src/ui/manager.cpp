@@ -42,7 +42,7 @@ void UIManager::resize(int width, int height){
     update();
 }
 
-static const glm::vec2 textureCoordinates[4] = {{1, 1},{0, 1},{0, 0},{1, 0}};
+static const glm::vec2 textureCoordinates[4] = {{0, 1},{1, 1},{1, 0},{0, 0}};
 void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, Mesh& output){
     int x = info.x;
     int y = info.y;
@@ -110,10 +110,12 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
         vertex[16 + offset] = borderSize.w;
 
         for(int j  = 0;j < 4; j++){
-            vertex[17 + offset + j * 4] = info.borderColor[i].r;
-            vertex[18 + offset + j * 4] = info.borderColor[i].g;
-            vertex[19 + offset + j * 4] = info.borderColor[i].b;
-            vertex[20 + offset + j * 4] = info.borderColor[i].a;
+            vertex[17 + offset + j * 4] = info.borderColor[j].r;
+            vertex[18 + offset + j * 4] = info.borderColor[j].g;
+            vertex[19 + offset + j * 4] = info.borderColor[j].b;
+            vertex[20 + offset + j * 4] = info.borderColor[j].a;
+
+            std::cout << info.borderColor[i].r << std::endl;
         }
 
         vecIndices[i] = startIndex + i;

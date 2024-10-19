@@ -116,19 +116,10 @@ struct UIRenderInfo{
 
         static std::array<UIColor, 4> generateBorderColors(UIColor base){
             return {
-                base + 0.1f,
-                base + 0.1f,
-                base - 0.1f,
-                base - 0.1f
-            };
-        }
-
-        static std::array<UIColor, 4> generateBorderColorsMaxOpacity(UIColor base){
-            return {
-                UIColor(glm::vec3(base) + 0.1f, 1.0),
-                UIColor(glm::vec3(base) + 0.1f, 1.0),
-                UIColor(glm::vec3(base) - 0.1f, 1.0),
-                UIColor(glm::vec3(base) - 0.1f, 1.0)
+                glm::clamp(UIColor(glm::vec3(base) + 0.1f, base.a),0.0f,1.0f),
+                glm::clamp(UIColor(glm::vec3(base) + 0.1f, base.a),0.0f,1.0f),
+                glm::clamp(UIColor(glm::vec3(base) - 0.1f, base.a),0.0f,1.0f),
+                glm::clamp(UIColor(glm::vec3(base) - 0.1f, base.a),0.0f,1.0f)
             };
         }
 };
@@ -161,7 +152,7 @@ class UIFrame{
 
     public:
         UIFrame(TValue x, TValue y, TValue width, TValue height, UIColor color): x(x), y(y), width(width), height(height), color(color), hoverColor(color){
-            borderColor = UIRenderInfo::generateBorderColorsMaxOpacity(color);
+            borderColor = UIRenderInfo::generateBorderColors(color);
         }
         virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
 

@@ -22,12 +22,12 @@ void main()
 {    
     bool isBorder = TexCoords.x < borderWidth.y || TexCoords.y < borderWidth.z || TexCoords.x > 1 - borderWidth.w || TexCoords.y > 1 - borderWidth.x;
     
-    vec4 borderColor = vec4(0);
+    vec4 borderColor = vec4(1.0,0,0,1.0);
 
-    borderColor += borderColor == vec4(0) && TexCoords.y > 1 - borderWidth.x ? borderColorTop : vec4(0);
-    borderColor += borderColor == vec4(0) && TexCoords.x < borderWidth.y     ? borderColorRight : vec4(0);
-    borderColor += borderColor == vec4(0) && TexCoords.y < borderWidth.z     ? borderColorBottom : vec4(0);
-    borderColor += borderColor == vec4(0) && TexCoords.x > 1 - borderWidth.w ? borderColorLeft : vec4(0);
+    if     (TexCoords.y > 1 - borderWidth.x) borderColor = borderColorTop;
+    else if(TexCoords.y < borderWidth.z    ) borderColor = borderColorBottom;
+    else if(TexCoords.x > 1 - borderWidth.y) borderColor = borderColorRight;
+    else if(TexCoords.x < borderWidth.w    ) borderColor = borderColorLeft;
 
     vec4 sampledText = vec4(1.0, 1.0, 1.0, texture(textAtlas, TexCoords).r);
     vec4 sampledTexture = texture(tex, vec3(TexCoords, textureIndex));
