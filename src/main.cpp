@@ -167,9 +167,9 @@ int main() {
 
     auto worldSelection = std::make_unique<UIFrame>(
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
-        TValue(FRACTIONS, 5),
-        TValue(FRACTIONS, 80),
-        TValue(FRACTIONS, 80),
+        TValue(FRACTIONS, 0),
+        TValue(PFRACTION, 100),
+        TValue(PFRACTION, 100),
         glm::vec4(0.1,0.1,0.1,1.0)
     );
     worldSelection->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
@@ -224,7 +224,7 @@ int main() {
     menuScene->setUILayer("default");
     menuScene->addElement(std::move(startButton));
     
-    sceneManager.setScene("game");
+    sceneManager.setScene("menu");
 
     double last = glfwGetTime();
     double current = glfwGetTime();

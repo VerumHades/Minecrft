@@ -192,7 +192,10 @@ int UIFrame::getValueInPixels(TValue& value, bool horizontal, int container_size
             return static_cast<float>(horizontal ? getValueInPixels(width, horizontal, container_size) : getValueInPixels(height, horizontal, container_size)) / 100.0f * value.value;
         case PFRACTION:
             if(parent){
-                return static_cast<float>(horizontal ? getValueInPixels(parent->width, horizontal, container_size) : getValueInPixels(parent->height, horizontal, container_size)) / 100.0f * value.value;
+                return static_cast<float>(horizontal ? 
+                    parent->getValueInPixels(parent->width , horizontal, container_size) : 
+                    parent->getValueInPixels(parent->height, horizontal, container_size)
+                ) / 100.0f * value.value;
             }
             else return (container_size / 100.0f) * value.value; // Fall back to container size
     }
