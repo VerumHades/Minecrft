@@ -87,7 +87,7 @@ class MainScene: public Scene{
         std::unordered_set<glm::vec3, Vec3Hash, Vec3Equal> loadedPositions;
         
     public:
-        void initialize();
+        void initialize(Scene* mainScene);
         void setWorldPath(std::string path) {worldPath = path;}
 
         void render() override;

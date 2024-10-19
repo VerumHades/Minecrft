@@ -1,6 +1,6 @@
 #include <game/mscene.hpp>
 
-void MainScene::initialize(){
+void MainScene::initialize(Scene* mainScene){
     modelManager.initialize();
     camera.getProjectionUniform().attach(modelManager.getModelProgram());
     camera.getViewUniform().attach(modelManager.getModelProgram());
@@ -48,7 +48,7 @@ void MainScene::initialize(){
     this->getUILayer("menu").eventLocks = {true, true, true, true};
     this->getUILayer("settings").eventLocks = {true, true, true, true};
 
-    auto chatInput = std::make_unique<UICommandInput>(
+    auto chatInput = std::make_shared<UICommandInput>(
         &commandProcessor,
         TValue(PIXELS,0),
         TValue(OPERATION_MINUS,{FRACTIONS, 100}, {MFRACTION, 100}),
@@ -64,14 +64,14 @@ void MainScene::initialize(){
     };
     
     this->setUILayer("chat");
-    this->addElement(std::move(chatInput));
+    this->addElement(chatInput);
     
     /*
         Create the pause menu
     */
     this->setUILayer("menu");
 
-    auto pauseMenuFrame = std::make_unique<UIFrame>(
+    auto pauseMenuFrame = std::make_shared<UIFrame>(
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(PIXELS, 400),
@@ -79,7 +79,7 @@ void MainScene::initialize(){
         glm::vec4(0.1,0.1,0.1,0.8)
     );
 
-    auto exitButton = std::make_unique<UILabel>(
+    auto exitButton = std::make_shared<UILabel>(
         "Exit", 
         TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
         TValue(OPERATION_MINUS,{PFRACTION, 100}, {MFRACTION, 200}),
@@ -88,11 +88,11 @@ void MainScene::initialize(){
         glm::vec4(0.3,0.3,0.3,1)
     );
     exitButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
-    exitButton->onMouseEvent = [this](UIManager& manager, int button, int action, int mods) {
+    exitButton->onClicked = [this]() {
         this->sceneManager->setScene("menu");
     };
 
-    auto resumeButton = std::make_unique<UILabel>(
+    auto resumeButton = std::make_shared<UILabel>(
         "Resume", 
         TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
         TValue(MFRACTION, 100),
@@ -101,12 +101,12 @@ void MainScene::initialize(){
         glm::vec4(0.3,0.3,0.3,1)
     );
     resumeButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
-    resumeButton->onMouseEvent = [this](UIManager& manager, int button, int action, int mods) {
+    resumeButton->onClicked = [this]() {
         this->setUILayer("default");
         menuOpen = false;
     };
 
-    auto settingsButton = std::make_unique<UILabel>(
+    auto settingsButton = std::make_shared<UILabel>(
         "Settings", 
         TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
         TValue(MFRACTION, 300),
@@ -115,24 +115,24 @@ void MainScene::initialize(){
         glm::vec4(0.3,0.3,0.3,1)
     );
     settingsButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
-    settingsButton->onMouseEvent = [this](UIManager& manager, int button, int action, int mods) {
+    settingsButton->onClicked = [this]() {
         this->setUILayer("settings");
     };
 
     pauseMenuFrame->setBorderWidth({{PIXELS,8},{PIXELS,8},{PIXELS,8},{PIXELS,8}});
 
-    pauseMenuFrame->appendChild(std::move(exitButton));
-    pauseMenuFrame->appendChild(std::move(resumeButton));
-    pauseMenuFrame->appendChild(std::move(settingsButton));
+    pauseMenuFrame->appendChild(exitButton);
+    pauseMenuFrame->appendChild(resumeButton);
+    pauseMenuFrame->appendChild(settingsButton);
 
-    this->addElement(std::move(pauseMenuFrame));
+    this->addElement(pauseMenuFrame);
 
     /*
         ======
     */
     this->setUILayer("settings");
 
-    auto settingsMenuFrame = std::make_unique<UIFrame>(
+    auto settingsMenuFrame = std::make_shared<UIFrame>(
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(PIXELS, 700),
@@ -140,7 +140,7 @@ void MainScene::initialize(){
         glm::vec4(0.1,0.1,0.1,0.8)
     );
 
-    auto renderDistanceSlider = std::make_unique<UISlider>(
+    auto renderDistanceSlider = std::make_shared<UISlider>(
         TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
         TValue(MFRACTION, 300),
         TValue(PFRACTION, 80),
@@ -150,7 +150,7 @@ void MainScene::initialize(){
         glm::vec4(0.3,0.3,0.3,1)
     );
 
-    auto renderDistanceLabel = std::make_unique<UILabel>(
+    auto renderDistanceLabel = std::make_shared<UILabel>(
         "Render distance: ", 
         TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
         TValue(MFRACTION, 200),
@@ -161,14 +161,15 @@ void MainScene::initialize(){
     renderDistanceLabel->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
 
     settingsMenuFrame->setBorderWidth({{PIXELS,8},{PIXELS,8},{PIXELS,8},{PIXELS,8}});
-    settingsMenuFrame->appendChild(std::move(renderDistanceSlider));
-    settingsMenuFrame->appendChild(std::move(renderDistanceLabel));
+    settingsMenuFrame->appendChild(renderDistanceSlider);
+    settingsMenuFrame->appendChild(renderDistanceLabel);
 
-    this->addElement(std::move(settingsMenuFrame));
+    this->addElement(settingsMenuFrame);
+    mainScene->getUILayer("settings").addElement(settingsMenuFrame);
 
     this->setUILayer("default");
 
-    auto allocatorVisVertex = std::make_unique<UIAllocatorVisualizer>(
+    auto allocatorVisVertex = std::make_shared<UIAllocatorVisualizer>(
         TValue(PIXELS,10),
         TValue(PIXELS,10),
         TValue(FRACTIONS, 33),
@@ -177,7 +178,7 @@ void MainScene::initialize(){
         &chunkBuffer.getVertexAllocator()
     );
 
-    auto allocatorVisIndex = std::make_unique<UIAllocatorVisualizer>(
+    auto allocatorVisIndex = std::make_shared<UIAllocatorVisualizer>(
         TValue(PIXELS,10),
         TValue(PIXELS,40),
         TValue(FRACTIONS, 33),
@@ -186,8 +187,8 @@ void MainScene::initialize(){
         &chunkBuffer.getIndexAllocator()
     );
 
-    this->addElement(std::move(allocatorVisVertex));
-    this->addElement(std::move(allocatorVisIndex));
+    this->addElement(allocatorVisVertex);
+    this->addElement(allocatorVisIndex);
 
     Model& bob = modelManager.createModel("bob");
     bob.loadFromFile("models/test.gltf", "");

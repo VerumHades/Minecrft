@@ -151,51 +151,83 @@ int main() {
     sceneManager.addScene("game",std::move(mainScene));
     sceneManager.addScene("menu",std::move(mainMenu));
 
-    mainSceneTemp->initialize();
-
     Scene* menuScene = sceneManager.getScene("menu");
+    mainSceneTemp->initialize(menuScene);
 
-    auto startButton = std::make_unique<UILabel>(
+
+    auto mainFlexFrame = std::make_shared<UIFlexFrame>(
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(PIXELS, 300),
+        TValue(PIXELS, 500),
+        glm::vec4(0.1,0.1,0.1,1.0)
+    );
+    mainFlexFrame->setBorderWidth({0,0,0,0});
+    mainFlexFrame->setElementDirection(UIFlexFrame::ROWS);
+    mainFlexFrame->setElementMargin(20);
+
+    auto startButton = std::make_shared<UILabel>(
         "New Game", 
-        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
-        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
         glm::vec4(0.3,0.3,0.3,1.0)
     );
     startButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+    mainFlexFrame->appendChild(startButton);
 
-    auto worldSelection = std::make_unique<UIFrame>(
+    auto settingsButton = std::make_shared<UILabel>(
+        "Settings", 
+        TValue(PIXELS, 200),
+        TValue(PIXELS, 40),
+        glm::vec4(0.3,0.3,0.3,1.0)
+    );
+    settingsButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+    settingsButton->onClicked = [menuScene]{
+        menuScene->setUILayer("settings");
+    };
+    auto settingsReturnButton = std::make_shared<UILabel>(
+        "Back", 
+        TValue(10),
+        TValue(10),
+        TValue(PIXELS, 200),
+        TValue(PIXELS, 40),
+        glm::vec4(0.3,0.3,0.3,1.0)
+    );
+    settingsReturnButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+    settingsReturnButton->onClicked = [menuScene]{
+        menuScene->setUILayer("default");
+    };
+    mainFlexFrame->appendChild(settingsButton);
+
+    auto worldSelection = std::make_shared<UIFlexFrame>(
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(FRACTIONS, 0),
         TValue(PFRACTION, 100),
         TValue(PFRACTION, 100),
         glm::vec4(0.1,0.1,0.1,1.0)
     );
+    worldSelection->setElementDirection(UIFlexFrame::ROWS);
+    worldSelection->setElementMargin(20);
     worldSelection->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
 
     UIFrame* worldSelectionRaw = worldSelection.get();
 
-    startButton->onMouseEvent = [menuScene, worldSelectionRaw, mainSceneTemp](UIManager& manager, int button, int action, int mods) {
-        if(button != GLFW_MOUSE_BUTTON_1 || action != GLFW_PRESS) return;
+    startButton->onClicked = [menuScene, worldSelectionRaw, mainSceneTemp] {
         //sceneManager.setScene("game");
         menuScene->setUILayer("world_menu");
         worldSelectionRaw->clearChildren();
 
-        int offset = 5;
         for (const auto& dirEntry : std::filesystem::recursive_directory_iterator("saves")){
             std::string filepath = dirEntry.path().string();
             WorldStream stream(filepath);
             
-            auto frame = std::make_unique<UIFrame>(
-                50ps - 50ws,
-                TValue(PIXELS, offset),
+            auto frame = std::make_shared<UIFrame>(
                 800px,
                 100px,
                 glm::vec4(0.2,0.2,0.2,2.0)
             );
 
-            auto temp = std::make_unique<UILabel>(
+            auto temp = std::make_shared<UILabel>(
                 stream.getName(),
                 10px,
                 10px,
@@ -206,23 +238,22 @@ int main() {
             temp->setTextPosition(LEFT);
             temp->setBorderWidth(0px);
             temp->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
-            temp->onMouseEvent = [menuScene, worldSelectionRaw, mainSceneTemp, filepath](UIManager& manager, int button, int action, int mods) {
-                if(button != GLFW_MOUSE_BUTTON_1 || action != GLFW_PRESS) return;
+            temp->onClicked = [menuScene, worldSelectionRaw, mainSceneTemp, filepath] {
                 mainSceneTemp->setWorldPath(filepath);
                 sceneManager.setScene("game");
             };
 
-            frame->appendChild(std::move(temp));
-            worldSelectionRaw->appendChild(std::move(frame));
-
-            offset += 100;
+            frame->appendChild(temp);
+            worldSelectionRaw->appendChild(frame);
         }
     };
-    
+
+    menuScene->setUILayer("settings");
+    menuScene->addElement(settingsReturnButton);
     menuScene->setUILayer("world_menu");
-    menuScene->addElement(std::move(worldSelection));
+    menuScene->addElement(worldSelection);
     menuScene->setUILayer("default");
-    menuScene->addElement(std::move(startButton));
+    menuScene->addElement(mainFlexFrame);
     
     sceneManager.setScene("menu");
 

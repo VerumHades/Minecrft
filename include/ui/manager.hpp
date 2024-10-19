@@ -26,6 +26,7 @@ struct TValue{
     std::vector<TValue> operands;
 
     TValue(Units unit, int value) : unit(unit), value(value){}
+    TValue(int value) : unit(PIXELS), value(value){}
     TValue(Units operation, TValue op1, TValue op2): unit(operation){
         operands.push_back(op1);
         operands.push_back(op2);
@@ -79,6 +80,9 @@ struct UIRenderInfo{
         bool hasTexCoords = false;
         std::vector<glm::vec2> texCoords;
         int textureIndex;
+
+        glm::vec4 clipRegion; // minX/Y, maxX/Y
+        bool clip = false;
 
         static UIRenderInfo Rectangle(int x, int y, int width, int height, UIColor color, UIBorderSizes borderWidth = {0,0,0,0},std::array<UIColor,4> borderColor = {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}}){
             return {
@@ -147,11 +151,15 @@ class UIFrame{
             glm::vec4(0.5,0.1,0.5,0.4)
         };
 
-        std::vector<std::unique_ptr<UIFrame>> children;
+        std::vector<std::shared_ptr<UIFrame>> children;
         UIFrame* parent = nullptr;
 
     public:
         UIFrame(TValue x, TValue y, TValue width, TValue height, UIColor color): x(x), y(y), width(width), height(height), color(color), hoverColor(color){
+            borderColor = UIRenderInfo::generateBorderColors(color);
+        }
+
+        UIFrame(TValue width, TValue height, UIColor color): x(0), y(0), width(width), height(height), color(color), hoverColor(color){
             borderColor = UIRenderInfo::generateBorderColors(color);
         }
         virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
@@ -160,6 +168,7 @@ class UIFrame{
         std::function<void(UIManager& manager, int, int)> onMouseMove;
         std::function<void(GLFWwindow*, unsigned int)> onKeyTyped;
         std::function<void(GLFWwindow*, int key, int scancode, int action, int mods)> onKeyEvent;
+        std::function<void(void)> onClicked;
 
         std::function<void(UIManager& manager)> onMouseLeave;
         std::function<void(UIManager& manager)> onMouseEnter;
@@ -173,22 +182,24 @@ class UIFrame{
 
         bool pointWithin(glm::vec2 position, UIManager& manager, int padding = 0);
         bool pointWithinBounds(glm::vec2 position, UITransform transform, int padding = 0);
-
         void setBorderWidth(std::vector<TValue> borderWidth) {this->borderWidth = borderWidth;}
         void setBorderWidth(TValue borderWidth) {this->borderWidth = {borderWidth,borderWidth,borderWidth,borderWidth};}
+
+        void setPosition(TValue x, TValue y){this->x = x; this->y = y;}
+        void setSize(TValue width, TValue height) {this->width = width; this->height = height;}
 
         void setHover(bool value) {hover = value;}
         void setFocusable(bool value) {focusable = value;}
         bool isFocusable(){return focusable;}
 
-        void appendChild(std::unique_ptr<UIFrame> child){
+        void appendChild(std::shared_ptr<UIFrame> child){
             child->parent = this;
-            children.push_back(std::move(child));
+            children.push_back(child);
         }
         void clearChildren(){
             children.clear();
         }
-        std::vector<std::unique_ptr<UIFrame>>& getChildren() {return children;}
+        std::vector<std::shared_ptr<UIFrame>>& getChildren() {return children;}
 };
 
 enum UITextPosition{
@@ -207,6 +218,7 @@ class UILabel: public UIFrame{
 
     public:
         UILabel(std::string text, TValue x, TValue y, TValue width, TValue height, UIColor color): UIFrame(x,y,width,height,color), text(text) {}
+        UILabel(std::string text, TValue width, TValue height, UIColor color): UIFrame(width,height,color), text(text) {}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
         void setText(std::string text) {this->text = text;}
@@ -261,6 +273,25 @@ class UISlider: public UIFrame{
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
+class UIFlexFrame: public UIFrame{
+    public:
+        enum FlexDirection{
+            COLUMN,
+            ROWS,
+        };
+
+    private:
+        FlexDirection direction;
+        TValue elementMargin = {0};
+
+    public:
+
+        UIFlexFrame(TValue x, TValue y, TValue width, TValue height, UIColor color): UIFrame(x,y,width,height,color) {};
+        void setElementDirection(FlexDirection direction) {this->direction = direction;}
+        void setElementMargin(TValue margin) {elementMargin = margin;}
+        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
+};
+
 struct UIEventLock{
     bool keyEvent = false;
     bool mouseEvent = false;
@@ -270,17 +301,17 @@ struct UIEventLock{
 
 class UILayer{
     private:
-        std::vector<std::unique_ptr<UIFrame>> elements;
+        std::vector<std::shared_ptr<UIFrame>> elements;
         
     public:
         uint32_t cursorMode =  GLFW_CURSOR_NORMAL;
         UIEventLock eventLocks = {};
 
         void clear(){elements.clear();}
-        void addElement(std::unique_ptr<UIFrame> element){
-            elements.push_back(std::move(element));
+        void addElement(std::shared_ptr<UIFrame> element){
+            elements.push_back(element);
         }
-        std::vector<std::unique_ptr<UIFrame>>& getElements() {return elements;}
+        std::vector<std::shared_ptr<UIFrame>>& getElements() {return elements;}
 };
 
 using UIWindowIdentifier = uint32_t;
@@ -289,7 +320,6 @@ class UIWindow{
     private: 
         std::unordered_map<std::string, UILayer> layers;
         std::string currentLayer = "default";
-
 
     public:
         void setCurrentLayer(std::string name) {currentLayer = name;};

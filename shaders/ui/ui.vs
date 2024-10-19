@@ -7,11 +7,12 @@ layout (location = 4) in float aIsText;
 layout (location = 5) in float aIsTexture; 
 layout (location = 6) in float aTextureIndex; 
 layout (location = 7) in vec4  aBorderWidth; 
+layout (location = 8) in vec4  aClipRegion; 
 
-layout (location = 8)  in vec4  aBorderColorTop; 
-layout (location = 9)  in vec4  aBorderColorRight; 
-layout (location = 10) in vec4  aBorderColorBottom; 
-layout (location = 11) in vec4  aBorderColorLeft; 
+layout (location = 9)  in vec4  aBorderColorTop; 
+layout (location = 10)  in vec4  aBorderColorRight; 
+layout (location = 11) in vec4  aBorderColorBottom; 
+layout (location = 12) in vec4  aBorderColorLeft; 
 
 out vec2 TexCoords;
 out vec2 Size;
@@ -20,6 +21,9 @@ out vec4 Color;
 out float isTexture;
 out float textureIndex;
 out vec4 borderWidth;
+
+out vec4 clipRegion;
+out vec2 screenPos;
 
 out vec4 borderColorTop;
 out vec4 borderColorRight;
@@ -31,6 +35,8 @@ uniform mat4 projectionMatrix;
 void main()
 {
     gl_Position = projectionMatrix * vec4(aPos, 0.0, 1.0);
+    screenPos = aPos;
+
     TexCoords = aTexCoords;
     Color = aColor;
     isText = aIsText;
@@ -38,6 +44,8 @@ void main()
     isTexture = aIsTexture;
     textureIndex = aTextureIndex;
     borderWidth = aBorderWidth;
+
+    clipRegion = aClipRegion;
 
     borderColorTop = aBorderColorTop;
     borderColorRight = aBorderColorRight;

@@ -49,6 +49,13 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
     int w = info.width;
     int h = info.height;
 
+    if(!info.clip){
+        info.clipRegion.x = x;
+        info.clipRegion.y = y;
+        info.clipRegion.z = x + w;
+        info.clipRegion.w = y + h;
+    }
+
     glm::vec2 vertices_[4] = {
         {x    , y    },
         {x + w, y    },
@@ -58,7 +65,7 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
 
     uint32_t vecIndices[4];
 
-    const int vertexSize = 2 + 2 + 4 + 2 + 1 + 1 + 1 + 4 + 4 + 4 + 4 + 4;
+    const int vertexSize = 2 + 2 + 4 + 2 + 1 + 1 + 1 + 4 + 4 + 4 + 4 + 4 + 4;
 
     glm::vec4 borderSize = {
         info.borderWidth.top,
@@ -109,13 +116,16 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
         vertex[15 + offset] = borderSize.z;
         vertex[16 + offset] = borderSize.w;
 
-        for(int j  = 0;j < 4; j++){
-            vertex[17 + offset + j * 4] = info.borderColor[j].r;
-            vertex[18 + offset + j * 4] = info.borderColor[j].g;
-            vertex[19 + offset + j * 4] = info.borderColor[j].b;
-            vertex[20 + offset + j * 4] = info.borderColor[j].a;
+        vertex[17 + offset] = info.clipRegion.x;
+        vertex[18 + offset] = info.clipRegion.y;
+        vertex[19 + offset] = info.clipRegion.z;
+        vertex[20 + offset] = info.clipRegion.w;
 
-            std::cout << info.borderColor[i].r << std::endl;
+        for(int j  = 0;j < 4; j++){
+            vertex[21 + offset + j * 4] = info.borderColor[j].r;
+            vertex[22 + offset + j * 4] = info.borderColor[j].g;
+            vertex[23 + offset + j * 4] = info.borderColor[j].b;
+            vertex[24 + offset + j * 4] = info.borderColor[j].a;
         }
 
         vecIndices[i] = startIndex + i;
@@ -135,7 +145,7 @@ void UIManager::update(){
     uiProgram.use();
 
     Mesh temp = Mesh();
-    temp.setVertexFormat(VertexFormat({2,2,4,2,1,1,1,4,4,4,4,4}));
+    temp.setVertexFormat(VertexFormat({2,2,4,2,1,1,1,4,4,4,4,4,4}));
 
     for(auto& window: getCurrentWindow().getCurrentLayer().getElements()){
         std::vector<UIRenderInfo> winfo = window->getRenderingInformation(*this);
@@ -237,6 +247,7 @@ void UIManager::mouseMove(int x, int y){
 void UIManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     if(button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS){
         if(inFocus != underHover) inFocus = underHover;
+        if(underHover && underHover->onClicked) underHover->onClicked();
     }
 
     if(underHover && underHover->onMouseEvent) underHover->onMouseEvent(*this,button,action,mods);
@@ -517,4 +528,26 @@ std::vector<UIRenderInfo> UISlider::getRenderingInformation(UIManager& manager){
     }
 
     return out;
+}
+
+std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manager){
+    int offset = 0;
+
+    auto t = getTransform(manager);
+    for(auto& child: children){
+        offset += getValueInPixels(elementMargin, direction == COLUMN, direction == COLUMN ? manager.getScreenWidth() : manager.getScreenHeight());
+
+        auto ct = child->getTransform(manager);
+
+        child->setPosition(
+            direction == COLUMN ? TValue(PIXELS,offset) : t.width  / 2 - ct.width  / 2,
+            direction == ROWS   ? TValue(PIXELS,offset) : t.height / 2 - ct.height / 2
+        );
+        offset += 
+            direction == COLUMN ?
+            child->getTransform(manager).width :
+            child->getTransform(manager).height;
+    }
+
+    return UIFrame::getRenderingInformation(manager);
 }

@@ -3,8 +3,8 @@
 /*
     Adds an element to the current selected ui layer
 */
-void Scene::addElement(std::unique_ptr<UIFrame> element){
-    this->uiManager->getWindow(windowID).getCurrentLayer().addElement(std::move(element));
+void Scene::addElement(std::shared_ptr<UIFrame> element){
+    this->uiManager->getWindow(windowID).getCurrentLayer().addElement(element);
     this->uiManager->update();
 }
 /*
