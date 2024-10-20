@@ -212,7 +212,7 @@ int main() {
 
     auto worldSelectionScrollFrame = std::make_shared<UIScrollableFrame>(
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
-        TValue(FRACTIONS, 0),
+        TValue(FRACTIONS, 10),
         TValue(PFRACTION, 60),
         TValue(PFRACTION, 100),
         glm::vec4(0.1,0.1,0.1,0.0),

@@ -337,7 +337,7 @@ std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
         
 
         for(auto& i: temp){
-            /*if(i.clip){
+            if(i.clip){
                 i.clipRegion.x = glm::clamp(i.clipRegion.x, region.x, region.z);
                 i.clipRegion.y = glm::clamp(i.clipRegion.y, region.y, region.w);
                 i.clipRegion.z = glm::clamp(i.clipRegion.z, region.x, region.z);
@@ -346,7 +346,7 @@ std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
             else{
                 i.clip = true;
                 i.clipRegion = region;
-            }*/
+            }
             out.push_back(i);
         }
     }
