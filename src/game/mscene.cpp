@@ -142,9 +142,9 @@ void MainScene::initialize(Scene* mainScene){
 
     auto renderDistanceSlider = std::make_shared<UISlider>(
         TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
-        TValue(MFRACTION, 300),
+        TValue(100),
         TValue(PFRACTION, 80),
-        TValue(PIXELS, 40),
+        TValue(PIXELS, 20),
         &renderDistance,
         static_cast<uint32_t>(4), static_cast<uint32_t>(32),
         glm::vec4(0.3,0.3,0.3,1)
@@ -153,7 +153,7 @@ void MainScene::initialize(Scene* mainScene){
     auto renderDistanceLabel = std::make_shared<UILabel>(
         "Render distance: ", 
         TValue(OPERATION_MINUS,{PFRACTION, 50}, {MFRACTION, 50}),
-        TValue(MFRACTION, 200),
+        TValue(10),
         TValue(PFRACTION, 80),
         TValue(PIXELS, 40),
         glm::vec4(0.3,0.3,0.3,0.0)

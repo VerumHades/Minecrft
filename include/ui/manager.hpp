@@ -141,6 +141,7 @@ class UIFrame{
 
         bool hover = false;
         bool focusable = false;
+        bool hoverable = true;
 
         UIColor color;
         UIColor hoverColor = glm::vec4(0.0,0.1,0.5,0.0);
@@ -176,9 +177,11 @@ class UIFrame{
         int getValueInPixels(TValue& value, bool horizontal, int container_size);
         UITransform getTransform(UIManager& manager);
         UIBorderSizes getBorderSizes(UIManager& manager);
+        glm::vec4 getClipRegion(UIManager& manager);
 
         void setHoverColor(UIColor color) {hoverColor = color;}
         void setBorderColor(std::array<UIColor,4> borderColor) {this->borderColor = borderColor;}
+        void setColor(UIColor color) {this->color = color;}
 
         bool pointWithin(glm::vec2 position, UIManager& manager, int padding = 0);
         bool pointWithinBounds(glm::vec2 position, UITransform transform, int padding = 0);
@@ -189,10 +192,12 @@ class UIFrame{
         void setSize(TValue width, TValue height) {this->width = width; this->height = height;}
 
         void setHover(bool value) {hover = value;}
+        void setHoverable(bool value) {hoverable = value;}
         void setFocusable(bool value) {focusable = value;}
         bool isFocusable(){return focusable;}
+        bool isHoverable(){return hoverable;}
 
-        void appendChild(std::shared_ptr<UIFrame> child){
+        virtual void appendChild(std::shared_ptr<UIFrame> child){
             child->parent = this;
             children.push_back(child);
         }
@@ -250,6 +255,12 @@ class UIImage: public UIFrame{
 };
 
 class UISlider: public UIFrame{
+    public:
+        enum Orientation{
+            VERTICAL,
+            HORIZONTAL
+        };
+
     private:
         int* value;
         uint32_t min;
@@ -259,17 +270,19 @@ class UISlider: public UIFrame{
         int valueDisplayOffset = 10;
 
         bool grabbed = false;
+        Orientation orientation = HORIZONTAL;
 
         uint32_t handleWidth = 15;
         UIColor handleColor = glm::vec4(0.361, 0.443, 0.741,1.0);
 
         UITransform getHandleTransform(UIManager& manager);
-        void moveTo(UIManager& manager, int x);
+        void moveTo(UIManager& manager, glm::vec2 pos);
 
     public:
         static std::unique_ptr<DynamicTextureArray> textures;
 
         UISlider(TValue x, TValue y, TValue width, TValue height, int* value, uint32_t min, uint32_t max, UIColor color);
+        void setOrientation(Orientation value){orientation = value;}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
@@ -290,6 +303,14 @@ class UIFlexFrame: public UIFrame{
         void setElementDirection(FlexDirection direction) {this->direction = direction;}
         void setElementMargin(TValue margin) {elementMargin = margin;}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
+};
+
+class UIScrollableFrame: public UIFrame{
+    private:
+        std::shared_ptr<UIFrame> internal;
+    public:
+        void appendChild(std::shared_ptr<UIFrame> child) override {internal->appendChild(child);};
+
 };
 
 struct UIEventLock{

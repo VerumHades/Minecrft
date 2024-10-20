@@ -160,7 +160,7 @@ int main() {
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(PIXELS, 300),
         TValue(PIXELS, 500),
-        glm::vec4(0.1,0.1,0.1,1.0)
+        glm::vec4(0.1,0.1,0.1,0.0)
     );
     mainFlexFrame->setBorderWidth({0,0,0,0});
     mainFlexFrame->setElementDirection(UIFlexFrame::ROWS);
@@ -170,7 +170,7 @@ int main() {
         "New Game", 
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
-        glm::vec4(0.3,0.3,0.3,1.0)
+        glm::vec4(0.0,0.3,0.3,1.0)
     );
     startButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
     mainFlexFrame->appendChild(startButton);
@@ -179,7 +179,7 @@ int main() {
         "Settings", 
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
-        glm::vec4(0.3,0.3,0.3,1.0)
+        glm::vec4(0.0,0.3,0.3,1.0)
     );
     settingsButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
     settingsButton->onClicked = [menuScene]{
@@ -191,7 +191,7 @@ int main() {
         TValue(10),
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
-        glm::vec4(0.3,0.3,0.3,1.0)
+        glm::vec4(0.0,0.3,0.3,1.0)
     );
     settingsReturnButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
     settingsReturnButton->onClicked = [menuScene]{
@@ -204,7 +204,7 @@ int main() {
         TValue(FRACTIONS, 0),
         TValue(PFRACTION, 100),
         TValue(PFRACTION, 100),
-        glm::vec4(0.1,0.1,0.1,1.0)
+        glm::vec4(0.1,0.1,0.1,0.0)
     );
     worldSelection->setElementDirection(UIFlexFrame::ROWS);
     worldSelection->setElementMargin(20);
@@ -224,8 +224,9 @@ int main() {
             auto frame = std::make_shared<UIFrame>(
                 800px,
                 100px,
-                glm::vec4(0.2,0.2,0.2,2.0)
+                glm::vec4(0.0,0.2,0.2,1.0)
             );
+            frame->setColor(glm::vec4(0.0,0.2,0.2,0.6));
 
             auto temp = std::make_shared<UILabel>(
                 stream.getName(),
@@ -237,8 +238,9 @@ int main() {
             );
             temp->setTextPosition(LEFT);
             temp->setBorderWidth(0px);
-            temp->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
-            temp->onClicked = [menuScene, worldSelectionRaw, mainSceneTemp, filepath] {
+            temp->setHoverable(false);
+
+            frame->onClicked = [menuScene, worldSelectionRaw, mainSceneTemp, filepath] {
                 mainSceneTemp->setWorldPath(filepath);
                 sceneManager.setScene("game");
             };

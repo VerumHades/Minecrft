@@ -295,7 +295,6 @@ UIFrame* UIManager::getElementUnder(int x, int y){
     
     for(auto& window: getCurrentWindow().getCurrentLayer().getElements()) elements.push({0,window.get(), nullptr});
     
-
     UIFrame* current = nullptr;
     int cdepth = -1;
 
@@ -305,6 +304,7 @@ UIFrame* UIManager::getElementUnder(int x, int y){
 
         for(auto& child: element->getChildren()) elements.push({depth + 1, child.get(), element});
 
+        if(!element->isHoverable()) continue;
         if(cdepth >= depth) continue;
         if(!element->pointWithin({x,y}, *this)) continue;
         current = element;
@@ -330,9 +330,25 @@ std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
         UIRenderInfo::Rectangle(t.x,t.y,t.width,t.height,clr,getBorderSizes(manager),borderColor)
     };
 
+    auto region = getClipRegion(manager);
+
     for(auto& child: children){
         auto temp = child->getRenderingInformation(manager);
-        out.insert(out.end(), temp.begin(), temp.end());
+        
+
+        for(auto& i: temp){
+            /*if(i.clip){
+                i.clipRegion.x = glm::clamp(i.clipRegion.x, region.x, region.z);
+                i.clipRegion.y = glm::clamp(i.clipRegion.y, region.y, region.w);
+                i.clipRegion.z = glm::clamp(i.clipRegion.z, region.x, region.z);
+                i.clipRegion.w = glm::clamp(i.clipRegion.w, region.y, region.w);
+            }
+            else{
+                i.clip = true;
+                i.clipRegion = region;
+            }*/
+            out.push_back(i);
+        }
     }
 
     return out;
@@ -367,13 +383,28 @@ UIBorderSizes UIFrame::getBorderSizes(UIManager& manager){
         getValueInPixels(borderWidth[3], true , sw)
     };
 }
+glm::vec4 UIFrame::getClipRegion(UIManager& manager){
+    auto t = getTransform(manager);
+
+    return {
+        t.x,
+        t.y,
+        t.x + t.width,
+        t.y + t.height
+    };
+}
 
 std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
     auto t = getTextPosition(manager);
     
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
     std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,t.x,t.y,1,{1,1,1,1});
-    out.insert(out.end(), temp.begin(), temp.end());
+    auto region = getClipRegion(manager);
+    for(auto& i: temp){
+        i.clip = true;
+        i.clipRegion = region;
+        out.push_back(i);
+    }
 
     return out;
 }
@@ -448,7 +479,13 @@ std::vector<UIRenderInfo> UIInput::getRenderingInformation(UIManager& manager){
     
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
     std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1,1});
-    out.insert(out.end(), temp.begin(), temp.end());
+    auto region = getClipRegion(manager);
+    for(auto& i: temp){
+        i.clip = true;
+        i.clipRegion = region;
+        out.push_back(i);
+    }
+    //out.insert(out.end(), temp.begin(), temp.end());
 
     return out;
 }
@@ -468,14 +505,14 @@ UISlider::UISlider(TValue x, TValue y, TValue width, TValue height, int* value, 
             grabbed = true;
         }
         else if(action == GLFW_PRESS){
-            moveTo(manager,manager.getMousePosition().x);
+            moveTo(manager,manager.getMousePosition());
         }
     };
     
     onMouseMove = [this](UIManager& manager, int x, int y){
         if(!grabbed) return;
     
-        moveTo(manager,x);
+        moveTo(manager,{x,y});
     };
 
     //onMouseLeave = [this](UIManager& manager){
@@ -487,22 +524,28 @@ UITransform UISlider::getHandleTransform(UIManager& manager){
     auto t = this->getTransform(manager);
 
     float percentage = static_cast<float>(*this->value - this->min) / static_cast<float>(this->max - this->min);
-    int handlePos = t.width * percentage;
+    int handlePos = static_cast<float>(orientation == HORIZONTAL ? t.width : t.height) * percentage;
+    //std::cout << handlePos << " " << percentage << std::endl;
+
+    int handleWidthI = static_cast<int>(handleWidth);
+    handlePos = handlePos - handleWidthI / 2;
 
     return{
-        t.x + handlePos - static_cast<int>(handleWidth) / 2,
-        t.y,
-        static_cast<int>(handleWidth),
-        t.height
+        t.x + (orientation == HORIZONTAL ? handlePos : 0),
+        t.y + (orientation == VERTICAL   ? handlePos : 0),
+        (orientation == HORIZONTAL) ? handleWidthI : t.width ,
+        (orientation == VERTICAL  ) ? handleWidthI : t.height
     };
 }
 
-void  UISlider::moveTo(UIManager& manager, int x){
+void  UISlider::moveTo(UIManager& manager, glm::vec2 pos){
     auto t = this->getTransform(manager);
-    float percentage = static_cast<float>(x - t.x) / static_cast<float>(t.width);
+    float percentage = 0.0f;
 
-    if(percentage > 1.0) percentage = 1.0;
-    if(percentage < 0.0) percentage = 0.0;
+    if     (orientation == HORIZONTAL) percentage = static_cast<float>(pos.x - t.x) / static_cast<float>(t.width );
+    else if(orientation == VERTICAL  ) percentage = static_cast<float>(pos.y - t.y) / static_cast<float>(t.height);
+
+    percentage = glm::clamp(percentage, 0.0f, 1.0f);
 
     *this->value = (this->max - this->min) * percentage + this->min;
 }
@@ -511,8 +554,11 @@ std::vector<UIRenderInfo> UISlider::getRenderingInformation(UIManager& manager){
     auto t = getTransform(manager);
 
     std::vector<UIRenderInfo> out = {
-        UIRenderInfo::Rectangle(t.x, t.y + t.height / 3, t.width, t.height / 3, color, {3,3,3,3},UIRenderInfo::generateBorderColors(color))
+        UIRenderInfo::Rectangle(t.x, t.y,t.width, t.height, color, {3,3,3,3},UIRenderInfo::generateBorderColors(color))
     };
+
+    //auto ht = getHandleTransform(manager);
+    //std::cout << ht.x << " " << ht.y << " " << ht.width << " " << ht.height << std::endl;
 
     out.push_back(UIRenderInfo::Rectangle(getHandleTransform(manager), handleColor, {3,3,3,3},UIRenderInfo::generateBorderColors(handleColor)));
     
