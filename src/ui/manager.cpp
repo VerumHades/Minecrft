@@ -581,7 +581,8 @@ std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manage
 
     auto t = getTransform(manager);
     for(auto& child: children){
-        offset += getValueInPixels(elementMargin, direction == COLUMN, direction == COLUMN ? manager.getScreenWidth() : manager.getScreenHeight());
+        bool column = direction == COLUMN;
+        offset += getValueInPixels(elementMargin, column, column ? manager.getScreenWidth() : manager.getScreenHeight());
 
         auto ct = child->getTransform(manager);
 
@@ -594,6 +595,31 @@ std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manage
             child->getTransform(manager).width :
             child->getTransform(manager).height;
     }
+
+    return UIFrame::getRenderingInformation(manager);
+}
+
+UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue height, UIColor color, std::shared_ptr<UIFrame> body): UIFrame(x,y,width,height,color) {
+    this->body = body;
+    slider = std::make_shared<UISlider>(0,0,0,0, &scroll, 0, scrollMax, UIColor(0.1,0.1,0.1,1.0));
+    slider->setOrientation(UISlider::VERTICAL);
+    slider->setDisplayValue(false);
+    slider->setHandleWidth(60);
+    
+    this->body->setParent(this);
+    children.push_back(this->body);
+
+    slider->setParent(this);
+    children.push_back(slider);
+}
+std::vector<UIRenderInfo> UIScrollableFrame::getRenderingInformation(UIManager& manager) {
+    auto t = getTransform(manager);
+    
+    body->setPosition(0,-scroll);
+    body->setSize(t.width - sliderWidth, t.height);
+    
+    slider->setPosition(t.width - sliderWidth,0);
+    slider->setSize(sliderWidth, t.height);
 
     return UIFrame::getRenderingInformation(manager);
 }

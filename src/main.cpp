@@ -210,6 +210,15 @@ int main() {
     worldSelection->setElementMargin(20);
     worldSelection->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
 
+    auto worldSelectionScrollFrame = std::make_shared<UIScrollableFrame>(
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(FRACTIONS, 0),
+        TValue(PFRACTION, 60),
+        TValue(PFRACTION, 100),
+        glm::vec4(0.1,0.1,0.1,0.0),
+        worldSelection
+    );
+
     UIFrame* worldSelectionRaw = worldSelection.get();
 
     startButton->onClicked = [menuScene, worldSelectionRaw, mainSceneTemp] {
@@ -253,7 +262,7 @@ int main() {
     menuScene->setUILayer("settings");
     menuScene->addElement(settingsReturnButton);
     menuScene->setUILayer("world_menu");
-    menuScene->addElement(worldSelection);
+    menuScene->addElement(worldSelectionScrollFrame);
     menuScene->setUILayer("default");
     menuScene->addElement(mainFlexFrame);
     

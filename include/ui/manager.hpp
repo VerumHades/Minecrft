@@ -197,6 +197,8 @@ class UIFrame{
         bool isFocusable(){return focusable;}
         bool isHoverable(){return hoverable;}
 
+        void setParent(UIFrame* parent){this->parent = parent;}
+
         virtual void appendChild(std::shared_ptr<UIFrame> child){
             child->parent = this;
             children.push_back(child);
@@ -283,6 +285,8 @@ class UISlider: public UIFrame{
 
         UISlider(TValue x, TValue y, TValue width, TValue height, int* value, uint32_t min, uint32_t max, UIColor color);
         void setOrientation(Orientation value){orientation = value;}
+        void setDisplayValue(bool value) {displayValue = value;}
+        void setHandleWidth(uint32_t width) {handleWidth = width;}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
@@ -307,9 +311,18 @@ class UIFlexFrame: public UIFrame{
 
 class UIScrollableFrame: public UIFrame{
     private:
-        std::shared_ptr<UIFrame> internal;
+        std::shared_ptr<UIFrame> body;
+        std::shared_ptr<UISlider> slider;
+
+        int sliderWidth = 15;
+
+        int scroll = 0;
+        int scrollMax = 1000;
     public:
-        void appendChild(std::shared_ptr<UIFrame> child) override {internal->appendChild(child);};
+        UIScrollableFrame(TValue x, TValue y, TValue width, TValue height, UIColor color, std::shared_ptr<UIFrame> body);
+        void appendChild(std::shared_ptr<UIFrame> child) override {body->appendChild(child);};
+
+        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
 };
 
