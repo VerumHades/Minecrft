@@ -142,6 +142,7 @@ class UIFrame{
         bool hover = false;
         bool focusable = false;
         bool hoverable = true;
+        bool scrollable = false;
 
         UIColor color;
         UIColor hoverColor = glm::vec4(0.0,0.1,0.5,0.0);
@@ -174,8 +175,12 @@ class UIFrame{
         std::function<void(UIManager& manager)> onMouseLeave;
         std::function<void(UIManager& manager)> onMouseEnter;
 
-        int getValueInPixels(TValue& value, bool horizontal, int container_size);
+        std::function<void(UIManager& manager, int offsetX, int offsetY)> onScroll;
+
+        int getValueInPixels(TValue value, bool horizontal, UIManager& manager);
+
         UITransform getTransform(UIManager& manager);
+        UITransform getContentTransform(UIManager& manager);
         UIBorderSizes getBorderSizes(UIManager& manager);
         glm::vec4 getClipRegion(UIManager& manager);
 
@@ -196,6 +201,7 @@ class UIFrame{
         void setFocusable(bool value) {focusable = value;}
         bool isFocusable(){return focusable;}
         bool isHoverable(){return hoverable;}
+        bool isScrollable(){return scrollable;}
 
         void setParent(UIFrame* parent){this->parent = parent;}
 
@@ -378,6 +384,7 @@ class UIManager{
 
         UIFrame* underHover;
         UIFrame* inFocus;
+        UIFrame* underScrollHover;
 
         UIWindowIdentifier currentWindow = -1;
         UIWindowIdentifier lastWindowIndentifier = 0;
@@ -395,7 +402,7 @@ class UIManager{
         void mouseEvent(GLFWwindow* window, int button, int action, int mods);
         void keyTypedEvent(GLFWwindow* window, unsigned int codepoint);
         void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods);
-        //void scrollEvent(int yoffset);
+        void scrollEvent(GLFWwindow* window, double xoffset, double yoffset);
 
         void render();
         void setCurrentWindow(UIWindowIdentifier id);
@@ -403,7 +410,7 @@ class UIManager{
         UIWindow& getWindow(UIWindowIdentifier id);
         UIWindowIdentifier createWindow();
 
-        UIFrame* getElementUnder(int x, int y);  
+        UIFrame* getElementUnder(int x, int y, bool onlyScrollable = false);   
 
         std::vector<UIRenderInfo> buildTextRenderingInformation(std::string text, float x, float y, float scale, UIColor color);
 

@@ -193,23 +193,32 @@ std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string t
     return out;
 }
 
-int UIFrame::getValueInPixels(TValue& value, bool horizontal, int container_size){
+int UIFrame::getValueInPixels(TValue value, bool horizontal, UIManager& manager){
     switch (value.unit)
     {
         case PIXELS: return value.value;   
-        case FRACTIONS: return (container_size / 100.0f) * value.value;
-        case OPERATION_PLUS: return getValueInPixels(value.operands[0], horizontal, container_size) + getValueInPixels(value.operands[1], horizontal, container_size);
-        case OPERATION_MINUS: return getValueInPixels(value.operands[0], horizontal, container_size) - getValueInPixels(value.operands[1], horizontal, container_size);
+        case FRACTIONS:
+            if(horizontal) return (manager.getScreenWidth()  / 100.0f) * value.value;
+            else           return (manager.getScreenHeight() / 100.0f) * value.value;
+            
+        case OPERATION_PLUS: return getValueInPixels(value.operands[0], horizontal, manager) + getValueInPixels(value.operands[1], horizontal, manager);
+        case OPERATION_MINUS: return getValueInPixels(value.operands[0], horizontal, manager) - getValueInPixels(value.operands[1], horizontal, manager);
         case MFRACTION: 
-            return static_cast<float>(horizontal ? getValueInPixels(width, horizontal, container_size) : getValueInPixels(height, horizontal, container_size)) / 100.0f * value.value;
+            return static_cast<float>(
+                horizontal ? 
+                getValueInPixels(width,  horizontal, manager) : 
+                getValueInPixels(height, horizontal, manager)
+            ) / 100.0f * value.value;
+
         case PFRACTION:
             if(parent){
+                auto t = parent->getContentTransform(manager);
                 return static_cast<float>(horizontal ? 
-                    parent->getValueInPixels(parent->width , horizontal, container_size) : 
-                    parent->getValueInPixels(parent->height, horizontal, container_size)
+                    t.width : 
+                    t.height
                 ) / 100.0f * value.value;
             }
-            else return (container_size / 100.0f) * value.value; // Fall back to container size
+            else return getValueInPixels(TValue(FRACTIONS, value.value), horizontal, manager);
     }
 }
 
@@ -228,6 +237,8 @@ void UIManager::mouseMove(int x, int y){
     mousePosition.y = y;
 
     UIFrame* element = getElementUnder(x,y);
+    underScrollHover = getElementUnder(x,y,true);
+
     if(element != underHover && underHover != nullptr){
         underHover->setHover(false);   
         if(underHover->onMouseLeave) underHover->onMouseLeave(*this);
@@ -253,6 +264,12 @@ void UIManager::mouseEvent(GLFWwindow* window, int button, int action, int mods)
     if(underHover && underHover->onMouseEvent) underHover->onMouseEvent(*this,button,action,mods);
     if(inFocus && inFocus != underHover && inFocus->onMouseEvent) inFocus->onMouseEvent(*this,button,action,mods);
 
+    update();
+}
+
+void UIManager::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
+    if(!underScrollHover) return;
+    if(underScrollHover->onScroll) underScrollHover->onScroll(*this,xoffset,yoffset);
     update();
 }
 
@@ -288,7 +305,7 @@ UIWindowIdentifier UIManager::createWindow(){
     return lastWindowIndentifier++;
 }
 
-UIFrame* UIManager::getElementUnder(int x, int y){
+UIFrame* UIManager::getElementUnder(int x, int y, bool onlyScrollable){
     if(currentWindow == (UIWindowIdentifier)-1) return nullptr;
 
     std::queue<std::tuple<int, UIFrame*, UIFrame*>> elements;
@@ -302,11 +319,15 @@ UIFrame* UIManager::getElementUnder(int x, int y){
         auto [depth,element,parent] = elements.front();
         elements.pop();
 
+        if(!element->pointWithin({x,y}, *this)) continue;
+
         for(auto& child: element->getChildren()) elements.push({depth + 1, child.get(), element});
 
+        if(onlyScrollable && !element->isScrollable()) continue;
         if(!element->isHoverable()) continue;
         if(cdepth >= depth) continue;
-        if(!element->pointWithin({x,y}, *this)) continue;
+
+        
         current = element;
     }
 
@@ -355,36 +376,46 @@ std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
 };
 
 UITransform UIFrame::getTransform(UIManager& manager){
-    int sw = manager.getScreenWidth();
-    int sh = manager.getScreenHeight();
-
     int ox = 0, oy = 0;
     if(parent){
-        auto t = parent->getTransform(manager);
+        auto t = parent->getContentTransform(manager);
         ox = t.x;
         oy = t.y;
     }
 
     return {
-        getValueInPixels(x     , true , sw) + ox,
-        getValueInPixels(y     , false, sh) + oy,
-        getValueInPixels(width , true , sw),
-        getValueInPixels(height, false, sh),
+        getValueInPixels(x     , true , manager) + ox,
+        getValueInPixels(y     , false, manager) + oy,
+        getValueInPixels(width , true , manager),
+        getValueInPixels(height, false, manager),
     };
 }
+
+UITransform UIFrame::getContentTransform(UIManager& manager){
+    auto t = getTransform(manager);
+    auto b = getBorderSizes(manager);
+
+    return {
+        t.x + b.left,
+        t.y + b.top ,
+        t.width  - b.right - b.left,
+        t.height - b.bottom - b.top
+    };
+}
+
 UIBorderSizes UIFrame::getBorderSizes(UIManager& manager){
     int sw = manager.getScreenWidth();
     int sh = manager.getScreenHeight();
 
     return {
-        getValueInPixels(borderWidth[0], false, sh),
-        getValueInPixels(borderWidth[1], true , sw),
-        getValueInPixels(borderWidth[2], false, sh),
-        getValueInPixels(borderWidth[3], true , sw)
+        getValueInPixels(borderWidth[0], false, manager),
+        getValueInPixels(borderWidth[1], true , manager),
+        getValueInPixels(borderWidth[2], false, manager),
+        getValueInPixels(borderWidth[3], true , manager)
     };
 }
 glm::vec4 UIFrame::getClipRegion(UIManager& manager){
-    auto t = getTransform(manager);
+    auto t = getContentTransform(manager);
 
     return {
         t.x,
@@ -581,8 +612,7 @@ std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manage
 
     auto t = getTransform(manager);
     for(auto& child: children){
-        bool column = direction == COLUMN;
-        offset += getValueInPixels(elementMargin, column, column ? manager.getScreenWidth() : manager.getScreenHeight());
+        offset += getValueInPixels(elementMargin, direction == COLUMN, manager);
 
         auto ct = child->getTransform(manager);
 
@@ -601,6 +631,13 @@ std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manage
 
 UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue height, UIColor color, std::shared_ptr<UIFrame> body): UIFrame(x,y,width,height,color) {
     this->body = body;
+    scrollable = true;
+
+    onScroll = [this](UIManager& manager, double xoffset, double yoffset){
+        this->scroll += yoffset * 30 * -1;
+        this->scroll = glm::clamp(this->scroll, 0, this->scrollMax);
+    };
+
     slider = std::make_shared<UISlider>(0,0,0,0, &scroll, 0, scrollMax, UIColor(0.1,0.1,0.1,1.0));
     slider->setOrientation(UISlider::VERTICAL);
     slider->setDisplayValue(false);
@@ -613,13 +650,15 @@ UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue he
     children.push_back(slider);
 }
 std::vector<UIRenderInfo> UIScrollableFrame::getRenderingInformation(UIManager& manager) {
-    auto t = getTransform(manager);
-    
+    auto ct = getContentTransform(manager);
+    auto bodyT = body->getTransform(manager);
+
+    scrollMax = bodyT.height;
     body->setPosition(0,-scroll);
-    body->setSize(t.width - sliderWidth, t.height);
+    //body->setSize(t.width - sliderWidth, t.height);
     
-    slider->setPosition(t.width - sliderWidth,0);
-    slider->setSize(sliderWidth, t.height);
+    slider->setPosition(ct.width - sliderWidth,0);
+    slider->setSize(sliderWidth, ct.height);
 
     return UIFrame::getRenderingInformation(manager);
 }

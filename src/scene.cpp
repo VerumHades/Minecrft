@@ -118,6 +118,7 @@ void SceneManager::mouseEvent(GLFWwindow* window, int button, int action, int mo
     if(!eventLocks.mouseEvent) getCurrentScene()->mouseEvent(window,button,action,mods);
 }
 void SceneManager::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
+    manager.scrollEvent(window, xoffset, yoffset);
     if(!eventLocks.scrollEvent) getCurrentScene()->scrollEvent(window, xoffset, yoffset);
 }
 

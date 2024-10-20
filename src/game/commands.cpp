@@ -95,15 +95,12 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
     int sw = manager.getScreenWidth();
     int sh = manager.getScreenHeight();
 
-    int rx = getValueInPixels(x, true , sw);
-    int ry = getValueInPixels(y, false, sh);
-    int w = getValueInPixels(width, true , sw);
-    int h = getValueInPixels(height, false, sh);
+    auto t = getTransform(manager);
 
     int suggestions_padding = 10;
     
-    int tx = rx + suggestions_padding;
-    int ty = ry + (h / 2) - textDimensions.y / 2;
+    int tx = t.x + suggestions_padding;
+    int ty = t.y + (t.height / 2) - textDimensions.y / 2;
     
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
     
@@ -113,11 +110,11 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
     }
 
     int cursorW = 2;
-    int cursorH = h / 2;
+    int cursorH = t.height / 2;
     
     out.push_back(UIRenderInfo::Rectangle(
-        tx + textDimensions.x    ,
-        ry + h / 2 - cursorH  / 2,
+        t.x + textDimensions.x    ,
+        t.y + t.height / 2 - cursorH  / 2,
         cursorW                  ,
         cursorH                  ,
         {1,1,1,1}
@@ -134,8 +131,8 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
     suggestions_width += suggestions_padding * 2;
     
     out.push_back(UIRenderInfo::Rectangle(
-        rx                     ,
-        ry - suggestions_height,
+        t.x                     ,
+        t.y - suggestions_height,
         suggestions_width      ,
         suggestions_height     ,
         {0,0,0,1}
@@ -143,7 +140,7 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
 
     int currentY = 0;
     for(auto& s: suggestions){
-        std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(s,rx + suggestions_padding,ry - suggestions_height + currentY + suggestions_padding,1,{0.5,1,1,1});
+        std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(s,t.x + suggestions_padding,t.y - suggestions_height + currentY + suggestions_padding,1,{0.5,1,1,1});
         glm::vec2 dm = manager.getMainFont().getTextDimensions(s);
         currentY += dm.y + suggestions_padding;
 

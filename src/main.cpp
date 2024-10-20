@@ -203,7 +203,7 @@ int main() {
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(FRACTIONS, 0),
         TValue(PFRACTION, 100),
-        TValue(PFRACTION, 100),
+        TValue(1000),
         glm::vec4(0.1,0.1,0.1,0.0)
     );
     worldSelection->setElementDirection(UIFlexFrame::ROWS);
@@ -212,10 +212,10 @@ int main() {
 
     auto worldSelectionScrollFrame = std::make_shared<UIScrollableFrame>(
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
-        TValue(FRACTIONS, 10),
+        TValue(FRACTIONS, 0),
         TValue(PFRACTION, 60),
-        TValue(PFRACTION, 100),
-        glm::vec4(0.1,0.1,0.1,0.0),
+        TValue(PFRACTION, 80),
+        glm::vec4(0.05,0.05,0.05,1.0),
         worldSelection
     );
 
