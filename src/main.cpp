@@ -266,7 +266,7 @@ int main() {
     menuScene->setUILayer("default");
     menuScene->addElement(mainFlexFrame);
     
-    sceneManager.setScene("menu");
+    sceneManager.setScene("game");
 
     double last = glfwGetTime();
     double current = glfwGetTime();

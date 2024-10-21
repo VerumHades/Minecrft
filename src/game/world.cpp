@@ -316,7 +316,11 @@ void WorldStream::loadTable(){
     chunkTable.clear();
 
     ByteArray tableData;
-    tableData.read(file_stream);
+    if(!tableData.read(file_stream)){
+        std::cout << "World file table corrupted, repairing" << std::endl;
+        saveTable();
+        return;
+    }
 
     size_t size = tableData.read<size_t>();
     std::cout << "Chunks total: " << size << std::endl;
@@ -381,6 +385,7 @@ size_t WorldStream::moveChunk(size_t from, size_t to){
     fromData.write(file_stream);
 
     chunkTable[position] = to;
+    saveTable();
 
     return fromData.getFullSize();
 }
@@ -392,9 +397,9 @@ size_t WorldStream::moveChunk(size_t from, size_t to){
     size_t compressed_24bit_count, data...
     size_t compressed_24bit_count_rotated, data...
 */
-static inline void saveMask(ByteArray& out, ChunkMask<uint64_f>& mask, int type){
+static inline void saveMask(ByteArray& out, ChunkMask<64>& mask, int type){
     out.append<int>(type);
-    out.append(bitworks::compressBitArray3D<uint64_f>(mask.segments));
+    out.append(mask.segments.compress());
 }
 
 /*
@@ -436,7 +441,13 @@ void WorldStream::load(Chunk* chunk){
     //std::cout << "Located at: " << chunkTable[chunk->getWorldPosition()] << std::endl;
     file_stream.seekg(chunkTable[chunk->getWorldPosition()], std::ios::beg);
     ByteArray source;
-    source.read(file_stream);
+    
+    if(!source.read(file_stream)){
+        std::cout << "Corrupted chunk:" << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
+        return;
+    }
+
+
     //std::cout << source << std::endl;
 
     glm::vec3 position = {
@@ -450,18 +461,20 @@ void WorldStream::load(Chunk* chunk){
     //std::cout << "With total layers: " << layerCount << std::endl;
 
     source.read<int>();
-    BitArray3D<uint64_f> solidNormal = bitworks::decompressBitArray3D<uint64_f>(source.vread<compressed_24bit>());
-    BitArray3D<uint64_f> solidRotated = solidNormal.rotate();
+    BitArray3D<64> solidNormal;
+    solidNormal.loadFromCompressed(source.vread<compressed_24bit>());
+    BitArray3D<64> solidRotated = solidNormal.rotate();
 
     chunk->getSolidMask().segments = solidNormal;
     chunk->getSolidMask().segmentsRotated = solidRotated;
 
     for(int layerIndex = 0; layerIndex < layerCount; layerIndex++){
         int type = source.read<int>();
-        BitArray3D<uint64_f> normal = bitworks::decompressBitArray3D<uint64_f>(source.vread<compressed_24bit>());
-        BitArray3D<uint64_f> rotated = normal.rotate();
+        BitArray3D<64> normal;
+        normal.loadFromCompressed(source.vread<compressed_24bit>());
+        BitArray3D<64> rotated = normal.rotate();
 
-        ChunkMask<uint64_f> mask;
+        ChunkMask<64> mask;
         mask.segments = normal;
         mask.segmentsRotated = rotated;
         mask.block = {static_cast<BlockTypes>(type)};

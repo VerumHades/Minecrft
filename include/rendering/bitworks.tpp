@@ -1,29 +1,29 @@
 #include <rendering/bitworks.hpp>
 
-template <typename T>
-std::vector<compressed_24bit> bitworks::compressBitArray3D(BitArray3D<T> array){
+template <int bits>
+std::vector<compressed_24bit> BitArray3D<bits>::compress(){
     std::vector<compressed_24bit> compressedOutput = {};
 
-    T firstBitMask = (1_uint64 << BitArray3D<T>::T_bits_total - 1);
+    uint<bits> firstBitMask = (1ULL << (bits - 1));
 
-    T* flatArray = array.getAsFlatArray();
-    T currentBits = flatArray[0];
+    uint<bits>* flatArray = getAsFlatArray();
+    uint<bits> currentBits = flatArray[0];
 
     size_t currentIndex = 0;
     size_t localBit = 0;
     size_t globalBit = 0;
 
-    while(globalBit < BitArray3D<T>::size_bits){
-        uint8_t start_value = (firstBitMask & currentBits) >> (BitArray3D<T>::T_bits_total - 1); // Check what the current first value is
+    while(globalBit < size_bits){
+        uint8_t start_value = (firstBitMask & currentBits) >> (bits - 1); // Check what the current first value is
         uint8_t count = count_leading_zeros(!start_value ? currentBits : ~currentBits);
 
-        if(localBit + count > BitArray3D<T>::T_bits_total) count = BitArray3D<T>::T_bits_total - localBit;
+        if(localBit + count > bits) count = bits - localBit;
 
         currentBits <<= count;
         localBit    +=  count;
         globalBit   +=  count;
 
-        if(localBit == BitArray3D<T>::T_bits_total){ // Move on to the next number
+        if(localBit == bits){ // Move on to the next number
             localBit = 0;
             currentBits = flatArray[++currentIndex];
         }
@@ -47,10 +47,9 @@ std::vector<compressed_24bit> bitworks::compressBitArray3D(BitArray3D<T> array){
     return compressedOutput;
 }
 
-template <typename T>
-BitArray3D<T> bitworks::decompressBitArray3D(std::vector<compressed_24bit> data){
-    BitArray3D<T> output;
-    T* flatArray = output.getAsFlatArray();
+template <int bits>
+void BitArray3D<bits>::loadFromCompressed(std::vector<compressed_24bit> data){
+    uint<bits>* flatArray = getAsFlatArray();
 
     size_t arrayIndex = 0;
     size_t dataIndex  = 0;
@@ -58,10 +57,10 @@ BitArray3D<T> bitworks::decompressBitArray3D(std::vector<compressed_24bit> data)
     
     compressed_24bit cdata = data[0];
     while(true){
-        size_t bitsLeft = BitArray3D<T>::T_bits_total - currentBit; // Find the remaining amount of bits in the current 64bit
+        size_t bitsLeft = bits - currentBit; // Find the remaining amount of bits in the current 64bit
         
         if(bitsLeft == 0){ // If no bits are left move onto the next 
-            if(arrayIndex + 1 >= BitArray3D<T>::size) break; // If there is no next number exit
+            if(arrayIndex + 1 >= size) break; // If there is no next number exit
             currentBit = 0;
             arrayIndex++;
             continue;
@@ -70,7 +69,7 @@ BitArray3D<T> bitworks::decompressBitArray3D(std::vector<compressed_24bit> data)
 
         size_t count = std::min(bitsLeft, static_cast<size_t>(cdata.getValue()));
         
-        T mask = ~0_uint64 >> currentBit;
+        uint<bits> mask = ~0ULL >> currentBit;
             
         if(cdata.getMode() == 0) flatArray[arrayIndex] &= ~mask;
         else flatArray[arrayIndex] |= mask;
@@ -88,6 +87,4 @@ BitArray3D<T> bitworks::decompressBitArray3D(std::vector<compressed_24bit> data)
     /*for(int i = 0;i < BitArray3D::size;i++){
         std::cout << std::bitset<64>(flatArray[i]) << std::endl;
     }*/
-
-    return output;
 }

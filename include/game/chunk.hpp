@@ -32,47 +32,39 @@
 
 class World;
 
-template <typename T>
-struct ChunkMask{
-    Block block = {BlockTypes::Air};
-    BitArray3D<T> segments = {}; 
-    BitArray3D<T> segmentsRotated = {}; 
-    
-    void set(uint32_t x,uint32_t y,uint32_t z) {
-        segments[z][y] |= (1_uint64 << (BitArray3D<T>::T_bits_total - 1 - x));
-        segmentsRotated[x][y] |= (1_uint64 << (BitArray3D<T>::T_bits_total - 1 - z));
-    }
-    void reset(uint32_t x,uint32_t y,uint32_t z) {
-        segments[z][y] &= ~(1_uint64 << (BitArray3D<T>::T_bits_total - 1 - x));
-        segmentsRotated[x][y] &= ~(1_uint64 << (BitArray3D<T>::T_bits_total - 1 - z));
-    }
+template <int size>
+class ChunkMask{
+    public:
+        Block block = {BlockTypes::Air};
+        BitArray3D<size> segments = {}; 
+        BitArray3D<size> segmentsRotated = {}; 
+        
+        void set(uint32_t x,uint32_t y,uint32_t z) {
+            segments[z][y] |= (1ULL << (size - 1 - x));
+            segmentsRotated[x][y] |= (1ULL << (size - 1 - z));
+        }
+        void reset(uint32_t x,uint32_t y,uint32_t z) {
+            segments[z][y] &= ~(1ULL << (size - 1 - x));
+            segmentsRotated[x][y] &= ~(1ULL << (size - 1 - z));
+        }
 };
 
-template <typename T>
+
+
+template <int size>
 struct ChunkMaskGroup{
-    ChunkMask<T> solidMask;
-    std::unordered_map<BlockTypes,ChunkMask<T>> masks;
+    ChunkMask<size> solidMask;
+    std::unordered_map<BlockTypes,ChunkMask<size>> masks;
 };
+
+
 
 class Chunk: public Volume{
     private:
         glm::ivec3 worldPosition = glm::ivec3(0,0,0);
         World& world; 
-
-        enum Resolution{
-            RES_8,
-            RES_16,
-            RES_32,
-            RES_64
-        };
-        Resolution lodResolution = RES_64;
-
-        std::unique_ptr<ChunkMaskGroup<uint_fast8_t >> maskGroup8 ;
-        std::unique_ptr<ChunkMaskGroup<uint_fast16_t>> maskGroup16;
-        std::unique_ptr<ChunkMaskGroup<uint_fast32_t>> maskGroup32;
-        std::unique_ptr<ChunkMaskGroup<uint_fast64_t>> maskGroup64;
         //Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {};
-        ChunkMaskGroup<uint64_f> mainGroup;
+        ChunkMaskGroup<64> mainGroup;
         //unsigned char lightArray[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE][3];
         //std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
         
@@ -106,8 +98,8 @@ class Chunk: public Volume{
             return this->worldPosition;
         }
 
-        ChunkMask<uint64_f>& getSolidMask() {return mainGroup.solidMask;}
-        std::unordered_map<BlockTypes,ChunkMask<uint64_f>>& getMasks() {return mainGroup.masks;}
+        ChunkMask<64>& getSolidMask() {return mainGroup.solidMask;}
+        std::unordered_map<BlockTypes,ChunkMask<64>>& getMasks() {return mainGroup.masks;}
 
 }; 
 
@@ -118,7 +110,7 @@ struct Face{
     int height;
 };
 
-//std::vector<Face> greedyMeshPlane64(std::array<uint64_f, 64> rows);
+//std::vector<Face> greedyMeshPlane64(std::array<uint64_t, 64> rows);
 
 #include <game/world.hpp>
 

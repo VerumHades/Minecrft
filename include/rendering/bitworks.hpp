@@ -14,66 +14,6 @@
 
 #include <game/blocks.hpp>
 
-typedef uint_fast64_t uint64_f;
-
-uint64_t operator"" _uint64(unsigned long long value);
-
-template <typename T>
-class BitArray3D{
-    public:
-        static const size_t T_bits_total = sizeof(T) * 8;
-
-    private:
-        T values[T_bits_total][T_bits_total] = {0};
-
-    public:
-        static const size_t size_bits = T_bits_total * T_bits_total * T_bits_total;
-        static const size_t size = T_bits_total * T_bits_total;
-        
-        T* operator[] (int index)
-        {
-            return values[index];
-        }
-        const T* operator[](int index) const {
-            return values[index];  
-        }
-        T* getAsFlatArray(){
-            return reinterpret_cast<T*>(values); 
-        }
-
-        BitArray3D<T> rotate(){
-            BitArray3D<T> rotated;
-
-            for(int z = 0;z < T_bits_total;z++){
-                for(int y = 0; y < T_bits_total;y++){
-                    T value = this->values[z][y];
-
-                    for(int x = 0;x < T_bits_total;x++){
-                        T mask = 1_uint64 << (T_bits_total - 1 - x);
-
-                        if(!(value & mask)) continue;
-
-                        rotated[x][y] |= (1_uint64 << (T_bits_total - 1 - z));
-                    }
-                }
-            }
-
-            return rotated;
-        }
-
-        bool operator == (const BitArray3D<T>& array) const {
-            return std::memcmp(values, array.values, size * sizeof(T)) == 0;
-        }
-};
-
-template <typename T>
-using BitPlane = std::array<T, sizeof(T) * 8>;
-
-template <typename T>
-using BlockBitPlanes = std::array<BitPlane<T>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL>;
-
-typedef uint8_t compressed_byte;
-
 /*
     Structure that can represent a full 64 * 64 * 64 array of bits with a single instance
 
@@ -100,14 +40,6 @@ struct compressed_24bit{
 
 namespace bitworks{
     template <typename T>
-    std::vector<compressed_24bit> compressBitArray3D(BitArray3D<T> array);
-    template <typename T>
-    BitArray3D<T> decompressBitArray3D(std::vector<compressed_24bit> data);
-
-    std::vector<compressed_byte> compress64Bits(uint64_f bits);
-    uint64_f decompress64Bits(std::vector<compressed_byte> bytes);
-
-    template <typename T>
     static inline void saveValue(std::fstream &file, T value){
         file.write(reinterpret_cast<const char*>(&value), sizeof(T));
     }
@@ -120,9 +52,87 @@ namespace bitworks{
     }
 };
 
-inline uint8_t count_leading_zeros(uint64_f x) {
+template <typename T>
+inline uint8_t count_leading_zeros(T x) {
     return std::countl_zero(x);
 }
+
+/*
+    Type that selects the smallest type that fits the set number of bits
+
+    Max size of 64 bits.
+*/
+template <size_t Bits>
+using uint = typename std::conditional<
+    Bits <= 8, uint8_t,
+    typename std::conditional<
+        Bits <= 16, uint16_t,
+        typename std::conditional<
+            Bits <= 32, uint32_t,
+            typename std::conditional<
+                Bits <= 64, uint64_t,
+                void 
+            >::type
+        >::type
+    >::type
+>::type;
+
+template <int bits>
+class BitArray3D{
+    private:
+        uint<bits> values[bits][bits] = {0};
+
+    public:
+        static const size_t size_bits = bits * bits * bits;
+        static const size_t size = bits * bits;
+        static const size_t bits_total = bits;
+        
+        uint<bits>* operator[] (int index)
+        {
+            return values[index];
+        }
+        const uint<bits>* operator[](int index) const {
+            return values[index];  
+        }
+        uint<bits>* getAsFlatArray(){
+            return reinterpret_cast<uint<bits>*>(values); 
+        }
+
+        BitArray3D<bits> rotate(){
+            BitArray3D<bits> rotated;
+
+            for(int z = 0;z < bits;z++){
+                for(int y = 0; y < bits;y++){
+                    uint<bits> value = this->values[z][y];
+
+                    for(int x = 0;x < bits;x++){
+                        uint<bits> mask = 1ULL << (bits - 1 - x);
+
+                        if(!(value & mask)) continue;
+
+                        rotated[x][y] |= (1ULL << (bits - 1 - z));
+                    }
+                }
+            }
+
+            return rotated;
+        }
+
+        std::vector<compressed_24bit> compress();
+        void loadFromCompressed(std::vector<compressed_24bit> data);
+
+        bool operator == (const BitArray3D<bits>& array) const {
+            return std::memcmp(values, array.values, size * sizeof(uint<bits>)) == 0;
+        }
+};
+
+#include <rendering/bitworks.tpp>
+
+template <int size>
+using BitPlane = std::array<uint<size>, size>;
+
+template <int size>
+using BlockBitPlanes = std::array<BitPlane<size>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL>;
 
 using byte = uint8_t;
 
@@ -179,7 +189,7 @@ class ByteArray{
 
         bool operator == (const ByteArray& array);
         void write(std::fstream &file);
-        void read(std::fstream &file);
+        bool read(std::fstream &file);
         size_t getFullSize() {return sizeof(char) + sizeof(size_t) + data.size() * sizeof(byte);};
 
         const std::vector<byte>& getData() const {return data;}
@@ -204,5 +214,3 @@ inline std::ostream& operator<<(std::ostream & Str, const ByteArray& v) {
     Str << "\033[0m";  // Reset the color after printing
     return Str;
 }
-
-#include <rendering/compression.tpp>
