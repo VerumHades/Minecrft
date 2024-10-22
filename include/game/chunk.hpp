@@ -11,7 +11,7 @@
 #include <rendering/model.hpp>
 #include <rendering/bitworks.hpp>
 #include <game/threadpool.hpp>
-
+#include <game/chunk_masks.hpp>
 
 #include <glm/glm.hpp>
 #include <map>
@@ -28,43 +28,14 @@
 #include <bitset>
 #include <iostream>
 
-#define CHUNK_SIZE 64
-
 class World;
-
-template <int size>
-class ChunkMask{
-    public:
-        Block block = {BlockTypes::Air};
-        BitArray3D<size> segments = {}; 
-        BitArray3D<size> segmentsRotated = {}; 
-        
-        void set(uint32_t x,uint32_t y,uint32_t z) {
-            segments[z][y] |= (1ULL << (size - 1 - x));
-            segmentsRotated[x][y] |= (1ULL << (size - 1 - z));
-        }
-        void reset(uint32_t x,uint32_t y,uint32_t z) {
-            segments[z][y] &= ~(1ULL << (size - 1 - x));
-            segmentsRotated[x][y] &= ~(1ULL << (size - 1 - z));
-        }
-};
-
-
-
-template <int size>
-struct ChunkMaskGroup{
-    ChunkMask<size> solidMask = {};
-    std::unordered_map<BlockTypes,ChunkMask<size>> masks = {};
-};
-
-
 
 class Chunk: public Volume{
     private:
         glm::ivec3 worldPosition = glm::ivec3(0,0,0);
         World& world; 
         //Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {};
-        ChunkMaskGroup<64> mainGroup = {};
+        std::unique_ptr<DynamicChunkMaskGroup> group = {};
         //unsigned char lightArray[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE][3];
         //std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
         
@@ -82,7 +53,7 @@ class Chunk: public Volume{
     public:
         //std::optional<Mesh> transparentMesh;
 
-        bool isEmpty() const {return mainGroup.masks.size() == 0;}
+        bool isEmpty() const {return group->empty();}
         bool isOnFrustum(PerspectiveCamera& cam) const;
 
         Chunk(World& world, const glm::vec3& pos);
@@ -98,9 +69,13 @@ class Chunk: public Volume{
             return this->worldPosition;
         }
 
-        ChunkMask<64>& getSolidMask() {return mainGroup.solidMask;}
-        std::unordered_map<BlockTypes,ChunkMask<64>>& getMasks() {return mainGroup.masks;}
+        bool isMainGroupOfSize(int size){return group->getSize() == size;}
 
+        template <int size>
+        ChunkMaskGroup<size>* getMainGroupAs() { return static_cast<ChunkMaskGroup<size>*>(group.get()); }
+
+        std::unique_ptr<DynamicChunkMaskGroup>& getMainGroup() {return group;}
+        void setMainGroup(std::unique_ptr<DynamicChunkMaskGroup> group) {this->group = std::move(group);}
 }; 
 
 struct Face{

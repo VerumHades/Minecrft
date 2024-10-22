@@ -7,7 +7,7 @@ World::World(std::string filepath){
 
 std::shared_mutex chunkGenLock;
 
-void World::generateChunk(int x, int y, int z){
+void World::generateChunk(int x, int y, int z, LODLevel lod){
     const glm::vec3 key = glm::vec3(x,y,z);
 
     {
@@ -17,7 +17,11 @@ void World::generateChunk(int x, int y, int z){
     }
 
     std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(*this, key);
-    generator.generateTerrainChunk(*chunk,x,y,z);
+    
+    if     (lod == CLOSE  ) generator.generateTerrainChunk<64>(*chunk,x,y,z);
+    else if(lod == MID    ) generator.generateTerrainChunk<32>(*chunk,x,y,z);
+    else if(lod == MID_FAR) generator.generateTerrainChunk<16>(*chunk,x,y,z);
+    else if(lod == FAR    ) generator.generateTerrainChunk<8>(*chunk,x,y,z);
 
     std::unique_lock lock(chunkGenLock);
     this->chunks.emplace(key, std::move(chunk));
@@ -407,19 +411,23 @@ static inline void saveMask(ByteArray& out, ChunkMask<64>& mask, int type){
     size_t layerCount
     saved masks using the above function..
 */
-void WorldStream::save(Chunk& chunk){
-    if(hasChunkAt(chunk.getWorldPosition())) return;
+bool WorldStream::save(Chunk& chunk){
+    if(hasChunkAt(chunk.getWorldPosition())) return false;
     ByteArray out;
 
     out.append(chunk.getWorldPosition().x);
     out.append(chunk.getWorldPosition().y);
     out.append(chunk.getWorldPosition().z);
+    
+    // Get the 64 bit masks if they exist otherwise fail
+    if(!chunk.isMainGroupOfSize(64)) return false;
+    ChunkMaskGroup<64>* group = chunk.getMainGroupAs<64>();
 
-    size_t layer_count = chunk.getMasks().size();
+    size_t layer_count = group->masks.size();
     out.append(layer_count);
 
-    saveMask(out, chunk.getSolidMask(), -1);
-    for(auto& [key, mask]: chunk.getMasks()) saveMask(out, mask, static_cast<int>(mask.block.type));
+    saveMask(out, group->solidMask, -1);
+    for(auto& [key, mask]: group->masks) saveMask(out, mask, static_cast<int>(mask.block.type));
 
     file_stream.seekp(header.chunk_data_end, std::ios::beg);
     out.write(file_stream);
@@ -429,6 +437,7 @@ void WorldStream::save(Chunk& chunk){
 
     saveHeader();
     saveTable();
+    return true;
 }
 
 void WorldStream::load(Chunk* chunk){
@@ -445,7 +454,8 @@ void WorldStream::load(Chunk* chunk){
         std::cout << "Corrupted chunk:" << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
         return;
     }
-
+    
+    //std::cout << "Loaded: " << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
 
     //std::cout << source << std::endl;
 
@@ -464,8 +474,10 @@ void WorldStream::load(Chunk* chunk){
     solidNormal.loadFromCompressed(source.vread<compressed_24bit>());
     BitArray3D<64> solidRotated = solidNormal.rotate();
 
-    chunk->getSolidMask().segments = solidNormal;
-    chunk->getSolidMask().segmentsRotated = solidRotated;
+    auto outputDataGroup = std::make_unique<ChunkMaskGroup<64>>();
+
+    outputDataGroup->solidMask.segments = solidNormal;
+    outputDataGroup->solidMask.segmentsRotated = solidRotated;
 
     for(int layerIndex = 0; layerIndex < layerCount; layerIndex++){
         int type = source.read<int>();
@@ -478,8 +490,10 @@ void WorldStream::load(Chunk* chunk){
         mask.segmentsRotated = rotated;
         mask.block = {static_cast<BlockTypes>(type)};
 
-        chunk->getMasks()[static_cast<BlockTypes>(type)] = mask;
+        outputDataGroup->masks[static_cast<BlockTypes>(type)] = mask;
     }
+
+    chunk->setMainGroup(std::move(outputDataGroup));
     
     //std::cout << "Loaded: " << position.x << " " << position.y << " " << position.z << std::endl;
 }

@@ -7,7 +7,7 @@ static inline void fillChunkLevel(Chunk& chunk, uint32_t y, Block value){
 }
 
 Chunk::Chunk(World& world, const glm::vec3& pos): world(world), worldPosition(pos) {
-    
+    group = std::make_unique<ChunkMaskGroup<64>>();
 }
 
 Block::Block(){
@@ -26,10 +26,12 @@ Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     if(x >= CHUNK_SIZE) return nullptr;
     if(y >= CHUNK_SIZE) return nullptr;
     if(z >= CHUNK_SIZE) return nullptr;
+    if(!isMainGroupOfSize(64)) return nullptr;
     
     uint64_t checkMask = (1ULL << (63 - x));
+    auto mainGroup = getMainGroupAs<64>();
     
-    for(auto& [key,mask]: mainGroup.masks){
+    for(auto& [key,mask]: mainGroup->masks){
         uint64_t row = mask.segments[z][y];
 
         if(row & checkMask){
@@ -44,19 +46,21 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     if(x >= CHUNK_SIZE) return false;
     if(y >= CHUNK_SIZE) return false;
     if(z >= CHUNK_SIZE) return false;
+    if(!isMainGroupOfSize(64)) return false;
 
     uint64_t currentMask = (1ULL << (63 - x));
-    
+    auto mainGroup = getMainGroupAs<64>();
+
     if(value.type != BlockTypes::Air){
-        if(mainGroup.masks.count(value.type) == 0){
-            mainGroup.masks[value.type] = {};
-            mainGroup.masks[value.type].block = value;
+        if(mainGroup->masks.count(value.type) == 0){
+            mainGroup->masks[value.type] = {};
+            mainGroup->masks[value.type].block = value;
         }
 
-        mainGroup.masks[value.type].set(x,y,z);
+        mainGroup->masks[value.type].set(x,y,z);
     }
 
-    for(auto& [key,mask]: mainGroup.masks){
+    for(auto& [key,mask]: mainGroup->masks){
         uint64_t row = mask.segments[z][y];
 
         if(!(row & currentMask)) continue;
@@ -66,8 +70,8 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
         break;
     }
 
-    if(getBlockType(&value).untextured) mainGroup.solidMask.reset(x,y,z);
-    else mainGroup.solidMask.set(x,y,z);
+    if(getBlockType(&value).untextured) mainGroup->solidMask.reset(x,y,z);
+    else mainGroup->solidMask.set(x,y,z);
 
     return true;
 }
@@ -279,7 +283,7 @@ static inline void processFaces(std::vector<Face> faces, FaceDirection direction
 }   
 
 template <int size>
-std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, ChunkMaskGroup<size> group){
+std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, ChunkMaskGroup<size>* group){
     auto solidMesh = std::make_unique<Mesh>();
     //this->solidMesh->setVertexFormat(VertexFormat({3,1,2,1,1}));  // Unused
     float worldX = worldPosition.x * CHUNK_SIZE;
@@ -299,22 +303,22 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
         BlockBitPlanes<size> planesZbackward = {0};
         
         for(int y = 0;y < size;y++){
-            for(auto& [key,mask]: group.masks){
-                uint<size> allFacesX = (mask.segmentsRotated[z][y] | mask.segmentsRotated[z + 1][y]) & (group.solidMask.segmentsRotated[z][y] ^ group.solidMask.segmentsRotated[z + 1][y]);
-                planesXforward[ (size_t) mask.block.type][y] = group.solidMask.segmentsRotated[z][y] & allFacesX;
-                planesXbackward[(size_t) mask.block.type][y] = group.solidMask.segmentsRotated[z + 1][y] & allFacesX;
+            for(auto& [key,mask]: group->masks){
+                uint<size> allFacesX = (mask.segmentsRotated[z][y] | mask.segmentsRotated[z + 1][y]) & (group->solidMask.segmentsRotated[z][y] ^ group->solidMask.segmentsRotated[z + 1][y]);
+                planesXforward[ (size_t) mask.block.type][y] = group->solidMask.segmentsRotated[z][y] & allFacesX;
+                planesXbackward[(size_t) mask.block.type][y] = group->solidMask.segmentsRotated[z + 1][y] & allFacesX;
 
-                uint<size> allFacesY = (mask.segments[y][z] | mask.segments[y][z + 1]) & (group.solidMask.segments[y][z] ^ group.solidMask.segments[y][z + 1]);
-                planesYforward[ (size_t) mask.block.type][y] = group.solidMask.segments[y][z] & allFacesY;
-                planesYbackward[(size_t) mask.block.type][y] = group.solidMask.segments[y][z + 1] & allFacesY;
+                uint<size> allFacesY = (mask.segments[y][z] | mask.segments[y][z + 1]) & (group->solidMask.segments[y][z] ^ group->solidMask.segments[y][z + 1]);
+                planesYforward[ (size_t) mask.block.type][y] = group->solidMask.segments[y][z] & allFacesY;
+                planesYbackward[(size_t) mask.block.type][y] = group->solidMask.segments[y][z + 1] & allFacesY;
 
-                uint<size> allFacesZ = (mask.segments[z][y] | mask.segments[z + 1][y]) & (group.solidMask.segments[z][y] ^ group.solidMask.segments[z + 1][y]);
-                planesZforward[ (size_t) mask.block.type][y] = group.solidMask.segments[z][y] & allFacesZ;
-                planesZbackward[(size_t) mask.block.type][y] = group.solidMask.segments[z + 1][y] & allFacesZ;
+                uint<size> allFacesZ = (mask.segments[z][y] | mask.segments[z + 1][y]) & (group->solidMask.segments[z][y] ^ group->solidMask.segments[z + 1][y]);
+                planesZforward[ (size_t) mask.block.type][y] = group->solidMask.segments[z][y] & allFacesZ;
+                planesZbackward[(size_t) mask.block.type][y] = group->solidMask.segments[z + 1][y] & allFacesZ;
             }
         }
 
-        for(auto& [key,mask]: group.masks){
+        for(auto& [key,mask]: group->masks){
             BlockType type = predefinedBlocks[mask.block.type];
             if(type.untextured) continue;
             //std::cout << "Solving plane: " << i << std::endl;
@@ -358,9 +362,9 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
     auto& nextYmasks = nextY->getMasks();
     auto& nextZmasks = nextZ->getMasks();
     
-    std::unordered_set<BlockTypes> agregateTypesX = mergeMaskKeys(group.masks,nextXmasks);
-    std::unordered_set<BlockTypes> agregateTypesY = mergeMaskKeys(group.masks,nextYmasks);
-    std::unordered_set<BlockTypes> agregateTypesZ = mergeMaskKeys(group.masks,nextZmasks);
+    std::unordered_set<BlockTypes> agregateTypesX = mergeMaskKeys(group->masks,nextXmasks);
+    std::unordered_set<BlockTypes> agregateTypesY = mergeMaskKeys(group->masks,nextYmasks);
+    std::unordered_set<BlockTypes> agregateTypesZ = mergeMaskKeys(group->masks,nextZmasks);
 
     std::unordered_set<BlockTypes> fullAgregate;
     fullAgregate.insert(agregateTypesX.begin(),agregateTypesX.end());
@@ -369,33 +373,33 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
 
     for(int y = 0;y < CHUNK_SIZE;y++){
         for(auto& key: agregateTypesX){
-            const uint64_t localMaskRow = group.masks.count(key) != 0 ? group.masks.at(key)     .segmentsRotated[0] [y] : 0ULL;
+            const uint64_t localMaskRow = group->masks.count(key) != 0 ? group->masks.at(key)     .segmentsRotated[0] [y] : 0ULL;
             const uint64_t otherMaskRow = nextXmasks.count(key)  != 0 ? nextXmasks.at(key).segmentsRotated[63][y] : 0ULL;
             
-            uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (group.solidMask.segmentsRotated[0][y] ^ nextXSolid.segmentsRotated[63][y]);
+            uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (group->solidMask.segmentsRotated[0][y] ^ nextXSolid.segmentsRotated[63][y]);
 
-            planesXforward[ (size_t)key][y] =  group.solidMask.segmentsRotated[0][y] & allFacesX;
+            planesXforward[ (size_t)key][y] =  group->solidMask.segmentsRotated[0][y] & allFacesX;
             planesXbackward[(size_t)key][y] =  nextXSolid.segmentsRotated[63][y] & allFacesX;
         }
 
         for(auto& key: agregateTypesY){
-            const uint64_t localMaskRow = group.masks.count(key) != 0 ? group.masks.at(key)     .segments[y] [0] : 0ULL;
+            const uint64_t localMaskRow = group->masks.count(key) != 0 ? group->masks.at(key)     .segments[y] [0] : 0ULL;
             const uint64_t otherMaskRow = nextYmasks.count(key)  != 0 ? nextYmasks.at(key).segments[y][63] : 0ULL;
             
-            uint64_t allFacesY =  (localMaskRow | otherMaskRow) & (group.solidMask.segments[y][0] ^ nextYSolid.segments[y][63]);
+            uint64_t allFacesY =  (localMaskRow | otherMaskRow) & (group->solidMask.segments[y][0] ^ nextYSolid.segments[y][63]);
 
-            planesYforward[ (size_t) key][y] = group.solidMask.segments[y][0] & allFacesY;
+            planesYforward[ (size_t) key][y] = group->solidMask.segments[y][0] & allFacesY;
             planesYbackward[(size_t) key][y] = nextYSolid.segments[y][63] & allFacesY;
         }
 
         for(auto& key: agregateTypesZ){
-            const uint64_t localMaskRow = group.masks.count(key) != 0 ? group.masks.at(key)     .segments[0] [y] : 0ULL;
+            const uint64_t localMaskRow = group->masks.count(key) != 0 ? group->masks.at(key)     .segments[0] [y] : 0ULL;
             const uint64_t otherMaskRow = nextZmasks.count(key)  != 0 ? nextZmasks.at(key).segments[63][y] : 0ULL;
             
 
-            uint64_t allFacesZ =  (localMaskRow | otherMaskRow) & (group.solidMask.segments[0][y] ^ nextZSolid.segments[63][y]);
+            uint64_t allFacesZ =  (localMaskRow | otherMaskRow) & (group->solidMask.segments[0][y] ^ nextZSolid.segments[63][y]);
                 
-            planesZforward[ (size_t) key][y] =  group.solidMask.segments[0][y] & allFacesZ;
+            planesZforward[ (size_t) key][y] =  group->solidMask.segments[0][y] & allFacesZ;
             planesZbackward[(size_t) key][y] =  nextZSolid.segments[63][y] & allFacesZ;
         }
     }
@@ -419,7 +423,13 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
 }
 
 void Chunk::generateMeshes(){
-    solidMesh = generateChunkMesh<64>(world, worldPosition, mainGroup);
+    //std::cout << "Generating mesh for: " << getMainGroup()->getSize() << " " << isMainGroupOfSize(64) << " " << isMainGroupOfSize(32) << std::endl;
+    if     (isMainGroupOfSize(64)) solidMesh = generateChunkMesh<64>(world, worldPosition, getMainGroupAs<64>());
+    else if(isMainGroupOfSize(32)) solidMesh = generateChunkMesh<32>(world, worldPosition, getMainGroupAs<32>());
+    else if(isMainGroupOfSize(16)) solidMesh = generateChunkMesh<16>(world, worldPosition, getMainGroupAs<16>());
+    else if(isMainGroupOfSize(8))  solidMesh = generateChunkMesh<8> (world, worldPosition, getMainGroupAs<8> ());
+    else solidMesh = std::make_unique<Mesh>(); // Fall back to empty;
+    //std::cout << "Generated vertices: " << solidMesh->getVertices().size() << std::endl;
 }
 
 static inline bool isOnOrForwardPlane(const Plane& plane, glm::vec3 center){

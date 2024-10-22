@@ -4,6 +4,7 @@
 #include <optional>
 #include <random>
 #include <game/blocks.hpp>
+#include <game/chunk_masks.hpp>
 #include <memory>
 
 #include <FastNoiseLite.h> 
@@ -36,9 +37,12 @@ class WorldGenerator{
     public:
         WorldGenerator(int seed);
         WorldGenerator(){seed = 1948;}
+
+        template <int size>
         void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ);
 };
 
 #include <game/chunk.hpp>
+#include <worldgen/worldgen.tpp>
 
 #endif

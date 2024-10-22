@@ -78,13 +78,6 @@ std::random_device dev;
 std::mt19937 rng(dev());
 std::uniform_int_distribution<std::mt19937::result_type> dist6(1,10); // distribution in range [1, 6]
 
-static inline float transcribeNoiseValue(float value, float ry){
-    value -= std::max(ry / 256, -100.0f);
-    value = std::max(0.0f, value);
-
-    return value;
-}
-
 WorldGenerator::WorldGenerator(int seed){
     //noise = std::make_unique<FastNoiseLite>();
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
@@ -93,45 +86,3 @@ WorldGenerator::WorldGenerator(int seed){
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetSeed(seed);
 }
-    
-void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
-    //auto start = std::chrono::high_resolution_clock::now();
-
-    for(int x = 0;x < CHUNK_SIZE;x++) for(int y = 0;y < CHUNK_SIZE;y++) for(int z = 0;z < CHUNK_SIZE;z++){
-        float rx = (float)(x + chunkX * CHUNK_SIZE);
-        float ry = (float)(y + chunkY * CHUNK_SIZE);
-        float rz = (float)(z + chunkZ * CHUNK_SIZE);
-        
-        float value = transcribeNoiseValue(noise.GetNoise(rx, ry, rz),  ry);
-        bool top = transcribeNoiseValue(noise.GetNoise(rx, ry + 1, rz), ry + 1) <= 0.5;
-
-        if(value > 0.5){
-            chunk.setBlock(x,y,z, {top ? BlockTypes::Grass : BlockTypes::Stone});
-
-            if(top && rand() % 30 == 0) generateOakTree(chunk,x,y+1,z);
-        }
-    }
-    
-    /*for(int x = 0;x < CHUNK_SIZE;x++) for(int y = 0;y < CHUNK_SIZE;y++) for(int z = 0;z < CHUNK_SIZE;z++){
-        float rx = (float)(x + chunkX * CHUNK_SIZE);
-        float ry = (float)(y + chunkY * CHUNK_SIZE);
-        float rz = (float)(z + chunkZ * CHUNK_SIZE);
-
-        Block* block = chunk.getBlock(x,y,z);
-        Block* upperBlock = chunk.getBlock(x,y + 1,z); 
-        if(block->type == BlockTypes::Stone && upperBlock && upperBlock->type == BlockTypes::Air){
-            chunk.setBlock(x,y,z, {BlockTypes::Grass});
-
-            if(dist6(rng) == 100) generateOakTree(chunk, x,y,z);
-        }
-    }*/
-
-
-
-      // End time point
-    //auto end = std::chrono::high_resolution_clock::now();
-
-    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    //std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
-
-}   

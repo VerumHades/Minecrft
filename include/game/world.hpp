@@ -65,7 +65,7 @@ class WorldStream{
     public:
         WorldStream(std::string filepath);
         ~WorldStream();
-        void save(Chunk& chunk);
+        bool save(Chunk& chunk);
         void load(Chunk* chunk);
         bool hasChunkAt(glm::vec3 position);
         int getSeed() const {return header.seed;};
@@ -73,6 +73,13 @@ class WorldStream{
 };
 
 class ModelManager;
+
+enum LODLevel{
+    CLOSE,
+    MID,
+    MID_FAR,
+    FAR
+};
 
 class World: public Collidable{
     private:
@@ -87,7 +94,7 @@ class World: public Collidable{
         Block* getBlock(int x, int y, int z);
         bool setBlock(int x, int y, int z, Block index);
 
-        void generateChunk(int x, int y, int z);
+        void generateChunk(int x, int y, int z, LODLevel lod);
 
         bool isChunkLoadable(int x, int y, int z);
         void loadChunk(int x, int y, int z);

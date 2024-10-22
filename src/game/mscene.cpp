@@ -664,8 +664,15 @@ void MainScene::pregenUpdate(){
 
                 World* worldp = world.get();
                 //std::cout << "Generating chunk" << std::endl;
-                threadPool->deploy([worldp,chunkX,chunkY,chunkZ](){
-                    worldp->generateChunk(chunkX, chunkY, chunkZ);
+
+                LODLevel level = FAR;
+                float distance = glm::length(glm::vec3(x,y,z));
+                if(distance < 4 ) level = CLOSE;
+                else if(distance < 6 ) level = MID;
+                else if(distance < 10) level = MID_FAR;
+
+                threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level](){
+                    worldp->generateChunk(chunkX, chunkY, chunkZ, level);
                 });
             }
         }
