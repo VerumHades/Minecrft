@@ -286,7 +286,7 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
     float worldY = worldPosition.y * CHUNK_SIZE;
     float worldZ = worldPosition.z * CHUNK_SIZE;
 
-    float scale = 64 / size;
+    float scale = CHUNK_SIZE / size;
 
     for(int z = 0; z < size - 1;z++){
         BlockBitPlanes<size> planesXforward = {0};

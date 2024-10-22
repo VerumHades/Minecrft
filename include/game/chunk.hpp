@@ -53,8 +53,8 @@ class ChunkMask{
 
 template <int size>
 struct ChunkMaskGroup{
-    ChunkMask<size> solidMask;
-    std::unordered_map<BlockTypes,ChunkMask<size>> masks;
+    ChunkMask<size> solidMask = {};
+    std::unordered_map<BlockTypes,ChunkMask<size>> masks = {};
 };
 
 
@@ -64,7 +64,7 @@ class Chunk: public Volume{
         glm::ivec3 worldPosition = glm::ivec3(0,0,0);
         World& world; 
         //Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {};
-        ChunkMaskGroup<64> mainGroup;
+        ChunkMaskGroup<64> mainGroup = {};
         //unsigned char lightArray[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE][3];
         //std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
         

@@ -657,12 +657,13 @@ void MainScene::pregenUpdate(){
                 //meshlessChunk = world->generateAndGetChunk(chunkX, chunkY, chunkZ);
 
                 if(world->isChunkLoadable(chunkX,chunkY,chunkZ)){
+                    //std::cout << "Loading chunk" << std::endl;
                     world->loadChunk(chunkX,chunkY,chunkZ);
                     continue;
                 }
 
                 World* worldp = world.get();
-                
+                //std::cout << "Generating chunk" << std::endl;
                 threadPool->deploy([worldp,chunkX,chunkY,chunkZ](){
                     worldp->generateChunk(chunkX, chunkY, chunkZ);
                 });

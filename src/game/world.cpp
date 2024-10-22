@@ -385,7 +385,6 @@ size_t WorldStream::moveChunk(size_t from, size_t to){
     fromData.write(file_stream);
 
     chunkTable[position] = to;
-    saveTable();
 
     return fromData.getFullSize();
 }
