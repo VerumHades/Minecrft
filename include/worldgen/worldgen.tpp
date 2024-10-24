@@ -26,7 +26,7 @@ void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, 
         float rz = (float)(z * jump + chunkZ * CHUNK_SIZE);
         
         float value = transcribeNoiseValue(noise.GetNoise(rx, ry, rz),  ry);
-        bool top = transcribeNoiseValue(noise.GetNoise(rx, ry + 1, rz), ry + 1) <= 0.5;
+        bool top = transcribeNoiseValue(noise.GetNoise(rx, ry + jump, rz), ry + jump) <= 0.5;
 
         if(value > 0.5){
             if(top){

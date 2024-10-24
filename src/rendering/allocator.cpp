@@ -3,7 +3,7 @@
 /*
     Allocates memory to the block of closest size, resizes blocks to be exactly the size of the allocation.
 */
-size_t Allocator::allocate(size_t size){
+AllocationResult Allocator::allocate(size_t size){
     auto it = freeBlocks.lower_bound(size);
 
     if(it == freeBlocks.end()){
@@ -13,14 +13,13 @@ size_t Allocator::allocate(size_t size){
             return allocate(size);
         }
         else{
-            return 0;
+            return {0, true};
         }
     }
 
-    freeBlocks.erase(it);
     auto [actual_size, selectedBlock] = *it;
-
-
+    freeBlocks.erase(it);
+    
     size_t sizeLeft = selectedBlock->size - size;
     if(selectedBlock->size > size){ // Defragmented when freeing
         MemBlock newBlock;
@@ -36,13 +35,14 @@ size_t Allocator::allocate(size_t size){
     selectedBlock->used = true;
     selectedBlock->size = size;
     takenBlocks[selectedBlock->start] = selectedBlock;
+    
     //std::cout << "Allocated at:" << selectedBlock->start << " of size: " << size << std::endl;
     //std::cout << "Current state:" << std::endl;
     //for(auto& block: blocks){
     //    std::cout << "(" << block.start << ":" << block.size << ")[" << (block.used ? "used" : "unused") << "] ";
     //}
     //std::cout << std::endl;
-    return selectedBlock->start;
+    return {selectedBlock->start,false};
 }   
 
 void Allocator::clear(){

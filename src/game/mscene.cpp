@@ -271,14 +271,14 @@ void MainScene::initialize(Scene* mainScene){
         {GLFW_KEY_D}
     };
 
-    chunkBuffer.initialize(pow(12*2, 3));
+    chunkBuffer.initialize(renderDistance);
 
     camera.setModelPosition({0,0,0});
     terrainProgram.updateUniform("modelMatrix");
 
     suncam.setCaptureSize(renderDistance * 2 * CHUNK_SIZE);
 
-    threadPool = std::make_unique<ThreadPool>(8);
+    threadPool = std::make_unique<ThreadPool>(10);
     //world->load("saves/worldsave.bin");
 }
 
@@ -667,9 +667,9 @@ void MainScene::pregenUpdate(){
 
                 LODLevel level = FAR;
                 float distance = glm::length(glm::vec3(x,y,z));
-                if(distance < 4 ) level = CLOSE;
-                else if(distance < 6 ) level = MID;
-                else if(distance < 10) level = MID_FAR;
+                if(distance < 6 ) level = CLOSE;
+                else if(distance < 10 ) level = MID;
+                else if(distance < 13) level = MID_FAR;
 
                 threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level](){
                     worldp->generateChunk(chunkX, chunkY, chunkZ, level);

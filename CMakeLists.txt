@@ -2,12 +2,16 @@ cmake_minimum_required(VERSION 3.14)  # FetchContent is fully supported from CMa
 # Project name
 project(main LANGUAGES C CXX)
 
+
+#set(CMAKE_C_COMPILER gcc) 
+#set(CMAKE_CXX_COMPILER g++)  # Set g++ as the C++ compiler
+
 set(CMAKE_C_STANDARD 11)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_PARALLEL_LEVEL 8)
-#set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -47,6 +51,21 @@ set(ASSIMP_BUILD_TYPE "Release" CACHE STRING "Build type for Assimp" FORCE)
 
 FetchContent_MakeAvailable(assimp)
 
+# Suppress all warnings for GLFW
+target_compile_options(glfw PRIVATE
+    -w  # Suppress all warnings
+)
+
+# Suppress all warnings for GLM
+target_compile_options(glm PRIVATE
+    -w  # Suppress all warnings
+)
+
+# Suppress all warnings for GLM
+target_compile_options(assimp PRIVATE
+    -w  # Suppress all warnings
+)
+
 set_target_properties(assimp PROPERTIES MAP_IMPORTED_CONFIG_DEBUG Release)
 
 # Declare FreeType as a dependency
@@ -67,8 +86,5 @@ add_executable(main ${SOURCES})
 # Link libraries
 target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad assimp freetype)
 
-if(MSVC)
-  target_compile_options(main PRIVATE /W4)
-else()
-  target_compile_options(main PRIVATE -Wall -Wextra)
-endif()
+
+target_compile_options(main PRIVATE -Wall)

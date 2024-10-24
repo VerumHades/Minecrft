@@ -7,9 +7,11 @@
 #include <cmath>
 #include <queue>
 #include <glm/glm.hpp>
-#include <rendering/allocator.hpp>
 #include <unordered_map>
+#include <list>
+
 #include <rendering/mesh.hpp>
+#include <rendering/allocator.hpp>
 
 #include <chrono>
 
@@ -64,6 +66,9 @@ class MultiChunkBuffer{
 
         Allocator vertexAllocator;
         Allocator indexAllocator;
+
+        size_t drawCallsSize = 0;
+        size_t drawCallCount = 0;
     
         struct DrawElementsIndirectCommand {
             GLuint  count;      // Number of indices for the current draw call.
@@ -82,21 +87,20 @@ class MultiChunkBuffer{
 
             size_t vertexDataSize;
             size_t indexDataSize;
-            
-            bool hasDrawCall;
         };
-
-        DrawElementsIndirectCommand* drawCallBuffer = nullptr;
 
         //void setDrawCall(size_t index, uint32_t firstIndex, uint32_t count, uint32_t baseVertex);
 
         std::unordered_map<glm::ivec3, LoadedChunk, IVec3Hash, IVec3Equal> loadedChunks;
-        std::vector<DrawElementsIndirectCommand> drawCalls;
+        std::unordered_map<glm::ivec3, size_t, IVec3Hash, IVec3Equal> drawCallMap;
+        
+        PoolAllocator drawCommandAllocator;
+        std::vector<DrawElementsIndirectCommand> drawCommands;
 
     public:
         ~MultiChunkBuffer();
         
-        void initialize(uint32_t maxDrawCalls);
+        void initialize(uint32_t renderDistance);
 
         void addChunkMesh(Mesh& mesh, const glm::ivec3& pos);
         void swapChunkMesh(Mesh& mesh, const glm::ivec3& pos);
@@ -109,6 +113,7 @@ class MultiChunkBuffer{
 
         void addDrawCall(const glm::ivec3& position);
         void removeDrawCall(const glm::ivec3& position);
+        void clearDrawCalls();
         void updateDrawCalls();
         void draw();
 

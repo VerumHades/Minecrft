@@ -21,7 +21,7 @@ void World::generateChunk(int x, int y, int z, LODLevel lod){
     if     (lod == CLOSE  ) generator.generateTerrainChunk<64>(*chunk,x,y,z);
     else if(lod == MID    ) generator.generateTerrainChunk<32>(*chunk,x,y,z);
     else if(lod == MID_FAR) generator.generateTerrainChunk<16>(*chunk,x,y,z);
-    else if(lod == FAR    ) generator.generateTerrainChunk<8>(*chunk,x,y,z);
+    else if(lod == FAR    ) generator.generateTerrainChunk<8 >(*chunk,x,y,z);
 
     std::unique_lock lock(chunkGenLock);
     this->chunks.emplace(key, std::move(chunk));

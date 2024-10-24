@@ -6,8 +6,14 @@
 #include <functional>
 #include <list>
 #include <map>
+#include <queue>
 
 using AllocatorMemoryRequest = std::function<bool(size_t)>;
+
+struct AllocationResult{
+    size_t location;
+    bool failed;
+};
 
 class Allocator{
     private:
@@ -43,12 +49,40 @@ class Allocator{
             memsize = 0;
         }
 
-        size_t allocate(size_t size);
+        AllocationResult allocate(size_t size);
         void free(size_t location);
         void clear();
 
         const std::list<MemBlock>& getBlocks() {return blocks;};
         const size_t& getMemorySize(){return memsize;}
+};
+
+class PoolAllocator{
+    private:
+        std::queue<size_t> freeLocations = {};
+        size_t memsize = 0;
+
+    public:
+        PoolAllocator(): PoolAllocator(0){}
+        PoolAllocator(size_t memsize){
+            for(int i = 0;i < memsize;i++) freeLocations.push(i);
+        }
+        // Allocates the first empty block
+        AllocationResult allocate(){
+            if(freeLocations.empty()) return {0,true};
+            size_t loc = freeLocations.front();
+            freeLocations.pop();
+            return {loc};
+        }
+        // Does no checks to validate the free, can cause issues
+        void free(size_t ptr){
+            freeLocations.push(ptr);
+        }
+
+        void clear(){
+            freeLocations = {};
+            for(int i = 0;i < memsize;i++) freeLocations.push(i);
+        }
 };
 
 #endif

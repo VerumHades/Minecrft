@@ -35,7 +35,7 @@ class Chunk: public Volume{
         glm::ivec3 worldPosition = glm::ivec3(0,0,0);
         World& world; 
         //Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {};
-        std::unique_ptr<DynamicChunkMaskGroup> group = {};
+        std::unique_ptr<DynamicChunkMaskGroup> currentGroup = {};
         //unsigned char lightArray[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE][3];
         //std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
         
@@ -53,7 +53,8 @@ class Chunk: public Volume{
     public:
         //std::optional<Mesh> transparentMesh;
 
-        bool isEmpty() const {return group->empty();}
+        bool isEmpty() const {return currentGroup && currentGroup->empty();}
+        bool isMeshEmpty() {return generatedEmptyMesh;}
         bool isOnFrustum(PerspectiveCamera& cam) const;
 
         Chunk(World& world, const glm::vec3& pos);
@@ -69,13 +70,13 @@ class Chunk: public Volume{
             return this->worldPosition;
         }
 
-        bool isMainGroupOfSize(int size){return group->getSize() == size;}
+        bool isMainGroupOfSize(int size){return currentGroup && currentGroup->getSize() == size;}
 
         template <int size>
-        ChunkMaskGroup<size>* getMainGroupAs() { return static_cast<ChunkMaskGroup<size>*>(group.get()); }
+        ChunkMaskGroup<size>* getMainGroupAs() { return static_cast<ChunkMaskGroup<size>*>(currentGroup.get()); }
 
-        std::unique_ptr<DynamicChunkMaskGroup>& getMainGroup() {return group;}
-        void setMainGroup(std::unique_ptr<DynamicChunkMaskGroup> group) {this->group = std::move(group);}
+        std::unique_ptr<DynamicChunkMaskGroup>& getMainGroup() {return currentGroup;}
+        void setMainGroup(std::unique_ptr<DynamicChunkMaskGroup> group) {this->currentGroup = std::move(group);}
 }; 
 
 struct Face{

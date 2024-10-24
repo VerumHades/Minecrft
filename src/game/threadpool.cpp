@@ -58,6 +58,8 @@ ThreadPool::ThreadPool(size_t mthreads){
 }
 
 bool ThreadPool::deploy(std::function<void(void)> func){
+    std::lock_guard<std::mutex> lock(this->updateMutex);
+    
     if(nextThread.empty()) return false;
 
     //std::cout << "Deploying thread!" << std::endl;

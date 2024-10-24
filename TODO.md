@@ -27,7 +27,7 @@
     - [x] Free meshes when out of view if neccesary
   - [x] Free chunk meshes that are far away
   - [ ] Add LOD
-    - [ ] Add meshing for different chunk sizes
+    - [x] Add meshing for different chunk sizes
     - [ ] Make something to approximate distant chunks
   - [ ] Make chunk buffer check for mesh format correctness
   - [ ] Transpose planes to save 1/2 of all memory taken by blocks
