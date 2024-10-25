@@ -47,7 +47,7 @@ class MainScene: public Scene{
         MultiChunkBuffer chunkBuffer;
 
         std::string worldPath = "saves/worldsave.bin";
-        int renderDistance = 32;
+        int renderDistance = 16;
         int selectedBlock = 2;
 
         bool running = false;
