@@ -539,16 +539,32 @@ void MainScene::generateMeshes(){
         camera.getPosition().z / CHUNK_SIZE
     };
 
-    std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> currentPositions;
-    auto* cpptr = &currentPositions;
 
+    std::vector<DrawElementsIndirectCommand> drawCommands = {};
+    drawCommands.reserve(10000);
+    auto* drawcmdnptr = &drawCommands;
     //auto istart = std::chrono::high_resolution_clock::now();
 
     findVisibleChunks(
         camera.getLocalFrustum(), 
         renderDistance, 
-        [cpptr, camWorldPosition](glm::ivec3 local_position){
-            cpptr->emplace(local_position + camWorldPosition);
+        [drawcmdnptr, camWorldPosition, this](glm::ivec3 local_position){
+            auto pos = local_position + camWorldPosition;
+
+            Chunk* meshlessChunk = world->getChunk(pos.x, pos.y, pos.z);
+
+            if(!meshlessChunk) return;
+            if(meshlessChunk->isEmpty()) return;
+
+            if(!chunkBuffer.isChunkLoaded(pos)){
+                meshlessChunk->generateMesh(chunkBuffer, *threadPool);
+
+                return;
+            }
+
+            if(meshlessChunk->isMeshEmpty()) return;
+
+            drawcmdnptr->push_back(this->chunkBuffer.getCommandFor(pos));
         }
     );
 
@@ -559,55 +575,14 @@ void MainScene::generateMeshes(){
 
     //auto start = std::chrono::high_resolution_clock::now();
 
-    bool changed = false;
-    for(auto iter = currentPositions.begin(); iter != currentPositions.end();){
-        glm::ivec3 pos = *iter;
-
-        if(!chunkBuffer.isChunkLoaded(pos)){
-            iter = currentPositions.erase(iter);
-
-            Chunk* meshlessChunk = world->getChunk(pos.x, pos.y, pos.z);
-            
-            if(!meshlessChunk) continue;
-            if(meshlessChunk->isEmpty()) continue;
-            
-            meshlessChunk->generateMesh(chunkBuffer, *threadPool);
-
-            continue;
-        }
-
-        if(loadedPositions.find(pos) != loadedPositions.end()){
-            ++iter;
-            continue;
-        }
-
-        chunkBuffer.addDrawCall(pos);
-        changed = true;
-        ++iter;
-    }
-
-    for(auto& pos: loadedPositions){
-        if(currentPositions.find(pos) != currentPositions.end()) continue;
-
-        chunkBuffer.removeDrawCall(pos);
-        changed = true;
-    }
-
-    loadedPositions = currentPositions;
-
     //End time point
     //auto end = std::chrono::high_resolution_clock::now();
 
     //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     //std::cout << "Updated draw calls in: " << duration << " microseconds" << std::endl;
 
-    if(changed){
-        //circumscribed sphere of the render distance
-        float radius = glm::distance(glm::vec3(0,0,0), glm::vec3(static_cast<float>(renderDistance)));
-        
-        //chunkBuffer.unloadFarawayChunks(camWorldPosition, radius);
-        chunkBuffer.updateDrawCalls();
-    }
+    float radius = glm::distance(glm::vec3(0,0,0), glm::vec3(static_cast<float>(renderDistance)));
+    chunkBuffer.updateDrawCalls(drawCommands);
 }
 
 void MainScene::physicsUpdate(){

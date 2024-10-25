@@ -51,6 +51,14 @@ class GLDoubleBuffer{
 
 #include <vec_hash.hpp>
 
+struct DrawElementsIndirectCommand {
+    GLuint  count;      // Number of indices for the current draw call.
+    GLuint  instanceCount; // Number of instances to render.
+    GLuint  firstIndex; // Offset into the element array buffer.
+    GLuint  baseVertex; // Base vertex for index calculations.
+    GLuint  baseInstance; // Base instance for instanced rendering.
+};
+
 class MultiChunkBuffer{
     private:
         uint32_t maxDrawCalls = 0; // Calculated in the constructor
@@ -66,17 +74,7 @@ class MultiChunkBuffer{
 
         Allocator vertexAllocator;
         Allocator indexAllocator;
-
-        size_t drawCallsSize = 0;
-        size_t drawCallCount = 0;
     
-        struct DrawElementsIndirectCommand {
-            GLuint  count;      // Number of indices for the current draw call.
-            GLuint  instanceCount; // Number of instances to render.
-            GLuint  firstIndex; // Offset into the element array buffer.
-            GLuint  baseVertex; // Base vertex for index calculations.
-            GLuint  baseInstance; // Base instance for instanced rendering.
-        };
         struct LoadedChunk{ 
             size_t vertexData;
             size_t indexData;
@@ -91,11 +89,9 @@ class MultiChunkBuffer{
 
         //void setDrawCall(size_t index, uint32_t firstIndex, uint32_t count, uint32_t baseVertex);
 
+        size_t drawCallBufferSize = 0;
+        size_t drawCallCount = 0;
         std::unordered_map<glm::ivec3, LoadedChunk, IVec3Hash, IVec3Equal> loadedChunks;
-        std::unordered_map<glm::ivec3, size_t, IVec3Hash, IVec3Equal> drawCallMap;
-        
-        PoolAllocator drawCommandAllocator;
-        std::vector<DrawElementsIndirectCommand> drawCommands;
 
     public:
         ~MultiChunkBuffer();
@@ -111,10 +107,8 @@ class MultiChunkBuffer{
             return loadedChunks.find(pos) != loadedChunks.end();
         }
 
-        void addDrawCall(const glm::ivec3& position);
-        void removeDrawCall(const glm::ivec3& position);
-        void clearDrawCalls();
-        void updateDrawCalls();
+        void updateDrawCalls(std::vector<DrawElementsIndirectCommand>& commands);
+        DrawElementsIndirectCommand getCommandFor(const glm::ivec3& pos);
         void draw();
 
         Allocator& getVertexAllocator() {return vertexAllocator;};
