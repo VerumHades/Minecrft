@@ -56,6 +56,7 @@ class Chunk: public Volume{
         bool isEmpty() const {return currentGroup && currentGroup->empty();}
         bool isMeshEmpty() {return generatedEmptyMesh;}
         bool isOnFrustum(PerspectiveCamera& cam) const;
+        bool needsMeshReload(){return reloadMesh;}
 
         Chunk(World& world, const glm::vec3& pos);
 

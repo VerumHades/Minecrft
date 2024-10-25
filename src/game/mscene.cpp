@@ -541,15 +541,20 @@ void MainScene::generateMeshes(){
 
 
     std::vector<DrawElementsIndirectCommand> drawCommands = {};
-    drawCommands.reserve(10000);
+    drawCommands.reserve(20000);
     auto* drawcmdnptr = &drawCommands;
-    //auto istart = std::chrono::high_resolution_clock::now();
+    auto istart = std::chrono::high_resolution_clock::now();
+
+    int consideredTotal = 0;
+    int *tr = &consideredTotal;
 
     findVisibleChunks(
         camera.getLocalFrustum(), 
         renderDistance, 
-        [drawcmdnptr, camWorldPosition, this](glm::ivec3 local_position){
+        [drawcmdnptr, camWorldPosition, this, tr](glm::ivec3 local_position){
             auto pos = local_position + camWorldPosition;
+
+            (*tr)++;
 
             Chunk* meshlessChunk = world->getChunk(pos.x, pos.y, pos.z);
 
@@ -561,7 +566,7 @@ void MainScene::generateMeshes(){
 
                 return;
             }
-
+            if(meshlessChunk->needsMeshReload())  meshlessChunk->generateMesh(chunkBuffer, *threadPool);
             if(meshlessChunk->isMeshEmpty()) return;
 
             drawcmdnptr->push_back(this->chunkBuffer.getCommandFor(pos));
@@ -569,20 +574,20 @@ void MainScene::generateMeshes(){
     );
 
     //End time point
-    //auto iend = std::chrono::high_resolution_clock::now();
+    auto iend = std::chrono::high_resolution_clock::now();
 
-    //std::cout << "Iterated over all chunks in: " << std::chrono::duration_cast<std::chrono::microseconds>(iend - istart).count() << " microseconds" << std::endl;
+    std::cout << "Iterated over all chunks in: " << std::chrono::duration_cast<std::chrono::microseconds>(iend - istart).count() << " microseconds" << std::endl;
 
-    //auto start = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
 
+    chunkBuffer.updateDrawCalls(drawCommands);
     //End time point
-    //auto end = std::chrono::high_resolution_clock::now();
+    auto end = std::chrono::high_resolution_clock::now();
 
-    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    //std::cout << "Updated draw calls in: " << duration << " microseconds" << std::endl;
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "Updated draw calls in: " << duration << " microseconds" << std::endl;
 
     float radius = glm::distance(glm::vec3(0,0,0), glm::vec3(static_cast<float>(renderDistance)));
-    chunkBuffer.updateDrawCalls(drawCommands);
 }
 
 void MainScene::physicsUpdate(){
