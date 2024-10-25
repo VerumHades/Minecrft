@@ -361,15 +361,15 @@ void MultiChunkBuffer::removeDrawCall(const glm::ivec3& position){
 void MultiChunkBuffer::updateDrawCalls(){
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
 
-    //auto start = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
 
     glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(DrawElementsIndirectCommand) * maxDrawCalls, drawCommands.data());
 
     //End time point
-    //auto end = std::chrono::high_resolution_clock::now();
+    auto end = std::chrono::high_resolution_clock::now();
 
-    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    //std::cout << "Execution time to change draw calls: " << duration << " microseconds" << std::endl;
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "Execution time to change draw calls: " << duration << " microseconds" << std::endl;
 }
 
 void MultiChunkBuffer::draw(){

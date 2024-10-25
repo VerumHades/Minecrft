@@ -539,6 +539,9 @@ void MainScene::generateMeshes(){
 
     std::unordered_set<glm::vec3, Vec3Hash, Vec3Equal> currentPositions;
     
+    auto istart = std::chrono::high_resolution_clock::now();
+
+    //bool changed = false;
     for(int x = -renderDistance; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
         int chunkX = x + camWorldX;
         int chunkY = y + camWorldY;
@@ -552,15 +555,27 @@ void MainScene::generateMeshes(){
         if(!camera.isVisible(*meshlessChunk)) continue;
         if(meshlessChunk->isEmpty()) continue;
 
-        meshlessChunk->generateMesh(chunkBuffer, *threadPool);
-
         glm::vec3 position = {chunkX,chunkY,chunkZ};
 
-        if(!chunkBuffer.isChunkLoaded(position)) continue;
+        if(!chunkBuffer.isChunkLoaded(position)){
+            meshlessChunk->generateMesh(chunkBuffer, *threadPool);
+            continue;
+        }
+
+        if(meshlessChunk->isMeshEmpty()) continue;
+
         //chunkBuffer.addDrawCall(position);
+        //changed = true;
         currentPositions.emplace(position);
         //if(chunk->solidBuffer) chunk->solidBuffer->getBuffer().draw();
     }
+
+    //End time point
+    auto iend = std::chrono::high_resolution_clock::now();
+
+    std::cout << "Iterated over all chunks in: " << std::chrono::duration_cast<std::chrono::microseconds>(iend - istart).count() << " microseconds" << std::endl;
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     bool changed = false;
     for(auto& pos: currentPositions){
@@ -579,13 +594,19 @@ void MainScene::generateMeshes(){
 
     loadedPositions = currentPositions;
 
+    //End time point
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "Updated draw calls in: " << duration << " microseconds" << std::endl;
+
     if(changed){
         //circumscribed sphere of the render distance
 
         glm::vec3 camWorldPosition = {camWorldX, camWorldY, camWorldZ};
         float radius = glm::distance(glm::vec3(0,0,0), glm::vec3(static_cast<float>(renderDistance)));
         
-        chunkBuffer.unloadFarawayChunks(camWorldPosition, radius);
+        //chunkBuffer.unloadFarawayChunks(camWorldPosition, radius);
         chunkBuffer.updateDrawCalls();
     }
 }
