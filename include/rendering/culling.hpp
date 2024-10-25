@@ -18,19 +18,25 @@ struct Plane
 
 	float getSignedDistanceToPlane(const glm::vec3& point) const
 	{
-		return glm::dot(normal, point) - distance;
+		return glm::dot(normal, point) + distance;
 	}
 };
 
 inline bool isAABBOnOrForwardPlane(const Plane& plane, glm::vec3 center, int extent){
-    // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
+    // Calculate AABB extents
+    glm::vec3 extents(extent, extent, extent);
 
-    const float r = 
-        std::abs(plane.normal.x) * (extent) +
-        std::abs(plane.normal.y) * (extent) +
-        std::abs(plane.normal.z) * (extent);
+    // Calculate the projection interval radius of the AABB onto the plane normal
+    const float projectionRadius =
+        std::abs(plane.normal.x) * extents.x +
+        std::abs(plane.normal.y) * extents.y +
+        std::abs(plane.normal.z) * extents.z;
 
-    return -r <= plane.getSignedDistanceToPlane(center);
+    // Calculate the distance from the AABB center to the plane
+    const float centerDistance = plane.getSignedDistanceToPlane(center);
+
+    // If the center is within the radius of the projection interval, the AABB is in front or intersecting the plane
+    return centerDistance + projectionRadius >= 0;
 }
 
 struct Frustum
@@ -46,11 +52,11 @@ struct Frustum
 
     bool isAABBWithing(glm::vec3 position, int extent){
         //Get global scale thanks to our transform
-        return  isAABBOnOrForwardPlane(leftFace  , position, extent) &&
-                isAABBOnOrForwardPlane(rightFace , position, extent) &&
-                isAABBOnOrForwardPlane(topFace   , position, extent) &&
-                isAABBOnOrForwardPlane(bottomFace, position, extent) &&
-                isAABBOnOrForwardPlane(nearFace  , position, extent) &&
+        return  isAABBOnOrForwardPlane(leftFace  , position, extent) ||
+                isAABBOnOrForwardPlane(rightFace , position, extent) ||
+                isAABBOnOrForwardPlane(topFace   , position, extent) ||
+                isAABBOnOrForwardPlane(bottomFace, position, extent) ||
+                isAABBOnOrForwardPlane(nearFace  , position, extent) ||
                 isAABBOnOrForwardPlane(farFace   , position, extent);
     }
 };

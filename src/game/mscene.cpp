@@ -573,6 +573,7 @@ void MainScene::generateMeshes(){
         }
     );
 
+    std::cout << (consideredTotal / pow(renderDistance*2,3)) * 100 << "%" << std::endl;
     //End time point
     auto iend = std::chrono::high_resolution_clock::now();
 
