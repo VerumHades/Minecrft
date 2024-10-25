@@ -448,7 +448,7 @@ void Chunk::generateMeshes(){
 
 static inline bool isOnOrForwardPlane(const Plane& plane, glm::vec3 center){
     // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
-    const float x = CHUNK_SIZE;
+    const float x = CHUNK_SIZE / 2;
 
     const float r = 
         std::abs(plane.normal.x) * (x) +

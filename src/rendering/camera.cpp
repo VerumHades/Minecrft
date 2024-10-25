@@ -28,24 +28,32 @@ void PerspectiveCamera::adjustFOV(float fov){
     this->projectionMatrix = glm::perspective<float>(glm::radians(fov), aspect, zNear, zFar);
 }
 
+
 void PerspectiveCamera::calculateFrustum(){
     const float halfVSide = zFar * tanf(FOV * .5f);
     const float halfHSide = halfVSide * aspect;
     const glm::vec3 frontMultFar = zFar * this->direction;
 
     glm::vec3 CamRight = glm::normalize(glm::cross(this->direction, this->up));
-    glm::vec3 CamUp = glm::normalize(glm::cross(CamRight, this->direction));
+    glm::vec3 CamUp    = glm::normalize(glm::cross(CamRight, this->direction));
 
-    frustum.nearFace = { this->position.getValue() + zNear * this->direction, this->direction };
-    frustum.farFace = { this->position.getValue() + frontMultFar, -this->direction };
-    frustum.rightFace = { this->position.getValue(),
-                            glm::cross(frontMultFar - CamRight * halfHSide, CamUp) };
-    frustum.leftFace = { this->position.getValue(),
-                            glm::cross(CamUp,frontMultFar + CamRight  * halfHSide) };
-    frustum.topFace = { this->position.getValue(),
-                            glm::cross(CamRight, frontMultFar - CamUp * halfVSide) };
-    frustum.bottomFace = { this->position.getValue(),
-                            glm::cross(frontMultFar + CamUp * halfVSide, CamRight) };
+    glm::vec3 origin = {0,0,0};
+
+    localFrustum.nearFace   = {origin + zNear * this->direction,  this->direction                                      };
+    localFrustum.farFace    = {origin + frontMultFar           , -this->direction                                      };
+    localFrustum.rightFace  = {origin                          ,glm::cross(frontMultFar - CamRight * halfHSide, CamUp) };
+    localFrustum.leftFace   = {origin                          ,glm::cross(CamUp,frontMultFar + CamRight  * halfHSide) };
+    localFrustum.topFace    = {origin                          ,glm::cross(CamRight, frontMultFar - CamUp * halfVSide) };
+    localFrustum.bottomFace = {origin                          ,glm::cross(frontMultFar + CamUp * halfVSide, CamRight) };
+
+    glm::vec3 pos = this->position.getValue();
+
+    frustum.nearFace   = {localFrustum.nearFace  .distance + pos, localFrustum.nearFace  .normal};
+    frustum.farFace    = {localFrustum.farFace   .distance + pos, localFrustum.farFace   .normal};
+    frustum.rightFace  = {localFrustum.rightFace .distance + pos, localFrustum.rightFace .normal};
+    frustum.leftFace   = {localFrustum.leftFace  .distance + pos, localFrustum.leftFace  .normal};
+    frustum.topFace    = {localFrustum.topFace   .distance + pos, localFrustum.topFace   .normal};
+    frustum.bottomFace = {localFrustum.bottomFace.distance + pos, localFrustum.bottomFace.normal};
 }
 
 PerspectiveCamera::PerspectiveCamera(){

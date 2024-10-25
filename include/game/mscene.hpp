@@ -47,7 +47,7 @@ class MainScene: public Scene{
         MultiChunkBuffer chunkBuffer;
 
         std::string worldPath = "saves/worldsave.bin";
-        int renderDistance = 8;
+        int renderDistance = 32;
         int selectedBlock = 2;
 
         bool running = false;
@@ -84,7 +84,7 @@ class MainScene: public Scene{
         double current = glfwGetTime();
         double deltatime;
 
-        std::unordered_set<glm::vec3, Vec3Hash, Vec3Equal> loadedPositions;
+        std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> loadedPositions;
         
     public:
         void initialize(Scene* mainScene);

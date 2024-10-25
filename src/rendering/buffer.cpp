@@ -168,8 +168,8 @@ void MultiChunkBuffer::initialize(uint32_t renderDistance){
     /*
         These values are gross estimates and will probably need dynamic adjusting later
     */
-    maxVertices = maxDrawCalls * vertexFormat.getVertexSize() * 100 * 10; // Estimate that every chunk has about 50000 vertices at max
-    maxIndices = maxDrawCalls * 1200; // Same for indices
+    maxVertices = maxDrawCalls * vertexFormat.getVertexSize() * 10; // Estimate that every chunk has about 50000 vertices at max
+    maxIndices = maxDrawCalls * 12; // Same for indices
     vertexAllocator = Allocator(maxVertices, [this](size_t requested){
         // Atempt to trash unused chunks
         return false;
@@ -361,15 +361,15 @@ void MultiChunkBuffer::removeDrawCall(const glm::ivec3& position){
 void MultiChunkBuffer::updateDrawCalls(){
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
 
-    auto start = std::chrono::high_resolution_clock::now();
+    //auto start = std::chrono::high_resolution_clock::now();
 
     glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(DrawElementsIndirectCommand) * maxDrawCalls, drawCommands.data());
 
     //End time point
-    auto end = std::chrono::high_resolution_clock::now();
+    //auto end = std::chrono::high_resolution_clock::now();
 
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Execution time to change draw calls: " << duration << " microseconds" << std::endl;
+    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    //std::cout << "Execution time to change draw calls: " << duration << " microseconds" << std::endl;
 }
 
 void MultiChunkBuffer::draw(){

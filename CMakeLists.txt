@@ -11,7 +11,6 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_PARALLEL_LEVEL 8)
-set(CMAKE_BUILD_TYPE Debug)
 
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)

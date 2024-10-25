@@ -6,40 +6,12 @@
 #include <unordered_map>
 #include <glm/glm.hpp>
 #include <memory>
+
 #include <rendering/texture.hpp>
-
-struct Plane
-{
-	glm::vec3 normal = { 0.f, 1.f, 0.f }; // unit vector
-	float     distance = 0.f;        // Distance with origin
-
-	Plane() = default;
-
-	Plane(const glm::vec3& p1, const glm::vec3& norm)
-		: normal(glm::normalize(norm)),
-		distance(glm::dot(normal, p1))
-	{}
-
-	float getSignedDistanceToPlane(const glm::vec3& point) const
-	{
-		return glm::dot(normal, point) - distance;
-	}
-};
-
-
-struct Frustum
-{
-    Plane topFace;
-    Plane bottomFace;
-
-    Plane rightFace;
-    Plane leftFace;
-
-    Plane farFace;
-    Plane nearFace;
-};
+#include <rendering/culling.hpp>
 
 class PerspectiveCamera;
+
 struct Volume
 {
     virtual bool isOnFrustum(PerspectiveCamera& camera) const = 0;
@@ -82,6 +54,7 @@ class PerspectiveCamera: public Camera{
         float aspect;
 
         Frustum frustum;
+        Frustum localFrustum;
 
         void calculateFrustum();
 
@@ -105,6 +78,7 @@ class PerspectiveCamera: public Camera{
         glm::vec3& getDirection() {return direction;}
         glm::vec3& getUp() {return up;}
         Frustum& getFrustum() {return frustum;}
+        Frustum& getLocalFrustum() {return localFrustum;}
         
         int getScreenWidth(){return screenWidth;}
         int getScreenHeight(){return screenHeight;}
