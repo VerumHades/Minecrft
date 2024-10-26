@@ -4,10 +4,10 @@ template <int bits>
 std::vector<compressed_24bit> BitArray3D<bits>::compress(){
     std::vector<compressed_24bit> compressedOutput = {};
 
-    uint<bits> firstBitMask = (1ULL << (bits - 1));
+    uint_t<bits> firstBitMask = (1ULL << (bits - 1));
 
-    uint<bits>* flatArray = getAsFlatArray();
-    uint<bits> currentBits = flatArray[0];
+    uint_t<bits>* flatArray = getAsFlatArray();
+    uint_t<bits> currentBits = flatArray[0];
 
     size_t currentIndex = 0;
     size_t localBit = 0;
@@ -49,7 +49,7 @@ std::vector<compressed_24bit> BitArray3D<bits>::compress(){
 
 template <int bits>
 void BitArray3D<bits>::loadFromCompressed(std::vector<compressed_24bit> data){
-    uint<bits>* flatArray = getAsFlatArray();
+    uint_t<bits>* flatArray = getAsFlatArray();
 
     size_t arrayIndex = 0;
     size_t dataIndex  = 0;
@@ -69,7 +69,7 @@ void BitArray3D<bits>::loadFromCompressed(std::vector<compressed_24bit> data){
 
         size_t count = std::min(bitsLeft, static_cast<size_t>(cdata.getValue()));
         
-        uint<bits> mask = ~0ULL >> currentBit;
+        uint_t<bits> mask = ~0ULL >> currentBit;
             
         if(cdata.getMode() == 0) flatArray[arrayIndex] &= ~mask;
         else flatArray[arrayIndex] |= mask;

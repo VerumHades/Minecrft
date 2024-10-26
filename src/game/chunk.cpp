@@ -167,19 +167,19 @@ void Chunk::syncGenerateMesh(MultiChunkBuffer& buffer){
     Generate greedy meshed faces from a plane of bits
 */
 template <int size>
-std::vector<Face> greedyMeshPlane(std::array<uint<size>, size> rows){
+std::vector<Face> greedyMeshPlane(std::array<uint_t<size>, size> rows){
     std::vector<Face> out = {};
 
     int currentRow = 0;
     
     while(currentRow < size){
-        uint<size> row = rows[currentRow];
+        uint_t<size> row = rows[currentRow];
         /*
             0b00001101
 
             'start' is 4
         */    
-        uint8_t start = count_leading_zeros<uint<size>>(row); // Find the first
+        uint8_t start = count_leading_zeros<uint_t<size>>(row); // Find the first
         if(start == size){
             currentRow++;
             continue;
@@ -191,7 +191,7 @@ std::vector<Face> greedyMeshPlane(std::array<uint<size>, size> rows){
             'width' is 2
         */    
         row <<= start; // Shift so the faces start
-        uint8_t width = count_leading_zeros<uint<size>>(~row); // Calculate width (negated counts '1') 
+        uint8_t width = count_leading_zeros<uint_t<size>>(~row); // Calculate width (negated counts '1') 
         row >>= start; // Return to original position
 
         /*
@@ -204,7 +204,7 @@ std::vector<Face> greedyMeshPlane(std::array<uint<size>, size> rows){
 
                 4. 0b00001100 AND with the row to create the faces mask
         */
-        uint<size> mask = ~0ULL;
+        uint_t<size> mask = ~0ULL;
 
         //  Shifting by 64 is undefined behaviour for some reason ¯\_(ツ)_/¯
         if((start + width) != size) mask = ~(mask >> (start + width));
@@ -329,15 +329,15 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
         
         for(int y = 0;y < size;y++){
             for(auto& [key,mask]: group->masks){
-                uint<size> allFacesX = (mask.segmentsRotated[z][y] | mask.segmentsRotated[z + 1][y]) & (group->solidMask.segmentsRotated[z][y] ^ group->solidMask.segmentsRotated[z + 1][y]);
+                uint_t<size> allFacesX = (mask.segmentsRotated[z][y] | mask.segmentsRotated[z + 1][y]) & (group->solidMask.segmentsRotated[z][y] ^ group->solidMask.segmentsRotated[z + 1][y]);
                 planesXforward[ (size_t) mask.block.type][y] = group->solidMask.segmentsRotated[z][y] & allFacesX;
                 planesXbackward[(size_t) mask.block.type][y] = group->solidMask.segmentsRotated[z + 1][y] & allFacesX;
 
-                uint<size> allFacesY = (mask.segments[y][z] | mask.segments[y][z + 1]) & (group->solidMask.segments[y][z] ^ group->solidMask.segments[y][z + 1]);
+                uint_t<size> allFacesY = (mask.segments[y][z] | mask.segments[y][z + 1]) & (group->solidMask.segments[y][z] ^ group->solidMask.segments[y][z + 1]);
                 planesYforward[ (size_t) mask.block.type][y] = group->solidMask.segments[y][z] & allFacesY;
                 planesYbackward[(size_t) mask.block.type][y] = group->solidMask.segments[y][z + 1] & allFacesY;
 
-                uint<size> allFacesZ = (mask.segments[z][y] | mask.segments[z + 1][y]) & (group->solidMask.segments[z][y] ^ group->solidMask.segments[z + 1][y]);
+                uint_t<size> allFacesZ = (mask.segments[z][y] | mask.segments[z + 1][y]) & (group->solidMask.segments[z][y] ^ group->solidMask.segments[z + 1][y]);
                 planesZforward[ (size_t) mask.block.type][y] = group->solidMask.segments[z][y] & allFacesZ;
                 planesZbackward[(size_t) mask.block.type][y] = group->solidMask.segments[z + 1][y] & allFacesZ;
             }

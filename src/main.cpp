@@ -154,7 +154,6 @@ int main() {
     Scene* menuScene = sceneManager.getScene("menu");
     mainSceneTemp->initialize(menuScene);
 
-
     auto mainFlexFrame = std::make_shared<UIFlexFrame>(
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
@@ -209,6 +208,7 @@ int main() {
     worldSelection->setElementDirection(UIFlexFrame::ROWS);
     worldSelection->setElementMargin(20);
     worldSelection->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
+    worldSelection->setExpand(true);
 
     auto worldSelectionScrollFrame = std::make_shared<UIScrollableFrame>(
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
@@ -262,11 +262,12 @@ int main() {
     menuScene->setUILayer("settings");
     menuScene->addElement(settingsReturnButton);
     menuScene->setUILayer("world_menu");
+    menuScene->addElement(settingsReturnButton);
     menuScene->addElement(worldSelectionScrollFrame);
     menuScene->setUILayer("default");
     menuScene->addElement(mainFlexFrame);
     
-    sceneManager.setScene("game");
+    sceneManager.setScene("menu");
 
     double last = glfwGetTime();
     double current = glfwGetTime();

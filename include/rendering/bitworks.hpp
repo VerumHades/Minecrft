@@ -63,7 +63,7 @@ inline uint8_t count_leading_zeros(T x) {
     Max size of 64 bits.
 */
 template <size_t Bits>
-using uint = typename std::conditional<
+using uint_t = typename std::conditional<
     Bits <= 8, uint8_t,
     typename std::conditional<
         Bits <= 16, uint16_t,
@@ -80,22 +80,22 @@ using uint = typename std::conditional<
 template <int bits>
 class BitArray3D{
     private:
-        uint<bits> values[bits][bits] = {0};
+        uint_t<bits> values[bits][bits] = {0};
 
     public:
         static const size_t size_bits = bits * bits * bits;
         static const size_t size = bits * bits;
         static const size_t bits_total = bits;
         
-        uint<bits>* operator[] (int index)
+        uint_t<bits>* operator[] (int index)
         {
             return values[index];
         }
-        const uint<bits>* operator[](int index) const {
+        const uint_t<bits>* operator[](int index) const {
             return values[index];  
         }
-        uint<bits>* getAsFlatArray(){
-            return reinterpret_cast<uint<bits>*>(values); 
+        uint_t<bits>* getAsFlatArray(){
+            return reinterpret_cast<uint_t<bits>*>(values); 
         }
 
         BitArray3D<bits> rotate(){
@@ -103,10 +103,10 @@ class BitArray3D{
 
             for(int z = 0;z < bits;z++){
                 for(int y = 0; y < bits;y++){
-                    uint<bits> value = this->values[z][y];
+                    uint_t<bits> value = this->values[z][y];
 
                     for(int x = 0;x < bits;x++){
-                        uint<bits> mask = 1ULL << (bits - 1 - x);
+                        uint_t<bits> mask = 1ULL << (bits - 1 - x);
 
                         if(!(value & mask)) continue;
 
@@ -122,14 +122,14 @@ class BitArray3D{
         void loadFromCompressed(std::vector<compressed_24bit> data);
 
         bool operator == (const BitArray3D<bits>& array) const {
-            return std::memcmp(values, array.values, size * sizeof(uint<bits>)) == 0;
+            return std::memcmp(values, array.values, size * sizeof(uint_t<bits>)) == 0;
         }
 };
 
 #include <rendering/bitworks.tpp>
 
 template <int size>
-using BitPlane = std::array<uint<size>, size>;
+using BitPlane = std::array<uint_t<size>, size>;
 
 template <int size>
 using BlockBitPlanes = std::array<BitPlane<size>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL>;

@@ -553,8 +553,12 @@ UISlider::UISlider(TValue x, TValue y, TValue width, TValue height, int* value, 
 
 UITransform UISlider::getHandleTransform(UIManager& manager){
     auto t = this->getTransform(manager);
+    
+    int range = this->max - this->min;
 
-    float percentage = static_cast<float>(*this->value - this->min) / static_cast<float>(this->max - this->min);
+    float percentage = 0.0f;
+    if(range != 0) percentage = static_cast<float>(*this->value - this->min) / static_cast<float>(range);
+
     int handlePos = static_cast<float>(orientation == HORIZONTAL ? t.width : t.height) * percentage;
     //std::cout << handlePos << " " << percentage << std::endl;
 
@@ -610,6 +614,20 @@ std::vector<UIRenderInfo> UISlider::getRenderingInformation(UIManager& manager){
 std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manager){
     int offset = 0;
 
+    if(expandToChildren){
+        int size = 0;
+        
+        for(auto& child: children){
+            auto ct = child->getTransform(manager);
+
+            size += getValueInPixels(elementMargin, direction == COLUMN, manager);
+            size += direction == COLUMN ? ct.width : ct.height;
+        } 
+
+        if(direction == COLUMN) width = {size};
+        else height = {size};
+    }
+
     auto t = getTransform(manager);
     for(auto& child: children){
         offset += getValueInPixels(elementMargin, direction == COLUMN, manager);
@@ -653,12 +671,13 @@ std::vector<UIRenderInfo> UIScrollableFrame::getRenderingInformation(UIManager& 
     auto ct = getContentTransform(manager);
     auto bodyT = body->getTransform(manager);
 
-    scrollMax = bodyT.height;
+    scrollMax = std::max(bodyT.height - ct.height, 0);
     body->setPosition(0,-scroll);
     //body->setSize(t.width - sliderWidth, t.height);
     
     slider->setPosition(ct.width - sliderWidth,0);
     slider->setSize(sliderWidth, ct.height);
+    slider->setMax(scrollMax);
 
     return UIFrame::getRenderingInformation(manager);
 }

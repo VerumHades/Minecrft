@@ -39,6 +39,13 @@ struct TValue{
     TValue operator-() const {
         return TValue(unit, -value);
     }
+
+    bool hasParentReference(){
+        if(unit == OPERATION_PLUS || unit == OPERATION_MINUS){
+            return operands[0].hasParentReference() || operands[1].hasParentReference();
+        }
+        return unit == PFRACTION;
+    }
 };
 
 // Pixels
@@ -195,6 +202,8 @@ class UIFrame{
 
         void setPosition(TValue x, TValue y){this->x = x; this->y = y;}
         void setSize(TValue width, TValue height) {this->width = width; this->height = height;}
+        TValue& getWidth(){return width;}
+        TValue& getHeight(){return height;}
 
         void setHover(bool value) {hover = value;}
         void setHoverable(bool value) {hoverable = value;}
@@ -293,6 +302,10 @@ class UISlider: public UIFrame{
         void setOrientation(Orientation value){orientation = value;}
         void setDisplayValue(bool value) {displayValue = value;}
         void setHandleWidth(uint32_t width) {handleWidth = width;}
+        
+        void setMax(uint32_t value) {max = value;}
+        void setMin(uint32_t value) {min = value;}
+
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
@@ -306,12 +319,32 @@ class UIFlexFrame: public UIFrame{
     private:
         FlexDirection direction;
         TValue elementMargin = {0};
+        bool expandToChildren = false;
+
+        bool isChildValid(std::shared_ptr<UIFrame>& child){
+            if(!expandToChildren) return true;
+            return child->getWidth().hasParentReference() || child->getHeight().hasParentReference();
+        }
 
     public:
 
         UIFlexFrame(TValue x, TValue y, TValue width, TValue height, UIColor color): UIFrame(x,y,width,height,color) {};
         void setElementDirection(FlexDirection direction) {this->direction = direction;}
         void setElementMargin(TValue margin) {elementMargin = margin;}
+        void setExpand(bool value) {
+            expandToChildren = value;
+            if(!value) return;
+
+            for(auto& child: children){
+                if(isChildValid(child)) continue;
+                throw std::runtime_error("Invalid child size for expanding UIFlexFrame!");
+            }
+        }
+
+        void appendChild(std::shared_ptr<UIFrame> child) override{
+            if(!isChildValid(child)) std::runtime_error("Invalid child size for expanding UIFlexFrame!");
+            UIFrame::appendChild(child);
+        }
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
