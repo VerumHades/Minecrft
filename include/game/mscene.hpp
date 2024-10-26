@@ -47,7 +47,7 @@ class MainScene: public Scene{
         MultiChunkBuffer chunkBuffer;
 
         std::string worldPath = "saves/worldsave.bin";
-        int renderDistance = 16;
+        int renderDistance = 8;
         int selectedBlock = 2;
 
         bool running = false;
@@ -72,12 +72,18 @@ class MainScene: public Scene{
         int lastMouseY = 0;
         float sensitivity = 0.1f;
 
+        int lastCamPitch = 0;
+        int lastCamYaw = 0;
+        float chunkVisibilityUpdateThreshold = 10.0f;
+
+        bool updateVisibility = false;
+
         std::vector<BoundKey> boundKeys;
 
         Font testFont = Font("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
 
         void physicsUpdate();
-        void pregenUpdate();
+        void generateSurroundingChunks();
         void generateMeshes();
 
         double last = glfwGetTime();

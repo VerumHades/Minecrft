@@ -148,6 +148,21 @@ void Chunk::generateMesh(MultiChunkBuffer& buffer, ThreadPool& pool){
     }*/
 }
 
+void Chunk::syncGenerateMesh(MultiChunkBuffer& buffer){
+    generateMeshes();
+
+    if(solidMesh->getVertices().size() == 0){
+        generatedEmptyMesh = true;
+    }
+    else if(reloadMesh){
+        buffer.swapChunkMesh(*solidMesh, getWorldPosition());
+        reloadMesh = false;
+    }
+    else buffer.addChunkMesh(*solidMesh, getWorldPosition());
+    
+    solidMesh = nullptr;
+}
+
 /*
     Generate greedy meshed faces from a plane of bits
 */

@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
+#include <cstring>
 #include <queue>
 #include <glm/glm.hpp>
 #include <unordered_map>
@@ -91,6 +92,9 @@ class MultiChunkBuffer{
 
         size_t drawCallBufferSize = 0;
         size_t drawCallCount = 0;
+        size_t bufferOffset = 0;
+        DrawElementsIndirectCommand* persistentMappedBuffer;
+        
         std::unordered_map<glm::ivec3, LoadedChunk, IVec3Hash, IVec3Equal> loadedChunks;
 
     public:
@@ -104,7 +108,7 @@ class MultiChunkBuffer{
         void unloadFarawayChunks(const glm::ivec3& from, float treshold);
         void clear();
         bool isChunkLoaded(const glm::ivec3& pos){
-            return loadedChunks.find(pos) != loadedChunks.end();
+            return loadedChunks.count(pos) != 0;
         }
 
         void updateDrawCalls(std::vector<DrawElementsIndirectCommand>& commands);

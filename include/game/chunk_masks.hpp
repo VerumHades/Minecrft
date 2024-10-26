@@ -4,6 +4,13 @@
 
 #define CHUNK_SIZE 64
 
+enum LODLevel{
+    CLOSE,
+    MID,
+    MID_FAR,
+    FAR
+};
+
 template <int size>
 class ChunkMask{
     public:

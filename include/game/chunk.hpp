@@ -64,6 +64,7 @@ class Chunk: public Volume{
         bool setBlock(uint32_t x, uint32_t y, uint32_t z, Block value);
         
         void generateMesh(MultiChunkBuffer& buffer, ThreadPool& pool);
+        void syncGenerateMesh(MultiChunkBuffer& buffer);
         void updateMesh(); // Marks the mesh for updating
 
         World& getWorld();

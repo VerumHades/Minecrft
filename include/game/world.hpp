@@ -74,13 +74,6 @@ class WorldStream{
 
 class ModelManager;
 
-enum LODLevel{
-    CLOSE,
-    MID,
-    MID_FAR,
-    FAR
-};
-
 class World: public Collidable{
     private:
         std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>, IVec3Hash, IVec3Equal> chunks;

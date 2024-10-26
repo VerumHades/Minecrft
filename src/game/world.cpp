@@ -13,7 +13,7 @@ void World::generateChunk(int x, int y, int z, LODLevel lod){
     {
         std::shared_lock lock(chunkGenLock);
         auto it = this->chunks.find(key);
-        if (it != this->chunks.end()) return;
+        if (it != this->chunks.end()) return; 
     }
 
     std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(*this, key);

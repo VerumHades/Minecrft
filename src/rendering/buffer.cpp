@@ -176,9 +176,22 @@ void MultiChunkBuffer::initialize(uint32_t renderDistance){
     /*
         Create and map buffer for draw calls
     */
+    GLsizeiptr bufferSize = sizeof(DrawElementsIndirectCommand) * maxDrawCalls * 2;
+
     glGenBuffers(1, &indirectBuffer);
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
-    glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(DrawElementsIndirectCommand) * maxDrawCalls, nullptr, GL_STATIC_DRAW);
+
+    glBufferStorage(GL_DRAW_INDIRECT_BUFFER, bufferSize, nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+
+    persistentMappedBuffer = static_cast<DrawElementsIndirectCommand*>(
+        glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, 0, bufferSize, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT)
+    );
+
+    if (!persistentMappedBuffer) {
+        throw std::runtime_error("Failed to map persistent buffer for multichunk buffer.");
+    }
+
+    drawCallBufferSize = maxDrawCalls;
 
     CHECK_GL_ERROR();
 
@@ -337,22 +350,20 @@ DrawElementsIndirectCommand MultiChunkBuffer::getCommandFor(const glm::ivec3& po
 void MultiChunkBuffer::updateDrawCalls(std::vector<DrawElementsIndirectCommand>& commands){
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
 
-    //auto start = std::chrono::high_resolution_clock::now();
-
-    if(drawCallBufferSize < commands.size()){
-        drawCallBufferSize = commands.size();
-        glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(DrawElementsIndirectCommand) * drawCallBufferSize, commands.data(), GL_DYNAMIC_DRAW);
+    if (commands.size() > maxDrawCalls) {
+        throw std::runtime_error("Exceeded maximum number of draw calls.");
     }
-    else glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(DrawElementsIndirectCommand) * commands.size(), commands.data());
+
+    bufferOffset = (bufferOffset + maxDrawCalls) % (maxDrawCalls * 2);
+    std::memcpy(persistentMappedBuffer + bufferOffset, commands.data(), sizeof(DrawElementsIndirectCommand) * commands.size());
+
+    drawCallCount = commands.size();
+
+    std::memcpy(persistentMappedBuffer, commands.data(), sizeof(DrawElementsIndirectCommand) * commands.size());
 
     drawCallCount = commands.size();
 
     CHECK_GL_ERROR();
-    //End time point
-    //auto end = std::chrono::high_resolution_clock::now();
-
-    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    //std::cout << "Execution time to change draw calls: " << duration << " microseconds" << std::endl;
 }
 
 void MultiChunkBuffer::draw(){
@@ -360,7 +371,7 @@ void MultiChunkBuffer::draw(){
 
     //int drawCalls = maxDrawCalls - freeDrawCallIndices.size();
     //std::cout << "Active draw calls: " << lastDrawCall << std::endl;
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, drawCallCount, sizeof(DrawElementsIndirectCommand));
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)(bufferOffset * sizeof(DrawElementsIndirectCommand)), drawCallCount, sizeof(DrawElementsIndirectCommand));
 
     CHECK_GL_ERROR();
 }
