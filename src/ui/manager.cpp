@@ -429,7 +429,7 @@ std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
     auto t = getTextPosition(manager);
     
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,t.x,t.y,1,{1,1,1,1});
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,t.x,t.y,1,UIColor(255,255,255));
     auto region = getClipRegion(manager);
     for(auto& i: temp){
         i.clip = true;
@@ -656,7 +656,7 @@ UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue he
         this->scroll = glm::clamp(this->scroll, 0, this->scrollMax);
     };
 
-    slider = std::make_shared<UISlider>(0,0,0,0, &scroll, 0, scrollMax, UIColor(0.1,0.1,0.1,1.0));
+    slider = std::make_shared<UISlider>(0,0,0,0, &scroll, 0, scrollMax, UIColor(0.1f,0.1f,0.1f,1.0f));
     slider->setOrientation(UISlider::VERTICAL);
     slider->setDisplayValue(false);
     slider->setHandleWidth(60);

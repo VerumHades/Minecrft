@@ -152,14 +152,16 @@ int main() {
     sceneManager.addScene("menu",std::move(mainMenu));
 
     Scene* menuScene = sceneManager.getScene("menu");
+    
     mainSceneTemp->initialize(menuScene);
+
 
     auto mainFlexFrame = std::make_shared<UIFlexFrame>(
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(PIXELS, 300),
         TValue(PIXELS, 500),
-        glm::vec4(0.1,0.1,0.1,0.0)
+        UIColor(0,0,0,0)
     );
     mainFlexFrame->setBorderWidth({0,0,0,0});
     mainFlexFrame->setElementDirection(UIFlexFrame::ROWS);
@@ -169,18 +171,18 @@ int main() {
         "New Game", 
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
-        glm::vec4(0.0,0.3,0.3,1.0)
+        UIColor(30, 62, 98,255)
     );
-    startButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+    startButton->setHoverColor(UIColor(11,25,44,255));
     mainFlexFrame->appendChild(startButton);
 
     auto settingsButton = std::make_shared<UILabel>(
         "Settings", 
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
-        glm::vec4(0.0,0.3,0.3,1.0)
+        UIColor(30, 62, 98,255)
     );
-    settingsButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+    settingsButton->setHoverColor(UIColor(11,25,44,255));
     settingsButton->onClicked = [menuScene]{
         menuScene->setUILayer("settings");
     };
@@ -190,9 +192,9 @@ int main() {
         TValue(10),
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
-        glm::vec4(0.0,0.3,0.3,1.0)
+        UIColor(30, 62, 98,255)
     );
-    settingsReturnButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+    settingsReturnButton->setHoverColor(UIColor(11,25,44,255));
     settingsReturnButton->onClicked = [menuScene]{
         menuScene->setUILayer("default");
     };
@@ -203,21 +205,31 @@ int main() {
         TValue(FRACTIONS, 0),
         TValue(PFRACTION, 100),
         TValue(1000),
-        glm::vec4(0.1,0.1,0.1,0.0)
+        UIColor(0,0,0,0)
     );
     worldSelection->setElementDirection(UIFlexFrame::ROWS);
     worldSelection->setElementMargin(20);
     worldSelection->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
     worldSelection->setExpand(true);
 
+    auto newWorldName  = std::make_shared<UIInput>(
+        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {PFRACTION, 60}),
+        TValue(PFRACTION, 61),
+        TValue(PFRACTION, 30),
+        TValue(40),
+        UIColor(11,25,44)
+    );
+
     auto worldSelectionScrollFrame = std::make_shared<UIScrollableFrame>(
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(FRACTIONS, 0),
         TValue(PFRACTION, 60),
         TValue(PFRACTION, 80),
-        glm::vec4(0.05,0.05,0.05,1.0),
+        UIColor(0,0,0,0),
         worldSelection
     );
+    worldSelectionScrollFrame->setBorderColor(UIColor(30, 62, 98).shifted(-0.05f));
+    worldSelectionScrollFrame->setBorderWidth(3);
 
     UIFrame* worldSelectionRaw = worldSelection.get();
 
@@ -233,9 +245,9 @@ int main() {
             auto frame = std::make_shared<UIFrame>(
                 800px,
                 100px,
-                glm::vec4(0.0,0.2,0.2,1.0)
+                UIColor(30, 62, 98)
             );
-            frame->setColor(glm::vec4(0.0,0.2,0.2,0.6));
+            frame->setHoverColor(UIColor(11,25,44));
 
             auto temp = std::make_shared<UILabel>(
                 stream.getName(),
@@ -243,7 +255,7 @@ int main() {
                 10px,
                 100ps - 20px,
                 50ps,
-                glm::vec4(0.0,0.0,0.0,0.0)
+                UIColor(0,0,0,0)
             );
             temp->setTextPosition(LEFT);
             temp->setBorderWidth(0px);
@@ -264,6 +276,7 @@ int main() {
     menuScene->setUILayer("world_menu");
     menuScene->addElement(settingsReturnButton);
     menuScene->addElement(worldSelectionScrollFrame);
+    menuScene->addElement(newWorldName);
     menuScene->setUILayer("default");
     menuScene->addElement(mainFlexFrame);
     

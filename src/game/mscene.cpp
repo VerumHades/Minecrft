@@ -54,7 +54,7 @@ void MainScene::initialize(Scene* mainScene){
         TValue(OPERATION_MINUS,{FRACTIONS, 100}, {MFRACTION, 100}),
         TValue(FRACTIONS,100),
         TValue(PIXELS,50),
-        glm::vec4(0,0,0,1)
+        UIColor(0,0,0)
     );
     this->chatInput = chatInput.get();
 
@@ -76,7 +76,7 @@ void MainScene::initialize(Scene* mainScene){
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(PIXELS, 400),
         TValue(PIXELS, 700),
-        glm::vec4(0.1,0.1,0.1,0.8)
+        UIColor(30, 62, 98)
     );
 
     auto exitButton = std::make_shared<UILabel>(
@@ -85,9 +85,9 @@ void MainScene::initialize(Scene* mainScene){
         TValue(OPERATION_MINUS,{PFRACTION, 100}, {MFRACTION, 200}),
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
-        glm::vec4(0.3,0.3,0.3,1)
+        UIColor(30, 62, 98)
     );
-    exitButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+    exitButton->setHoverColor(UIColor(11,25,44,255));
     exitButton->onClicked = [this]() {
         this->sceneManager->setScene("menu");
     };
@@ -98,9 +98,9 @@ void MainScene::initialize(Scene* mainScene){
         TValue(MFRACTION, 100),
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
-        glm::vec4(0.3,0.3,0.3,1)
+        UIColor(30, 62, 98)
     );
-    resumeButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+    resumeButton->setHoverColor(UIColor(11,25,44,255));
     resumeButton->onClicked = [this]() {
         this->setUILayer("default");
         menuOpen = false;
@@ -112,9 +112,9 @@ void MainScene::initialize(Scene* mainScene){
         TValue(MFRACTION, 300),
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
-        glm::vec4(0.3,0.3,0.3,1)
+        UIColor(30, 62, 98)
     );
-    settingsButton->setHoverColor(glm::vec4(0.0,0.1,0.5,1.0));
+    settingsButton->setHoverColor(UIColor(11,25,44,255));
     settingsButton->onClicked = [this]() {
         this->setUILayer("settings");
     };
@@ -137,7 +137,7 @@ void MainScene::initialize(Scene* mainScene){
         TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
         TValue(PIXELS, 700),
         TValue(PIXELS, 700),
-        glm::vec4(0.1,0.1,0.1,0.8)
+        UIColor(30, 62, 98)
     );
 
     auto renderDistanceSlider = std::make_shared<UISlider>(
@@ -147,7 +147,7 @@ void MainScene::initialize(Scene* mainScene){
         TValue(PIXELS, 20),
         &renderDistance,
         static_cast<uint32_t>(4), static_cast<uint32_t>(32),
-        glm::vec4(0.3,0.3,0.3,1)
+        UIColor(30, 62, 98)
     );
 
     auto renderDistanceLabel = std::make_shared<UILabel>(
@@ -156,7 +156,7 @@ void MainScene::initialize(Scene* mainScene){
         TValue(10),
         TValue(PFRACTION, 80),
         TValue(PIXELS, 40),
-        glm::vec4(0.3,0.3,0.3,0.0)
+        UIColor(30, 62, 98)
     );
     renderDistanceLabel->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
 
@@ -174,7 +174,7 @@ void MainScene::initialize(Scene* mainScene){
         TValue(PIXELS,10),
         TValue(FRACTIONS, 33),
         TValue(PIXELS, 20),
-        glm::vec4(0.3,0.3,0.3,0.0),
+        UIColor(0,0,0,0),
         &chunkBuffer.getVertexAllocator()
     );
 
@@ -183,7 +183,7 @@ void MainScene::initialize(Scene* mainScene){
         TValue(PIXELS,40),
         TValue(FRACTIONS, 33),
         TValue(PIXELS, 20),
-        glm::vec4(0.3,0.3,0.3,0.0),
+        UIColor(0,0,0,0),
         &chunkBuffer.getIndexAllocator()
     );
 

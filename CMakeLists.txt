@@ -14,9 +14,10 @@ set(CMAKE_BUILD_PARALLEL_LEVEL 8)
 
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)
-include_directories(${CMAKE_SOURCE_DIR}/libs)
+include_directories(${CMAKE_SOURCE_DIR}/external/include)
 
-add_library(glad src/glad.c)
+add_library(glad external/src/glad.c)
+add_library(tinyxml2 external/src/tinyxml2.cpp)
 
 include(FetchContent)
 
@@ -77,13 +78,17 @@ FetchContent_MakeAvailable(freetype)
 find_package(OpenGL REQUIRED)
 
 # Source files
-file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp ${CMAKE_SOURCE_DIR}/src/*.c)
+file(GLOB_RECURSE SOURCES
+  ${CMAKE_SOURCE_DIR}/src/*.cpp
+  ${CMAKE_SOURCE_DIR}/src/*.c
+  ${CMAKE_SOURCE_DIR}/external/src/*.cpp
+  ${CMAKE_SOURCE_DIR}/external/src/*.c
+)
 
 # Add executable target
 add_executable(main ${SOURCES})
 
 # Link libraries
-target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad assimp freetype)
-
+target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad assimp freetype tinyxml2)
 
 target_compile_options(main PRIVATE -Wall)

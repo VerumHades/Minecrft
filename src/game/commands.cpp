@@ -140,7 +140,7 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
 
     int currentY = 0;
     for(auto& s: suggestions){
-        std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(s,t.x + suggestions_padding,t.y - suggestions_height + currentY + suggestions_padding,1,{0.5,1,1,1});
+        std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(s,t.x + suggestions_padding,t.y - suggestions_height + currentY + suggestions_padding,1,{0.5f,1.0f,1.0f,});
         glm::vec2 dm = manager.getMainFont().getTextDimensions(s);
         currentY += dm.y + suggestions_padding;
 

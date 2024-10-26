@@ -8,7 +8,30 @@
 #include <queue>
 #include <functional>
 
-using UIColor = glm::vec4;
+struct UIColor{
+    float r;
+    float g;
+    float b;
+    float a;
+
+    UIColor(int r, int g, int b, int a = 255){
+        this->r = static_cast<float>(r) / 255.0f;
+        this->g = static_cast<float>(g) / 255.0f;
+        this->b = static_cast<float>(b) / 255.0f;
+        this->a = static_cast<float>(a) / 255.0f;
+    }
+
+    UIColor(float r, float g, float b, float a = 1.0): r(r), g(g), b(b), a(a) {}
+
+    UIColor shifted(float value){
+        return UIColor(
+            glm::clamp(r + value, .0f, 1.0f),
+            glm::clamp(g + value, .0f, 1.0f),
+            glm::clamp(b + value, .0f, 1.0f),
+            a
+        );
+    }
+};
 
 enum Units{
     PIXELS,
@@ -127,10 +150,10 @@ struct UIRenderInfo{
 
         static std::array<UIColor, 4> generateBorderColors(UIColor base){
             return {
-                glm::clamp(UIColor(glm::vec3(base) + 0.1f, base.a),0.0f,1.0f),
-                glm::clamp(UIColor(glm::vec3(base) + 0.1f, base.a),0.0f,1.0f),
-                glm::clamp(UIColor(glm::vec3(base) - 0.1f, base.a),0.0f,1.0f),
-                glm::clamp(UIColor(glm::vec3(base) - 0.1f, base.a),0.0f,1.0f)
+                base.shifted(0.1),
+                base.shifted(0.1),
+                base.shifted(-0.1),
+                base.shifted(-0.1)
             };
         }
 };
@@ -152,12 +175,12 @@ class UIFrame{
         bool scrollable = false;
 
         UIColor color;
-        UIColor hoverColor = glm::vec4(0.0,0.1,0.5,0.0);
+        UIColor hoverColor = UIColor(0.0f,0.1f,0.5f,0.0f);
         std::array<UIColor,4> borderColor = {
-            glm::vec4(0.5,0.1,0.5,0.4),
-            glm::vec4(0.5,0.1,0.5,0.4),
-            glm::vec4(0.5,0.1,0.5,0.4),
-            glm::vec4(0.5,0.1,0.5,0.4)
+            UIColor(0.5f,0.1f,0.5f,0.4f),
+            UIColor(0.5f,0.1f,0.5f,0.4f),
+            UIColor(0.5f,0.1f,0.5f,0.4f),
+            UIColor(0.5f,0.1f,0.5f,0.4f)
         };
 
         std::vector<std::shared_ptr<UIFrame>> children;
@@ -193,6 +216,7 @@ class UIFrame{
 
         void setHoverColor(UIColor color) {hoverColor = color;}
         void setBorderColor(std::array<UIColor,4> borderColor) {this->borderColor = borderColor;}
+        void setBorderColor(UIColor borderColor) {this->borderColor = {borderColor,borderColor,borderColor,borderColor};}
         void setColor(UIColor color) {this->color = color;}
 
         bool pointWithin(glm::vec2 position, UIManager& manager, int padding = 0);
@@ -290,7 +314,7 @@ class UISlider: public UIFrame{
         Orientation orientation = HORIZONTAL;
 
         uint32_t handleWidth = 15;
-        UIColor handleColor = glm::vec4(0.361, 0.443, 0.741,1.0);
+        UIColor handleColor = UIColor(0.361f, 0.443f, 0.741f,1.0f);
 
         UITransform getHandleTransform(UIManager& manager);
         void moveTo(UIManager& manager, glm::vec2 pos);
@@ -302,7 +326,7 @@ class UISlider: public UIFrame{
         void setOrientation(Orientation value){orientation = value;}
         void setDisplayValue(bool value) {displayValue = value;}
         void setHandleWidth(uint32_t width) {handleWidth = width;}
-        
+
         void setMax(uint32_t value) {max = value;}
         void setMin(uint32_t value) {min = value;}
 
@@ -399,6 +423,8 @@ class UIWindow{
         std::string getCurrentLayerName(){return currentLayer;}
         UILayer& getCurrentLayer() {return layers[currentLayer];}
         UILayer& getLayer(std::string name) {return layers[name];}
+
+        void loadFromXML(std::string data);
 };
 
 class UIManager{
