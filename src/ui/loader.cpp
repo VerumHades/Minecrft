@@ -5,6 +5,16 @@ static const std::vector<std::tuple<std::string, int, Units>> operators = {
     {"+", 0, OPERATION_PLUS }
 };
 
+std::string strip(const std::string& input) {
+    const std::string whitespace = " \t\n\r\f\v";
+    
+    size_t start = input.find_first_not_of(whitespace);
+    if (start == std::string::npos) {return "";}
+    size_t end = input.find_last_not_of(whitespace);
+
+    return input.substr(start, end - start + 1);
+}
+
 /*
     Return a tuple of [operator position in the string, operator index in registry]
 */
@@ -14,42 +24,43 @@ std::tuple<size_t, size_t> findMostImportantOperator(std::string source){
 
     size_t offset = 0;
     while(offset < source.size()){
-        size_t closesDistance = std::string::npos;
-        size_t closesOperatorIndex = std::string::npos;
+        size_t closestDistance = std::string::npos;
+        size_t closestOperatorIndex = std::string::npos;
 
-        int i = 0;
-        for(auto& [name, value, unit]: operators){
-            i++;
+    
+        for(int i = 0; i < operators.size();i++){
+            auto& [name, value, unit] = operators[i];
 
             size_t distance = source.find(name);
-            if(distance >= closesDistance) continue;
+            if(distance >= closestDistance) continue;
             
-            closesDistance = distance;
-            closesOperatorIndex = i;
+            closestDistance = distance;
+            closestOperatorIndex = i;
         }
 
-        if(closesOperatorIndex == std::string::npos) 
+        if(closestOperatorIndex == std::string::npos) 
             return {selectedOperatorPosition, selectedOperatorIndex};
 
         if(
             selectedOperatorIndex == std::string::npos || 
             (
-                std::get<1>(operators[closesOperatorIndex]) > 
+                std::get<1>(operators[closestOperatorIndex]) > 
                 std::get<1>(operators[selectedOperatorIndex])
             )
         ){
-            selectedOperatorIndex = closesOperatorIndex;
-            selectedOperatorPosition = closesDistance;
+            selectedOperatorIndex = closestOperatorIndex;
+            selectedOperatorPosition = offset + closestDistance;
         }
+        
+        offset += closestDistance;
     }
 
     return {selectedOperatorPosition, selectedOperatorIndex};
 }
 
-TValue parseTValue(const char* ssource, TValue def = {PIXELS,10}){
-    if(!ssource) return def;
-
-    std::string source = std::string(ssource);
+TValue parseTValue(std::string source){
+    source = strip(std::string(source));
+    
     auto [op_position,op_index] = findMostImportantOperator(source);
 
     if(op_position != std::string::npos){
@@ -67,11 +78,11 @@ TValue parseTValue(const char* ssource, TValue def = {PIXELS,10}){
 
     if (std::regex_match(source, matches, pattern)) {
         int value = std::stoi(matches[1].str());  
-        std::string unitType = matches[3].str();     
+        std::string unitType = matches[2].str();     
 
         Units unit;
         if (unitType == "%") {
-            unit = Units::PERCENT;
+            unit = Units::PFRACTION;
         } else if (unitType == "px") {
             unit = Units::PIXELS;
         } else if (unitType == "m") {
@@ -83,10 +94,18 @@ TValue parseTValue(const char* ssource, TValue def = {PIXELS,10}){
         return TValue(unit, value);  
     }
     std::cerr << "Failed to parse value: " << source << std::endl;
-    return def;
+    return {0};
 }
 
+
 using namespace tinyxml2;
+
+static inline TValue getAttributeValue(XMLElement* source, std::string name, TValue def = {PIXELS,0}){
+    const char* attr = source->Attribute(name.c_str());
+    if(!attr) return def;
+    return parseTValue(attr);
+}
+
 std::shared_ptr<UIFrame> createElement(XMLElement* source) {
     // Map each tag name to a specific constructor
     static const std::unordered_map<std::string, std::function<std::shared_ptr<UIFrame>()>> elements = {
@@ -94,24 +113,30 @@ std::shared_ptr<UIFrame> createElement(XMLElement* source) {
             "frame", 
             [source]() {
                 return std::make_shared<UIFrame>(
-                    parseTValue(source->Attribute("x")),
-                    parseTValue(source->Attribute("y")),
-                    parseTValue(source->Attribute("width")),
-                    parseTValue(source->Attribute("height")),
-                    UIColor(50,50,50,1)
+                    getAttributeValue(source,"x"),
+                    getAttributeValue(source,"y"),
+                    getAttributeValue(source,"width"),
+                    getAttributeValue(source,"height"),
+                    UIColor(150,150,150)
                 ); 
             }
         },
         {
             "label", 
             [source]() {
+                const char* content = source->GetText();
+                std::string text = "";
+                if(content) text = std::string(content);
+
+                std::cout << text << std::endl;
+
                 return std::make_shared<UILabel>(
-                    source->GetText(),
-                    parseTValue(source->Attribute("x")),
-                    parseTValue(source->Attribute("y")),
-                    parseTValue(source->Attribute("width")),
-                    parseTValue(source->Attribute("height")),
-                    UIColor(50,50,50,1)
+                    text,
+                    getAttributeValue(source,"x"),
+                    getAttributeValue(source,"y"),
+                    getAttributeValue(source,"width"),
+                    getAttributeValue(source,"height"),
+                    UIColor(150,150,150)
                 ); 
             }
         },
@@ -134,7 +159,10 @@ std::shared_ptr<UIFrame> processElement(XMLElement* source){
         child = child->NextSiblingElement()
     ) {
         std::shared_ptr<UIFrame> proccessed = processElement(child);
-        if(!proccessed) continue;
+        if(!proccessed){
+            std::cerr << "Failed to proccess element: " << source->Name() << std::endl;
+            continue;
+        }
         element->appendChild(proccessed);
     }
 
@@ -156,7 +184,6 @@ bool loadWindowFromXML(UIWindow& window, std::string path){
         return false;
     }
 
-    root->FirstChild();
     // Iterate over all 'book' elements in 'bookstore'
     for (
         XMLElement* layer = root->FirstChildElement(); 
@@ -172,7 +199,10 @@ bool loadWindowFromXML(UIWindow& window, std::string path){
             layer_child = layer_child->NextSiblingElement()
         ) {
             auto processed = processElement(layer_child);
-            if(!processed) continue;
+            if(!processed){
+                std::cerr << "Failed to proccess element: " << layer_child->Name() << std::endl;
+                continue;
+            }
             window.getLayer(name).addElement(processed);
         }
     }

@@ -20,6 +20,11 @@ void Scene::setUILayer(std::string name){
 
     uiManager->setFocus(nullptr);
 }
+
+UIWindow& Scene::getWindow(){
+    return this->uiManager->getWindow(windowID);
+}
+
 UILayer& Scene::getCurrentUILayer(){
     return this->uiManager->getWindow(windowID).getCurrentLayer();
 }

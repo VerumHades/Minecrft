@@ -23,6 +23,7 @@ class Scene{
         UILayer& getCurrentUILayer();
         UILayer& getUILayer(std::string name);
         void addElement(std::shared_ptr<UIFrame> element);
+        UIWindow& getWindow();
         
         virtual void render() {};
         virtual void open(GLFWwindow* window)  {};

@@ -4,9 +4,11 @@
 #include <cmath>
 
 #include <ui/manager.hpp>
+#include <ui/loader.hpp>
 #include <scene.hpp>
 #include <game/mscene.hpp>
 #include <rendering/allocator.hpp>
+
 
 SceneManager sceneManager;
 /*void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
@@ -155,8 +157,12 @@ int main() {
     
     mainSceneTemp->initialize(menuScene);
 
+    sceneManager.setScene("menu");
+    menuScene->setUILayer("default");
+    loadWindowFromXML(menuScene->getWindow(), "templates/menu.xml");
 
-    auto mainFlexFrame = std::make_shared<UIFlexFrame>(
+
+    /*auto mainFlexFrame = std::make_shared<UIFlexFrame>(
         TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(PIXELS, 300),
@@ -279,8 +285,7 @@ int main() {
     menuScene->addElement(newWorldName);
     menuScene->setUILayer("default");
     menuScene->addElement(mainFlexFrame);
-    
-    sceneManager.setScene("menu");
+    */
 
     double last = glfwGetTime();
     double current = glfwGetTime();
