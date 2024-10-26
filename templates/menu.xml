@@ -1,0 +1,7 @@
+<window>
+    <default>
+        <frame x="50% - 50m" y="50% - 50m" width="100px" height="100px">
+            <label width="100px" height="40px">Hello World!</label>
+        </frame>
+    </default>
+</window>

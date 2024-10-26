@@ -2,7 +2,7 @@
 
 TValue operator"" px(unsigned long long value){return TValue(PIXELS, value);}
 TValue operator"" ps(unsigned long long value){return TValue(PFRACTION, value);}
-TValue operator"" ws(unsigned long long value){return TValue(MFRACTION, value);}
+TValue operator"" ws(unsigned long long value){return TValue(MY_PERCENT, value);}
 
 void UIManager::initialize(){
     uiProgram.initialize();
@@ -197,13 +197,13 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal, UIManager& manager)
     switch (value.unit)
     {
         case PIXELS: return value.value;   
-        case FRACTIONS:
+        case PERCENT:
             if(horizontal) return (manager.getScreenWidth()  / 100.0f) * value.value;
             else           return (manager.getScreenHeight() / 100.0f) * value.value;
             
         case OPERATION_PLUS: return getValueInPixels(value.operands[0], horizontal, manager) + getValueInPixels(value.operands[1], horizontal, manager);
         case OPERATION_MINUS: return getValueInPixels(value.operands[0], horizontal, manager) - getValueInPixels(value.operands[1], horizontal, manager);
-        case MFRACTION: 
+        case MY_PERCENT: 
             return static_cast<float>(
                 horizontal ? 
                 getValueInPixels(width,  horizontal, manager) : 
@@ -218,7 +218,7 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal, UIManager& manager)
                     t.height
                 ) / 100.0f * value.value;
             }
-            else return getValueInPixels(TValue(FRACTIONS, value.value), horizontal, manager);
+            else return getValueInPixels(TValue(PERCENT, value.value), horizontal, manager);
     }
 }
 

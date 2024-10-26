@@ -157,8 +157,8 @@ int main() {
 
 
     auto mainFlexFrame = std::make_shared<UIFlexFrame>(
-        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
-        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(PIXELS, 300),
         TValue(PIXELS, 500),
         UIColor(0,0,0,0)
@@ -201,8 +201,8 @@ int main() {
     mainFlexFrame->appendChild(settingsButton);
 
     auto worldSelection = std::make_shared<UIFlexFrame>(
-        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
-        TValue(FRACTIONS, 0),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
+        TValue(PERCENT, 0),
         TValue(PFRACTION, 100),
         TValue(1000),
         UIColor(0,0,0,0)
@@ -213,7 +213,7 @@ int main() {
     worldSelection->setExpand(true);
 
     auto newWorldName  = std::make_shared<UIInput>(
-        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {PFRACTION, 60}),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {PFRACTION, 60}),
         TValue(PFRACTION, 61),
         TValue(PFRACTION, 30),
         TValue(40),
@@ -221,8 +221,8 @@ int main() {
     );
 
     auto worldSelectionScrollFrame = std::make_shared<UIScrollableFrame>(
-        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
-        TValue(FRACTIONS, 0),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
+        TValue(PERCENT, 0),
         TValue(PFRACTION, 60),
         TValue(PFRACTION, 80),
         UIColor(0,0,0,0),

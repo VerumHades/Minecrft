@@ -34,8 +34,8 @@ SceneManager::SceneManager(){
 
     auto label = std::make_unique<UILabel>(
         "This is the default scene, if you are seeing this something has gone wrong!", 
-        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
-        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
         UIColor(0.0f,0.0f,0.0f)
@@ -45,8 +45,8 @@ SceneManager::SceneManager(){
 
     auto label2 = std::make_unique<UILabel>(
         "Or you could be a dev, in which case you should have intended this to happen.", 
-        TValue(OPERATION_MINUS,{FRACTIONS, 50}, {MFRACTION, 50}),
-        TValue(OPERATION_PLUS ,{FRACTIONS, 50}, {MFRACTION, 70}),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_PLUS ,{PERCENT, 50}, {MY_PERCENT, 70}),
         TValue(PIXELS, 200),
         TValue(PIXELS, 40),
         UIColor(0.0f,0.0f,0.0f)

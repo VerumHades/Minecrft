@@ -35,10 +35,10 @@ struct UIColor{
 
 enum Units{
     PIXELS,
-    FRACTIONS, // Percentage of the window
+    PERCENT, // Percentage of the window
     OPERATION_PLUS, // TValue + TValue (resolved to pixels)
     OPERATION_MINUS, // TValue - TValue (resolved to pixels)
-    MFRACTION, // Percentage of the size of the widget
+    MY_PERCENT, // Percentage of the size of the widget
     PFRACTION // Percentage of parrent
 };
 
