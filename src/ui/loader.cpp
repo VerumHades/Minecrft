@@ -108,7 +108,7 @@ static inline TValue getAttributeValue(XMLElement* source, std::string name, TVa
 
 std::shared_ptr<UIFrame> createElement(XMLElement* source) {
     // Map each tag name to a specific constructor
-    static const std::unordered_map<std::string, std::function<std::shared_ptr<UIFrame>()>> elements = {
+    std::unordered_map<std::string, std::function<std::shared_ptr<UIFrame>()>> elements = {
         {   
             "frame", 
             [source]() {
@@ -128,8 +128,6 @@ std::shared_ptr<UIFrame> createElement(XMLElement* source) {
                 std::string text = "";
                 if(content) text = std::string(content);
 
-                std::cout << text << std::endl;
-
                 return std::make_shared<UILabel>(
                     text,
                     getAttributeValue(source,"x"),
@@ -140,14 +138,31 @@ std::shared_ptr<UIFrame> createElement(XMLElement* source) {
                 ); 
             }
         },
+        {
+            "flex_frame",
+            [source]() {
+                auto frm = std::make_shared<UIFlexFrame>(
+                    getAttributeValue(source,"x"),
+                    getAttributeValue(source,"y"),
+                    getAttributeValue(source,"width"),
+                    getAttributeValue(source,"height"),
+                    UIColor(150,150,150)
+                ); 
+
+                frm->setElementDirection(source->BoolAttribute("horizontal", true) ? UIFlexFrame::COLUMN : UIFlexFrame::ROWS);
+                frm->setExpand(source->BoolAttribute("expand", false));
+
+                return frm;
+            }
+        }
     };
 
     auto it = elements.find(source->Name());
     if (it != elements.end()) {
-        return it->second();  // Call the factory function to create the object
+        return it->second(); 
     }
     std::cerr << "No tag '" << source->Name() << "' found!" << std::endl;
-    return nullptr;  // Return nullptr if no handler is found for the tag name
+    return nullptr; 
 }
 
 std::shared_ptr<UIFrame> processElement(XMLElement* source){
@@ -158,9 +173,9 @@ std::shared_ptr<UIFrame> processElement(XMLElement* source){
         child != nullptr; 
         child = child->NextSiblingElement()
     ) {
-        std::shared_ptr<UIFrame> proccessed = processElement(child);
+        auto proccessed = processElement(child);
         if(!proccessed){
-            std::cerr << "Failed to proccess element: " << source->Name() << std::endl;
+            std::cerr << "Failed to proccess element: " << child->Name() << std::endl;
             continue;
         }
         element->appendChild(proccessed);
@@ -177,27 +192,26 @@ bool loadWindowFromXML(UIWindow& window, std::string path){
         return false;
     }
 
-    // Get the root element (bookstore)
     XMLElement* root = doc.FirstChildElement("window");
     if (!root) {
         std::cerr << "No root window element found." << std::endl;
         return false;
     }
 
-    // Iterate over all 'book' elements in 'bookstore'
     for (
         XMLElement* layer = root->FirstChildElement(); 
         layer != nullptr; 
         layer = layer->NextSiblingElement()
     ) {
         std::string name = layer->Name();
-        window.setCurrentLayer(name);
+        //window.setCurrentLayer(name);
 
         for (
             XMLElement* layer_child = layer->FirstChildElement(); 
             layer_child != nullptr; 
             layer_child = layer_child->NextSiblingElement()
         ) {
+            //std::cout << layer_child->Name() << std::endl;
             auto processed = processElement(layer_child);
             if(!processed){
                 std::cerr << "Failed to proccess element: " << layer_child->Name() << std::endl;

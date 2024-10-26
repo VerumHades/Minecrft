@@ -423,8 +423,6 @@ class UIWindow{
         std::string getCurrentLayerName(){return currentLayer;}
         UILayer& getCurrentLayer() {return layers[currentLayer];}
         UILayer& getLayer(std::string name) {return layers[name];}
-
-        void loadFromXML(std::string data);
 };
 
 class UIManager{
