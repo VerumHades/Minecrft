@@ -5,19 +5,21 @@
             x="50% - 50m" y="50% - 50m" 
             width="300px" height="500px" 
             horizontal="false">
-            <label width="100%" height="40px" id="new_world">New World</label>
-            <label width="100%" height="40px" id="settings" class="some">Settings</label>
-            <label width="100%" height="40px" id="settings" class="some">Settings2</label>
+            <label width="100% - 2px" height="40px" id="new_world" class="interactable">New World</label>
+            <label width="100% - 2px" height="40px" class="interactable">Settings</label>
         </flex_frame>
     </default>
     <world_menu>
-        <label width="100px" height="40px">Hello World!</label>
+        <flex_frame x="50% - 50m" y="0px" width="70%" height="100%" horizontal="false" id="world_selection_frame">
+            <frame id="top_frame" width="100%" height="80%">
+
+            </frame>
+            <frame id="bottom_frame" width="100% - 2px" height="20%">
+                <label id="back_to_menu" width="140px" height="40px" class="interactable">Back</label>
+            </frame>
+        </flex_frame>
     </world_menu>
     <settings>
-        <label>Settings</label>
-        <frame x="50% - 50m" y="0px" width="80%" height="100%">
-            <label>Render distance</label>
-            
-        </frame>
+        
     </settings>
 </window>

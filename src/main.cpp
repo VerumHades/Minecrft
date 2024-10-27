@@ -170,6 +170,11 @@ int main() {
         menuScene->setUILayer("world_menu");
     };
 
+    auto backButton = menuScene->getUILayer("world_menu").getElementById("back_to_menu");
+    backButton->onClicked = [menuScene, mainSceneTemp] {
+        menuScene->setUILayer("default");
+    };
+
     /*auto mainFlexFrame = std::make_shared<UIFlexFrame>(
         TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),

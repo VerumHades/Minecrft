@@ -98,12 +98,12 @@ TValue parseTValue(std::string source){
         return TValue(unit, value);  
     }
     std::cerr << "Failed to parse value: " << source << std::endl;
-    return {0};
+    return TNONE;
 }
 
 using namespace tinyxml2;
 
-static inline TValue getAttributeValue(XMLElement* source, std::string name, TValue def = {PIXELS,0}){
+static inline TValue getAttributeValue(XMLElement* source, std::string name, TValue def = TNONE){
     const char* attr = source->Attribute(name.c_str());
     if(!attr) return def;
     return parseTValue(attr);
@@ -152,7 +152,7 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
             getAttributeValue(source,"x"),
             getAttributeValue(source,"y")
         );
-
+        
         el->setSize(
             getAttributeValue(source,"width"),
             getAttributeValue(source,"height")

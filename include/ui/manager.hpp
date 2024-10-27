@@ -35,6 +35,7 @@ struct UIColor{
 };
 
 enum Units{
+    NONE,
     PIXELS,
     PERCENT, // Percentage of the window
     OPERATION_PLUS, // TValue + TValue (resolved to pixels)
@@ -71,6 +72,9 @@ struct TValue{
         return unit == PFRACTION;
     }
 };
+
+const static TValue TNONE = {NONE, 0};
+
 
 struct UITransform{
     int x;
@@ -174,6 +178,7 @@ class UIFrame{
             std::optional<UIColor>               backgroundColor;
             std::optional<std::array<TValue,4>>  borderWidth;
             std::optional<std::array<UIColor,4>> borderColor;
+            std::optional<TValue>                margin;
         };
 
     protected:
@@ -183,7 +188,8 @@ class UIFrame{
             UIColor{255,255,255,255},
             UIColor{0,0,0,255},
             std::array<TValue,4>{0,0,0,0},
-            std::array<UIColor,4>{UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}}
+            std::array<UIColor,4>{UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
+            TValue(0)
         };
         Style hoverStyle;
         Style focusStyle;
@@ -199,10 +205,10 @@ class UIFrame{
 
         State state;
 
-        TValue x;
-        TValue y;
-        TValue width;
-        TValue height;
+        TValue x = TNONE;
+        TValue y = TNONE;
+        TValue width = TNONE;
+        TValue height = TNONE;
 
         bool hover = false;
         bool focusable = false;
@@ -214,8 +220,8 @@ class UIFrame{
 
     public:
         UIFrame(TValue x, TValue y, TValue width, TValue height): x(x), y(y), width(width), height(height){}
-        UIFrame(TValue width, TValue height): x(0), y(0), width(width), height(height){}
-        UIFrame(): UIFrame(0,0,0,0) {}
+        UIFrame(TValue width, TValue height): x(TNONE), y(TNONE), width(width), height(height){}
+        UIFrame(): UIFrame(TNONE,TNONE,TNONE,TNONE) {}
 
         virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
 
@@ -232,8 +238,9 @@ class UIFrame{
 
         int getValueInPixels(TValue value, bool horizontal, UIManager& manager);
 
-        UITransform getTransform(UIManager& manager);
-        UITransform getContentTransform(UIManager& manager);
+        UITransform getTransform(UIManager& manager); // Transform that includes the border
+        UITransform getContentTransform(UIManager& manager); // Transform for only content
+        UITransform getBoundingTransform(UIManager& manager); // Transform that includes margin
         UIBorderSizes getBorderSizes(UIManager& manager);
         glm::vec4 getClipRegion(UIManager& manager);
 
@@ -286,6 +293,7 @@ class UIFrame{
 class UILabel: public UIFrame{
     protected:
         std::string text;
+        bool resizeToText = false;
         int textPadding = 5;
 
         UITransform getTextPosition(UIManager& manager);
@@ -293,7 +301,7 @@ class UILabel: public UIFrame{
     public:
         UILabel(std::string text, TValue x, TValue y, TValue width, TValue height): UIFrame(x,y,width,height), text(text) {}
         UILabel(std::string text, TValue width, TValue height): UIFrame(width,height), text(text) {}
-        UILabel(std::string text): UILabel(text,0,0) {}
+        UILabel(std::string text): UILabel(text,TNONE,TNONE) {}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
         void setText(std::string text) {this->text = text;}
@@ -306,7 +314,7 @@ class UIInput: public UILabel{
 
     public:
         UIInput(TValue x, TValue y, TValue width, TValue height);
-        UIInput(): UIInput(0,0,0,0) {}
+        UIInput(): UIInput(TNONE,TNONE,TNONE,TNONE) {}
  
         std::function<void(std::string)> onSubmit;
 
@@ -321,7 +329,7 @@ class UIImage: public UIFrame{
         static std::unique_ptr<DynamicTextureArray> textures;
 
         UIImage(std::string path, TValue x, TValue y, TValue width, TValue height);
-        UIImage(std::string path) : UIImage(path,0,0,0,0) {}
+        UIImage(std::string path) : UIImage(path,TNONE,TNONE,TNONE,TNONE) {}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 

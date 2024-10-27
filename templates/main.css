@@ -1,21 +1,28 @@
-label {
-    background-color: rgba(100,10,10,255);
+.interactable {
+    border-width: 1px;
+    border-color: rgb(2, 76, 170);
+    background-color: rgb(9, 16, 87);
+    margin: 10px;
 }
 
-label:hover{
-    background-color: rgba(100,10,100,255);
+.interactable:hover{
+    background-color: rgb(2, 76, 170);
+    border-color: rgb(9, 16, 87);
+    box-sizing: border-box;
 }
 
-#new_world {
-    color: rgba(100,100,250,255);
-    border-width: 5px;
-    border-color: rgba(50,50,50,255);
+#world_selection_frame{
+    background-color: rgb(6, 10, 51);
 }
 
-.some{
-    color: rgba(100,200,100,255);
+#top_frame{
+    border-width: 1px;
+    border-color: rgb(2, 76, 170);
 }
-
-flex_frame{
-    background-color: rgba(40,10,10,150);
+#bottom_frame{
+    border-width: 1px;
+    border-color: rgb(2, 76, 170);
+}
+#back_to_menu{
+    margin: 10px;
 }

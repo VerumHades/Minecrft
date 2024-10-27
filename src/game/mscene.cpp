@@ -8,7 +8,7 @@ void MainScene::initialize(Scene* mainScene){
     fpsLock = false;
     
     std::unique_ptr<Command> tpCommand = std::make_unique<Command>(
-        std::vector<CommandArgumentType>({INT,INT,INT}),
+        std::vector<CommandArgument::CommandArgumentType>({CommandArgument::INT,CommandArgument::INT,CommandArgument::INT}),
         [this](std::vector<CommandArgument> arguments){
             Entity& player = world->getEntities()[0];
             
@@ -18,7 +18,7 @@ void MainScene::initialize(Scene* mainScene){
     );
 
     std::unique_ptr<Command> summonCommand = std::make_unique<Command>(
-        std::vector<CommandArgumentType>({STRING}),
+        std::vector<CommandArgument::CommandArgumentType>({CommandArgument::STRING}),
         [this](std::vector<CommandArgument> arguments){
             Entity& player = world->getEntities()[0];
             std::string& name = arguments[0].stringValue;
@@ -31,7 +31,7 @@ void MainScene::initialize(Scene* mainScene){
     );
 
     std::unique_ptr<Command> saveWorldCommand = std::make_unique<Command>(
-        std::vector<CommandArgumentType>({STRING}),
+        std::vector<CommandArgument::CommandArgumentType>({CommandArgument::STRING}),
         [this](std::vector<CommandArgument> arguments){
             std::string& name = arguments[0].stringValue;
 

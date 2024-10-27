@@ -7,14 +7,12 @@
 
 #include <ui/manager.hpp>
 
-enum CommandArgumentType {
-    INT,
-    STRING,
-    NONE
-};
-
 struct CommandArgument{
-    CommandArgumentType type = NONE;
+    enum CommandArgumentType {
+        INT,
+        STRING,
+        NONE
+    } type = NONE;
     std::string stringValue;
     int intValue;
 
@@ -25,11 +23,11 @@ struct CommandArgument{
 using CommandFunction = std::function<void(std::vector<CommandArgument>)>;
 class Command{
     private:
-        std::vector<CommandArgumentType> argumentTypes;
+        std::vector<CommandArgument::CommandArgumentType> argumentTypes;
     public:
-        Command(std::vector<CommandArgumentType> argumentTypes, CommandFunction function): argumentTypes(argumentTypes), execute(function) {}
+        Command(std::vector<CommandArgument::CommandArgumentType> argumentTypes, CommandFunction function): argumentTypes(argumentTypes), execute(function) {}
         CommandFunction execute;
-        const std::vector<CommandArgumentType>& getArgumentTypes(){return argumentTypes;}
+        const std::vector<CommandArgument::CommandArgumentType>& getArgumentTypes(){return argumentTypes;}
 }; 
 
 class CommandProcessor{

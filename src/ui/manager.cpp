@@ -192,6 +192,7 @@ std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string t
 int UIFrame::getValueInPixels(TValue value, bool horizontal, UIManager& manager){
     switch (value.unit)
     {
+        case NONE: return 0;
         case PIXELS: return value.value;   
         case PERCENT:
             if(horizontal) return (manager.getScreenWidth()  / 100.0f) * value.value;
@@ -370,31 +371,52 @@ std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
     return out;
 };
 
-UITransform UIFrame::getTransform(UIManager& manager){
-    int ox = 0, oy = 0;
+UITransform UIFrame::getContentTransform(UIManager& manager){
+    auto t = getAttribute(&UIFrame::Style::margin);
+    auto b = getBorderSizes(manager);
+
+    int margin_x = getValueInPixels(t, true , manager);
+    int margin_y = getValueInPixels(t, false, manager);
+
+    int offset_x = 0, offset_y = 0;
     if(parent){
         auto t = parent->getContentTransform(manager);
-        ox = t.x;
-        oy = t.y;
+        offset_x = t.x;
+        offset_y = t.y;
     }
 
     return {
-        getValueInPixels(x     , true , manager) + ox,
-        getValueInPixels(y     , false, manager) + oy,
+        getValueInPixels(x     , true , manager) + offset_x + margin_x + b.left,
+        getValueInPixels(y     , false, manager) + offset_y + margin_y + b.top,
         getValueInPixels(width , true , manager),
         getValueInPixels(height, false, manager),
     };
 }
 
-UITransform UIFrame::getContentTransform(UIManager& manager){
-    auto t = getTransform(manager);
+UITransform UIFrame::getTransform(UIManager& manager){
+    auto t = getContentTransform(manager);
     auto b = getBorderSizes(manager);
 
     return {
-        t.x + b.left,
-        t.y + b.top ,
-        t.width  - b.right - b.left,
-        t.height - b.bottom - b.top
+        t.x - b.left,
+        t.y - b.top ,
+        t.width  + b.right + b.left,
+        t.height + b.bottom + b.top
+    };
+}
+
+UITransform UIFrame::getBoundingTransform(UIManager& manager){
+    auto t = getTransform(manager);
+    auto m = getAttribute(&UIFrame::Style::margin);
+
+    int mx = getValueInPixels(m, true , manager);
+    int my = getValueInPixels(m, false, manager);
+
+    return {
+        t.x - mx,
+        t.y - my,
+        t.width  + mx * 2,
+        t.height + my * 2
     };
 }
 
@@ -420,7 +442,16 @@ glm::vec4 UIFrame::getClipRegion(UIManager& manager){
 
 std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
     auto t = getTextPosition(manager);
-    
+    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
+
+    //std::cout << "Label with text: " << text << " has width of unit: " << width.unit << " and height of unit: " << height.unit << 
+    //"That is" << width.value << " and " << height.value << std::endl;
+
+    //std::cout << textDimensions.x << " " << textDimensions.y << std::endl;
+
+    if(width .unit == NONE) width  = textDimensions.x + textPadding * 2;
+    if(height.unit == NONE) height = textDimensions.y + textPadding * 2;
+
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
     std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,t.x,t.y,1,getAttribute(&Style::textColor));
     auto region = getClipRegion(manager);
@@ -617,7 +648,7 @@ std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manage
         int size = 0;
         
         for(auto& child: children){
-            auto ct = child->getTransform(manager);
+            auto ct = child->getBoundingTransform(manager);
 
             size += getValueInPixels(elementMargin, direction == COLUMN, manager);
             size += direction == COLUMN ? ct.width : ct.height;
@@ -631,7 +662,7 @@ std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manage
     for(auto& child: children){
         offset += getValueInPixels(elementMargin, direction == COLUMN, manager);
 
-        auto ct = child->getTransform(manager);
+        auto ct = child->getBoundingTransform(manager);
 
         child->setPosition(
             direction == COLUMN ? TValue(PIXELS,offset) : t.width  / 2 - ct.width  / 2,
@@ -639,8 +670,8 @@ std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manage
         );
         offset += 
             direction == COLUMN ?
-            child->getTransform(manager).width :
-            child->getTransform(manager).height;
+            ct.width :
+            ct.height;
     }
 
     return UIFrame::getRenderingInformation(manager);
@@ -660,11 +691,8 @@ UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue he
     slider->setDisplayValue(false);
     slider->setHandleWidth(60);
     
-    this->body->setParent(this);
-    children.push_back(this->body);
-
-    slider->setParent(this);
-    children.push_back(slider);
+    UIFrame::appendChild(body);
+    UIFrame::appendChild(slider);
 }
 std::vector<UIRenderInfo> UIScrollableFrame::getRenderingInformation(UIManager& manager) {
     auto ct = getContentTransform(manager);

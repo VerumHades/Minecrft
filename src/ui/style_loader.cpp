@@ -49,6 +49,9 @@ static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFram
     {"border-color",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
         auto c = parseColor(value);
         element->setAttribute(&UIFrame::Style::borderColor, {c,c,c,c}, state);
+    }},
+    {"margin",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+        element->setAttribute(&UIFrame::Style::margin, parseTValue(value), state);
     }}
 };
 
