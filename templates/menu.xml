@@ -13,4 +13,11 @@
     <world_menu>
         <label width="100px" height="40px">Hello World!</label>
     </world_menu>
+    <settings>
+        <label>Settings</label>
+        <frame x="50% - 50m" y="0px" width="80%" height="100%">
+            <label>Render distance</label>
+            
+        </frame>
+    </settings>
 </window>
