@@ -42,8 +42,7 @@ SceneManager::SceneManager(){
         TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(PIXELS, 200),
-        TValue(PIXELS, 40),
-        UIColor(0.0f,0.0f,0.0f)
+        TValue(PIXELS, 40)
     );
 
     getCurrentScene()->addElement(std::move(label));
@@ -53,8 +52,7 @@ SceneManager::SceneManager(){
         TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(OPERATION_PLUS ,{PERCENT, 50}, {MY_PERCENT, 70}),
         TValue(PIXELS, 200),
-        TValue(PIXELS, 40),
-        UIColor(0.0f,0.0f,0.0f)
+        TValue(PIXELS, 40)
     );
 
     /*label2->onMouseEvent = [](GLFWwindow* window, int button, int action, int mods) {

@@ -53,8 +53,7 @@ void MainScene::initialize(Scene* mainScene){
         TValue(PIXELS,0),
         TValue(OPERATION_MINUS,{PERCENT, 100}, {MY_PERCENT, 100}),
         TValue(PERCENT,100),
-        TValue(PIXELS,50),
-        UIColor(0,0,0)
+        TValue(PIXELS,50)
     );
     this->chatInput = chatInput.get();
 
@@ -75,8 +74,7 @@ void MainScene::initialize(Scene* mainScene){
         TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(PIXELS, 400),
-        TValue(PIXELS, 700),
-        UIColor(30, 62, 98)
+        TValue(PIXELS, 700)
     );
 
     auto exitButton = std::make_shared<UILabel>(
@@ -84,10 +82,9 @@ void MainScene::initialize(Scene* mainScene){
         TValue(OPERATION_MINUS,{PFRACTION, 50}, {MY_PERCENT, 50}),
         TValue(OPERATION_MINUS,{PFRACTION, 100}, {MY_PERCENT, 200}),
         TValue(PIXELS, 200),
-        TValue(PIXELS, 40),
-        UIColor(30, 62, 98)
+        TValue(PIXELS, 40)
     );
-    exitButton->setHoverColor(UIColor(11,25,44,255));
+    //exitButton->setHoverColor(UIColor(11,25,44,255));
     exitButton->onClicked = [this]() {
         this->sceneManager->setScene("menu");
     };
@@ -97,10 +94,9 @@ void MainScene::initialize(Scene* mainScene){
         TValue(OPERATION_MINUS,{PFRACTION, 50}, {MY_PERCENT, 50}),
         TValue(MY_PERCENT, 100),
         TValue(PIXELS, 200),
-        TValue(PIXELS, 40),
-        UIColor(30, 62, 98)
+        TValue(PIXELS, 40)
     );
-    resumeButton->setHoverColor(UIColor(11,25,44,255));
+    //resumeButton->setHoverColor(UIColor(11,25,44,255));
     resumeButton->onClicked = [this]() {
         this->setUILayer("default");
         menuOpen = false;
@@ -111,15 +107,14 @@ void MainScene::initialize(Scene* mainScene){
         TValue(OPERATION_MINUS,{PFRACTION, 50}, {MY_PERCENT, 50}),
         TValue(MY_PERCENT, 300),
         TValue(PIXELS, 200),
-        TValue(PIXELS, 40),
-        UIColor(30, 62, 98)
+        TValue(PIXELS, 40)
     );
-    settingsButton->setHoverColor(UIColor(11,25,44,255));
+    //settingsButton->setHoverColor(UIColor(11,25,44,255));
     settingsButton->onClicked = [this]() {
         this->setUILayer("settings");
     };
 
-    pauseMenuFrame->setBorderWidth({{PIXELS,8},{PIXELS,8},{PIXELS,8},{PIXELS,8}});
+    pauseMenuFrame->setAttribute(&UIFrame::Style::borderWidth, {TValue{8},{8},{8},{8}});
 
     pauseMenuFrame->appendChild(exitButton);
     pauseMenuFrame->appendChild(resumeButton);
@@ -136,8 +131,7 @@ void MainScene::initialize(Scene* mainScene){
         TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(PIXELS, 700),
-        TValue(PIXELS, 700),
-        UIColor(30, 62, 98)
+        TValue(PIXELS, 700)
     );
 
     auto renderDistanceSlider = std::make_shared<UISlider>(
@@ -146,8 +140,7 @@ void MainScene::initialize(Scene* mainScene){
         TValue(PFRACTION, 80),
         TValue(PIXELS, 20),
         &renderDistance,
-        static_cast<uint32_t>(4), static_cast<uint32_t>(32),
-        UIColor(30, 62, 98)
+        static_cast<uint32_t>(4), static_cast<uint32_t>(32)
     );
 
     auto renderDistanceLabel = std::make_shared<UILabel>(
@@ -155,12 +148,11 @@ void MainScene::initialize(Scene* mainScene){
         TValue(OPERATION_MINUS,{PFRACTION, 50}, {MY_PERCENT, 50}),
         TValue(10),
         TValue(PFRACTION, 80),
-        TValue(PIXELS, 40),
-        UIColor(30, 62, 98)
+        TValue(PIXELS, 40)
     );
-    renderDistanceLabel->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
+    //renderDistanceLabel->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
 
-    settingsMenuFrame->setBorderWidth({{PIXELS,8},{PIXELS,8},{PIXELS,8},{PIXELS,8}});
+    //settingsMenuFrame->setBorderWidth({{PIXELS,8},{PIXELS,8},{PIXELS,8},{PIXELS,8}});
     settingsMenuFrame->appendChild(renderDistanceSlider);
     settingsMenuFrame->appendChild(renderDistanceLabel);
 
@@ -174,7 +166,6 @@ void MainScene::initialize(Scene* mainScene){
         TValue(PIXELS,10),
         TValue(PERCENT, 33),
         TValue(PIXELS, 20),
-        UIColor(0,0,0,0),
         &chunkBuffer.getVertexAllocator()
     );
 
@@ -183,7 +174,6 @@ void MainScene::initialize(Scene* mainScene){
         TValue(PIXELS,40),
         TValue(PERCENT, 33),
         TValue(PIXELS, 20),
-        UIColor(0,0,0,0),
         &chunkBuffer.getIndexAllocator()
     );
 

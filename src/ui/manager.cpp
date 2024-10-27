@@ -1,9 +1,5 @@
 #include <ui/manager.hpp>
 
-TValue operator"" px(unsigned long long value){return TValue(PIXELS, value);}
-TValue operator"" ps(unsigned long long value){return TValue(PFRACTION, value);}
-TValue operator"" ws(unsigned long long value){return TValue(MY_PERCENT, value);}
-
 void UIManager::initialize(){
     uiProgram.initialize();
     uiProgram.addShader("shaders/ui/ui.vs", GL_VERTEX_SHADER);
@@ -344,11 +340,10 @@ bool UIFrame::pointWithin(glm::vec2 point, UIManager& manager, int padding){
 }
 
 std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
-    auto clr = hover ? hoverColor : color;
     auto t = getTransform(manager);
 
     std::vector<UIRenderInfo> out = {
-        UIRenderInfo::Rectangle(t.x,t.y,t.width,t.height,clr,getBorderSizes(manager),borderColor)
+        UIRenderInfo::Rectangle(t.x,t.y,t.width,t.height,getAttribute(&Style::backgroundColor),getBorderSizes(manager),getAttribute(&Style::borderColor))
     };
 
     auto region = getClipRegion(manager);
@@ -404,9 +399,7 @@ UITransform UIFrame::getContentTransform(UIManager& manager){
 }
 
 UIBorderSizes UIFrame::getBorderSizes(UIManager& manager){
-    int sw = manager.getScreenWidth();
-    int sh = manager.getScreenHeight();
-
+    auto borderWidth = getAttribute(&Style::borderWidth);
     return {
         getValueInPixels(borderWidth[0], false, manager),
         getValueInPixels(borderWidth[1], true , manager),
@@ -429,7 +422,7 @@ std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
     auto t = getTextPosition(manager);
     
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,t.x,t.y,1,textColor);
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,t.x,t.y,1,getAttribute(&Style::textColor));
     auto region = getClipRegion(manager);
     for(auto& i: temp){
         i.clip = true;
@@ -444,6 +437,7 @@ UITransform UILabel::getTextPosition(UIManager& manager){
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
 
     auto t = getTransform(manager);
+    auto textPosition = getAttribute(&Style::textPosition);
 
     int tx = 0;
     if     (textPosition == LEFT  ) tx = t.x + textPadding;
@@ -472,11 +466,11 @@ std::vector<UIRenderInfo> UIImage::getRenderingInformation(UIManager& manager){
     return out;
 }
 
-UIImage::UIImage(std::string path, TValue x, TValue y, TValue width, TValue height) : UIFrame(x,y,width,height,{0,0,0,0}), path(path){
+UIImage::UIImage(std::string path, TValue x, TValue y, TValue width, TValue height) : UIFrame(x,y,width,height), path(path){
     textures->addTexture(path);
 }
 
-UIInput::UIInput(TValue x, TValue y, TValue width, TValue height, UIColor color): UILabel("",x,y,width,height,color){
+UIInput::UIInput(TValue x, TValue y, TValue width, TValue height): UILabel("",x,y,width,height){
     this->width = width;
     this->height = height;
     this->focusable = true;
@@ -521,7 +515,7 @@ std::vector<UIRenderInfo> UIInput::getRenderingInformation(UIManager& manager){
     return out;
 }
 
-UISlider::UISlider(TValue x, TValue y, TValue width, TValue height, int* value, uint32_t min, uint32_t max, UIColor color): UIFrame(x,y,width,height,color), min(min), max(max), value(value) {
+UISlider::UISlider(TValue x, TValue y, TValue width, TValue height, int* value, uint32_t min, uint32_t max): UIFrame(x,y,width,height), min(min), max(max), value(value) {
     this->focusable = true;
     
     onMouseEvent = [this](UIManager& manager, int button, int action, int mods){
@@ -589,7 +583,12 @@ std::vector<UIRenderInfo> UISlider::getRenderingInformation(UIManager& manager){
     auto t = getTransform(manager);
 
     std::vector<UIRenderInfo> out = {
-        UIRenderInfo::Rectangle(t.x, t.y,t.width, t.height, color, {3,3,3,3},UIRenderInfo::generateBorderColors(color))
+        UIRenderInfo::Rectangle(
+            t.x, t.y,t.width, t.height,
+            getAttribute(&Style::backgroundColor),
+            getBorderSizes(manager),
+            getAttribute(&Style::borderColor)
+        )
     };
 
     //auto ht = getHandleTransform(manager);
@@ -647,7 +646,7 @@ std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manage
     return UIFrame::getRenderingInformation(manager);
 }
 
-UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue height, UIColor color, std::shared_ptr<UIFrame> body): UIFrame(x,y,width,height,color) {
+UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue height, std::shared_ptr<UIFrame> body): UIFrame(x,y,width,height) {
     this->body = body;
     scrollable = true;
 
@@ -656,7 +655,7 @@ UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue he
         this->scroll = glm::clamp(this->scroll, 0, this->scrollMax);
     };
 
-    slider = std::make_shared<UISlider>(0,0,0,0, &scroll, 0, scrollMax, UIColor(0.1f,0.1f,0.1f,1.0f));
+    slider = std::make_shared<UISlider>(0,0,0,0, &scroll, 0, scrollMax);
     slider->setOrientation(UISlider::VERTICAL);
     slider->setDisplayValue(false);
     slider->setHandleWidth(60);

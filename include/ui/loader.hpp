@@ -16,6 +16,7 @@ struct UIStyleQuery{
         CLASS,
         TAG
     } type;
+    UIFrame::State state;
     std::string value;
     std::vector<UIStyleQueryAttribute> attributes;
     
@@ -24,11 +25,18 @@ struct UIStyleQuery{
 
 class UIStyle{
     private:
-        std::unordered_map<std::string, UIStyleQuery> tag_queries;
-        std::unordered_map<std::string, UIStyleQuery> class_queries;
-        std::unordered_map<std::string, UIStyleQuery> id_queries;
+        using QueryMap = std::unordered_map<std::string, std::vector<UIStyleQuery>>;
 
-        void parseQuery(std::string type, std::string value, std::string source);
+        QueryMap tag_queries;
+        QueryMap class_queries;
+        QueryMap id_queries;
+
+        void addQuery(std::string name, QueryMap& map, UIStyleQuery& query){
+            if(map.count(name) == 0) map[name] = {};
+            map[name].push_back(query);
+        }
+
+        void parseQuery(std::string type, std::string value, std::string state, std::string source);
 
     public:
         UIStyle(std::string path);

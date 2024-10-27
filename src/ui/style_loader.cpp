@@ -29,26 +29,30 @@ UIColor parseColor(std::string source){
 
 
 
-static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFrame>, std::string)>> attributeApplyFunctions = {
+static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFrame>, std::string, UIFrame::State)>> attributeApplyFunctions = {
     {
         "background-color",
-        [](std::shared_ptr<UIFrame> element, std::string value){
-            element->setColor(parseColor(value));
+        [](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+            element->setAttribute(&UIFrame::Style::backgroundColor, parseColor(value), state);
         }
     },
     {
         "color",
-        [](std::shared_ptr<UIFrame> element, std::string value){
-            if(auto label = std::dynamic_pointer_cast<UILabel>(element)){
-                label->setTextColor(parseColor(value));
-            }
+        [](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+            element->setAttribute(&UIFrame::Style::textColor, parseColor(value), state);
         }
     },
-    {"border-width",[](std::shared_ptr<UIFrame> element, std::string value){element->setBorderWidth(parseTValue(value));}},
-    {"border-color",[](std::shared_ptr<UIFrame> element, std::string value){element->setBorderColor(parseColor(value));}}
+    {"border-width",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+        auto v = parseTValue(value);
+        element->setAttribute(&UIFrame::Style::borderWidth, {v,v,v,v}, state);
+    }},
+    {"border-color",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+        auto c = parseColor(value);
+        element->setAttribute(&UIFrame::Style::borderColor, {c,c,c,c}, state);
+    }}
 };
 
-void UIStyle::parseQuery(std::string type, std::string value, std::string source){
+void UIStyle::parseQuery(std::string type, std::string value, std::string state, std::string source){
     UIStyleQuery query = {};
     query.value = value;
 
@@ -68,17 +72,20 @@ void UIStyle::parseQuery(std::string type, std::string value, std::string source
         query.attributes.push_back({match[1],match[2]});
     }
 
+    if(state == ":hover") query.state = UIFrame::HOVER;
+    else query.state = UIFrame::BASE;
+
     if(type == "#"){
         query.type = UIStyleQuery::ID;
-        id_queries[value] = query;
+        addQuery(value, id_queries, query);
     }
     else if(type == "."){
         query.type = UIStyleQuery::CLASS;
-        class_queries[value] = query;
+        addQuery(value, class_queries, query);
     }
     else{
         query.type = UIStyleQuery::TAG;
-        tag_queries[value] = query;
+        addQuery(value, tag_queries, query);
     }
 }
 
@@ -90,7 +97,7 @@ UIStyle::UIStyle(std::string path){
     f.read(source.data(), sz);   
 
     // Regex for individual queries
-    std::regex pattern(R"((#|\.|)([a-zA-Z_]+)\{([\s\S]*?)\})"); 
+    std::regex pattern(R"((#|\.|)([a-zA-Z_]+)(:hover|)?\{([\s\S]*?)\})"); 
     // Remove all spaces
     source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
 
@@ -100,7 +107,7 @@ UIStyle::UIStyle(std::string path){
     for (std::sregex_iterator i = matches_begin; i != matches_end; ++i) {
         std::smatch match = *i;
         
-        parseQuery(match[1],match[2],match[3]);
+        parseQuery(match[1],match[2],match[3],match[4]);
     }
 }
 
@@ -110,13 +117,19 @@ void UIStyle::applyTo(
     std::string id,
     const std::vector<std::string>& classes
 ){
-    if(tag_queries.count(tag) != 0) tag_queries[tag].applyTo(element);
-    for(auto& classname: classes) if(class_queries.count(classname) != 0) class_queries[classname].applyTo(element);
-    if(id_queries.count(id)) id_queries[id].applyTo(element);
+    if(tag_queries.count(tag) != 0)
+        for(auto& q: tag_queries[tag]) q.applyTo(element);
+
+    for(auto& classname: classes)
+        if(class_queries.count(classname) != 0)
+            for(auto& q: class_queries[classname]) q.applyTo(element);
+
+    if(id_queries.count(id) != 0)
+        for(auto& q: id_queries[id]) q.applyTo(element);
 }
 
 void UIStyleQuery::applyTo(std::shared_ptr<UIFrame> element){
     for(auto& attr: attributes){
-        attributeApplyFunctions[attr.name](element, attr.value);
+        attributeApplyFunctions[attr.name](element, attr.value, state);
     }    
 }

@@ -7,6 +7,7 @@
 #include <ui/font.hpp>
 #include <queue>
 #include <functional>
+#include <optional>
 
 struct UIColor{
     float r;
@@ -70,13 +71,6 @@ struct TValue{
         return unit == PFRACTION;
     }
 };
-
-// Pixels
-TValue operator"" px(unsigned long long value);
-// Percent of parent
-TValue operator"" ps(unsigned long long value);
-// Percent of widget
-TValue operator"" ws(unsigned long long value);
 
 struct UITransform{
     int x;
@@ -160,42 +154,69 @@ struct UIRenderInfo{
 
 class UIManager;
 
+enum UITextPosition{
+    LEFT,
+    RIGHT,
+    CENTER
+};
+
+
 class UIFrame{
+    public:
+        enum State{
+            BASE,
+            HOVER,
+            FOCUS
+        };
+        struct Style{
+            std::optional<UITextPosition>        textPosition;
+            std::optional<UIColor>               textColor;
+            std::optional<UIColor>               backgroundColor;
+            std::optional<std::array<TValue,4>>  borderWidth;
+            std::optional<std::array<UIColor,4>> borderColor;
+        };
+
     protected:
+
+        Style baseStyle = {
+            LEFT,
+            UIColor{255,255,255,255},
+            UIColor{0,0,0,255},
+            std::array<TValue,4>{0,0,0,0},
+            std::array<UIColor,4>{UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}}
+        };
+        Style hoverStyle;
+        Style focusStyle;
+
+        Style& getStyleForState(State state){
+            switch(state){
+                case BASE : return baseStyle;
+                case HOVER: return hoverStyle;
+                case FOCUS: return focusStyle;
+            }
+            return baseStyle;
+        }
+
+        State state;
+
         TValue x;
         TValue y;
         TValue width;
         TValue height;
-
-        std::vector<TValue> borderWidth = {{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}};
 
         bool hover = false;
         bool focusable = false;
         bool hoverable = true;
         bool scrollable = false;
 
-        UIColor color;
-        UIColor hoverColor = UIColor(0.0f,0.1f,0.5f,0.0f);
-        std::array<UIColor,4> borderColor = {
-            UIColor(0.5f,0.1f,0.5f,0.4f),
-            UIColor(0.5f,0.1f,0.5f,0.4f),
-            UIColor(0.5f,0.1f,0.5f,0.4f),
-            UIColor(0.5f,0.1f,0.5f,0.4f)
-        };
-
         std::vector<std::shared_ptr<UIFrame>> children;
         UIFrame* parent = nullptr;
 
     public:
-        UIFrame(TValue x, TValue y, TValue width, TValue height, UIColor color): x(x), y(y), width(width), height(height), color(color), hoverColor(color){
-            //borderColor = UIRenderInfo::generateBorderColors(color);
-        }
+        UIFrame(TValue x, TValue y, TValue width, TValue height): x(x), y(y), width(width), height(height){}
+        UIFrame(TValue width, TValue height): x(0), y(0), width(width), height(height){}
+        UIFrame(): UIFrame(0,0,0,0) {}
 
-        UIFrame(TValue width, TValue height, UIColor color): x(0), y(0), width(width), height(height), color(color), hoverColor(color){
-            //borderColor = UIRenderInfo::generateBorderColors(color);
-        }
-
-        UIFrame(): UIFrame(0,0,UIColor(0,0,0)) {}
         virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
 
         std::function<void(UIManager& manager, int, int, int)> onMouseEvent;
@@ -216,22 +237,19 @@ class UIFrame{
         UIBorderSizes getBorderSizes(UIManager& manager);
         glm::vec4 getClipRegion(UIManager& manager);
 
-        void setHoverColor(UIColor color) {hoverColor = color;}
-        void setBorderColor(std::array<UIColor,4> borderColor) {this->borderColor = borderColor;}
-        void setBorderColor(UIColor borderColor) {this->borderColor = {borderColor,borderColor,borderColor,borderColor};}
-        void setColor(UIColor color) {this->color = color;}
-
         bool pointWithin(glm::vec2 position, UIManager& manager, int padding = 0);
         bool pointWithinBounds(glm::vec2 position, UITransform transform, int padding = 0);
-        void setBorderWidth(std::vector<TValue> borderWidth) {this->borderWidth = borderWidth;}
-        void setBorderWidth(TValue borderWidth) {this->borderWidth = {borderWidth,borderWidth,borderWidth,borderWidth};}
 
         void setPosition(TValue x, TValue y){this->x = x; this->y = y;}
         void setSize(TValue width, TValue height) {this->width = width; this->height = height;}
         TValue& getWidth(){return width;}
         TValue& getHeight(){return height;}
 
-        void setHover(bool value) {hover = value;}
+        void setHover(bool value) {
+            hover = value;
+            if(hover) state = HOVER;
+            else state = BASE;
+        }
         void setHoverable(bool value) {hoverable = value;}
         void setFocusable(bool value) {focusable = value;}
         bool isFocusable(){return focusable;}
@@ -248,33 +266,38 @@ class UIFrame{
             children.clear();
         }
         std::vector<std::shared_ptr<UIFrame>>& getChildren() {return children;}
-};
 
-enum UITextPosition{
-    LEFT,
-    RIGHT,
-    CENTER
+        template <typename T>
+        T getAttribute(std::optional<T> Style::*attribute){
+            auto& style = getStyleForState(state);
+            if (style.*attribute) {
+                return *(style.*attribute);
+            }
+            return *(baseStyle.*attribute);
+        }
+
+        template <typename T>
+        void setAttribute(std::optional<T> Style::*attribute, T value, State state = BASE){
+            auto& style = getStyleForState(state);
+            style.*attribute = value;
+        }
 };
 
 class UILabel: public UIFrame{
     protected:
         std::string text;
         int textPadding = 5;
-        UITextPosition textPosition = CENTER;
-        UIColor textColor = {255,255,255};
 
         UITransform getTextPosition(UIManager& manager);
 
     public:
-        UILabel(std::string text, TValue x, TValue y, TValue width, TValue height, UIColor color): UIFrame(x,y,width,height,color), text(text) {}
-        UILabel(std::string text, TValue width, TValue height, UIColor color): UIFrame(width,height,color), text(text) {}
-        UILabel(std::string text): UILabel(text,0,0,UIColor(0,0,0)) {}
+        UILabel(std::string text, TValue x, TValue y, TValue width, TValue height): UIFrame(x,y,width,height), text(text) {}
+        UILabel(std::string text, TValue width, TValue height): UIFrame(width,height), text(text) {}
+        UILabel(std::string text): UILabel(text,0,0) {}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
         void setText(std::string text) {this->text = text;}
-        void setTextPosition(UITextPosition position) {this->textPosition = position;}
         void setTextPadding(int padding) {this->textPadding = padding;}
-        void setTextColor(UIColor color) {this->textColor = color;}
         std::string& getText() {return text;}
 };
 
@@ -282,8 +305,8 @@ class UIInput: public UILabel{
     private:
 
     public:
-        UIInput(TValue x, TValue y, TValue width, TValue height, UIColor color);
-        UIInput(): UIInput(0,0,0,0,UIColor(0,0,0)) {}
+        UIInput(TValue x, TValue y, TValue width, TValue height);
+        UIInput(): UIInput(0,0,0,0) {}
  
         std::function<void(std::string)> onSubmit;
 
@@ -329,7 +352,7 @@ class UISlider: public UIFrame{
     public:
         static std::unique_ptr<DynamicTextureArray> textures;
 
-        UISlider(TValue x, TValue y, TValue width, TValue height, int* value, uint32_t min, uint32_t max, UIColor color);
+        UISlider(TValue x, TValue y, TValue width, TValue height, int* value, uint32_t min, uint32_t max);
         void setOrientation(Orientation value){orientation = value;}
         void setDisplayValue(bool value) {displayValue = value;}
         void setHandleWidth(uint32_t width) {handleWidth = width;}
@@ -359,7 +382,7 @@ class UIFlexFrame: public UIFrame{
 
     public:
 
-        UIFlexFrame(TValue x, TValue y, TValue width, TValue height, UIColor color): UIFrame(x,y,width,height,color) {};
+        UIFlexFrame(TValue x, TValue y, TValue width, TValue height): UIFrame(x,y,width,height) {};
         UIFlexFrame(): UIFrame() {}
         void setElementDirection(FlexDirection direction) {this->direction = direction;}
         void setElementMargin(TValue margin) {elementMargin = margin;}
@@ -390,7 +413,7 @@ class UIScrollableFrame: public UIFrame{
         int scroll = 0;
         int scrollMax = 1000;
     public:
-        UIScrollableFrame(TValue x, TValue y, TValue width, TValue height, UIColor color, std::shared_ptr<UIFrame> body);
+        UIScrollableFrame(TValue x, TValue y, TValue width, TValue height, std::shared_ptr<UIFrame> body);
         void appendChild(std::shared_ptr<UIFrame> child) override {body->appendChild(child);};
 
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;

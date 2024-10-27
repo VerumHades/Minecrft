@@ -2,6 +2,10 @@ label {
     background-color: rgba(100,10,10,255);
 }
 
+label:hover{
+    background-color: rgba(100,10,100,255);
+}
+
 #new_world {
     color: rgba(100,100,250,255);
     border-width: 5px;

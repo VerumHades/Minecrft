@@ -70,7 +70,7 @@ void CommandProcessor::processCommand(std::string raw){
 }
 
 
-UICommandInput::UICommandInput(CommandProcessor* commandProcessor, TValue x, TValue y, TValue width, TValue height, UIColor color): UIInput(x,y,width,height,color), commandProcessor(commandProcessor){
+UICommandInput::UICommandInput(CommandProcessor* commandProcessor, TValue x, TValue y, TValue width, TValue height): UIInput(x,y,width,height), commandProcessor(commandProcessor){
     onKeyTyped = [this](GLFWwindow* window, unsigned int codepoint){
         char typedChar = static_cast<char>(codepoint);
 
