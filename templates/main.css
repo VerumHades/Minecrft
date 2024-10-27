@@ -1,0 +1,17 @@
+label {
+    background-color: rgba(100,10,10,255);
+}
+
+#new_world {
+    color: rgba(100,100,250,255);
+    border-width: 5px;
+    border-color: rgba(50,50,50,255);
+}
+
+.some{
+    color: rgba(100,200,100,255);
+}
+
+flex_frame{
+    background-color: rgba(40,10,10,150);
+}

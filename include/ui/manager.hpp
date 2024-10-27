@@ -167,7 +167,7 @@ class UIFrame{
         TValue width;
         TValue height;
 
-        std::vector<TValue> borderWidth = {{PIXELS,3},{PIXELS,3},{PIXELS,3},{PIXELS,3}};
+        std::vector<TValue> borderWidth = {{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}};
 
         bool hover = false;
         bool focusable = false;
@@ -188,12 +188,14 @@ class UIFrame{
 
     public:
         UIFrame(TValue x, TValue y, TValue width, TValue height, UIColor color): x(x), y(y), width(width), height(height), color(color), hoverColor(color){
-            borderColor = UIRenderInfo::generateBorderColors(color);
+            //borderColor = UIRenderInfo::generateBorderColors(color);
         }
 
         UIFrame(TValue width, TValue height, UIColor color): x(0), y(0), width(width), height(height), color(color), hoverColor(color){
-            borderColor = UIRenderInfo::generateBorderColors(color);
+            //borderColor = UIRenderInfo::generateBorderColors(color);
         }
+
+        UIFrame(): UIFrame(0,0,UIColor(0,0,0)) {}
         virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
 
         std::function<void(UIManager& manager, int, int, int)> onMouseEvent;
@@ -259,17 +261,20 @@ class UILabel: public UIFrame{
         std::string text;
         int textPadding = 5;
         UITextPosition textPosition = CENTER;
+        UIColor textColor = {255,255,255};
 
         UITransform getTextPosition(UIManager& manager);
 
     public:
         UILabel(std::string text, TValue x, TValue y, TValue width, TValue height, UIColor color): UIFrame(x,y,width,height,color), text(text) {}
         UILabel(std::string text, TValue width, TValue height, UIColor color): UIFrame(width,height,color), text(text) {}
+        UILabel(std::string text): UILabel(text,0,0,UIColor(0,0,0)) {}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
         void setText(std::string text) {this->text = text;}
         void setTextPosition(UITextPosition position) {this->textPosition = position;}
         void setTextPadding(int padding) {this->textPadding = padding;}
+        void setTextColor(UIColor color) {this->textColor = color;}
         std::string& getText() {return text;}
 };
 
@@ -278,7 +283,8 @@ class UIInput: public UILabel{
 
     public:
         UIInput(TValue x, TValue y, TValue width, TValue height, UIColor color);
-
+        UIInput(): UIInput(0,0,0,0,UIColor(0,0,0)) {}
+ 
         std::function<void(std::string)> onSubmit;
 
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
@@ -292,6 +298,7 @@ class UIImage: public UIFrame{
         static std::unique_ptr<DynamicTextureArray> textures;
 
         UIImage(std::string path, TValue x, TValue y, TValue width, TValue height);
+        UIImage(std::string path) : UIImage(path,0,0,0,0) {}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
@@ -353,6 +360,7 @@ class UIFlexFrame: public UIFrame{
     public:
 
         UIFlexFrame(TValue x, TValue y, TValue width, TValue height, UIColor color): UIFrame(x,y,width,height,color) {};
+        UIFlexFrame(): UIFrame() {}
         void setElementDirection(FlexDirection direction) {this->direction = direction;}
         void setElementMargin(TValue margin) {elementMargin = margin;}
         void setExpand(bool value) {
@@ -399,6 +407,7 @@ struct UIEventLock{
 class UILayer{
     private:
         std::vector<std::shared_ptr<UIFrame>> elements;
+        std::unordered_map<std::string, std::shared_ptr<UIFrame>> idRegistry;
         
     public:
         uint32_t cursorMode =  GLFW_CURSOR_NORMAL;
@@ -407,6 +416,15 @@ class UILayer{
         void clear(){elements.clear();}
         void addElement(std::shared_ptr<UIFrame> element){
             elements.push_back(element);
+        }
+        void addElementWithID(std::string id, std::shared_ptr<UIFrame> element){
+            idRegistry[id] = element;
+        }
+        std::shared_ptr<UIFrame> getElementById(std::string id){
+            if(idRegistry.count(id) == 0) {
+                std::cerr << "No element under id: " << id << std::endl;
+            }
+            return idRegistry[id];
         }
         std::vector<std::shared_ptr<UIFrame>>& getElements() {return elements;}
 };

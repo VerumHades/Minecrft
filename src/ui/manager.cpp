@@ -429,7 +429,7 @@ std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
     auto t = getTextPosition(manager);
     
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,t.x,t.y,1,UIColor(255,255,255));
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,t.x,t.y,1,textColor);
     auto region = getClipRegion(manager);
     for(auto& i: temp){
         i.clip = true;

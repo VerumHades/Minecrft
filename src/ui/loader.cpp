@@ -5,14 +5,18 @@ static const std::vector<std::tuple<std::string, int, Units>> operators = {
     {"+", 0, OPERATION_PLUS }
 };
 
-std::string strip(const std::string& input) {
-    const std::string whitespace = " \t\n\r\f\v";
-    
-    size_t start = input.find_first_not_of(whitespace);
-    if (start == std::string::npos) {return "";}
-    size_t end = input.find_last_not_of(whitespace);
+std::vector<std::string> split(std::string s, const std::string& delimiter) {
+    std::vector<std::string> tokens;
+    size_t pos = 0;
+    std::string token;
+    while ((pos = s.find(delimiter)) != std::string::npos) {
+        token = s.substr(0, pos);
+        tokens.push_back(token);
+        s.erase(0, pos + delimiter.length());
+    }
+    tokens.push_back(s);
 
-    return input.substr(start, end - start + 1);
+    return tokens;
 }
 
 /*
@@ -59,7 +63,7 @@ std::tuple<size_t, size_t> findMostImportantOperator(std::string source){
 }
 
 TValue parseTValue(std::string source){
-    source = strip(std::string(source));
+    source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
     
     auto [op_position,op_index] = findMostImportantOperator(source);
 
@@ -97,7 +101,6 @@ TValue parseTValue(std::string source){
     return {0};
 }
 
-
 using namespace tinyxml2;
 
 static inline TValue getAttributeValue(XMLElement* source, std::string name, TValue def = {PIXELS,0}){
@@ -106,20 +109,18 @@ static inline TValue getAttributeValue(XMLElement* source, std::string name, TVa
     return parseTValue(attr);
 }
 
-std::shared_ptr<UIFrame> createElement(XMLElement* source) {
+static inline std::string optGetAttribute(XMLElement* source, std::string name, std::string def = ""){
+    const char* attr = source->Attribute(name.c_str());
+    if(!attr) return def;
+    return attr;
+}
+
+std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& layer) {
     // Map each tag name to a specific constructor
     std::unordered_map<std::string, std::function<std::shared_ptr<UIFrame>()>> elements = {
         {   
             "frame", 
-            [source]() {
-                return std::make_shared<UIFrame>(
-                    getAttributeValue(source,"x"),
-                    getAttributeValue(source,"y"),
-                    getAttributeValue(source,"width"),
-                    getAttributeValue(source,"height"),
-                    UIColor(150,150,150)
-                ); 
-            }
+            [source]() {return std::make_shared<UIFrame>(); }
         },
         {
             "label", 
@@ -128,26 +129,13 @@ std::shared_ptr<UIFrame> createElement(XMLElement* source) {
                 std::string text = "";
                 if(content) text = std::string(content);
 
-                return std::make_shared<UILabel>(
-                    text,
-                    getAttributeValue(source,"x"),
-                    getAttributeValue(source,"y"),
-                    getAttributeValue(source,"width"),
-                    getAttributeValue(source,"height"),
-                    UIColor(150,150,150)
-                ); 
+                return std::make_shared<UILabel>(text); 
             }
         },
         {
             "flex_frame",
             [source]() {
-                auto frm = std::make_shared<UIFlexFrame>(
-                    getAttributeValue(source,"x"),
-                    getAttributeValue(source,"y"),
-                    getAttributeValue(source,"width"),
-                    getAttributeValue(source,"height"),
-                    UIColor(150,150,150)
-                ); 
+                auto frm = std::make_shared<UIFlexFrame>(); 
 
                 frm->setElementDirection(source->BoolAttribute("horizontal", true) ? UIFlexFrame::COLUMN : UIFlexFrame::ROWS);
                 frm->setExpand(source->BoolAttribute("expand", false));
@@ -159,32 +147,65 @@ std::shared_ptr<UIFrame> createElement(XMLElement* source) {
 
     auto it = elements.find(source->Name());
     if (it != elements.end()) {
-        return it->second(); 
+        auto el = it->second();
+        el->setPosition(
+            getAttributeValue(source,"x"),
+            getAttributeValue(source,"y")
+        );
+
+        el->setSize(
+            getAttributeValue(source,"width"),
+            getAttributeValue(source,"height")
+        );
+
+        if(currentStyle){
+            std::vector<std::string> classes = split(optGetAttribute(source,"class"), " ");
+            currentStyle->applyTo(
+                el,
+                source->Name(),
+                optGetAttribute(source,"id"),
+                classes
+            );
+        }
+
+        auto id = source->Attribute("id");
+        if(id) layer.addElementWithID(id, el);
+
+        return el; 
     }
     std::cerr << "No tag '" << source->Name() << "' found!" << std::endl;
     return nullptr; 
 }
 
-std::shared_ptr<UIFrame> processElement(XMLElement* source){
-    std::shared_ptr<UIFrame> element = createElement(source);
+std::shared_ptr<UIFrame> UILoader::processElement(XMLElement* source, UILayer& layer){
+    if(source->Name() && std::string(source->Name()) == "style"){
+        auto path = source->Attribute("src");
+        if(!path){
+            std::cerr << "Style missing source path." << std::endl;
+            return nullptr;
+        }
+
+        currentStyle = std::make_unique<UIStyle>(path);
+        
+        return nullptr;
+    }
+
+    std::shared_ptr<UIFrame> element = createElement(source, layer);
     
     for (
         XMLElement* child = source->FirstChildElement(); 
         child != nullptr; 
         child = child->NextSiblingElement()
     ) {
-        auto proccessed = processElement(child);
-        if(!proccessed){
-            std::cerr << "Failed to proccess element: " << child->Name() << std::endl;
-            continue;
-        }
+        auto proccessed = processElement(child, layer);
+        if(!proccessed) continue;
         element->appendChild(proccessed);
     }
 
     return element;
 }
 
-bool loadWindowFromXML(UIWindow& window, std::string path){
+bool UILoader::loadWindowFromXML(UIWindow& window, std::string path){
     XMLDocument doc;
 
     if (doc.LoadFile(path.c_str()) != XML_SUCCESS) {
@@ -212,11 +233,8 @@ bool loadWindowFromXML(UIWindow& window, std::string path){
             layer_child = layer_child->NextSiblingElement()
         ) {
             //std::cout << layer_child->Name() << std::endl;
-            auto processed = processElement(layer_child);
-            if(!processed){
-                std::cerr << "Failed to proccess element: " << layer_child->Name() << std::endl;
-                continue;
-            }
+            auto processed = processElement(layer_child, window.getLayer(name));
+            if(!processed) continue;
             window.getLayer(name).addElement(processed);
         }
     }

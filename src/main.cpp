@@ -159,8 +159,16 @@ int main() {
 
     sceneManager.setScene("menu");
     menuScene->setUILayer("default");
-    loadWindowFromXML(menuScene->getWindow(), "templates/menu.xml");
 
+    UILoader loader = UILoader();
+    loader.loadWindowFromXML(menuScene->getWindow(), "templates/menu.xml");
+
+    auto startButton = menuScene->getUILayer("default").getElementById("new_world");
+
+    startButton->onClicked = [menuScene, mainSceneTemp] {
+        //sceneManager.setScene("game");
+        menuScene->setUILayer("world_menu");
+    };
 
     /*auto mainFlexFrame = std::make_shared<UIFlexFrame>(
         TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
