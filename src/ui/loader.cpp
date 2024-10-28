@@ -142,6 +142,21 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
 
                 return frm;
             }
+        },
+        {
+            "input",
+            [source]() {
+                return std::make_shared<UIInput>(); 
+            }
+        },
+        {
+            "scrollable",
+            [source]() {
+                auto body = std::make_shared<UIFlexFrame>();
+                body->setExpand(true);
+                body->setElementDirection(UIFlexFrame::ROWS);
+                return std::make_shared<UIScrollableFrame>(TNONE,TNONE,TNONE,TNONE,body); 
+            }
         }
     };
 

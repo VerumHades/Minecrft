@@ -11,7 +11,7 @@ void UIManager::initialize(){
 
     drawBuffer = std::make_unique<GLBuffer>();
     mainFont = std::make_unique<Font>("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
-    UIImage::textures = std::make_unique<DynamicTextureArray>();
+    textures = std::make_unique<DynamicTextureArray>();
 
     projectionMatrix.attach(uiProgram);
     projectionMatrix.attach(fontManager.getProgram());
@@ -51,6 +51,7 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
         info.clipRegion.z = x + w;
         info.clipRegion.w = y + h;
     }
+    else if(info.clipRegion.x >= info.clipRegion.z || info.clipRegion.y >= info.clipRegion.w) return;
 
     glm::vec2 vertices_[4] = {
         {x    , y    },
@@ -224,7 +225,7 @@ void UIManager::render(){
     glDisable(GL_DEPTH_TEST);
 
     uiProgram.updateUniforms();
-    UIImage::textures->bind(0);
+    textures->bind(0);
     mainFont->getAtlas()->bind(1);
     drawBuffer->draw();
 }
@@ -254,7 +255,11 @@ void UIManager::mouseMove(int x, int y){
 
 void UIManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     if(button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS){
-        if(inFocus != underHover) inFocus = underHover;
+        if(inFocus != underHover){
+            if(inFocus) inFocus->setFocus(false);
+            inFocus = underHover;
+            if(inFocus) inFocus->setFocus(true);
+        }
         if(underHover && underHover->onClicked) underHover->onClicked();
     }
 
@@ -284,7 +289,7 @@ void UIManager::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
 void UIManager::setCurrentWindow(UIWindowIdentifier id){
     if(underHover){
         underHover->setHover(false);
-        if(underHover->onMouseLeave) underHover->onMouseLeave(*this);
+        //if(underHover->onMouseLeave) underHover->onMouseLeave(*this);
     }
     inFocus = nullptr;
     underHover = nullptr;
@@ -323,7 +328,6 @@ UIFrame* UIManager::getElementUnder(int x, int y, bool onlyScrollable){
         if(onlyScrollable && !element->isScrollable()) continue;
         if(!element->isHoverable()) continue;
         if(cdepth >= depth) continue;
-
         
         current = element;
     }
@@ -352,13 +356,16 @@ std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
     for(auto& child: children){
         auto temp = child->getRenderingInformation(manager);
         
-
         for(auto& i: temp){
             if(i.clip){
                 i.clipRegion.x = glm::clamp(i.clipRegion.x, region.x, region.z);
                 i.clipRegion.y = glm::clamp(i.clipRegion.y, region.y, region.w);
                 i.clipRegion.z = glm::clamp(i.clipRegion.z, region.x, region.z);
                 i.clipRegion.w = glm::clamp(i.clipRegion.w, region.y, region.w);
+
+                if(i.clipRegion.x >= i.clipRegion.z || i.clipRegion.y >= i.clipRegion.w){ // Skip invisible
+                    continue;
+                }
             }
             else{
                 i.clip = true;
@@ -483,22 +490,21 @@ UITransform UILabel::getTextPosition(UIManager& manager){
     };
 }
 
-std::unique_ptr<DynamicTextureArray> UIImage::textures;
-
 std::vector<UIRenderInfo> UIImage::getRenderingInformation(UIManager& manager){
     auto t = getTransform(manager);
 
+    if(!loaded){
+        manager.getTextures()->addTexture(path);
+        loaded = true;
+    }
+    
     std::vector<UIRenderInfo> out = {UIRenderInfo::Texture(
         t.x,t.y,t.width,t.height,
-        textures->getTextureUVs(path),
-        textures->getTextureIndex(path)
+        manager.getTextures()->getTextureUVs(path),
+        manager.getTextures()->getTextureIndex(path)
     )};
 
     return out;
-}
-
-UIImage::UIImage(std::string path, TValue x, TValue y, TValue width, TValue height) : UIFrame(x,y,width,height), path(path){
-    textures->addTexture(path);
 }
 
 UIInput::UIInput(TValue x, TValue y, TValue width, TValue height): UILabel("",x,y,width,height){
@@ -529,18 +535,23 @@ std::vector<UIRenderInfo> UIInput::getRenderingInformation(UIManager& manager){
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
 
     auto t = getTransform(manager);
-
-    int tx = t.x + t.width  / 2 - textDimensions.x / 2;
-    int ty = t.y + t.height / 2 - textDimensions.y / 2;
+    auto tpos = getTextPosition(manager);
+    auto textColor = getAttribute(&UIFrame::Style::textColor);
     
     std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1,1});
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tpos.x,tpos.y,1,textColor);
+
     auto region = getClipRegion(manager);
     for(auto& i: temp){
         i.clip = true;
         i.clipRegion = region;
         out.push_back(i);
     }
+
+    if(focus){
+        out.push_back(UIRenderInfo::Rectangle(tpos.x + textDimensions.x,t.y + t.height / 6,3,(t.height / 3) * 2, textColor));    
+    }
+
     //out.insert(out.end(), temp.begin(), temp.end());
 
     return out;
@@ -644,7 +655,9 @@ std::vector<UIRenderInfo> UISlider::getRenderingInformation(UIManager& manager){
 std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manager){
     int offset = 0;
 
-    if(expandToChildren){
+    if(expandToChildren && lastExpansion != children.size()){
+        lastExpansion = children.size();
+
         int size = 0;
         
         for(auto& child: children){
@@ -679,6 +692,7 @@ std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manage
 
 UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue height, std::shared_ptr<UIFrame> body): UIFrame(x,y,width,height) {
     this->body = body;
+    body->setSize({PFRACTION,100},0);
     scrollable = true;
 
     onScroll = [this](UIManager& manager, double xoffset, double yoffset){
@@ -691,16 +705,17 @@ UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue he
     slider->setDisplayValue(false);
     slider->setHandleWidth(60);
     
-    UIFrame::appendChild(body);
+    UIFrame::appendChild(this->body);
     UIFrame::appendChild(slider);
 }
 std::vector<UIRenderInfo> UIScrollableFrame::getRenderingInformation(UIManager& manager) {
     auto ct = getContentTransform(manager);
-    auto bodyT = body->getTransform(manager);
+    auto bodyT = body->getBoundingTransform(manager);
 
+    //std::cout << bodyT.height << std::endl;
     scrollMax = std::max(bodyT.height - ct.height, 0);
     body->setPosition(0,-scroll);
-    //body->setSize(t.width - sliderWidth, t.height);
+    //body->setSize(bodyT.width - sliderWidth, t.height);
     
     slider->setPosition(ct.width - sliderWidth,0);
     slider->setSize(sliderWidth, ct.height);

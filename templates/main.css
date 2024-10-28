@@ -15,14 +15,30 @@
     background-color: rgb(6, 10, 51);
 }
 
+.world_option{
+    margin: 10px;
+    background-color: rgb(6, 10, 51);
+}
+.world_option_label{
+    background-color: rgb(2, 76, 170);
+}
 #top_frame{
     border-width: 1px;
     border-color: rgb(2, 76, 170);
+    background-color: rgb(6, 10, 51);
 }
 #bottom_frame{
     border-width: 1px;
     border-color: rgb(2, 76, 170);
 }
-#back_to_menu{
+
+#new_world_name_label{
+    margin: 0px;
+}
+
+input{
+    border-width: 1px;
+    border-color: rgb(2, 76, 170);
+    background-color: rgb(9, 16, 87);
     margin: 10px;
 }

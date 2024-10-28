@@ -61,6 +61,7 @@ class UILoader{
             Loads a window its layers and elements from an xml source file.
         */
         bool loadWindowFromXML(UIWindow& window, std::string path);
+        std::unique_ptr<UIStyle>& getCurrentStyle(){return currentStyle;};
 };
 
 TValue parseTValue(std::string source);

@@ -75,7 +75,7 @@ class SceneManager{
         float getTickTime() {return 1.0f / getCurrentScene()->targetFPS;};
         bool isFPSLocked() {return getCurrentScene()->fpsLock;};
 
-        UIManager& getUIManager();
+        UIManager& getUIManager() { return manager; };
 };
 
 #endif

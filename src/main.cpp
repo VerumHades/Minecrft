@@ -10,7 +10,6 @@
 #include <rendering/allocator.hpp>
 
 
-SceneManager sceneManager;
 /*void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
         if(menuOpen){
@@ -68,6 +67,7 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
 		   id, severity_, type_, source_, message);
 }
 
+SceneManager* s;
 int main() {
     GLFWwindow* window;
 
@@ -96,24 +96,23 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(0);
 
-    sceneManager.setWindow(window);
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
-        sceneManager.resize(window, width, height); // Call resize on the instance
+        s->resize(window, width, height); // Call resize on the instance
     });
     glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y) {
-        sceneManager.mouseMove(window, static_cast<int>(x), static_cast<int>(y));
+        s->mouseMove(window, static_cast<int>(x), static_cast<int>(y));
     });
     glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
-        sceneManager.mouseEvent(window, button, action, mods);
+        s->mouseEvent(window, button, action, mods);
     });
     glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
-        sceneManager.scrollEvent(window, xoffset, yoffset);
+        s->scrollEvent(window, xoffset, yoffset);
     });
     glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-        sceneManager.keyEvent(window, key, scancode, action, mods);
+        s->keyEvent(window, key, scancode, action, mods);
     });
     glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int codepoint) {
-        sceneManager.keyTypedEvent(window, codepoint);
+        s->keyTypedEvent(window, codepoint);
     });
     
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -137,187 +136,96 @@ int main() {
     //glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     /*
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
     */
-   
-    sceneManager.initialize();
+    {
+        SceneManager sceneManager;
 
-    std::unique_ptr<Scene> mainMenu = std::make_unique<Scene>();
-    std::unique_ptr<MainScene> mainScene = std::make_unique<MainScene>();
-    MainScene* mainSceneTemp = mainScene.get();
+        sceneManager.setWindow(window);
+        sceneManager.initialize();
 
-    sceneManager.addScene("game",std::move(mainScene));
-    sceneManager.addScene("menu",std::move(mainMenu));
+        s = &sceneManager;
 
-    Scene* menuScene = sceneManager.getScene("menu");
-    
-    mainSceneTemp->initialize(menuScene);
+        std::unique_ptr<Scene> mainMenu = std::make_unique<Scene>();
+        std::unique_ptr<MainScene> mainScene = std::make_unique<MainScene>();
+        MainScene* mainSceneTemp = mainScene.get();
 
-    sceneManager.setScene("menu");
-    menuScene->setUILayer("default");
+        sceneManager.addScene("game",std::move(mainScene));
+        sceneManager.addScene("menu",std::move(mainMenu));
 
-    UILoader loader = UILoader();
-    loader.loadWindowFromXML(menuScene->getWindow(), "templates/menu.xml");
+        Scene* menuScene = sceneManager.getScene("menu");
+        
+        mainSceneTemp->initialize(menuScene);
 
-    auto startButton = menuScene->getUILayer("default").getElementById("new_world");
-
-    startButton->onClicked = [menuScene, mainSceneTemp] {
-        //sceneManager.setScene("game");
-        menuScene->setUILayer("world_menu");
-    };
-
-    auto backButton = menuScene->getUILayer("world_menu").getElementById("back_to_menu");
-    backButton->onClicked = [menuScene, mainSceneTemp] {
+        sceneManager.setScene("menu");
         menuScene->setUILayer("default");
-    };
 
-    /*auto mainFlexFrame = std::make_shared<UIFlexFrame>(
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
-        TValue(PIXELS, 300),
-        TValue(PIXELS, 500),
-        UIColor(0,0,0,0)
-    );
-    mainFlexFrame->setBorderWidth({0,0,0,0});
-    mainFlexFrame->setElementDirection(UIFlexFrame::ROWS);
-    mainFlexFrame->setElementMargin(20);
+        UILoader loader = UILoader();
+        loader.loadWindowFromXML(menuScene->getWindow(), "templates/menu.xml");
+        auto* l = &loader;
 
-    auto startButton = std::make_shared<UILabel>(
-        "New Game", 
-        TValue(PIXELS, 200),
-        TValue(PIXELS, 40),
-        UIColor(30, 62, 98,255)
-    );
-    startButton->setHoverColor(UIColor(11,25,44,255));
-    mainFlexFrame->appendChild(startButton);
+        auto startButton = menuScene->getUILayer("default").getElementById("new_world");
 
-    auto settingsButton = std::make_shared<UILabel>(
-        "Settings", 
-        TValue(PIXELS, 200),
-        TValue(PIXELS, 40),
-        UIColor(30, 62, 98,255)
-    );
-    settingsButton->setHoverColor(UIColor(11,25,44,255));
-    settingsButton->onClicked = [menuScene]{
-        menuScene->setUILayer("settings");
-    };
-    auto settingsReturnButton = std::make_shared<UILabel>(
-        "Back", 
-        TValue(10),
-        TValue(10),
-        TValue(PIXELS, 200),
-        TValue(PIXELS, 40),
-        UIColor(30, 62, 98,255)
-    );
-    settingsReturnButton->setHoverColor(UIColor(11,25,44,255));
-    settingsReturnButton->onClicked = [menuScene]{
-        menuScene->setUILayer("default");
-    };
-    mainFlexFrame->appendChild(settingsButton);
 
-    auto worldSelection = std::make_shared<UIFlexFrame>(
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
-        TValue(PERCENT, 0),
-        TValue(PFRACTION, 100),
-        TValue(1000),
-        UIColor(0,0,0,0)
-    );
-    worldSelection->setElementDirection(UIFlexFrame::ROWS);
-    worldSelection->setElementMargin(20);
-    worldSelection->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
-    worldSelection->setExpand(true);
+        auto scrollable = std::dynamic_pointer_cast<UIScrollableFrame>(menuScene->getUILayer("world_menu").getElementById("top_frame"));
+        
+        startButton->onClicked = [menuScene, mainSceneTemp, scrollable, l] {
+            menuScene->setUILayer("world_menu");
+            scrollable->clearChildren();
 
-    auto newWorldName  = std::make_shared<UIInput>(
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {PFRACTION, 60}),
-        TValue(PFRACTION, 61),
-        TValue(PFRACTION, 30),
-        TValue(40),
-        UIColor(11,25,44)
-    );
+            for (const auto& dirEntry : std::filesystem::recursive_directory_iterator("saves")){
+                std::string filepath = dirEntry.path().string();
+                WorldStream stream(filepath);
+                
+                auto frame = std::make_shared<UIFrame>();
+                frame->setSize({PFRACTION,80}, 200);
+                auto temp = std::make_shared<UILabel>(stream.getName());
+                temp->setSize({PFRACTION,100},40);
+                temp->setHoverable(false);
 
-    auto worldSelectionScrollFrame = std::make_shared<UIScrollableFrame>(
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
-        TValue(PERCENT, 0),
-        TValue(PFRACTION, 60),
-        TValue(PFRACTION, 80),
-        UIColor(0,0,0,0),
-        worldSelection
-    );
-    worldSelectionScrollFrame->setBorderColor(UIColor(30, 62, 98).shifted(-0.05f));
-    worldSelectionScrollFrame->setBorderWidth(3);
+                frame->onClicked = [menuScene, mainSceneTemp, filepath] {
+                    mainSceneTemp->setWorldPath(filepath);
+                    s->setScene("game");
+                };
+                if(l->getCurrentStyle()){
+                    l->getCurrentStyle()->applyTo(frame, "frame", "", {"world_option"});
+                    l->getCurrentStyle()->applyTo(temp, "label", "", {"world_option_label"});
+                }
 
-    UIFrame* worldSelectionRaw = worldSelection.get();
+                frame->appendChild(temp);
+                scrollable->appendChild(frame);
+            }
+            menuScene->setUILayer("world_menu");
+        };
 
-    startButton->onClicked = [menuScene, worldSelectionRaw, mainSceneTemp] {
-        //sceneManager.setScene("game");
-        menuScene->setUILayer("world_menu");
-        worldSelectionRaw->clearChildren();
+        auto backButton = menuScene->getUILayer("world_menu").getElementById("back_to_menu");
+        backButton->onClicked = [menuScene, mainSceneTemp] {
+            menuScene->setUILayer("default");
+        };
 
-        for (const auto& dirEntry : std::filesystem::recursive_directory_iterator("saves")){
-            std::string filepath = dirEntry.path().string();
-            WorldStream stream(filepath);
-            
-            auto frame = std::make_shared<UIFrame>(
-                800px,
-                100px,
-                UIColor(30, 62, 98)
-            );
-            frame->setHoverColor(UIColor(11,25,44));
 
-            auto temp = std::make_shared<UILabel>(
-                stream.getName(),
-                10px,
-                10px,
-                100ps - 20px,
-                50ps,
-                UIColor(0,0,0,0)
-            );
-            temp->setTextPosition(LEFT);
-            temp->setBorderWidth(0px);
-            temp->setHoverable(false);
+        double last = glfwGetTime();
+        double current = glfwGetTime();
+        float deltatime;
 
-            frame->onClicked = [menuScene, worldSelectionRaw, mainSceneTemp, filepath] {
-                mainSceneTemp->setWorldPath(filepath);
-                sceneManager.setScene("game");
-            };
+        while (!glfwWindowShouldClose(window)) {
+            current = glfwGetTime();
+            deltatime = (float)(current - last);
 
-            frame->appendChild(temp);
-            worldSelectionRaw->appendChild(frame);
-        }
-    };
+            if(sceneManager.isFPSLocked() && deltatime < sceneManager.getTickTime()) continue;
+            last = current;
 
-    menuScene->setUILayer("settings");
-    menuScene->addElement(settingsReturnButton);
-    menuScene->setUILayer("world_menu");
-    menuScene->addElement(settingsReturnButton);
-    menuScene->addElement(worldSelectionScrollFrame);
-    menuScene->addElement(newWorldName);
-    menuScene->setUILayer("default");
-    menuScene->addElement(mainFlexFrame);
-    */
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    double last = glfwGetTime();
-    double current = glfwGetTime();
-    float deltatime;
+            sceneManager.render();
 
-    while (!glfwWindowShouldClose(window)) {
-        current = glfwGetTime();
-        deltatime = (float)(current - last);
-
-        if(sceneManager.isFPSLocked() && deltatime < sceneManager.getTickTime()) continue;
-        last = current;
-
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        sceneManager.render();
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+    }
     }
 
     glfwDestroyWindow(window);

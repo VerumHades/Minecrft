@@ -211,6 +211,7 @@ class UIFrame{
         TValue height = TNONE;
 
         bool hover = false;
+        bool focus = false;
         bool focusable = false;
         bool hoverable = true;
         bool scrollable = false;
@@ -257,6 +258,11 @@ class UIFrame{
             if(hover) state = HOVER;
             else state = BASE;
         }
+        void setFocus(bool value){
+            focus = value;
+            if(focus) state = FOCUS;
+            else state = BASE;
+        }
         void setHoverable(bool value) {hoverable = value;}
         void setFocusable(bool value) {focusable = value;}
         bool isFocusable(){return focusable;}
@@ -269,7 +275,7 @@ class UIFrame{
             child->parent = this;
             children.push_back(child);
         }
-        void clearChildren(){
+        virtual void clearChildren(){
             children.clear();
         }
         std::vector<std::shared_ptr<UIFrame>>& getChildren() {return children;}
@@ -324,11 +330,10 @@ class UIInput: public UILabel{
 class UIImage: public UIFrame{
     private:
         std::string path;
+        bool loaded = false;
 
     public:
-        static std::unique_ptr<DynamicTextureArray> textures;
-
-        UIImage(std::string path, TValue x, TValue y, TValue width, TValue height);
+        UIImage(std::string path, TValue x, TValue y, TValue width, TValue height): UIFrame(x,y,width,height), path(path) {};
         UIImage(std::string path) : UIImage(path,TNONE,TNONE,TNONE,TNONE) {}
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
@@ -358,8 +363,6 @@ class UISlider: public UIFrame{
         void moveTo(UIManager& manager, glm::vec2 pos);
 
     public:
-        static std::unique_ptr<DynamicTextureArray> textures;
-
         UISlider(TValue x, TValue y, TValue width, TValue height, int* value, uint32_t min, uint32_t max);
         void setOrientation(Orientation value){orientation = value;}
         void setDisplayValue(bool value) {displayValue = value;}
@@ -382,6 +385,7 @@ class UIFlexFrame: public UIFrame{
         FlexDirection direction;
         TValue elementMargin = {0};
         bool expandToChildren = false;
+        int lastExpansion = 0;
 
         bool isChildValid(std::shared_ptr<UIFrame>& child){
             if(!expandToChildren) return true;
@@ -406,6 +410,7 @@ class UIFlexFrame: public UIFrame{
 
         void appendChild(std::shared_ptr<UIFrame> child) override{
             if(!isChildValid(child)) std::runtime_error("Invalid child size for expanding UIFlexFrame!");
+
             UIFrame::appendChild(child);
         }
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
@@ -423,6 +428,7 @@ class UIScrollableFrame: public UIFrame{
     public:
         UIScrollableFrame(TValue x, TValue y, TValue width, TValue height, std::shared_ptr<UIFrame> body);
         void appendChild(std::shared_ptr<UIFrame> child) override {body->appendChild(child);};
+        void clearChildren() override {body->clearChildren();}
 
         std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 
@@ -496,6 +502,8 @@ class UIManager{
         UIWindowIdentifier lastWindowIndentifier = 0;
         std::unordered_map<UIWindowIdentifier, UIWindow> windows;
 
+        std::unique_ptr<DynamicTextureArray> textures;
+
         void processRenderingInformation(UIRenderInfo& info, UIFrame& frame, Mesh& output);
 
     public:
@@ -528,6 +536,8 @@ class UIManager{
 
         int getScreenWidth() {return screenWidth;}
         int getScreenHeight() {return screenHeight;}
+
+        std::unique_ptr<DynamicTextureArray>& getTextures(){return textures;}
 };
 
 #endif

@@ -16,7 +16,7 @@ class BindableTexture{
         BindableTexture(){
             glGenTextures(1, &this->texture);
         }
-        ~BindableTexture(){
+        virtual ~BindableTexture(){
             glDeleteTextures(1, &this->texture);
         }
     public:
@@ -79,7 +79,7 @@ class DynamicTextureArray: public BindableTexture{
         std::unordered_map<std::string,DynamicTextureMember> textures;
 
     public:
-        DynamicTextureArray(){TYPE = GL_TEXTURE_2D_ARRAY;}
+        DynamicTextureArray() {TYPE = GL_TEXTURE_2D_ARRAY;}
         ~DynamicTextureArray();
 
         void addTexture(std::string path);

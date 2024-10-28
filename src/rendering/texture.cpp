@@ -241,11 +241,11 @@ DynamicTextureArray::~DynamicTextureArray(){
 }
 
 void DynamicTextureArray::addTexture(std::string path){
+    if(textures.count(path) != 0) return;
+
     glDeleteTextures(1,&this->texture);
     glGenTextures(1,&this->texture);
     glBindTexture(GL_TEXTURE_2D_ARRAY, this->texture);
-
-    if(textures.count(path) != 0) return;
 
     /*
         Load the new texture
