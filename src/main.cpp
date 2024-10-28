@@ -157,7 +157,7 @@ int main() {
         sceneManager.addScene("menu",std::move(mainMenu));
 
         Scene* menuScene = sceneManager.getScene("menu");
-        
+
         mainSceneTemp->initialize(menuScene);
 
         sceneManager.setScene("menu");
@@ -205,6 +205,24 @@ int main() {
         backButton->onClicked = [menuScene, mainSceneTemp] {
             menuScene->setUILayer("default");
         };
+
+        auto newWorldNameInput = std::dynamic_pointer_cast<UIInput>(menuScene->getUILayer("world_menu").getElementById("new_world_name"));
+        
+        auto newWorldFunc = [newWorldNameInput, startButton]{
+            auto name = newWorldNameInput->getText();
+            newWorldNameInput->setText("");
+            if(name == "") return;
+
+            WorldStream stream("saves/" + name + ".bin");
+            stream.setName(name);
+
+            startButton->onClicked();
+        };
+
+        newWorldNameInput->onSubmit = [newWorldFunc](std::string){newWorldFunc();};
+
+        auto newWorldButton = menuScene->getUILayer("world_menu").getElementById("create_new_world");
+        newWorldButton->onClicked = newWorldFunc;
 
 
         double last = glfwGetTime();

@@ -70,6 +70,14 @@ class WorldStream{
         bool hasChunkAt(glm::vec3 position);
         int getSeed() const {return header.seed;};
         std::string getName() const {return std::string(header.name);}
+        void setName(std::string name) {
+            if(name.length() > 256) {
+                std::cerr << "Max world name length is 256 chars" << std::endl;
+                return;
+            }
+            std::strcpy(header.name,name.c_str()); // Boo unsafe
+            saveHeader();
+        }
 };
 
 class ModelManager;
