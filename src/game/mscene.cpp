@@ -51,8 +51,8 @@ void MainScene::initialize(Scene* mainScene){
     auto chatInput = std::make_shared<UICommandInput>(
         &commandProcessor,
         TValue(PIXELS,0),
-        TValue(OPERATION_MINUS,{PERCENT, 100}, {MY_PERCENT, 100}),
-        TValue(PERCENT,100),
+        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 100}, {MY_PERCENT, 100}),
+        TValue(WINDOW_WIDTH,100),
         TValue(PIXELS,50)
     );
     this->chatInput = chatInput.get();
@@ -71,16 +71,16 @@ void MainScene::initialize(Scene* mainScene){
     this->setUILayer("menu");
 
     auto pauseMenuFrame = std::make_shared<UIFrame>(
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50}),
         TValue(PIXELS, 400),
         TValue(PIXELS, 700)
     );
 
     auto exitButton = std::make_shared<UILabel>(
         "Exit", 
-        TValue(OPERATION_MINUS,{PFRACTION, 50}, {MY_PERCENT, 50}),
-        TValue(OPERATION_MINUS,{PFRACTION, 100}, {MY_PERCENT, 200}),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_MINUS,{PERCENT, 100}, {MY_PERCENT, 200}),
         TValue(PIXELS, 200),
         TValue(PIXELS, 40)
     );
@@ -91,7 +91,7 @@ void MainScene::initialize(Scene* mainScene){
 
     auto resumeButton = std::make_shared<UILabel>(
         "Resume", 
-        TValue(OPERATION_MINUS,{PFRACTION, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(MY_PERCENT, 100),
         TValue(PIXELS, 200),
         TValue(PIXELS, 40)
@@ -104,7 +104,7 @@ void MainScene::initialize(Scene* mainScene){
 
     auto settingsButton = std::make_shared<UILabel>(
         "Settings", 
-        TValue(OPERATION_MINUS,{PFRACTION, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(MY_PERCENT, 300),
         TValue(PIXELS, 200),
         TValue(PIXELS, 40)
@@ -128,16 +128,16 @@ void MainScene::initialize(Scene* mainScene){
     this->setUILayer("settings");
 
     auto settingsMenuFrame = std::make_shared<UIFrame>(
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50}),
         TValue(PIXELS, 700),
         TValue(PIXELS, 700)
     );
 
     auto renderDistanceSlider = std::make_shared<UISlider>(
-        TValue(OPERATION_MINUS,{PFRACTION, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(100),
-        TValue(PFRACTION, 80),
+        TValue(PERCENT, 80),
         TValue(PIXELS, 20),
         &renderDistance,
         static_cast<uint32_t>(4), static_cast<uint32_t>(32)
@@ -145,9 +145,9 @@ void MainScene::initialize(Scene* mainScene){
 
     auto renderDistanceLabel = std::make_shared<UILabel>(
         "Render distance: ", 
-        TValue(OPERATION_MINUS,{PFRACTION, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
         TValue(10),
-        TValue(PFRACTION, 80),
+        TValue(PERCENT, 80),
         TValue(PIXELS, 40)
     );
     //renderDistanceLabel->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
@@ -164,7 +164,7 @@ void MainScene::initialize(Scene* mainScene){
     auto allocatorVisVertex = std::make_shared<UIAllocatorVisualizer>(
         TValue(PIXELS,10),
         TValue(PIXELS,10),
-        TValue(PERCENT, 33),
+        TValue(WINDOW_WIDTH, 33),
         TValue(PIXELS, 20),
         &chunkBuffer.getVertexAllocator()
     );
@@ -172,7 +172,7 @@ void MainScene::initialize(Scene* mainScene){
     auto allocatorVisIndex = std::make_shared<UIAllocatorVisualizer>(
         TValue(PIXELS,10),
         TValue(PIXELS,40),
-        TValue(PERCENT, 33),
+        TValue(WINDOW_WIDTH, 33),
         TValue(PIXELS, 20),
         &chunkBuffer.getIndexAllocator()
     );

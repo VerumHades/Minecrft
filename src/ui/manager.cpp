@@ -46,12 +46,12 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
     int h = info.height;
 
     if(!info.clip){
-        info.clipRegion.x = x;
-        info.clipRegion.y = y;
-        info.clipRegion.z = x + w;
-        info.clipRegion.w = y + h;
+        info.clipRegion.min.x = x;
+        info.clipRegion.min.y = y;
+        info.clipRegion.max.x = x + w;
+        info.clipRegion.max.y = y + h;
     }
-    else if(info.clipRegion.x >= info.clipRegion.z || info.clipRegion.y >= info.clipRegion.w) return;
+    else if(info.clipRegion.min.x >= info.clipRegion.max.x || info.clipRegion.min.y >= info.clipRegion.max.y) return;
 
     glm::vec2 vertices_[4] = {
         {x    , y    },
@@ -113,10 +113,10 @@ void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, 
         vertex[15 + offset] = borderSize.z;
         vertex[16 + offset] = borderSize.w;
 
-        vertex[17 + offset] = info.clipRegion.x;
-        vertex[18 + offset] = info.clipRegion.y;
-        vertex[19 + offset] = info.clipRegion.z;
-        vertex[20 + offset] = info.clipRegion.w;
+        vertex[17 + offset] = info.clipRegion.min.x;
+        vertex[18 + offset] = info.clipRegion.min.y;
+        vertex[19 + offset] = info.clipRegion.max.x;
+        vertex[20 + offset] = info.clipRegion.max.y;
 
         for(int j  = 0;j < 4; j++){
             vertex[21 + offset + j * 4] = info.borderColor[j].r;
@@ -190,33 +190,36 @@ std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string t
     return out;
 }
 
-int UIFrame::getValueInPixels(TValue value, bool horizontal, UIManager& manager){
+int UIFrame::getValueInPixels(TValue value, bool horizontal){
     switch (value.unit)
     {
         case NONE: return 0;
         case PIXELS: return value.value;   
-        case PERCENT:
-            if(horizontal) return (manager.getScreenWidth()  / 100.0f) * value.value;
-            else           return (manager.getScreenHeight() / 100.0f) * value.value;
-            
-        case OPERATION_PLUS: return getValueInPixels(value.operands[0], horizontal, manager) + getValueInPixels(value.operands[1], horizontal, manager);
-        case OPERATION_MINUS: return getValueInPixels(value.operands[0], horizontal, manager) - getValueInPixels(value.operands[1], horizontal, manager);
+
+        case WINDOW_WIDTH : return (manager.getScreenWidth()  / 100.0f) * value.value;
+        case WINDOW_HEIGHT: return (manager.getScreenHeight() / 100.0f) * value.value;
+        
+        case OPERATION_PLUS    : return getValueInPixels(value.operands[0], horizontal) + getValueInPixels(value.operands[1], horizontal);
+        case OPERATION_MINUS   : return getValueInPixels(value.operands[0], horizontal) - getValueInPixels(value.operands[1], horizontal);
+        case OPERATION_MULTIPLY: return getValueInPixels(value.operands[0], horizontal) * getValueInPixels(value.operands[1], horizontal);
+        case OPERATION_DIVIDE  : return getValueInPixels(value.operands[0], horizontal) / getValueInPixels(value.operands[1], horizontal);
+
         case MY_PERCENT: 
             return static_cast<float>(
                 horizontal ? 
-                getValueInPixels(width,  horizontal, manager) : 
-                getValueInPixels(height, horizontal, manager)
+                getValueInPixels(width,  horizontal) : 
+                getValueInPixels(height, horizontal)
             ) / 100.0f * value.value;
 
-        case PFRACTION:
+        case PERCENT:
             if(parent){
-                auto t = parent->getContentTransform(manager);
+                auto t = parent->contentTransform;
                 return static_cast<float>(horizontal ? 
                     t.width : 
                     t.height
                 ) / 100.0f * value.value;
             }
-            else return getValueInPixels(TValue(PERCENT, value.value), horizontal, manager);
+            else return (( horizontal ? manager.getScreenWidth() : manager.getScreenHeight() )  / 100.0f) * value.value;
     }
 }
 
@@ -321,9 +324,9 @@ UIFrame* UIManager::getElementUnder(int x, int y, bool onlyScrollable){
         auto [depth,element,parent] = elements.front();
         elements.pop();
 
-        if(!element->pointWithin({x,y}, *this)) continue;
+        if(!element->pointWithin({x,y})) continue;
 
-        for(auto& child: element->getChildren()) elements.push({depth + 1, child.get(), element});
+        for(auto& child: element->children) elements.push({depth + 1, child.get(), element});
 
         if(onlyScrollable && !element->isScrollable()) continue;
         if(!element->isHoverable()) continue;
@@ -340,8 +343,8 @@ bool UIFrame::pointWithinBounds(glm::vec2 point, UITransform t, int padding){
             point.y > t.y - padding && point.y < t.y + t.height + padding;
 }
 
-bool UIFrame::pointWithin(glm::vec2 point, UIManager& manager, int padding){
-    return pointWithinBounds(point, getTransform(manager), padding);
+bool UIFrame::pointWithin(glm::vec2 point, int padding){
+    return pointWithinBounds(point, transform, padding);
 }
 
 std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
@@ -378,73 +381,54 @@ std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
     return out;
 };
 
-UITransform UIFrame::getContentTransform(UIManager& manager){
-    auto t = getAttribute(&UIFrame::Style::margin);
-    auto b = getBorderSizes(manager);
+void UIFrame::calculateTransforms(){
+    auto margin = getAttribute(&UIFrame::Style::margin);
 
-    int margin_x = getValueInPixels(t, true , manager);
-    int margin_y = getValueInPixels(t, false, manager);
+    auto borderWidth = getAttribute(&Style::borderWidth);
+    borderSizes = {
+        getValueInPixels(borderWidth[0], false),
+        getValueInPixels(borderWidth[1], true ),
+        getValueInPixels(borderWidth[2], false),
+        getValueInPixels(borderWidth[3], true )
+    };
 
+    int margin_x = getValueInPixels(margin, true );
+    int margin_y = getValueInPixels(margin, false);
+
+    int px      = getValueInPixels(x     , true );
+    int py      = getValueInPixels(y     , false);
+    int pwidth  = getValueInPixels(width , true );
+    int pheight = getValueInPixels(height, false);
+    
     int offset_x = 0, offset_y = 0;
     if(parent){
-        auto t = parent->getContentTransform(manager);
+        auto t = parent->contentTransform;
         offset_x = t.x;
         offset_y = t.y;
     }
 
-    return {
-        getValueInPixels(x     , true , manager) + offset_x + margin_x + b.left,
-        getValueInPixels(y     , false, manager) + offset_y + margin_y + b.top,
-        getValueInPixels(width , true , manager),
-        getValueInPixels(height, false, manager),
+    boundingTransform = {
+        px + offset_x,
+        py + offset_y,
+        pwidth  + borderSizes.right  + borderSizes.left + margin_x * 2,
+        pheight + borderSizes.bottom + borderSizes.top  + margin_y * 2
     };
-}
 
-UITransform UIFrame::getTransform(UIManager& manager){
-    auto t = getContentTransform(manager);
-    auto b = getBorderSizes(manager);
-
-    return {
-        t.x - b.left,
-        t.y - b.top ,
-        t.width  + b.right + b.left,
-        t.height + b.bottom + b.top
+    transform = {
+        px + offset_x + margin_x,
+        py + offset_y + margin_y,
+        pwidth  + borderSizes.right  + borderSizes.left,
+        pheight + borderSizes.bottom + borderSizes.top
     };
-}
 
-UITransform UIFrame::getBoundingTransform(UIManager& manager){
-    auto t = getTransform(manager);
-    auto m = getAttribute(&UIFrame::Style::margin);
-
-    int mx = getValueInPixels(m, true , manager);
-    int my = getValueInPixels(m, false, manager);
-
-    return {
-        t.x - mx,
-        t.y - my,
-        t.width  + mx * 2,
-        t.height + my * 2
+    contentTransform = {
+        px + offset_x + margin_x + borderSizes.left,
+        px + offset_y + margin_y + borderSizes.top,
+        pwidth,
+        pheight
     };
-}
 
-UIBorderSizes UIFrame::getBorderSizes(UIManager& manager){
-    auto borderWidth = getAttribute(&Style::borderWidth);
-    return {
-        getValueInPixels(borderWidth[0], false, manager),
-        getValueInPixels(borderWidth[1], true , manager),
-        getValueInPixels(borderWidth[2], false, manager),
-        getValueInPixels(borderWidth[3], true , manager)
-    };
-}
-glm::vec4 UIFrame::getClipRegion(UIManager& manager){
-    auto t = getContentTransform(manager);
-
-    return {
-        t.x,
-        t.y,
-        t.x + t.width,
-        t.y + t.height
-    };
+    clipRegion = transform.asRegion();
 }
 
 std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
@@ -478,9 +462,9 @@ UITransform UILabel::getTextPosition(UIManager& manager){
     auto textPosition = getAttribute(&Style::textPosition);
 
     int tx = 0;
-    if     (textPosition == LEFT  ) tx = t.x + textPadding;
-    else if(textPosition == CENTER) tx = t.x + t.width  / 2 - textDimensions.x / 2;
-    else if(textPosition == RIGHT ) tx = t.x + t.width - textDimensions.x - textPadding;
+    if     (textPosition == UIFrame::Style::TextPosition::LEFT  ) tx = t.x + textPadding;
+    else if(textPosition == UIFrame::Style::TextPosition::CENTER) tx = t.x + t.width  / 2 - textDimensions.x / 2;
+    else if(textPosition == UIFrame::Style::TextPosition::RIGHT ) tx = t.x + t.width - textDimensions.x - textPadding;
 
     int ty = t.y + t.height / 2 - textDimensions.y / 2;
 
@@ -663,7 +647,7 @@ std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manage
         for(auto& child: children){
             auto ct = child->getBoundingTransform(manager);
 
-            size += getValueInPixels(elementMargin, direction == COLUMN, manager);
+            size += getValueInPixels(elementMargin, direction == COLUMN);
             size += direction == COLUMN ? ct.width : ct.height;
         } 
 
@@ -673,7 +657,7 @@ std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manage
 
     auto t = getTransform(manager);
     for(auto& child: children){
-        offset += getValueInPixels(elementMargin, direction == COLUMN, manager);
+        offset += getValueInPixels(elementMargin, direction == COLUMN);
 
         auto ct = child->getBoundingTransform(manager);
 
@@ -692,7 +676,7 @@ std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manage
 
 UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue height, std::shared_ptr<UIFrame> body): UIFrame(x,y,width,height) {
     this->body = body;
-    body->setSize({PFRACTION,100},0);
+    body->setSize({PERCENT,100},0);
     scrollable = true;
 
     onScroll = [this](UIManager& manager, double xoffset, double yoffset){

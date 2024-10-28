@@ -181,9 +181,9 @@ int main() {
                 WorldStream stream(filepath);
                 
                 auto frame = std::make_shared<UIFrame>();
-                frame->setSize({PFRACTION,80}, 200);
+                frame->setSize({PERCENT,80}, 200);
                 auto temp = std::make_shared<UILabel>(stream.getName());
-                temp->setSize({PFRACTION,100},40);
+                temp->setSize({PERCENT,100},40);
                 temp->setHoverable(false);
 
                 frame->onClicked = [menuScene, mainSceneTemp, filepath] {

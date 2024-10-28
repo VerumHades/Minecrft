@@ -86,7 +86,7 @@ TValue parseTValue(std::string source){
 
         Units unit;
         if (unitType == "%") {
-            unit = Units::PFRACTION;
+            unit = Units::PERCENT;
         } else if (unitType == "px") {
             unit = Units::PIXELS;
         } else if (unitType == "m") {

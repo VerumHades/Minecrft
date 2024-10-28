@@ -8,13 +8,18 @@
 #include <queue>
 #include <functional>
 #include <optional>
+#include <concepts>
 
+/*
+    Structure used for all colors in the ui, always RGBA
+*/
 struct UIColor{
     float r;
     float g;
     float b;
     float a;
 
+    // Integers in ranges 0 - 255
     UIColor(int r, int g, int b, int a = 255){
         this->r = static_cast<float>(r) / 255.0f;
         this->g = static_cast<float>(g) / 255.0f;
@@ -22,8 +27,10 @@ struct UIColor{
         this->a = static_cast<float>(a) / 255.0f;
     }
 
-    UIColor(float r, float g, float b, float a = 1.0): r(r), g(g), b(b), a(a) {}
+    // Floats in ranges 0.0f - 1.0f
+    UIColor(float r, float g, float b, float a = 1.0f): r(r), g(g), b(b), a(a) {}
 
+    // Adds the value to r,g and b components (clamps the color to be always valid after shifting)
     UIColor shifted(float value){
         return UIColor(
             glm::clamp(r + value, .0f, 1.0f),
@@ -35,13 +42,19 @@ struct UIColor{
 };
 
 enum Units{
-    NONE,
-    PIXELS,
-    PERCENT, // Percentage of the window
-    OPERATION_PLUS, // TValue + TValue (resolved to pixels)
-    OPERATION_MINUS, // TValue - TValue (resolved to pixels)
+    NONE, // The default value always 0 pixels
+    PIXELS, 
+
+    WINDOW_WIDTH, // Percentage of the window width
+    WINDOW_HEIGHT, // Percentage of the window height
+    
     MY_PERCENT, // Percentage of the size of the widget
-    PFRACTION // Percentage of parrent
+    PERCENT, // The percentage of parent
+
+    OPERATION_PLUS    , // TValue + TValue (resolved to pixels)
+    OPERATION_MINUS   , // TValue - TValue (resolved to pixels)
+    OPERATION_MULTIPLY, // TValue * TValue (resolved to pixels)
+    OPERATION_DIVIDE  , // TValue / TValue (resolved to pixels)
 };
 
 struct TValue{
@@ -52,35 +65,55 @@ struct TValue{
 
     TValue(Units unit, int value) : unit(unit), value(value){}
     TValue(int value) : unit(PIXELS), value(value){}
+
+    // Gets automatically resolved if the operands have the same types
     TValue(Units operation, TValue op1, TValue op2): unit(operation){
+        if(
+            op1.unit != OPERATION_PLUS &&
+            op1.unit != OPERATION_MINUS &&
+            op1.unit != OPERATION_MULTIPLY &&
+            op1.unit != OPERATION_DIVIDE &&
+            op1.unit == op2.unit
+        ){
+            unit = op1.unit;
+            switch(operation){
+                case OPERATION_PLUS    : value = op1.value + op2.value; break;
+                case OPERATION_MINUS   : value = op1.value - op2.value; break;
+                case OPERATION_MULTIPLY: value = op1.value * op2.value; break;
+                case OPERATION_DIVIDE  : value = op1.value / op2.value; break;
+            }
+        }
+        
         operands.push_back(op1);
         operands.push_back(op2);
-    }
-
-    TValue operator-(const TValue& other) const {
-        return TValue(OPERATION_MINUS, *this, other);
-    }
-
-    TValue operator-() const {
-        return TValue(unit, -value);
     }
 
     bool hasParentReference(){
         if(unit == OPERATION_PLUS || unit == OPERATION_MINUS){
             return operands[0].hasParentReference() || operands[1].hasParentReference();
         }
-        return unit == PFRACTION;
+        return unit == PERCENT;
     }
 };
 
 const static TValue TNONE = {NONE, 0};
 
+struct UIRegion;
 
 struct UITransform{
     int x;
     int y;
     int width;
     int height;
+
+    UIRegion asRegion(){return {{x,y},{x + width, y + height}}; }
+};
+
+struct UIRegion{
+    glm::vec2 min;
+    glm::vec2 max;
+
+    UITransform asTransform(){return {min.x,min.y,max.x - min.x,max.y - min.y}; }
 };
 
 struct UIBorderSizes{
@@ -109,7 +142,7 @@ struct UIRenderInfo{
         std::vector<glm::vec2> texCoords;
         int textureIndex;
 
-        glm::vec4 clipRegion; // minX/Y, maxX/Y
+        UIRegion clipRegion; // minX/Y, maxX/Y
         bool clip = false;
 
         static UIRenderInfo Rectangle(int x, int y, int width, int height, UIColor color, UIBorderSizes borderWidth = {0,0,0,0},std::array<UIColor,4> borderColor = {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}}){
@@ -158,13 +191,9 @@ struct UIRenderInfo{
 
 class UIManager;
 
-enum UITextPosition{
-    LEFT,
-    RIGHT,
-    CENTER
-};
-
-
+/*
+    Core element that every other element inherits from
+*/
 class UIFrame{
     public:
         enum State{
@@ -173,7 +202,13 @@ class UIFrame{
             FOCUS
         };
         struct Style{
-            std::optional<UITextPosition>        textPosition;
+            enum TextPosition{
+                LEFT,
+                RIGHT,
+                CENTER
+            };
+
+            std::optional<TextPosition>          textPosition;
             std::optional<UIColor>               textColor;
             std::optional<UIColor>               backgroundColor;
             std::optional<std::array<TValue,4>>  borderWidth;
@@ -182,9 +217,11 @@ class UIFrame{
         };
 
     protected:
+        UIManager& manager;
+        UIFrame(UIManager& manager): manager(manager) {}
 
         Style baseStyle = {
-            LEFT,
+            Style::TextPosition::LEFT,
             UIColor{255,255,255,255},
             UIColor{0,0,0,255},
             std::array<TValue,4>{0,0,0,0},
@@ -218,14 +255,38 @@ class UIFrame{
 
         std::vector<std::shared_ptr<UIFrame>> children;
         UIFrame* parent = nullptr;
+        
+        void setHover(bool value) {
+            hover = value;
+            if(hover) state = HOVER;
+            else state = BASE;
+        }
+        void setFocus(bool value){
+            focus = value;
+            if(focus) state = FOCUS;
+            else state = BASE;
+        }
+        bool pointWithin(glm::vec2 position, int padding = 0);
+        bool pointWithinBounds(glm::vec2 position, UITransform transform, int padding = 0);
+
+        int getValueInPixels(TValue value, bool horizontal);
+
+        void calculateTransforms();
+        
+        UITransform transform; // Transform that includes the border
+        UITransform contentTransform; // Transform for only content
+        UITransform boundingTransform; // Transform that includes margin
+        UIBorderSizes borderSizes;
+        UIRegion clipRegion;
+
+        virtual std::vector<UIRenderInfo> getRenderingInformation();
+
+        friend class UIManager;
 
     public:
-        UIFrame(TValue x, TValue y, TValue width, TValue height): x(x), y(y), width(width), height(height){}
-        UIFrame(TValue width, TValue height): x(TNONE), y(TNONE), width(width), height(height){}
-        UIFrame(): UIFrame(TNONE,TNONE,TNONE,TNONE) {}
-
-        virtual std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager);
-
+        /*
+            Event lambdas
+        */
         std::function<void(UIManager& manager, int, int, int)> onMouseEvent;
         std::function<void(UIManager& manager, int, int)> onMouseMove;
         std::function<void(GLFWwindow*, unsigned int)> onKeyTyped;
@@ -237,39 +298,16 @@ class UIFrame{
 
         std::function<void(UIManager& manager, int offsetX, int offsetY)> onScroll;
 
-        int getValueInPixels(TValue value, bool horizontal, UIManager& manager);
-
-        UITransform getTransform(UIManager& manager); // Transform that includes the border
-        UITransform getContentTransform(UIManager& manager); // Transform for only content
-        UITransform getBoundingTransform(UIManager& manager); // Transform that includes margin
-        UIBorderSizes getBorderSizes(UIManager& manager);
-        glm::vec4 getClipRegion(UIManager& manager);
-
-        bool pointWithin(glm::vec2 position, UIManager& manager, int padding = 0);
-        bool pointWithinBounds(glm::vec2 position, UITransform transform, int padding = 0);
-
         void setPosition(TValue x, TValue y){this->x = x; this->y = y;}
         void setSize(TValue width, TValue height) {this->width = width; this->height = height;}
         TValue& getWidth(){return width;}
         TValue& getHeight(){return height;}
 
-        void setHover(bool value) {
-            hover = value;
-            if(hover) state = HOVER;
-            else state = BASE;
-        }
-        void setFocus(bool value){
-            focus = value;
-            if(focus) state = FOCUS;
-            else state = BASE;
-        }
         void setHoverable(bool value) {hoverable = value;}
         void setFocusable(bool value) {focusable = value;}
         bool isFocusable(){return focusable;}
         bool isHoverable(){return hoverable;}
         bool isScrollable(){return scrollable;}
-
-        void setParent(UIFrame* parent){this->parent = parent;}
 
         virtual void appendChild(std::shared_ptr<UIFrame> child){
             child->parent = this;
@@ -278,7 +316,6 @@ class UIFrame{
         virtual void clearChildren(){
             children.clear();
         }
-        std::vector<std::shared_ptr<UIFrame>>& getChildren() {return children;}
 
         template <typename T>
         T getAttribute(std::optional<T> Style::*attribute){
@@ -538,6 +575,12 @@ class UIManager{
         int getScreenHeight() {return screenHeight;}
 
         std::unique_ptr<DynamicTextureArray>& getTextures(){return textures;}
+
+        // Creates an element that belongs to the UIManager
+        template <typename T>
+        std::shared_ptr<T> createElement(){
+            return std::make_shared<T>(*this);
+        }
 };
 
 #endif
