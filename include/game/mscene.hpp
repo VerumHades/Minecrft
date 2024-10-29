@@ -117,7 +117,7 @@ class UIAllocatorVisualizer: public UIFrame{
         Allocator* watched;
     public:
         UIAllocatorVisualizer(TValue x, TValue y, TValue width, TValue height, Allocator* watched): UIFrame(x,y,width,height), watched(watched) {};
-        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
+        std::vector<UIRenderInfo> getRenderingInformation() override;
 };
 
 #endif

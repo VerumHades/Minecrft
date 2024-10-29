@@ -79,10 +79,17 @@ class PoolAllocator{
             freeLocations.push(ptr);
         }
 
+        void increaseSize(size_t size){
+            for(int i = 0; i < size;i++) freeLocations.push(memsize + i);
+            memsize += size;
+        }
+
         void clear(){
             freeLocations = {};
             for(int i = 0;i < memsize;i++) freeLocations.push(i);
         }
+
+        size_t getMemSize() {return memsize;}
 };
 
 #endif

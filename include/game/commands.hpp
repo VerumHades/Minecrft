@@ -48,7 +48,8 @@ class UICommandInput: public UIInput{
     private:
         CommandProcessor* commandProcessor;
     public:
-        UICommandInput(CommandProcessor* commandProcessor, TValue x, TValue y, TValue width, TValue height);
-        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
+        UICommandInput(UIManager& manager);
+        void setCommandProcessor(CommandProcessor* commandProcessor) {this->commandProcessor = commandProcessor;}
+        std::vector<UIRenderInfo> getRenderingInformation() override;
 
 };

@@ -40,6 +40,32 @@ class GLBuffer{
         uint32_t getID(){ return data; } 
 };
 
+class GLStripBuffer{
+    private:
+        uint32_t data;
+        uint32_t vao;
+
+        size_t buffer_size = 0;
+        size_t data_size = 0;
+
+        VertexFormat format;
+        void applyFormat();
+
+    public:
+        GLStripBuffer(VertexFormat format);
+        ~GLStripBuffer();
+
+        void setFormat(VertexFormat format);
+
+        // Appends data and returns its starting point
+        size_t appendData(const float* data, size_t size);
+        // Inserts data at a given location
+        bool insertData(size_t start, const float* data, size_t size);
+        bool resize(size_t newSize);
+
+        void draw();
+};
+
 class GLDoubleBuffer{
     private:
         GLBuffer buffers[2];

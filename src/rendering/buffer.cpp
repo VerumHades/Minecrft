@@ -1,5 +1,22 @@
 #include <rendering/buffer.hpp>
 
+static inline void resizeBuffer(uint32_t* buffer, size_t currentSize, size_t newSize){
+    GLuint newBuffer;
+    glGenBuffers(1, &newBuffer);
+    glBindBuffer(GL_COPY_WRITE_BUFFER, newBuffer);
+    glBufferData(GL_COPY_WRITE_BUFFER, newSize, nullptr, GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_COPY_READ_BUFFER, *buffer);
+    glBindBuffer(GL_COPY_WRITE_BUFFER, newBuffer); 
+
+    GLsizeiptr copySize = std::min(currentSize, newSize); 
+    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, copySize);
+
+    glDeleteBuffers(1, buffer);
+
+    *buffer = newBuffer;
+}
+
 void checkGLError(const char *file, int line){
     GLenum error;
     while ((error = glGetError()) != GL_NO_ERROR) {
@@ -116,6 +133,72 @@ void GLBuffer::drawInstances(int count){
     glBindVertexArray(0);
 }
 
+GLStripBuffer::GLStripBuffer(VertexFormat format) {
+    setFormat(format);
+
+    glGenVertexArrays(1, &this->vao);
+    glGenBuffers(1, &this->data);
+}
+GLStripBuffer::~GLStripBuffer(){
+    glDeleteBuffers(1 , &this->data);
+    glDeleteVertexArrays(1, &this->vao);
+}
+
+void GLStripBuffer::setFormat(VertexFormat format){
+    this->format = format;
+    applyFormat();
+}
+
+void GLStripBuffer::applyFormat(){
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, this->data);
+
+    this->format.apply();
+}
+// Appends data and returns its starting point
+size_t GLStripBuffer::appendData(const float* data, size_t size){
+    size_t where = data_size;
+    insertData(data_size, data, size);
+    return data_size;
+}
+
+// Inserts data at a given location
+bool GLStripBuffer::insertData(size_t start, const float* data, size_t size){
+    if(!data) return false;
+    if(start + size >= buffer_size){
+        if(!resize(start + size)) return false;
+
+        data_size = buffer_size;
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->data);
+    glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), size * sizeof(float), data);
+    
+    return true;
+}
+
+bool GLStripBuffer::resize(size_t new_size){
+    resizeBuffer(&data, buffer_size, new_size);
+    setFormat(format);
+    buffer_size = new_size;
+
+    return true;
+}
+
+void GLStripBuffer::draw(){
+    uint32_t buffer = this->data;
+
+    glBindVertexArray(vao);
+    glDrawArrays(
+        GL_TRIANGLE_STRIP,
+        0,
+        data_size          
+    );
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+
 void GLDoubleBuffer::swap(){
     this->current = !this->current;
 }
@@ -126,22 +209,6 @@ GLBuffer& GLDoubleBuffer::getBackBuffer(){
     return this->buffers[!this->current];
 }
 
-static void resizeBuffer(uint32_t* buffer, size_t currentSize, size_t newSize){
-    GLuint newBuffer;
-    glGenBuffers(1, &newBuffer);
-    glBindBuffer(GL_COPY_WRITE_BUFFER, newBuffer);
-    glBufferData(GL_COPY_WRITE_BUFFER, newSize, nullptr, GL_STATIC_DRAW);
-    
-    glBindBuffer(GL_COPY_READ_BUFFER, *buffer);
-    glBindBuffer(GL_COPY_WRITE_BUFFER, newBuffer); 
-
-    GLsizeiptr copySize = std::min(currentSize, newSize); 
-    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, copySize);
-
-    glDeleteBuffers(1, buffer);
-
-    *buffer = newBuffer;
-}
 void MultiChunkBuffer::unloadFarawayChunks(const glm::ivec3& from, float treshold){
     for(auto& [position, chunk]: this->loadedChunks){
         float distance = glm::distance(glm::vec3(from), glm::vec3(position));

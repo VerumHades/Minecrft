@@ -48,138 +48,6 @@ void MainScene::initialize(Scene* mainScene){
     this->getUILayer("menu").eventLocks = {true, true, true, true};
     this->getUILayer("settings").eventLocks = {true, true, true, true};
 
-    auto chatInput = std::make_shared<UICommandInput>(
-        &commandProcessor,
-        TValue(PIXELS,0),
-        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 100}, {MY_PERCENT, 100}),
-        TValue(WINDOW_WIDTH,100),
-        TValue(PIXELS,50)
-    );
-    this->chatInput = chatInput.get();
-
-    this->chatInput->onSubmit = [this](std::string command) {
-        commandProcessor.processCommand(command);
-        this->chatInput->setText("");
-    };
-    
-    this->setUILayer("chat");
-    this->addElement(chatInput);
-    
-    /*
-        Create the pause menu
-    */
-    this->setUILayer("menu");
-
-    auto pauseMenuFrame = std::make_shared<UIFrame>(
-        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50}),
-        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50}),
-        TValue(PIXELS, 400),
-        TValue(PIXELS, 700)
-    );
-
-    auto exitButton = std::make_shared<UILabel>(
-        "Exit", 
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
-        TValue(OPERATION_MINUS,{PERCENT, 100}, {MY_PERCENT, 200}),
-        TValue(PIXELS, 200),
-        TValue(PIXELS, 40)
-    );
-    //exitButton->setHoverColor(UIColor(11,25,44,255));
-    exitButton->onClicked = [this]() {
-        this->sceneManager->setScene("menu");
-    };
-
-    auto resumeButton = std::make_shared<UILabel>(
-        "Resume", 
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
-        TValue(MY_PERCENT, 100),
-        TValue(PIXELS, 200),
-        TValue(PIXELS, 40)
-    );
-    //resumeButton->setHoverColor(UIColor(11,25,44,255));
-    resumeButton->onClicked = [this]() {
-        this->setUILayer("default");
-        menuOpen = false;
-    };
-
-    auto settingsButton = std::make_shared<UILabel>(
-        "Settings", 
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
-        TValue(MY_PERCENT, 300),
-        TValue(PIXELS, 200),
-        TValue(PIXELS, 40)
-    );
-    //settingsButton->setHoverColor(UIColor(11,25,44,255));
-    settingsButton->onClicked = [this]() {
-        this->setUILayer("settings");
-    };
-
-    pauseMenuFrame->setAttribute(&UIFrame::Style::borderWidth, {TValue{8},{8},{8},{8}});
-
-    pauseMenuFrame->appendChild(exitButton);
-    pauseMenuFrame->appendChild(resumeButton);
-    pauseMenuFrame->appendChild(settingsButton);
-
-    this->addElement(pauseMenuFrame);
-
-    /*
-        ======
-    */
-    this->setUILayer("settings");
-
-    auto settingsMenuFrame = std::make_shared<UIFrame>(
-        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50}),
-        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50}),
-        TValue(PIXELS, 700),
-        TValue(PIXELS, 700)
-    );
-
-    auto renderDistanceSlider = std::make_shared<UISlider>(
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
-        TValue(100),
-        TValue(PERCENT, 80),
-        TValue(PIXELS, 20),
-        &renderDistance,
-        static_cast<uint32_t>(4), static_cast<uint32_t>(32)
-    );
-
-    auto renderDistanceLabel = std::make_shared<UILabel>(
-        "Render distance: ", 
-        TValue(OPERATION_MINUS,{PERCENT, 50}, {MY_PERCENT, 50}),
-        TValue(10),
-        TValue(PERCENT, 80),
-        TValue(PIXELS, 40)
-    );
-    //renderDistanceLabel->setBorderWidth({{PIXELS,0},{PIXELS,0},{PIXELS,0},{PIXELS,0}});
-
-    //settingsMenuFrame->setBorderWidth({{PIXELS,8},{PIXELS,8},{PIXELS,8},{PIXELS,8}});
-    settingsMenuFrame->appendChild(renderDistanceSlider);
-    settingsMenuFrame->appendChild(renderDistanceLabel);
-
-    this->addElement(settingsMenuFrame);
-    mainScene->getUILayer("settings").addElement(settingsMenuFrame);
-
-    this->setUILayer("default");
-
-    auto allocatorVisVertex = std::make_shared<UIAllocatorVisualizer>(
-        TValue(PIXELS,10),
-        TValue(PIXELS,10),
-        TValue(WINDOW_WIDTH, 33),
-        TValue(PIXELS, 20),
-        &chunkBuffer.getVertexAllocator()
-    );
-
-    auto allocatorVisIndex = std::make_shared<UIAllocatorVisualizer>(
-        TValue(PIXELS,10),
-        TValue(PIXELS,40),
-        TValue(WINDOW_WIDTH, 33),
-        TValue(PIXELS, 20),
-        &chunkBuffer.getIndexAllocator()
-    );
-
-    this->addElement(allocatorVisVertex);
-    this->addElement(allocatorVisIndex);
-
     Model& bob = modelManager.createModel("bob");
     bob.loadFromFile("models/test.gltf", "");
     //bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
@@ -693,23 +561,22 @@ void MainScene::generateSurroundingChunks(){
     }
 }
 
-std::vector<UIRenderInfo> UIAllocatorVisualizer::getRenderingInformation(UIManager& manager){
+std::vector<UIRenderInfo> UIAllocatorVisualizer::getRenderingInformation(){
     std::vector<UIRenderInfo> out = {};
 
     auto memsize = watched->getMemorySize();
-    auto t = getTransform(manager);
     int currentPosition = 0;
 
     for(auto& block: watched->getBlocks()){
-        size_t bw = round((static_cast<float>(block.size) / static_cast<float>(memsize)) * static_cast<float>(t.width));
+        size_t bw = round((static_cast<float>(block.size) / static_cast<float>(memsize)) * static_cast<float>(transform.width));
         
         UIColor color = block.used ? UIColor(1,0,0,1) : UIColor(0,1,0,1);
 
-        out.push_back(UIRenderInfo::Rectangle(t.x + currentPosition, t.y, bw, t.height, color));
+        out.push_back(UIRenderInfo::Rectangle(transform.x + currentPosition, transform.y, bw, transform.height, color));
         currentPosition += bw;
     }
 
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation("Blocks total: " + std::to_string(watched->getBlocks().size()),t.x + t.width, t.y,1,{1,1,1,1});
+    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation("Blocks total: " + std::to_string(watched->getBlocks().size()),transform.x + transform.width, transform.y,1,{1,1,1,1});
     out.insert(out.end(), temp.begin(), temp.end());
 
     return out;

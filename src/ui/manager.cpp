@@ -9,7 +9,7 @@ void UIManager::initialize(){
 
     fontManager.initialize();
 
-    drawBuffer = std::make_unique<GLBuffer>();
+    drawBuffer = std::make_unique<GLStripBuffer>(VertexFormat({2,2,4,2,1,1,1,4,4,4,4,4,4}));
     mainFont = std::make_unique<Font>("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
     textures = std::make_unique<DynamicTextureArray>();
 
@@ -39,99 +39,130 @@ void UIManager::resize(int width, int height){
 }
 
 static const glm::vec2 textureCoordinates[4] = {{0, 1},{1, 1},{1, 0},{0, 0}};
-void UIManager::processRenderingInformation(UIRenderInfo& info, UIFrame& frame, Mesh& output){
-    int x = info.x;
-    int y = info.y;
-    int w = info.width;
-    int h = info.height;
+const int vertexSize = 3 + 2 + 4 + 2 + 1 + 1 + 1 + 4 + 4 + 4 + 4 + 4 + 4;
 
-    if(!info.clip){
-        info.clipRegion.min.x = x;
-        info.clipRegion.min.y = y;
-        info.clipRegion.max.x = x + w;
-        info.clipRegion.max.y = y + h;
+bool UIRenderInfo::valid(){
+    return clipRegion.min.x < clipRegion.max.x && clipRegion.min.y < clipRegion.max.y;
+}
+
+RawRenderInfo UIRenderInfo::process(){
+    if(!clip){
+        clipRegion.min.x = x;
+        clipRegion.min.y = y;
+        clipRegion.max.x = x + width;
+        clipRegion.max.y = y + height;
     }
-    else if(info.clipRegion.min.x >= info.clipRegion.max.x || info.clipRegion.min.y >= info.clipRegion.max.y) return;
 
     glm::vec2 vertices_[4] = {
         {x    , y    },
-        {x + w, y    },
-        {x + w, y + h},
-        {x    , y + h}
+        {x + width, y    },
+        {x + width, y + height},
+        {x    , y + height}
     };
 
-    uint32_t vecIndices[4];
-
-    const int vertexSize = 2 + 2 + 4 + 2 + 1 + 1 + 1 + 4 + 4 + 4 + 4 + 4 + 4;
-
     glm::vec4 borderSize = {
-        info.borderWidth.top,
-        info.borderWidth.right,
-        info.borderWidth.bottom,
-        info.borderWidth.left
+        borderWidth.top,
+        borderWidth.right,
+        borderWidth.bottom,
+        borderWidth.left
     };
 
     // Border width recalculated to be relative to the elements dimensions
-    if(borderSize.x != 0) borderSize.x /= static_cast<float>(h);
-    if(borderSize.y != 0) borderSize.y /= static_cast<float>(w);
-    if(borderSize.z != 0) borderSize.z /= static_cast<float>(h);
-    if(borderSize.w != 0) borderSize.w /= static_cast<float>(w);
+    if(borderSize.x != 0) borderSize.x /= static_cast<float>(height);
+    if(borderSize.y != 0) borderSize.y /= static_cast<float>(width);
+    if(borderSize.z != 0) borderSize.z /= static_cast<float>(height);
+    if(borderSize.w != 0) borderSize.w /= static_cast<float>(width);
 
     //std::cout << borderSize.x << " " << borderSize.y << " " << borderSize.z << " " << borderSize.w << std::endl;
 
-    float vertex[vertexSize * 4];
-    uint32_t startIndex = (uint32_t) output.getVertices().size() / vertexSize;
+    RawRenderInfo vertex;
     for(int i = 0; i < 4; i++){
         int offset = i * vertexSize;
 
         vertex[0 + offset] = vertices_[i].x;
         vertex[1 + offset] = vertices_[i].y;
+        vertex[2 + offset] = zIndex;
 
-        if(info.hasTexCoords){
-            vertex[2 + offset] = info.texCoords[i].x;
-            vertex[3 + offset] = info.texCoords[i].y;
+        if(hasTexCoords){
+            vertex[3 + offset] = texCoords[i].x;
+            vertex[4 + offset] = texCoords[i].y;
         }
         else{
-            vertex[2 + offset] = textureCoordinates[i].x;
-            vertex[3 + offset] = textureCoordinates[i].y;
+            vertex[3 + offset] = textureCoordinates[i].x;
+            vertex[4 + offset] = textureCoordinates[i].y;
         }
 
-        vertex[4 + offset] = info.color.r;
-        vertex[5 + offset] = info.color.g;
-        vertex[6 + offset] = info.color.b;
-        vertex[7 + offset] = info.color.a;
+        vertex[5 + offset] = color.r;
+        vertex[6 + offset] = color.g;
+        vertex[7 + offset] = color.b;
+        vertex[8 + offset] = color.a;
 
-        vertex[8 + offset] = static_cast<float>(w);
-        vertex[9 + offset] = static_cast<float>(h);
+        vertex[9 + offset] = static_cast<float>(width);
+        vertex[10 + offset] = static_cast<float>(height);
 
-        vertex[10 + offset] = info.isText ? 1.0 : 0.0;
-        vertex[11 + offset] = info.isTexture ? 1.0 : 0.0;
-        vertex[12 + offset] = static_cast<float>(info.textureIndex);
+        vertex[11 + offset] = isText ? 1.0 : 0.0;
+        vertex[12 + offset] = isTexture ? 1.0 : 0.0;
+        vertex[13 + offset] = static_cast<float>(textureIndex);
 
-        vertex[13 + offset] = borderSize.x;
-        vertex[14 + offset] = borderSize.y;
-        vertex[15 + offset] = borderSize.z;
-        vertex[16 + offset] = borderSize.w;
+        vertex[14 + offset] = borderSize.x;
+        vertex[15 + offset] = borderSize.y;
+        vertex[16 + offset] = borderSize.z;
+        vertex[17 + offset] = borderSize.w;
 
-        vertex[17 + offset] = info.clipRegion.min.x;
-        vertex[18 + offset] = info.clipRegion.min.y;
-        vertex[19 + offset] = info.clipRegion.max.x;
-        vertex[20 + offset] = info.clipRegion.max.y;
+        vertex[18 + offset] = clipRegion.min.x;
+        vertex[19 + offset] = clipRegion.min.y;
+        vertex[20 + offset] = clipRegion.max.x;
+        vertex[21 + offset] = clipRegion.max.y;
 
         for(int j  = 0;j < 4; j++){
-            vertex[21 + offset + j * 4] = info.borderColor[j].r;
-            vertex[22 + offset + j * 4] = info.borderColor[j].g;
-            vertex[23 + offset + j * 4] = info.borderColor[j].b;
-            vertex[24 + offset + j * 4] = info.borderColor[j].a;
+            vertex[22 + offset + j * 4] = borderColor[j].r;
+            vertex[23 + offset + j * 4] = borderColor[j].g;
+            vertex[24 + offset + j * 4] = borderColor[j].b;
+            vertex[25 + offset + j * 4] = borderColor[j].a;
         }
-
-        vecIndices[i] = startIndex + i;
     }
 
-    output.getVertices().insert(output.getVertices().end(), vertex, vertex + vertexSize * 4);
-    output.getIndices().insert(output.getIndices().end(), {vecIndices[3], vecIndices[1], vecIndices[0], vecIndices[3], vecIndices[2], vecIndices[1]});
+    return vertex;    //std::cout << x << " " << y << " " << width << " " << height << std::endl;
+}
 
-    //std::cout << info.x << " " << info.y << " " << info.width << " " << info.height << std::endl;
+size_t UIManager::appendRenderInfo(const RawRenderInfo& info){
+    auto allocation = renderAllocator.allocate();
+
+    if(allocation.failed){
+        size_t size = renderAllocator.getMemSize();
+        renderAllocator.increaseSize(info.size());
+        allocation = renderAllocator.allocate();
+    }
+
+    drawBuffer->insertData(allocation.location, info.data(), info.size());
+    return allocation.location;
+}
+
+std::vector<size_t> UIManager::appendRenderInfo(std::vector<RawRenderInfo> info){
+    std::vector<size_t> outputPositions = {};
+    outputPositions.reserve(info.size());
+    
+    for(auto& call: info){
+        outputPositions.push_back(appendRenderInfo(call));
+    }
+    
+    return outputPositions;
+}
+
+void UIManager::updateRenderInfo(size_t location, const RawRenderInfo& info){
+    drawBuffer->insertData(location, info.data(), info.size());
+    renderAllocator.free(location);
+}
+
+void UIManager::clearRenderInfo(size_t location){
+    const RawRenderInfo zeroes = {0};
+
+    drawBuffer->insertData(location, zeroes.data(), zeroes.size());
+    renderAllocator.free(location);
+}
+
+void UIManager::clearRenderInfo(std::vector<size_t> locations){
+    for(auto& location: locations) clearRenderInfo(location);
 }
 
 void UIManager::update(){
@@ -141,15 +172,11 @@ void UIManager::update(){
 
     uiProgram.use();
 
-    Mesh temp = Mesh();
-    temp.setVertexFormat(VertexFormat({2,2,4,2,1,1,1,4,4,4,4,4,4}));
-
-    for(auto& window: getCurrentWindow().getCurrentLayer().getElements()){
-        std::vector<UIRenderInfo> winfo = window->getRenderingInformation(*this);
-        for(auto& info: winfo) processRenderingInformation(info, *window, temp);
+    for(auto& element: getCurrentWindow().getCurrentLayer().getElements()){
+        element->updateChildRenderData();
     }
 
-    drawBuffer->loadMesh(temp);
+    //drawBuffer->loadMesh(temp);
 }
 
 std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string text, float x, float y, float scale, UIColor color){
@@ -347,36 +374,38 @@ bool UIFrame::pointWithin(glm::vec2 point, int padding){
     return pointWithinBounds(point, transform, padding);
 }
 
-std::vector<UIRenderInfo> UIFrame::getRenderingInformation(UIManager& manager){
-    auto t = getTransform(manager);
+bool UIFrame::updateRenderData(){
+    auto newRenderData = getRenderingInformation();
+    
+    for(int i = 0; i < newRenderData.size();i++){
+        auto renderInfo = newRenderData[i].process();
 
-    std::vector<UIRenderInfo> out = {
-        UIRenderInfo::Rectangle(t.x,t.y,t.width,t.height,getAttribute(&Style::backgroundColor),getBorderSizes(manager),getAttribute(&Style::borderColor))
-    };
-
-    auto region = getClipRegion(manager);
-
-    for(auto& child: children){
-        auto temp = child->getRenderingInformation(manager);
-        
-        for(auto& i: temp){
-            if(i.clip){
-                i.clipRegion.x = glm::clamp(i.clipRegion.x, region.x, region.z);
-                i.clipRegion.y = glm::clamp(i.clipRegion.y, region.y, region.w);
-                i.clipRegion.z = glm::clamp(i.clipRegion.z, region.x, region.z);
-                i.clipRegion.w = glm::clamp(i.clipRegion.w, region.y, region.w);
-
-                if(i.clipRegion.x >= i.clipRegion.z || i.clipRegion.y >= i.clipRegion.w){ // Skip invisible
-                    continue;
-                }
-            }
-            else{
-                i.clip = true;
-                i.clipRegion = region;
-            }
-            out.push_back(i);
-        }
+        if(i >= renderDataLocations.size()) 
+            renderDataLocations.push_back(manager.appendRenderInfo(renderInfo));
+        else manager.updateRenderInfo(renderDataLocations[i], renderInfo);
     }
+
+    if(renderDataLocations.size() > newRenderData.size()) renderDataLocations.resize(newRenderData.size());
+
+    return true;
+}
+void UIFrame::clearRenderData(){
+    manager.clearRenderInfo(renderDataLocations);
+    renderDataLocations.clear();
+}
+void UIFrame::updateChildRenderData(){
+    updateRenderData();
+    for(auto& child: children) child->updateRenderData();
+}
+
+std::vector<UIRenderInfo> UIFrame::getRenderingInformation(){
+    std::vector<UIRenderInfo> out = {
+        UIRenderInfo::Rectangle(
+            transform.x,transform.y,transform.width,transform.height,
+            getAttribute(&Style::backgroundColor),
+            borderSizes,
+            getAttribute(&Style::borderColor))
+    };
 
     return out;
 };
@@ -429,9 +458,16 @@ void UIFrame::calculateTransforms(){
     };
 
     clipRegion = transform.asRegion();
+
+    if(parent){
+        clipRegion.min.x = glm::clamp(clipRegion.min.x, parent->clipRegion.min.x, parent->clipRegion.max.x);
+        clipRegion.min.y = glm::clamp(clipRegion.min.y, parent->clipRegion.min.y, parent->clipRegion.max.y);
+        clipRegion.max.x = glm::clamp(clipRegion.max.x, parent->clipRegion.min.x, parent->clipRegion.max.x);
+        clipRegion.max.y = glm::clamp(clipRegion.max.y, parent->clipRegion.min.y, parent->clipRegion.max.y);
+    }
 }
 
-std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
+std::vector<UIRenderInfo> UILabel::getRenderingInformation() {
     auto t = getTextPosition(manager);
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
 
@@ -443,12 +479,12 @@ std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
     if(width .unit == NONE) width  = textDimensions.x + textPadding * 2;
     if(height.unit == NONE) height = textDimensions.y + textPadding * 2;
 
-    std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
+    std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation();
     std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,t.x,t.y,1,getAttribute(&Style::textColor));
-    auto region = getClipRegion(manager);
+
     for(auto& i: temp){
         i.clip = true;
-        i.clipRegion = region;
+        i.clipRegion = clipRegion;
         out.push_back(i);
     }
 
@@ -458,15 +494,14 @@ std::vector<UIRenderInfo> UILabel::getRenderingInformation(UIManager& manager) {
 UITransform UILabel::getTextPosition(UIManager& manager){
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
 
-    auto t = getTransform(manager);
     auto textPosition = getAttribute(&Style::textPosition);
 
     int tx = 0;
-    if     (textPosition == UIFrame::Style::TextPosition::LEFT  ) tx = t.x + textPadding;
-    else if(textPosition == UIFrame::Style::TextPosition::CENTER) tx = t.x + t.width  / 2 - textDimensions.x / 2;
-    else if(textPosition == UIFrame::Style::TextPosition::RIGHT ) tx = t.x + t.width - textDimensions.x - textPadding;
+    if     (textPosition == UIFrame::Style::TextPosition::LEFT  ) tx = transform.x + textPadding;
+    else if(textPosition == UIFrame::Style::TextPosition::CENTER) tx = transform.x + transform.width  / 2 - textDimensions.x / 2;
+    else if(textPosition == UIFrame::Style::TextPosition::RIGHT ) tx = transform.x + transform.width - textDimensions.x - textPadding;
 
-    int ty = t.y + t.height / 2 - textDimensions.y / 2;
+    int ty = transform.y + transform.height / 2 - textDimensions.y / 2;
 
     return {
         tx,
@@ -474,16 +509,14 @@ UITransform UILabel::getTextPosition(UIManager& manager){
     };
 }
 
-std::vector<UIRenderInfo> UIImage::getRenderingInformation(UIManager& manager){
-    auto t = getTransform(manager);
-
+std::vector<UIRenderInfo> UIImage::getRenderingInformation(){
     if(!loaded){
         manager.getTextures()->addTexture(path);
         loaded = true;
     }
     
     std::vector<UIRenderInfo> out = {UIRenderInfo::Texture(
-        t.x,t.y,t.width,t.height,
+        transform.x,transform.y,transform.width,transform.height,
         manager.getTextures()->getTextureUVs(path),
         manager.getTextures()->getTextureIndex(path)
     )};
@@ -491,9 +524,7 @@ std::vector<UIRenderInfo> UIImage::getRenderingInformation(UIManager& manager){
     return out;
 }
 
-UIInput::UIInput(TValue x, TValue y, TValue width, TValue height): UILabel("",x,y,width,height){
-    this->width = width;
-    this->height = height;
+UIInput::UIInput(UIManager& manager): UILabel(manager) {
     this->focusable = true;
 
     onKeyTyped = [this](GLFWwindow* window, unsigned int codepoint){
@@ -515,25 +546,16 @@ UIInput::UIInput(TValue x, TValue y, TValue width, TValue height): UILabel("",x,
     };
 }
 
-std::vector<UIRenderInfo> UIInput::getRenderingInformation(UIManager& manager){
+std::vector<UIRenderInfo> UIInput::getRenderingInformation(){
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
 
-    auto t = getTransform(manager);
     auto tpos = getTextPosition(manager);
     auto textColor = getAttribute(&UIFrame::Style::textColor);
     
-    std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tpos.x,tpos.y,1,textColor);
-
-    auto region = getClipRegion(manager);
-    for(auto& i: temp){
-        i.clip = true;
-        i.clipRegion = region;
-        out.push_back(i);
-    }
+    std::vector<UIRenderInfo> out = UILabel::getRenderingInformation();
 
     if(focus){
-        out.push_back(UIRenderInfo::Rectangle(tpos.x + textDimensions.x,t.y + t.height / 6,3,(t.height / 3) * 2, textColor));    
+        out.push_back(UIRenderInfo::Rectangle(tpos.x + textDimensions.x,transform.y + transform.height / 6,3,(transform.height / 3) * 2, textColor));    
     }
 
     //out.insert(out.end(), temp.begin(), temp.end());
@@ -541,7 +563,7 @@ std::vector<UIRenderInfo> UIInput::getRenderingInformation(UIManager& manager){
     return out;
 }
 
-UISlider::UISlider(TValue x, TValue y, TValue width, TValue height, int* value, uint32_t min, uint32_t max): UIFrame(x,y,width,height), min(min), max(max), value(value) {
+UISlider::UISlider(UIManager& manager): UIFrame(manager) {
     this->focusable = true;
     
     onMouseEvent = [this](UIManager& manager, int button, int action, int mods){
@@ -572,47 +594,42 @@ UISlider::UISlider(TValue x, TValue y, TValue width, TValue height, int* value, 
 }
 
 UITransform UISlider::getHandleTransform(UIManager& manager){
-    auto t = this->getTransform(manager);
-    
     int range = this->max - this->min;
 
     float percentage = 0.0f;
     if(range != 0) percentage = static_cast<float>(*this->value - this->min) / static_cast<float>(range);
 
-    int handlePos = static_cast<float>(orientation == HORIZONTAL ? t.width : t.height) * percentage;
+    int handlePos = static_cast<float>(orientation == HORIZONTAL ? transform.width : transform.height) * percentage;
     //std::cout << handlePos << " " << percentage << std::endl;
 
     int handleWidthI = static_cast<int>(handleWidth);
     handlePos = handlePos - handleWidthI / 2;
 
     return{
-        t.x + (orientation == HORIZONTAL ? handlePos : 0),
-        t.y + (orientation == VERTICAL   ? handlePos : 0),
-        (orientation == HORIZONTAL) ? handleWidthI : t.width ,
-        (orientation == VERTICAL  ) ? handleWidthI : t.height
+        transform.x + (orientation == HORIZONTAL ? handlePos : 0),
+        transform.y + (orientation == VERTICAL   ? handlePos : 0),
+        (orientation == HORIZONTAL) ? handleWidthI : transform.width ,
+        (orientation == VERTICAL  ) ? handleWidthI : transform.height
     };
 }
 
 void  UISlider::moveTo(UIManager& manager, glm::vec2 pos){
-    auto t = this->getTransform(manager);
     float percentage = 0.0f;
 
-    if     (orientation == HORIZONTAL) percentage = static_cast<float>(pos.x - t.x) / static_cast<float>(t.width );
-    else if(orientation == VERTICAL  ) percentage = static_cast<float>(pos.y - t.y) / static_cast<float>(t.height);
+    if     (orientation == HORIZONTAL) percentage = static_cast<float>(pos.x - transform.x) / static_cast<float>(transform.width );
+    else if(orientation == VERTICAL  ) percentage = static_cast<float>(pos.y - transform.y) / static_cast<float>(transform.height);
 
     percentage = glm::clamp(percentage, 0.0f, 1.0f);
 
     *this->value = (this->max - this->min) * percentage + this->min;
 }
 
-std::vector<UIRenderInfo> UISlider::getRenderingInformation(UIManager& manager){
-    auto t = getTransform(manager);
-
+std::vector<UIRenderInfo> UISlider::getRenderingInformation(){
     std::vector<UIRenderInfo> out = {
         UIRenderInfo::Rectangle(
-            t.x, t.y,t.width, t.height,
+            transform,
             getAttribute(&Style::backgroundColor),
-            getBorderSizes(manager),
+            borderSizes,
             getAttribute(&Style::borderColor)
         )
     };
@@ -626,8 +643,8 @@ std::vector<UIRenderInfo> UISlider::getRenderingInformation(UIManager& manager){
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
 
     if(displayValue){
-        int tx = t.x + t.width + valueDisplayOffset;
-        int ty = t.y + t.height / 2 - textDimensions.y / 2;
+        int tx = transform.x + transform.width + valueDisplayOffset;
+        int ty = transform.y + transform.height / 2 - textDimensions.y / 2;
 
         std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1,1});
         out.insert(out.end(), temp.begin(), temp.end());
@@ -636,46 +653,40 @@ std::vector<UIRenderInfo> UISlider::getRenderingInformation(UIManager& manager){
     return out;
 }
 
-std::vector<UIRenderInfo> UIFlexFrame::getRenderingInformation(UIManager& manager){
-    int offset = 0;
+void UIFlexFrame::calculateTransforms(){
+    UIFrame::calculateTransforms();
 
-    if(expandToChildren && lastExpansion != children.size()){
-        lastExpansion = children.size();
-
-        int size = 0;
+    int size = 0;
         
-        for(auto& child: children){
-            auto ct = child->getBoundingTransform(manager);
+    for(auto& child: children){
+        auto ct = child->getBoundingTransform();
 
-            size += getValueInPixels(elementMargin, direction == COLUMN);
-            size += direction == COLUMN ? ct.width : ct.height;
-        } 
+        size += getValueInPixels(elementMargin, direction == COLUMN);
+        size += direction == COLUMN ? ct.width : ct.height;
+    } 
+    if(direction == COLUMN) width = {size};
+    else height = {size};
 
-        if(direction == COLUMN) width = {size};
-        else height = {size};
-    }
-
-    auto t = getTransform(manager);
+    int offset = 0;
     for(auto& child: children){
         offset += getValueInPixels(elementMargin, direction == COLUMN);
 
-        auto ct = child->getBoundingTransform(manager);
+        auto ct = child->getBoundingTransform();
 
         child->setPosition(
-            direction == COLUMN ? TValue(PIXELS,offset) : t.width  / 2 - ct.width  / 2,
-            direction == ROWS   ? TValue(PIXELS,offset) : t.height / 2 - ct.height / 2
+            direction == COLUMN ? TValue(PIXELS,offset) : transform.width  / 2 - ct.width  / 2,
+            direction == ROWS   ? TValue(PIXELS,offset) : transform.height / 2 - ct.height / 2
         );
         offset += 
             direction == COLUMN ?
             ct.width :
             ct.height;
     }
-
-    return UIFrame::getRenderingInformation(manager);
 }
 
-UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue height, std::shared_ptr<UIFrame> body): UIFrame(x,y,width,height) {
-    this->body = body;
+UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
+    this->body = std::make_shared<UIFlexFrame>();
+    body->setExpand(true);
     body->setSize({PERCENT,100},0);
     scrollable = true;
 
@@ -692,18 +703,16 @@ UIScrollableFrame::UIScrollableFrame(TValue x, TValue y, TValue width, TValue he
     UIFrame::appendChild(this->body);
     UIFrame::appendChild(slider);
 }
-std::vector<UIRenderInfo> UIScrollableFrame::getRenderingInformation(UIManager& manager) {
-    auto ct = getContentTransform(manager);
-    auto bodyT = body->getBoundingTransform(manager);
+
+void UIScrollableFrame::calculateTransforms(){
+    auto bodyT = body->getBoundingTransform();
 
     //std::cout << bodyT.height << std::endl;
-    scrollMax = std::max(bodyT.height - ct.height, 0);
+    scrollMax = std::max(bodyT.height - contentTransform.height, 0);
     body->setPosition(0,-scroll);
     //body->setSize(bodyT.width - sliderWidth, t.height);
     
-    slider->setPosition(ct.width - sliderWidth,0);
-    slider->setSize(sliderWidth, ct.height);
+    slider->setPosition(contentTransform.width - sliderWidth,0);
+    slider->setSize(sliderWidth, contentTransform.height);
     slider->setMax(scrollMax);
-
-    return UIFrame::getRenderingInformation(manager);
 }

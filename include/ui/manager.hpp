@@ -8,7 +8,6 @@
 #include <queue>
 #include <functional>
 #include <optional>
-#include <concepts>
 
 /*
     Structure used for all colors in the ui, always RGBA
@@ -123,6 +122,9 @@ struct UIBorderSizes{
     int left;
 };
 
+extern const int vertexSize;
+using RawRenderInfo = std::array<float, 4 * vertexSize>;
+
 struct UIRenderInfo{
     public:
         int x;
@@ -144,6 +146,11 @@ struct UIRenderInfo{
 
         UIRegion clipRegion; // minX/Y, maxX/Y
         bool clip = false;
+
+        int zIndex = 0;
+
+        RawRenderInfo process();
+        bool valid();
 
         static UIRenderInfo Rectangle(int x, int y, int width, int height, UIColor color, UIBorderSizes borderWidth = {0,0,0,0},std::array<UIColor,4> borderColor = {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}}){
             return {
@@ -247,6 +254,9 @@ class UIFrame{
         TValue width = TNONE;
         TValue height = TNONE;
 
+        int zIndex = 0;
+        std::vector<size_t> renderDataLocations;
+
         bool hover = false;
         bool focus = false;
         bool focusable = false;
@@ -271,7 +281,7 @@ class UIFrame{
 
         int getValueInPixels(TValue value, bool horizontal);
 
-        void calculateTransforms();
+        virtual void calculateTransforms();
         
         UITransform transform; // Transform that includes the border
         UITransform contentTransform; // Transform for only content
@@ -280,6 +290,10 @@ class UIFrame{
         UIRegion clipRegion;
 
         virtual std::vector<UIRenderInfo> getRenderingInformation();
+
+        bool updateRenderData();
+        void updateChildRenderData();
+        void clearRenderData();
 
         friend class UIManager;
 
@@ -311,7 +325,10 @@ class UIFrame{
 
         virtual void appendChild(std::shared_ptr<UIFrame> child){
             child->parent = this;
+            child->zIndex = this->zIndex + 1;
             children.push_back(child);
+
+            child->calculateTransforms();
         }
         virtual void clearChildren(){
             children.clear();
@@ -331,6 +348,8 @@ class UIFrame{
             auto& style = getStyleForState(state);
             style.*attribute = value;
         }
+
+        const UITransform& getBoundingTransform() const {return boundingTransform;}
 };
 
 class UILabel: public UIFrame{
@@ -342,10 +361,8 @@ class UILabel: public UIFrame{
         UITransform getTextPosition(UIManager& manager);
 
     public:
-        UILabel(std::string text, TValue x, TValue y, TValue width, TValue height): UIFrame(x,y,width,height), text(text) {}
-        UILabel(std::string text, TValue width, TValue height): UIFrame(width,height), text(text) {}
-        UILabel(std::string text): UILabel(text,TNONE,TNONE) {}
-        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
+        UILabel(UIManager& manager): UIFrame(manager) {}
+        std::vector<UIRenderInfo> getRenderingInformation() override;
 
         void setText(std::string text) {this->text = text;}
         void setTextPadding(int padding) {this->textPadding = padding;}
@@ -356,12 +373,11 @@ class UIInput: public UILabel{
     private:
 
     public:
-        UIInput(TValue x, TValue y, TValue width, TValue height);
-        UIInput(): UIInput(TNONE,TNONE,TNONE,TNONE) {}
+        UIInput(UIManager& manager): UILabel(manager) {}
  
         std::function<void(std::string)> onSubmit;
 
-        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
+        std::vector<UIRenderInfo> getRenderingInformation() override;
 };
 
 class UIImage: public UIFrame{
@@ -370,9 +386,8 @@ class UIImage: public UIFrame{
         bool loaded = false;
 
     public:
-        UIImage(std::string path, TValue x, TValue y, TValue width, TValue height): UIFrame(x,y,width,height), path(path) {};
-        UIImage(std::string path) : UIImage(path,TNONE,TNONE,TNONE,TNONE) {}
-        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
+        UIImage(UIManager& manager): UIFrame(manager) {}
+        std::vector<UIRenderInfo> getRenderingInformation() override;
 };
 
 class UISlider: public UIFrame{
@@ -400,15 +415,16 @@ class UISlider: public UIFrame{
         void moveTo(UIManager& manager, glm::vec2 pos);
 
     public:
-        UISlider(TValue x, TValue y, TValue width, TValue height, int* value, uint32_t min, uint32_t max);
+        UISlider(UIManager& manager): UIFrame(manager) {}
         void setOrientation(Orientation value){orientation = value;}
         void setDisplayValue(bool value) {displayValue = value;}
         void setHandleWidth(uint32_t width) {handleWidth = width;}
 
         void setMax(uint32_t value) {max = value;}
         void setMin(uint32_t value) {min = value;}
+        void setValuePointer(int* value) {this->value = value;}
 
-        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
+        std::vector<UIRenderInfo> getRenderingInformation() override;
 };
 
 class UIFlexFrame: public UIFrame{
@@ -430,9 +446,7 @@ class UIFlexFrame: public UIFrame{
         }
 
     public:
-
-        UIFlexFrame(TValue x, TValue y, TValue width, TValue height): UIFrame(x,y,width,height) {};
-        UIFlexFrame(): UIFrame() {}
+        UIFlexFrame(UIManager& manager): UIFrame(manager) {}
         void setElementDirection(FlexDirection direction) {this->direction = direction;}
         void setElementMargin(TValue margin) {elementMargin = margin;}
         void setExpand(bool value) {
@@ -445,17 +459,18 @@ class UIFlexFrame: public UIFrame{
             }
         }
 
+        void calculateTransforms() override;
+
         void appendChild(std::shared_ptr<UIFrame> child) override{
             if(!isChildValid(child)) std::runtime_error("Invalid child size for expanding UIFlexFrame!");
 
             UIFrame::appendChild(child);
         }
-        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
 };
 
 class UIScrollableFrame: public UIFrame{
     private:
-        std::shared_ptr<UIFrame> body;
+        std::shared_ptr<UIFlexFrame> body;
         std::shared_ptr<UISlider> slider;
 
         int sliderWidth = 15;
@@ -463,11 +478,11 @@ class UIScrollableFrame: public UIFrame{
         int scroll = 0;
         int scrollMax = 1000;
     public:
-        UIScrollableFrame(TValue x, TValue y, TValue width, TValue height, std::shared_ptr<UIFrame> body);
+        UIScrollableFrame(UIManager& manager);
         void appendChild(std::shared_ptr<UIFrame> child) override {body->appendChild(child);};
         void clearChildren() override {body->clearChildren();}
 
-        std::vector<UIRenderInfo> getRenderingInformation(UIManager& manager) override;
+        void calculateTransforms() override;
 
 };
 
@@ -523,7 +538,10 @@ class UIManager{
         std::unique_ptr<Font> mainFont;
 
         ShaderProgram uiProgram;
-        std::unique_ptr<GLBuffer> drawBuffer;
+        
+        std::unique_ptr<GLStripBuffer> drawBuffer;
+        PoolAllocator renderAllocator;
+
         Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("projectionMatrix");
         
         int screenWidth = 1920;
@@ -540,8 +558,6 @@ class UIManager{
         std::unordered_map<UIWindowIdentifier, UIWindow> windows;
 
         std::unique_ptr<DynamicTextureArray> textures;
-
-        void processRenderingInformation(UIRenderInfo& info, UIFrame& frame, Mesh& output);
 
     public:
         void initialize();
@@ -575,6 +591,15 @@ class UIManager{
         int getScreenHeight() {return screenHeight;}
 
         std::unique_ptr<DynamicTextureArray>& getTextures(){return textures;}
+
+        size_t appendRenderInfo(const RawRenderInfo& info);
+        std::vector<size_t> appendRenderInfo(std::vector<RawRenderInfo> info);
+
+        void updateRenderInfo(size_t location, const RawRenderInfo& info);
+        
+        void clearRenderInfo(size_t location);
+        // Frees render info, completely trusts that the locations are valid
+        void clearRenderInfo(std::vector<size_t> locations);
 
         // Creates an element that belongs to the UIManager
         template <typename T>

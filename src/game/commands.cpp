@@ -70,7 +70,7 @@ void CommandProcessor::processCommand(std::string raw){
 }
 
 
-UICommandInput::UICommandInput(CommandProcessor* commandProcessor, TValue x, TValue y, TValue width, TValue height): UIInput(x,y,width,height), commandProcessor(commandProcessor){
+UICommandInput::UICommandInput(UIManager& manager): UIInput(manager) {
     onKeyTyped = [this](GLFWwindow* window, unsigned int codepoint){
         char typedChar = static_cast<char>(codepoint);
 
@@ -90,19 +90,17 @@ UICommandInput::UICommandInput(CommandProcessor* commandProcessor, TValue x, TVa
     };
 }
 
-std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& manager){
+std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(){
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
     int sw = manager.getScreenWidth();
     int sh = manager.getScreenHeight();
 
-    auto t = getTransform(manager);
-
     int suggestions_padding = 10;
     
-    int tx = t.x + suggestions_padding;
-    int ty = t.y + (t.height / 2) - textDimensions.y / 2;
+    int tx = transform.x + suggestions_padding;
+    int ty = transform.y + (transform.height / 2) - textDimensions.y / 2;
     
-    std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation(manager);
+    std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation();
     
     std::vector<std::string> suggestions;
     for(auto& [key,value]: commandProcessor->getCommandIDs()){
@@ -110,11 +108,11 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
     }
 
     int cursorW = 2;
-    int cursorH = t.height / 2;
+    int cursorH = transform.height / 2;
     
     out.push_back(UIRenderInfo::Rectangle(
-        t.x + textDimensions.x    ,
-        t.y + t.height / 2 - cursorH  / 2,
+        transform.x + textDimensions.x    ,
+        transform.y + transform.height / 2 - cursorH  / 2,
         cursorW                  ,
         cursorH                  ,
         {1,1,1,1}
@@ -131,8 +129,8 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
     suggestions_width += suggestions_padding * 2;
     
     out.push_back(UIRenderInfo::Rectangle(
-        t.x                     ,
-        t.y - suggestions_height,
+        transform.x                     ,
+        transform.y - suggestions_height,
         suggestions_width      ,
         suggestions_height     ,
         {0,0,0,1}
@@ -140,7 +138,7 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(UIManager& man
 
     int currentY = 0;
     for(auto& s: suggestions){
-        std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(s,t.x + suggestions_padding,t.y - suggestions_height + currentY + suggestions_padding,1,{0.5f,1.0f,1.0f,});
+        std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(s,transform.x + suggestions_padding,transform.y - suggestions_height + currentY + suggestions_padding,1,{0.5f,1.0f,1.0f,});
         glm::vec2 dm = manager.getMainFont().getTextDimensions(s);
         currentY += dm.y + suggestions_padding;
 
