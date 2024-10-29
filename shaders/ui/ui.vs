@@ -23,7 +23,7 @@ out float textureIndex;
 out vec4 borderWidth;
 
 out vec4 clipRegion;
-out vec2 screenPos;
+out vec3 screenPos;
 
 out vec4 borderColorTop;
 out vec4 borderColorRight;
@@ -34,7 +34,9 @@ uniform mat4 projectionMatrix;
 
 void main()
 {
-    gl_Position = projectionMatrix * vec4(aPos, 0.0, 1.0);
+    gl_Position = projectionMatrix * vec4(aPos.xy, 0.0, 1.0);
+    //gl_Position.z = aPos.z;
+    
     screenPos = aPos;
 
     TexCoords = aTexCoords;

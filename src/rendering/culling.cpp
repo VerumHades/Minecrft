@@ -1,7 +1,7 @@
 #include <rendering/culling.hpp>
 
 const int halfChunkSize = (CHUNK_SIZE / 2);
-void processSubChunks(Frustum& frustum, glm::ivec3 offset, int size, ChunkFoundCallback chunkFound){
+void processSubChunks(Frustum& frustum, glm::ivec3 offset, int size, ChunkFoundCallback& chunkFound){
     int sub_size = size / 2;
     int real_size = CHUNK_SIZE * sub_size;
 

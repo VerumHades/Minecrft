@@ -9,7 +9,7 @@ in float textureIndex;
 in vec4 borderWidth;
 
 in vec4 clipRegion;
-in vec2 screenPos;
+in vec3 screenPos;
 
 in vec4 borderColorTop;
 in vec4 borderColorRight;
@@ -23,6 +23,7 @@ uniform sampler2D textAtlas;
 
 void main()
 {    
+    
     if(screenPos.x < clipRegion.x || screenPos.y < clipRegion.y || screenPos.x > clipRegion.z || screenPos.y > clipRegion.w) discard;
     
     bool isBorder = TexCoords.x < borderWidth.y || TexCoords.y < borderWidth.z || TexCoords.x > 1 - borderWidth.w || TexCoords.y > 1 - borderWidth.x;
@@ -39,4 +40,5 @@ void main()
 
     FragColor = (isBorder ? borderColor : Color) * (isText > 0.5 ? sampledText : vec4(1));
     FragColor = isTexture > 0.5 ? sampledTexture : FragColor;
+
 }

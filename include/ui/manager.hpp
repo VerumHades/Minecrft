@@ -57,8 +57,8 @@ enum Units{
 };
 
 struct TValue{
-    Units unit;
-    int value;
+    Units unit = NONE;
+    int value = 0; 
 
     std::vector<TValue> operands;
 
@@ -67,21 +67,18 @@ struct TValue{
 
     // Gets automatically resolved if the operands have the same types
     TValue(Units operation, TValue op1, TValue op2): unit(operation){
-        if(
-            op1.unit != OPERATION_PLUS &&
-            op1.unit != OPERATION_MINUS &&
-            op1.unit != OPERATION_MULTIPLY &&
-            op1.unit != OPERATION_DIVIDE &&
-            op1.unit == op2.unit
-        ){
+        /*if(op1.unit == op2.unit){
             unit = op1.unit;
             switch(operation){
-                case OPERATION_PLUS    : value = op1.value + op2.value; break;
-                case OPERATION_MINUS   : value = op1.value - op2.value; break;
-                case OPERATION_MULTIPLY: value = op1.value * op2.value; break;
-                case OPERATION_DIVIDE  : value = op1.value / op2.value; break;
+                case OPERATION_PLUS    : value = op1.value + op2.value; return;
+                case OPERATION_MINUS   : value = op1.value - op2.value; return;
+                case OPERATION_MULTIPLY: value = op1.value * op2.value; return;
+                case OPERATION_DIVIDE  : value = op1.value / op2.value; return;
+                default:
+                    unit = operation;
+                break;
             }
-        }
+        }*/
         
         operands.push_back(op1);
         operands.push_back(op2);
@@ -97,7 +94,10 @@ struct TValue{
 
 const static TValue TNONE = {NONE, 0};
 
-struct UIRegion;
+struct UIRegion{
+    glm::vec2 min;
+    glm::vec2 max;
+};
 
 struct UITransform{
     int x;
@@ -106,13 +106,7 @@ struct UITransform{
     int height;
 
     UIRegion asRegion(){return {{x,y},{x + width, y + height}}; }
-};
-
-struct UIRegion{
-    glm::vec2 min;
-    glm::vec2 max;
-
-    UITransform asTransform(){return {min.x,min.y,max.x - min.x,max.y - min.y}; }
+    std::string to_string(){return "Transform(" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(width) + "," + std::to_string(height) + ")";}
 };
 
 struct UIBorderSizes{
@@ -122,8 +116,9 @@ struct UIBorderSizes{
     int left;
 };
 
-extern const int vertexSize;
-using RawRenderInfo = std::array<float, 4 * vertexSize>;
+#define UI_VERTEX_SIZE (3 + 2 + 4 + 2 + 1 + 1 + 1 + 4 + 4 + 4 + 4 + 4 + 4)
+
+using RawRenderInfo = std::array<float, 4 * UI_VERTEX_SIZE>;
 
 struct UIRenderInfo{
     public:
@@ -149,7 +144,7 @@ struct UIRenderInfo{
 
         int zIndex = 0;
 
-        RawRenderInfo process();
+        void process(Mesh* output);
         bool valid();
 
         static UIRenderInfo Rectangle(int x, int y, int width, int height, UIColor color, UIBorderSizes borderWidth = {0,0,0,0},std::array<UIColor,4> borderColor = {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}}){
@@ -199,6 +194,13 @@ struct UIRenderInfo{
 class UIManager;
 
 /*
+    Functionaly very similar to yield in an iterator, but slightly different
+
+    Named for the comedic value
+*/
+using RenderYeetFunction = std::function<void(UIRenderInfo info)>;
+
+/*
     Core element that every other element inherits from
 */
 class UIFrame{
@@ -225,7 +227,6 @@ class UIFrame{
 
     protected:
         UIManager& manager;
-        UIFrame(UIManager& manager): manager(manager) {}
 
         Style baseStyle = {
             Style::TextPosition::LEFT,
@@ -280,24 +281,19 @@ class UIFrame{
         bool pointWithinBounds(glm::vec2 position, UITransform transform, int padding = 0);
 
         int getValueInPixels(TValue value, bool horizontal);
-
-        virtual void calculateTransforms();
         
-        UITransform transform; // Transform that includes the border
-        UITransform contentTransform; // Transform for only content
-        UITransform boundingTransform; // Transform that includes margin
-        UIBorderSizes borderSizes;
-        UIRegion clipRegion;
+        UITransform transform         = {0,0,0,0}; // Transform that includes the border
+        UITransform contentTransform  = {0,0,0,0}; // Transform for only content
+        UITransform boundingTransform = {0,0,0,0}; // Transform that includes margin
+        UIBorderSizes borderSizes     = {0,0,0,0};
+        UIRegion clipRegion           = {{0,0},{0,0}};
 
-        virtual std::vector<UIRenderInfo> getRenderingInformation();
-
-        bool updateRenderData();
-        void updateChildRenderData();
-        void clearRenderData();
+        virtual void getRenderingInformation(RenderYeetFunction& yeet);
 
         friend class UIManager;
 
     public:
+        UIFrame(UIManager& manager): manager(manager) {}
         /*
             Event lambdas
         */
@@ -312,8 +308,8 @@ class UIFrame{
 
         std::function<void(UIManager& manager, int offsetX, int offsetY)> onScroll;
 
-        void setPosition(TValue x, TValue y){this->x = x; this->y = y;}
-        void setSize(TValue width, TValue height) {this->width = width; this->height = height;}
+        void setPosition(TValue x, TValue y){this->x = x; this->y = y;calculateTransforms();}
+        void setSize(TValue width, TValue height) {this->width = width; this->height = height;calculateTransforms();}
         TValue& getWidth(){return width;}
         TValue& getHeight(){return height;}
 
@@ -350,6 +346,8 @@ class UIFrame{
         }
 
         const UITransform& getBoundingTransform() const {return boundingTransform;}
+
+        virtual void calculateTransforms();
 };
 
 class UILabel: public UIFrame{
@@ -362,7 +360,7 @@ class UILabel: public UIFrame{
 
     public:
         UILabel(UIManager& manager): UIFrame(manager) {}
-        std::vector<UIRenderInfo> getRenderingInformation() override;
+        virtual void getRenderingInformation(RenderYeetFunction& yeet);
 
         void setText(std::string text) {this->text = text;}
         void setTextPadding(int padding) {this->textPadding = padding;}
@@ -373,11 +371,11 @@ class UIInput: public UILabel{
     private:
 
     public:
-        UIInput(UIManager& manager): UILabel(manager) {}
+        UIInput(UIManager& manager);
  
         std::function<void(std::string)> onSubmit;
 
-        std::vector<UIRenderInfo> getRenderingInformation() override;
+        virtual void getRenderingInformation(RenderYeetFunction& yeet);
 };
 
 class UIImage: public UIFrame{
@@ -387,7 +385,7 @@ class UIImage: public UIFrame{
 
     public:
         UIImage(UIManager& manager): UIFrame(manager) {}
-        std::vector<UIRenderInfo> getRenderingInformation() override;
+        virtual void getRenderingInformation(RenderYeetFunction& yeet);
 };
 
 class UISlider: public UIFrame{
@@ -415,7 +413,7 @@ class UISlider: public UIFrame{
         void moveTo(UIManager& manager, glm::vec2 pos);
 
     public:
-        UISlider(UIManager& manager): UIFrame(manager) {}
+        UISlider(UIManager& manager);
         void setOrientation(Orientation value){orientation = value;}
         void setDisplayValue(bool value) {displayValue = value;}
         void setHandleWidth(uint32_t width) {handleWidth = width;}
@@ -424,7 +422,7 @@ class UISlider: public UIFrame{
         void setMin(uint32_t value) {min = value;}
         void setValuePointer(int* value) {this->value = value;}
 
-        std::vector<UIRenderInfo> getRenderingInformation() override;
+        virtual void getRenderingInformation(RenderYeetFunction& yeet);
 };
 
 class UIFlexFrame: public UIFrame{
@@ -505,6 +503,7 @@ class UILayer{
         void clear(){elements.clear();}
         void addElement(std::shared_ptr<UIFrame> element){
             elements.push_back(element);
+            element->calculateTransforms();
         }
         void addElementWithID(std::string id, std::shared_ptr<UIFrame> element){
             idRegistry[id] = element;
@@ -538,8 +537,9 @@ class UIManager{
         std::unique_ptr<Font> mainFont;
 
         ShaderProgram uiProgram;
-        
-        std::unique_ptr<GLStripBuffer> drawBuffer;
+        VertexFormat vertexFormat;
+
+        std::unique_ptr<GLBuffer> drawBuffer;
         PoolAllocator renderAllocator;
 
         Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("projectionMatrix");
@@ -549,9 +549,9 @@ class UIManager{
 
         glm::ivec2 mousePosition = {0,0};
 
-        UIFrame* underHover;
-        UIFrame* inFocus;
-        UIFrame* underScrollHover;
+        std::shared_ptr<UIFrame> underHover;
+        std::shared_ptr<UIFrame> inFocus;
+        std::shared_ptr<UIFrame> underScrollHover;
 
         UIWindowIdentifier currentWindow = -1;
         UIWindowIdentifier lastWindowIndentifier = 0;
@@ -563,7 +563,7 @@ class UIManager{
         void initialize();
         void resize(int width, int height);
         void update();
-        void setFocus(UIFrame* ptr){inFocus = ptr;}
+        void setFocus(std::shared_ptr<UIFrame> ptr){inFocus = ptr;}
 
         void mouseMove(int x, int y);
         void mouseEvent(GLFWwindow* window, int button, int action, int mods);
@@ -577,9 +577,9 @@ class UIManager{
         UIWindow& getWindow(UIWindowIdentifier id);
         UIWindowIdentifier createWindow();
 
-        UIFrame* getElementUnder(int x, int y, bool onlyScrollable = false);   
+        std::shared_ptr<UIFrame> getElementUnder(int x, int y, bool onlyScrollable = false);   
 
-        std::vector<UIRenderInfo> buildTextRenderingInformation(std::string text, float x, float y, float scale, UIColor color);
+        void buildTextRenderingInformation(RenderYeetFunction& yeet, std::string text, float x, float y, float scale, UIColor color);
 
         Uniform<glm::mat4>& getProjectionMatrix(){return projectionMatrix;}
         FontManager& getFontManager() {return fontManager;};
@@ -591,15 +591,6 @@ class UIManager{
         int getScreenHeight() {return screenHeight;}
 
         std::unique_ptr<DynamicTextureArray>& getTextures(){return textures;}
-
-        size_t appendRenderInfo(const RawRenderInfo& info);
-        std::vector<size_t> appendRenderInfo(std::vector<RawRenderInfo> info);
-
-        void updateRenderInfo(size_t location, const RawRenderInfo& info);
-        
-        void clearRenderInfo(size_t location);
-        // Frees render info, completely trusts that the locations are valid
-        void clearRenderInfo(std::vector<size_t> locations);
 
         // Creates an element that belongs to the UIManager
         template <typename T>

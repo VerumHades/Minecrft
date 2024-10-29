@@ -56,7 +56,7 @@ class MainScene: public Scene{
         bool lineMode = true;
         bool chatOpen = false;
         bool menuOpen = false;
-        UIInput* chatInput;
+        std::shared_ptr<UIInput> chatInput;
         //int sunDistance = ((CHUNK_SIZE * renderDistance) / 2) ;
         int sunDistance = 100;
         float sunAngle = 70.0f;
@@ -116,8 +116,8 @@ class UIAllocatorVisualizer: public UIFrame{
     private:
         Allocator* watched;
     public:
-        UIAllocatorVisualizer(TValue x, TValue y, TValue width, TValue height, Allocator* watched): UIFrame(x,y,width,height), watched(watched) {};
-        std::vector<UIRenderInfo> getRenderingInformation() override;
+        UIAllocatorVisualizer(UIManager& manager): UIFrame(manager){};
+        virtual void getRenderingInformation(RenderYeetFunction& yeet);
 };
 
 #endif

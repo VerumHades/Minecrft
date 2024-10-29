@@ -163,7 +163,7 @@ int main() {
         sceneManager.setScene("menu");
         menuScene->setUILayer("default");
 
-        UILoader loader = UILoader();
+        UILoader loader = UILoader(sceneManager.getUIManager());
         loader.loadWindowFromXML(menuScene->getWindow(), "templates/menu.xml");
         auto* l = &loader;
 
@@ -180,9 +180,10 @@ int main() {
                 std::string filepath = dirEntry.path().string();
                 WorldStream stream(filepath);
                 
-                auto frame = std::make_shared<UIFrame>();
+                auto frame = s->getUIManager().createElement<UIFrame>();
                 frame->setSize({PERCENT,80}, 200);
-                auto temp = std::make_shared<UILabel>(stream.getName());
+                auto temp = s->getUIManager().createElement<UILabel>();
+                temp->setText(stream.getName());
                 temp->setSize({PERCENT,100},40);
                 temp->setHoverable(false);
 

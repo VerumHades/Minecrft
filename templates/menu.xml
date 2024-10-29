@@ -1,13 +1,15 @@
 <window>
     <default>
+        <label x="50% - 50m" y="50% - 50m" 
+        width="300px" height="500px" >This is a hello world!</label>
         <style src="templates/main.css"></style>
-        <flex_frame 
+        <frame 
             x="50% - 50m" y="50% - 50m" 
             width="300px" height="500px" 
             horizontal="false">
             <label width="100% - 2px" height="40px" id="new_world" class="interactable">New World</label>
             <label width="100% - 2px" height="40px" class="interactable">Settings</label>
-        </flex_frame>
+        </frame>
     </default>
     <world_menu>
         <flex_frame x="50% - 50m" y="0px" width="70%" height="100%" horizontal="false" id="world_selection_frame">

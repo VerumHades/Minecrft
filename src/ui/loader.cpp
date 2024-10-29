@@ -120,22 +120,24 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
     std::unordered_map<std::string, std::function<std::shared_ptr<UIFrame>()>> elements = {
         {   
             "frame", 
-            [source]() {return std::make_shared<UIFrame>(); }
+            [source, this]() {return this->manager.createElement<UIFrame>(); }
         },
         {
             "label", 
-            [source]() {
+            [source, this]() {
                 const char* content = source->GetText();
                 std::string text = "";
                 if(content) text = std::string(content);
 
-                return std::make_shared<UILabel>(text); 
+                auto label = this->manager.createElement<UILabel>();
+                label->setText(text);
+                return label; 
             }
         },
         {
             "flex_frame",
-            [source]() {
-                auto frm = std::make_shared<UIFlexFrame>(); 
+            [source, this]() {
+                auto frm = this->manager.createElement<UIFlexFrame>(); 
 
                 frm->setElementDirection(source->BoolAttribute("horizontal", true) ? UIFlexFrame::COLUMN : UIFlexFrame::ROWS);
                 frm->setExpand(source->BoolAttribute("expand", false));
@@ -145,17 +147,14 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
         },
         {
             "input",
-            [source]() {
-                return std::make_shared<UIInput>(); 
+            [source, this]() {
+                return this->manager.createElement<UIInput>(); 
             }
         },
         {
             "scrollable",
-            [source]() {
-                auto body = std::make_shared<UIFlexFrame>();
-                body->setExpand(true);
-                body->setElementDirection(UIFlexFrame::ROWS);
-                return std::make_shared<UIScrollableFrame>(TNONE,TNONE,TNONE,TNONE,body); 
+            [source, this]() {
+                return this->manager.createElement<UIScrollableFrame>(); 
             }
         }
     };

@@ -37,29 +37,18 @@ SceneManager::SceneManager(){
     addScene("internal_default", std::move(defaultScene));
     setScene("internal_default");
 
-    auto label = std::make_unique<UILabel>(
-        "This is the default scene, if you are seeing this something has gone wrong!", 
+    auto label = manager.createElement<UILabel>();
+    label->setPosition(
         TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50}),
-        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50}),
+        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50})
+    );
+    label->setSize(
         TValue(PIXELS, 200),
         TValue(PIXELS, 40)
     );
+    label->setText("This is the default scene, if you are seeing this something has gone wrong!");
 
     getCurrentScene()->addElement(std::move(label));
-
-    auto label2 = std::make_unique<UILabel>(
-        "Or you could be a dev, in which case you should have intended this to happen.", 
-        TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50}),
-        TValue(OPERATION_PLUS ,{WINDOW_WIDTH, 50}, {MY_PERCENT, 70}),
-        TValue(PIXELS, 200),
-        TValue(PIXELS, 40)
-    );
-
-    /*label2->onMouseEvent = [](GLFWwindow* window, int button, int action, int mods) {
-        std::cout << "Hello World!" << std::endl;
-    };*/
-
-    getCurrentScene()->addElement(std::move(label2));
 }
 
 void SceneManager::initialize(){

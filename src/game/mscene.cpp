@@ -561,9 +561,7 @@ void MainScene::generateSurroundingChunks(){
     }
 }
 
-std::vector<UIRenderInfo> UIAllocatorVisualizer::getRenderingInformation(){
-    std::vector<UIRenderInfo> out = {};
-
+void UIAllocatorVisualizer::getRenderingInformation(RenderYeetFunction& yeet){
     auto memsize = watched->getMemorySize();
     int currentPosition = 0;
 
@@ -572,12 +570,9 @@ std::vector<UIRenderInfo> UIAllocatorVisualizer::getRenderingInformation(){
         
         UIColor color = block.used ? UIColor(1,0,0,1) : UIColor(0,1,0,1);
 
-        out.push_back(UIRenderInfo::Rectangle(transform.x + currentPosition, transform.y, bw, transform.height, color));
+        yeet(UIRenderInfo::Rectangle(transform.x + currentPosition, transform.y, bw, transform.height, color));
         currentPosition += bw;
     }
 
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation("Blocks total: " + std::to_string(watched->getBlocks().size()),transform.x + transform.width, transform.y,1,{1,1,1,1});
-    out.insert(out.end(), temp.begin(), temp.end());
-
-    return out;
+    manager.buildTextRenderingInformation(yeet, "Blocks total: " + std::to_string(watched->getBlocks().size()),transform.x + transform.width, transform.y,1,{1,1,1,1});
 }

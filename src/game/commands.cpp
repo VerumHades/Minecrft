@@ -90,7 +90,7 @@ UICommandInput::UICommandInput(UIManager& manager): UIInput(manager) {
     };
 }
 
-std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(){
+void UICommandInput::getRenderingInformation(RenderYeetFunction& yeet){
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
     int sw = manager.getScreenWidth();
     int sh = manager.getScreenHeight();
@@ -100,7 +100,7 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(){
     int tx = transform.x + suggestions_padding;
     int ty = transform.y + (transform.height / 2) - textDimensions.y / 2;
     
-    std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation();
+    UIFrame::getRenderingInformation(yeet);
     
     std::vector<std::string> suggestions;
     for(auto& [key,value]: commandProcessor->getCommandIDs()){
@@ -110,7 +110,7 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(){
     int cursorW = 2;
     int cursorH = transform.height / 2;
     
-    out.push_back(UIRenderInfo::Rectangle(
+    yeet(UIRenderInfo::Rectangle(
         transform.x + textDimensions.x    ,
         transform.y + transform.height / 2 - cursorH  / 2,
         cursorW                  ,
@@ -128,7 +128,7 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(){
 
     suggestions_width += suggestions_padding * 2;
     
-    out.push_back(UIRenderInfo::Rectangle(
+    yeet(UIRenderInfo::Rectangle(
         transform.x                     ,
         transform.y - suggestions_height,
         suggestions_width      ,
@@ -138,15 +138,10 @@ std::vector<UIRenderInfo> UICommandInput::getRenderingInformation(){
 
     int currentY = 0;
     for(auto& s: suggestions){
-        std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(s,transform.x + suggestions_padding,transform.y - suggestions_height + currentY + suggestions_padding,1,{0.5f,1.0f,1.0f,});
+        manager.buildTextRenderingInformation(yeet,s,transform.x + suggestions_padding,transform.y - suggestions_height + currentY + suggestions_padding,1,{0.5f,1.0f,1.0f,});
         glm::vec2 dm = manager.getMainFont().getTextDimensions(s);
         currentY += dm.y + suggestions_padding;
-
-        out.insert(out.end(), temp.begin(), temp.end());
     }
 
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1,1});
-    out.insert(out.end(), temp.begin(), temp.end());
-
-    return out;
+    manager.buildTextRenderingInformation(yeet,text,tx,ty,1,{1,1,1,1});
 }

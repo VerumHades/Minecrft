@@ -50,6 +50,6 @@ class UICommandInput: public UIInput{
     public:
         UICommandInput(UIManager& manager);
         void setCommandProcessor(CommandProcessor* commandProcessor) {this->commandProcessor = commandProcessor;}
-        std::vector<UIRenderInfo> getRenderingInformation() override;
+        virtual void getRenderingInformation(RenderYeetFunction& yeet);
 
 };

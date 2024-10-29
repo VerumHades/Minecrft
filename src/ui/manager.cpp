@@ -9,7 +9,8 @@ void UIManager::initialize(){
 
     fontManager.initialize();
 
-    drawBuffer = std::make_unique<GLStripBuffer>(VertexFormat({2,2,4,2,1,1,1,4,4,4,4,4,4}));
+    vertexFormat = VertexFormat({3,2,4,2,1,1,1,4,4,4,4,4,4});
+    drawBuffer = std::make_unique<GLBuffer>();
     mainFont = std::make_unique<Font>("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
     textures = std::make_unique<DynamicTextureArray>();
 
@@ -31,7 +32,7 @@ void UIManager::resize(int width, int height){
         (float)width, // Right
         (float)height, // Top
         0.0f,   // Bottom
-        -1.0f,  // Near plane
+        0.0f,  // Near plane
         1.0f    // Far plane
     );
 
@@ -39,13 +40,13 @@ void UIManager::resize(int width, int height){
 }
 
 static const glm::vec2 textureCoordinates[4] = {{0, 1},{1, 1},{1, 0},{0, 0}};
-const int vertexSize = 3 + 2 + 4 + 2 + 1 + 1 + 1 + 4 + 4 + 4 + 4 + 4 + 4;
+const int vertexSize = UI_VERTEX_SIZE;
 
 bool UIRenderInfo::valid(){
     return clipRegion.min.x < clipRegion.max.x && clipRegion.min.y < clipRegion.max.y;
 }
 
-RawRenderInfo UIRenderInfo::process(){
+void UIRenderInfo::process(Mesh* output){
     if(!clip){
         clipRegion.min.x = x;
         clipRegion.min.y = y;
@@ -75,13 +76,16 @@ RawRenderInfo UIRenderInfo::process(){
 
     //std::cout << borderSize.x << " " << borderSize.y << " " << borderSize.z << " " << borderSize.w << std::endl;
 
+    uint32_t vecIndices[4];
+    uint32_t startIndex = (uint32_t) output->getVertices().size() / vertexSize;
+
     RawRenderInfo vertex;
     for(int i = 0; i < 4; i++){
         int offset = i * vertexSize;
 
         vertex[0 + offset] = vertices_[i].x;
         vertex[1 + offset] = vertices_[i].y;
-        vertex[2 + offset] = zIndex;
+        vertex[2 + offset] = static_cast<float>(zIndex) / 1000.0f;
 
         if(hasTexCoords){
             vertex[3 + offset] = texCoords[i].x;
@@ -120,49 +124,12 @@ RawRenderInfo UIRenderInfo::process(){
             vertex[24 + offset + j * 4] = borderColor[j].b;
             vertex[25 + offset + j * 4] = borderColor[j].a;
         }
+
+        vecIndices[i] = startIndex + i;
     }
 
-    return vertex;    //std::cout << x << " " << y << " " << width << " " << height << std::endl;
-}
-
-size_t UIManager::appendRenderInfo(const RawRenderInfo& info){
-    auto allocation = renderAllocator.allocate();
-
-    if(allocation.failed){
-        size_t size = renderAllocator.getMemSize();
-        renderAllocator.increaseSize(info.size());
-        allocation = renderAllocator.allocate();
-    }
-
-    drawBuffer->insertData(allocation.location, info.data(), info.size());
-    return allocation.location;
-}
-
-std::vector<size_t> UIManager::appendRenderInfo(std::vector<RawRenderInfo> info){
-    std::vector<size_t> outputPositions = {};
-    outputPositions.reserve(info.size());
-    
-    for(auto& call: info){
-        outputPositions.push_back(appendRenderInfo(call));
-    }
-    
-    return outputPositions;
-}
-
-void UIManager::updateRenderInfo(size_t location, const RawRenderInfo& info){
-    drawBuffer->insertData(location, info.data(), info.size());
-    renderAllocator.free(location);
-}
-
-void UIManager::clearRenderInfo(size_t location){
-    const RawRenderInfo zeroes = {0};
-
-    drawBuffer->insertData(location, zeroes.data(), zeroes.size());
-    renderAllocator.free(location);
-}
-
-void UIManager::clearRenderInfo(std::vector<size_t> locations){
-    for(auto& location: locations) clearRenderInfo(location);
+    output->getVertices().insert(output->getVertices().end(), vertex.begin(), vertex.end());
+    output->getIndices().insert(output->getIndices().end(), {vecIndices[3], vecIndices[1], vecIndices[0], vecIndices[3], vecIndices[2], vecIndices[1]});
 }
 
 void UIManager::update(){
@@ -172,16 +139,26 @@ void UIManager::update(){
 
     uiProgram.use();
 
+    Mesh mesh = Mesh();
+    mesh.setVertexFormat(vertexFormat);
+
+    auto* meshPtr = &mesh;
+
+    RenderYeetFunction yeetCapture = [meshPtr](UIRenderInfo info){
+        info.process(meshPtr);
+        std::cout << info.x << " " << info.y << " " << info.width << " " << info.height << std::endl;
+    };
+
     for(auto& element: getCurrentWindow().getCurrentLayer().getElements()){
-        element->updateChildRenderData();
+        element->getRenderingInformation(yeetCapture);
     }
 
-    //drawBuffer->loadMesh(temp);
+    std::cout << mesh.getVertices().size() << std::endl;
+
+    drawBuffer->loadMesh(mesh);
 }
 
-std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string text, float x, float y, float scale, UIColor color){
-    std::vector<UIRenderInfo> out = {};
-
+void UIManager::buildTextRenderingInformation(RenderYeetFunction& yeet, std::string text, float x, float y, float scale, UIColor color){
     glm::vec2 textDimensions = mainFont->getTextDimensions(text);
 
     // Iterate through each character in the text
@@ -196,7 +173,7 @@ std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string t
 
         //ypos += textDimensions.y - h;
 
-        out.push_back(UIRenderInfo::Text(
+        yeet(UIRenderInfo::Text(
             static_cast<int>(xpos),
             static_cast<int>(ypos),
             static_cast<int>(w),
@@ -213,8 +190,6 @@ std::vector<UIRenderInfo> UIManager::buildTextRenderingInformation(std::string t
         // Advance to next glyph
         x += (ch.Advance >> 6) * scale;  // Bitshift by 6 to get the value in pixels
     }
-
-    return out;
 }
 
 int UIFrame::getValueInPixels(TValue value, bool horizontal){
@@ -264,7 +239,7 @@ void UIManager::mouseMove(int x, int y){
     mousePosition.x = x;
     mousePosition.y = y;
 
-    UIFrame* element = getElementUnder(x,y);
+    auto element = getElementUnder(x,y);
     underScrollHover = getElementUnder(x,y,true);
 
     if(element != underHover && underHover != nullptr){
@@ -337,14 +312,14 @@ UIWindowIdentifier UIManager::createWindow(){
     return lastWindowIndentifier++;
 }
 
-UIFrame* UIManager::getElementUnder(int x, int y, bool onlyScrollable){
+std::shared_ptr<UIFrame> UIManager::getElementUnder(int x, int y, bool onlyScrollable){
     if(currentWindow == (UIWindowIdentifier)-1) return nullptr;
 
-    std::queue<std::tuple<int, UIFrame*, UIFrame*>> elements;
+    std::queue<std::tuple<int, std::shared_ptr<UIFrame>, std::shared_ptr<UIFrame>>> elements;
     
-    for(auto& window: getCurrentWindow().getCurrentLayer().getElements()) elements.push({0,window.get(), nullptr});
+    for(auto& window: getCurrentWindow().getCurrentLayer().getElements()) elements.push({0,window, nullptr});
     
-    UIFrame* current = nullptr;
+    std::shared_ptr<UIFrame> current = nullptr;
     int cdepth = -1;
 
     while(!elements.empty()){
@@ -353,7 +328,7 @@ UIFrame* UIManager::getElementUnder(int x, int y, bool onlyScrollable){
 
         if(!element->pointWithin({x,y})) continue;
 
-        for(auto& child: element->children) elements.push({depth + 1, child.get(), element});
+        for(auto& child: element->children) elements.push({depth + 1, child, element});
 
         if(onlyScrollable && !element->isScrollable()) continue;
         if(!element->isHoverable()) continue;
@@ -374,40 +349,18 @@ bool UIFrame::pointWithin(glm::vec2 point, int padding){
     return pointWithinBounds(point, transform, padding);
 }
 
-bool UIFrame::updateRenderData(){
-    auto newRenderData = getRenderingInformation();
-    
-    for(int i = 0; i < newRenderData.size();i++){
-        auto renderInfo = newRenderData[i].process();
-
-        if(i >= renderDataLocations.size()) 
-            renderDataLocations.push_back(manager.appendRenderInfo(renderInfo));
-        else manager.updateRenderInfo(renderDataLocations[i], renderInfo);
-    }
-
-    if(renderDataLocations.size() > newRenderData.size()) renderDataLocations.resize(newRenderData.size());
-
-    return true;
-}
-void UIFrame::clearRenderData(){
-    manager.clearRenderInfo(renderDataLocations);
-    renderDataLocations.clear();
-}
-void UIFrame::updateChildRenderData(){
-    updateRenderData();
-    for(auto& child: children) child->updateRenderData();
-}
-
-std::vector<UIRenderInfo> UIFrame::getRenderingInformation(){
-    std::vector<UIRenderInfo> out = {
+void UIFrame::getRenderingInformation(RenderYeetFunction& yeet){
+    yeet(
         UIRenderInfo::Rectangle(
             transform.x,transform.y,transform.width,transform.height,
             getAttribute(&Style::backgroundColor),
             borderSizes,
             getAttribute(&Style::borderColor))
-    };
+    );
 
-    return out;
+    for(auto& child: children){
+        child->getRenderingInformation(yeet);
+    }
 };
 
 void UIFrame::calculateTransforms(){
@@ -424,50 +377,62 @@ void UIFrame::calculateTransforms(){
     int margin_x = getValueInPixels(margin, true );
     int margin_y = getValueInPixels(margin, false);
 
-    int px      = getValueInPixels(x     , true );
-    int py      = getValueInPixels(y     , false);
-    int pwidth  = getValueInPixels(width , true );
-    int pheight = getValueInPixels(height, false);
-    
+    UITransform internalTransform = {
+        getValueInPixels(x     , true ),
+        getValueInPixels(y     , false),
+        getValueInPixels(width , true ),
+        getValueInPixels(height, false)
+    };
+
     int offset_x = 0, offset_y = 0;
+    
+    //UIFrame* temp = this;
+    //while(temp) {temp = parent->parent; std::cout << temp << "->";}
     if(parent){
-        auto t = parent->contentTransform;
-        offset_x = t.x;
-        offset_y = t.y;
+        offset_x = parent->contentTransform.x;
+        offset_y = parent->contentTransform.y;
     }
 
+    //std::cout << "Transforms for: " << this << std::endl; 
     boundingTransform = {
-        px + offset_x,
-        py + offset_y,
-        pwidth  + borderSizes.right  + borderSizes.left + margin_x * 2,
-        pheight + borderSizes.bottom + borderSizes.top  + margin_y * 2
+        internalTransform.x + offset_x,
+        internalTransform.y + offset_y,
+        internalTransform.width  + borderSizes.right  + borderSizes.left + margin_x * 2,
+        internalTransform.height + borderSizes.bottom + borderSizes.top  + margin_y * 2
     };
 
     transform = {
-        px + offset_x + margin_x,
-        py + offset_y + margin_y,
-        pwidth  + borderSizes.right  + borderSizes.left,
-        pheight + borderSizes.bottom + borderSizes.top
+        internalTransform.x + offset_x + margin_x,
+        internalTransform.y + offset_y + margin_y,
+        internalTransform.width  + borderSizes.right  + borderSizes.left,
+        internalTransform.height + borderSizes.bottom + borderSizes.top
     };
 
     contentTransform = {
-        px + offset_x + margin_x + borderSizes.left,
-        px + offset_y + margin_y + borderSizes.top,
-        pwidth,
-        pheight
+        internalTransform.x + offset_x + margin_x + borderSizes.left,
+        internalTransform.x + offset_y + margin_y + borderSizes.top,
+        internalTransform.width,
+        internalTransform.height
     };
-
-    clipRegion = transform.asRegion();
+    //std::cout << internalTransform.to_string() << std::endl;
+    //std::cout << boundingTransform.to_string() << std::endl;
+    //std::cout << transform.to_string() << std::endl;
+    //std::cout << contentTransform.to_string() << std::endl;
 
     if(parent){
-        clipRegion.min.x = glm::clamp(clipRegion.min.x, parent->clipRegion.min.x, parent->clipRegion.max.x);
+        clipRegion = parent->transform.asRegion();
+
+        /*clipRegion.min.x = glm::clamp(clipRegion.min.x, parent->clipRegion.min.x, parent->clipRegion.max.x);
         clipRegion.min.y = glm::clamp(clipRegion.min.y, parent->clipRegion.min.y, parent->clipRegion.max.y);
         clipRegion.max.x = glm::clamp(clipRegion.max.x, parent->clipRegion.min.x, parent->clipRegion.max.x);
-        clipRegion.max.y = glm::clamp(clipRegion.max.y, parent->clipRegion.min.y, parent->clipRegion.max.y);
+        clipRegion.max.y = glm::clamp(clipRegion.max.y, parent->clipRegion.min.y, parent->clipRegion.max.y);*/
+    }
+    else{
+        clipRegion = {{0,0},{manager.getScreenWidth(),manager.getScreenHeight()}};
     }
 }
 
-std::vector<UIRenderInfo> UILabel::getRenderingInformation() {
+void UILabel::getRenderingInformation(RenderYeetFunction& yeet) {
     auto t = getTextPosition(manager);
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
 
@@ -479,16 +444,8 @@ std::vector<UIRenderInfo> UILabel::getRenderingInformation() {
     if(width .unit == NONE) width  = textDimensions.x + textPadding * 2;
     if(height.unit == NONE) height = textDimensions.y + textPadding * 2;
 
-    std::vector<UIRenderInfo> out = UIFrame::getRenderingInformation();
-    std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,t.x,t.y,1,getAttribute(&Style::textColor));
-
-    for(auto& i: temp){
-        i.clip = true;
-        i.clipRegion = clipRegion;
-        out.push_back(i);
-    }
-
-    return out;
+    UIFrame::getRenderingInformation(yeet);
+    manager.buildTextRenderingInformation(yeet,text,t.x,t.y,1,getAttribute(&Style::textColor));
 }
 
 UITransform UILabel::getTextPosition(UIManager& manager){
@@ -509,19 +466,19 @@ UITransform UILabel::getTextPosition(UIManager& manager){
     };
 }
 
-std::vector<UIRenderInfo> UIImage::getRenderingInformation(){
+void UIImage::getRenderingInformation(RenderYeetFunction& yeet){
     if(!loaded){
         manager.getTextures()->addTexture(path);
         loaded = true;
     }
     
-    std::vector<UIRenderInfo> out = {UIRenderInfo::Texture(
-        transform.x,transform.y,transform.width,transform.height,
-        manager.getTextures()->getTextureUVs(path),
-        manager.getTextures()->getTextureIndex(path)
-    )};
-
-    return out;
+    yeet(
+        UIRenderInfo::Texture(
+            transform.x,transform.y,transform.width,transform.height,
+            manager.getTextures()->getTextureUVs(path),
+            manager.getTextures()->getTextureIndex(path)
+        )
+    );
 }
 
 UIInput::UIInput(UIManager& manager): UILabel(manager) {
@@ -546,21 +503,26 @@ UIInput::UIInput(UIManager& manager): UILabel(manager) {
     };
 }
 
-std::vector<UIRenderInfo> UIInput::getRenderingInformation(){
+void UIInput::getRenderingInformation(RenderYeetFunction& yeet){
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
 
     auto tpos = getTextPosition(manager);
     auto textColor = getAttribute(&UIFrame::Style::textColor);
     
-    std::vector<UIRenderInfo> out = UILabel::getRenderingInformation();
+    UILabel::getRenderingInformation(yeet);
 
-    if(focus){
-        out.push_back(UIRenderInfo::Rectangle(tpos.x + textDimensions.x,transform.y + transform.height / 6,3,(transform.height / 3) * 2, textColor));    
-    }
+    yeet(
+        UIRenderInfo::Rectangle(
+            tpos.x + textDimensions.x,
+            transform.y + transform.height / 6,
+            3,
+            (transform.height / 3) * 2,
+            textColor
+        )
+    );    
+    
 
     //out.insert(out.end(), temp.begin(), temp.end());
-
-    return out;
 }
 
 UISlider::UISlider(UIManager& manager): UIFrame(manager) {
@@ -624,20 +586,20 @@ void  UISlider::moveTo(UIManager& manager, glm::vec2 pos){
     *this->value = (this->max - this->min) * percentage + this->min;
 }
 
-std::vector<UIRenderInfo> UISlider::getRenderingInformation(){
-    std::vector<UIRenderInfo> out = {
+void UISlider::getRenderingInformation(RenderYeetFunction& yeet){
+    yeet(
         UIRenderInfo::Rectangle(
             transform,
             getAttribute(&Style::backgroundColor),
             borderSizes,
             getAttribute(&Style::borderColor)
         )
-    };
+    );
 
     //auto ht = getHandleTransform(manager);
     //std::cout << ht.x << " " << ht.y << " " << ht.width << " " << ht.height << std::endl;
 
-    out.push_back(UIRenderInfo::Rectangle(getHandleTransform(manager), handleColor, {3,3,3,3},UIRenderInfo::generateBorderColors(handleColor)));
+    yeet(UIRenderInfo::Rectangle(getHandleTransform(manager), handleColor, {3,3,3,3},UIRenderInfo::generateBorderColors(handleColor)));
     
     std::string text = std::to_string(*value);
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
@@ -646,19 +608,15 @@ std::vector<UIRenderInfo> UISlider::getRenderingInformation(){
         int tx = transform.x + transform.width + valueDisplayOffset;
         int ty = transform.y + transform.height / 2 - textDimensions.y / 2;
 
-        std::vector<UIRenderInfo> temp = manager.buildTextRenderingInformation(text,tx,ty,1,{1,1,1,1});
-        out.insert(out.end(), temp.begin(), temp.end());
+        manager.buildTextRenderingInformation(yeet, text,tx,ty,1,{1,1,1,1});
     }
-
-    return out;
 }
 
 void UIFlexFrame::calculateTransforms(){
-    UIFrame::calculateTransforms();
-
     int size = 0;
         
     for(auto& child: children){
+        child->calculateTransforms();
         auto ct = child->getBoundingTransform();
 
         size += getValueInPixels(elementMargin, direction == COLUMN);
@@ -666,6 +624,8 @@ void UIFlexFrame::calculateTransforms(){
     } 
     if(direction == COLUMN) width = {size};
     else height = {size};
+    
+    UIFrame::calculateTransforms();
 
     int offset = 0;
     for(auto& child: children){
@@ -681,11 +641,13 @@ void UIFlexFrame::calculateTransforms(){
             direction == COLUMN ?
             ct.width :
             ct.height;
+
+        child->calculateTransforms();
     }
 }
 
 UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
-    this->body = std::make_shared<UIFlexFrame>();
+    this->body = std::make_shared<UIFlexFrame>(manager);
     body->setExpand(true);
     body->setSize({PERCENT,100},0);
     scrollable = true;
@@ -695,7 +657,7 @@ UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
         this->scroll = glm::clamp(this->scroll, 0, this->scrollMax);
     };
 
-    slider = std::make_shared<UISlider>(0,0,0,0, &scroll, 0, scrollMax);
+    slider = std::make_shared<UISlider>(manager);
     slider->setOrientation(UISlider::VERTICAL);
     slider->setDisplayValue(false);
     slider->setHandleWidth(60);
