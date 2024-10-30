@@ -198,7 +198,7 @@ class UIManager;
 
     Named for the comedic value
 */
-using RenderYeetFunction = std::function<void(UIRenderInfo info)>;
+using RenderYeetFunction = std::function<void(UIRenderInfo info, UIRegion clipRegion)>;
 
 /*
     Core element that every other element inherits from
@@ -287,6 +287,7 @@ class UIFrame{
         UITransform boundingTransform = {0,0,0,0}; // Transform that includes margin
         UIBorderSizes borderSizes     = {0,0,0,0};
         UIRegion clipRegion           = {{0,0},{0,0}};
+        UIRegion contentClipRegion    = {{0,0},{0,0}};
 
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 
@@ -583,7 +584,7 @@ class UIManager{
 
         std::shared_ptr<UIFrame> getElementUnder(int x, int y, bool onlyScrollable = false);   
 
-        void buildTextRenderingInformation(RenderYeetFunction& yeet, std::string text, float x, float y, float scale, UIColor color);
+        void buildTextRenderingInformation(RenderYeetFunction& yeet, UIRegion& clipRegion, std::string text, float x, float y, float scale, UIColor color);
 
         Uniform<glm::mat4>& getProjectionMatrix(){return projectionMatrix;}
         FontManager& getFontManager() {return fontManager;};

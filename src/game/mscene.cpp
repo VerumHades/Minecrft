@@ -570,9 +570,9 @@ void UIAllocatorVisualizer::getRenderingInformation(RenderYeetFunction& yeet){
         
         UIColor color = block.used ? UIColor(1,0,0,1) : UIColor(0,1,0,1);
 
-        yeet(UIRenderInfo::Rectangle(transform.x + currentPosition, transform.y, bw, transform.height, color));
+        yeet(UIRenderInfo::Rectangle(transform.x + currentPosition, transform.y, bw, transform.height, color),clipRegion);
         currentPosition += bw;
     }
 
-    manager.buildTextRenderingInformation(yeet, "Blocks total: " + std::to_string(watched->getBlocks().size()),transform.x + transform.width, transform.y,1,{1,1,1,1});
+    manager.buildTextRenderingInformation(yeet,clipRegion, "Blocks total: " + std::to_string(watched->getBlocks().size()),transform.x + transform.width, transform.y,1,{1,1,1,1});
 }

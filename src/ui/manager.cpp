@@ -150,7 +150,9 @@ void UIManager::update(){
 
     auto* meshPtr = &mesh;
 
-    RenderYeetFunction yeetCapture = [meshPtr](UIRenderInfo info){
+    RenderYeetFunction yeetCapture = [meshPtr](UIRenderInfo info, UIRegion clipRegion){
+        info.clip = true;
+        info.clipRegion = clipRegion;
         info.process(meshPtr);
         //std::cout << info.x << " " << info.y << " " << info.width << " " << info.height << std::endl;
     };
@@ -164,7 +166,7 @@ void UIManager::update(){
     drawBuffer->loadMesh(mesh);
 }
 
-void UIManager::buildTextRenderingInformation(RenderYeetFunction& yeet, std::string text, float x, float y, float scale, UIColor color){
+void UIManager::buildTextRenderingInformation(RenderYeetFunction& yeet, UIRegion& clipRegion, std::string text, float x, float y, float scale, UIColor color){
     glm::vec2 textDimensions = mainFont->getTextDimensions(text);
 
     // Iterate through each character in the text
@@ -179,19 +181,22 @@ void UIManager::buildTextRenderingInformation(RenderYeetFunction& yeet, std::str
 
         //ypos += textDimensions.y - h;
 
-        yeet(UIRenderInfo::Text(
-            static_cast<int>(xpos),
-            static_cast<int>(ypos),
-            static_cast<int>(w),
-            static_cast<int>(h),
-            color,
-            {
-                {ch.TexCoordsMin.x, ch.TexCoordsMin.y},
-                {ch.TexCoordsMax.x, ch.TexCoordsMin.y},
-                {ch.TexCoordsMax.x, ch.TexCoordsMax.y},
-                {ch.TexCoordsMin.x, ch.TexCoordsMax.y}
-            }
-        ));
+        yeet(
+            UIRenderInfo::Text(
+                static_cast<int>(xpos),
+                static_cast<int>(ypos),
+                static_cast<int>(w),
+                static_cast<int>(h),
+                color,
+                {
+                    {ch.TexCoordsMin.x, ch.TexCoordsMin.y},
+                    {ch.TexCoordsMax.x, ch.TexCoordsMin.y},
+                    {ch.TexCoordsMax.x, ch.TexCoordsMax.y},
+                    {ch.TexCoordsMin.x, ch.TexCoordsMax.y}
+                }
+            ),
+            clipRegion
+        );
 
         // Advance to next glyph
         x += (ch.Advance >> 6) * scale;  // Bitshift by 6 to get the value in pixels
@@ -358,13 +363,22 @@ void UIFrame::getRenderingInformation(RenderYeetFunction& yeet){
             transform.x,transform.y,transform.width,transform.height,
             getAttribute(&Style::backgroundColor),
             borderSizes,
-            getAttribute(&Style::borderColor))
+            getAttribute(&Style::borderColor)
+        ),
+        clipRegion
     );
 
     for(auto& child: children){
         child->getRenderingInformation(yeet);
     }
 };
+
+static inline void reduceRegionTo(UIRegion& target, UIRegion& to){
+    target.min.x = glm::clamp(target.min.x, to.min.x, to.max.x);
+    target.min.y = glm::clamp(target.min.y, to.min.y, to.max.y);
+    target.max.x = glm::clamp(target.max.x, to.min.x, to.max.x);
+    target.max.y = glm::clamp(target.max.y, to.min.y, to.max.y);
+}
 
 void UIFrame::calculateElementsTransforms(){
     auto margin = getAttribute(&UIFrame::Style::margin);
@@ -422,17 +436,15 @@ void UIFrame::calculateElementsTransforms(){
     //std::cout << transform.to_string() << std::endl;
     //std::cout << contentTransform.to_string() << std::endl;
 
-    if(parent){
-        clipRegion = parent->transform.asRegion();
+    clipRegion        = transform.asRegion();
+    contentClipRegion = contentTransform.asRegion();
 
-        /*clipRegion.min.x = glm::clamp(clipRegion.min.x, parent->clipRegion.min.x, parent->clipRegion.max.x);
-        clipRegion.min.y = glm::clamp(clipRegion.min.y, parent->clipRegion.min.y, parent->clipRegion.max.y);
-        clipRegion.max.x = glm::clamp(clipRegion.max.x, parent->clipRegion.min.x, parent->clipRegion.max.x);
-        clipRegion.max.y = glm::clamp(clipRegion.max.y, parent->clipRegion.min.y, parent->clipRegion.max.y);*/
+    if(parent){
+        reduceRegionTo(clipRegion       , parent->contentClipRegion);
+        reduceRegionTo(contentClipRegion, parent->contentClipRegion);
     }
-    else{
-        clipRegion = {{0,0},{manager.getScreenWidth(),manager.getScreenHeight()}};
-    }
+
+    //clipRegion = {{0,0},{100,100}};
 }
 
 void UIFrame::calculateChildrenTransforms(){
@@ -459,7 +471,7 @@ void UILabel::getRenderingInformation(RenderYeetFunction& yeet) {
     if(height.unit == NONE) height = textDimensions.y + textPadding * 2;
 
     UIFrame::getRenderingInformation(yeet);
-    manager.buildTextRenderingInformation(yeet,text,t.x,t.y,1,getAttribute(&Style::textColor));
+    manager.buildTextRenderingInformation(yeet,clipRegion,text,t.x,t.y,1,getAttribute(&Style::textColor));
 }
 
 UITransform UILabel::getTextPosition(UIManager& manager){
@@ -491,7 +503,8 @@ void UIImage::getRenderingInformation(RenderYeetFunction& yeet){
             transform.x,transform.y,transform.width,transform.height,
             manager.getTextures()->getTextureUVs(path),
             manager.getTextures()->getTextureIndex(path)
-        )
+        ),
+        clipRegion
     );
 }
 
@@ -532,7 +545,8 @@ void UIInput::getRenderingInformation(RenderYeetFunction& yeet){
             3,
             (transform.height / 3) * 2,
             textColor
-        )
+        ),
+        clipRegion
     );    
     
 
@@ -609,13 +623,14 @@ void UISlider::getRenderingInformation(RenderYeetFunction& yeet){
             getAttribute(&Style::backgroundColor),
             borderSizes,
             getAttribute(&Style::borderColor)
-        )
+        ),
+        clipRegion
     );
 
     //auto ht = getHandleTransform(manager);
     //std::cout << ht.x << " " << ht.y << " " << ht.width << " " << ht.height << std::endl;
 
-    yeet(UIRenderInfo::Rectangle(getHandleTransform(manager), handleColor, {3,3,3,3},UIRenderInfo::generateBorderColors(handleColor)));
+    yeet(UIRenderInfo::Rectangle(getHandleTransform(manager), handleColor, {3,3,3,3},UIRenderInfo::generateBorderColors(handleColor)),clipRegion);
     
     std::string text = std::to_string(*value);
     glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
@@ -624,7 +639,7 @@ void UISlider::getRenderingInformation(RenderYeetFunction& yeet){
         int tx = transform.x + transform.width + valueDisplayOffset;
         int ty = transform.y + transform.height / 2 - textDimensions.y / 2;
 
-        manager.buildTextRenderingInformation(yeet, text,tx,ty,1,{1,1,1,1});
+        manager.buildTextRenderingInformation(yeet,clipRegion, text,tx,ty,1,{1,1,1,1});
     }
 }
 
@@ -693,7 +708,7 @@ UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
     slider->onMove = [this]{
         calculateTransforms();
     };
-    
+
     UIFrame::appendChild(this->body);
     UIFrame::appendChild(slider);
 }

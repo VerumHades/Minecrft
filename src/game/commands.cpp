@@ -116,7 +116,7 @@ void UICommandInput::getRenderingInformation(RenderYeetFunction& yeet){
         cursorW                  ,
         cursorH                  ,
         {1,1,1,1}
-    ));
+    ),clipRegion);
 
     int suggestions_height = 0;
     int suggestions_width = 0;
@@ -134,14 +134,14 @@ void UICommandInput::getRenderingInformation(RenderYeetFunction& yeet){
         suggestions_width      ,
         suggestions_height     ,
         {0,0,0,1}
-    ));
+    ),clipRegion);
 
     int currentY = 0;
     for(auto& s: suggestions){
-        manager.buildTextRenderingInformation(yeet,s,transform.x + suggestions_padding,transform.y - suggestions_height + currentY + suggestions_padding,1,{0.5f,1.0f,1.0f,});
+        manager.buildTextRenderingInformation(yeet,clipRegion,s,transform.x + suggestions_padding,transform.y - suggestions_height + currentY + suggestions_padding,1,{0.5f,1.0f,1.0f,});
         glm::vec2 dm = manager.getMainFont().getTextDimensions(s);
         currentY += dm.y + suggestions_padding;
     }
 
-    manager.buildTextRenderingInformation(yeet,text,tx,ty,1,{1,1,1,1});
+    manager.buildTextRenderingInformation(yeet,clipRegion,text,tx,ty,1,{1,1,1,1});
 }
