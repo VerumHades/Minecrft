@@ -347,7 +347,9 @@ class UIFrame{
 
         const UITransform& getBoundingTransform() const {return boundingTransform;}
 
-        virtual void calculateTransforms();
+        virtual void calculateElementsTransforms();
+        virtual void calculateChildrenTransforms();
+        virtual void calculateTransforms(); // calculates elements own transforms and then children transforms
 };
 
 class UILabel: public UIFrame{
@@ -422,6 +424,8 @@ class UISlider: public UIFrame{
         void setMin(uint32_t value) {min = value;}
         void setValuePointer(int* value) {this->value = value;}
 
+        std::function<void(void)> onMove;
+
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 };
 
@@ -434,7 +438,7 @@ class UIFlexFrame: public UIFrame{
 
     private:
         FlexDirection direction;
-        TValue elementMargin = {0};
+        TValue elementMargin = {10};
         bool expandToChildren = false;
         int lastExpansion = 0;
 
@@ -457,7 +461,8 @@ class UIFlexFrame: public UIFrame{
             }
         }
 
-        void calculateTransforms() override;
+        void calculateElementsTransforms() override;
+        void calculateChildrenTransforms() override;
 
         void appendChild(std::shared_ptr<UIFrame> child) override{
             if(!isChildValid(child)) std::runtime_error("Invalid child size for expanding UIFlexFrame!");
@@ -480,7 +485,7 @@ class UIScrollableFrame: public UIFrame{
         void appendChild(std::shared_ptr<UIFrame> child) override {body->appendChild(child);};
         void clearChildren() override {body->clearChildren();}
 
-        void calculateTransforms() override;
+        void calculateElementsTransforms() override;
 
 };
 
@@ -540,7 +545,6 @@ class UIManager{
         VertexFormat vertexFormat;
 
         std::unique_ptr<GLBuffer> drawBuffer;
-        PoolAllocator renderAllocator;
 
         Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("projectionMatrix");
         
