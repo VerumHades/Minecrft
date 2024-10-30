@@ -1,6 +1,6 @@
 #include <game/mscene.hpp>
 
-void MainScene::initialize(Scene* mainScene){
+void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     modelManager.initialize();
     camera.getProjectionUniform().attach(modelManager.getModelProgram());
     camera.getViewUniform().attach(modelManager.getModelProgram());
@@ -120,15 +120,6 @@ void MainScene::initialize(Scene* mainScene){
     terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
 
-    boundKeys = {
-        {GLFW_KEY_SPACE},
-        {GLFW_KEY_LEFT_SHIFT},
-        {GLFW_KEY_W},
-        {GLFW_KEY_S},
-        {GLFW_KEY_A},
-        {GLFW_KEY_D}
-    };
-
     chunkBuffer.initialize(renderDistance);
 
     camera.setModelPosition({0,0,0});
@@ -138,6 +129,12 @@ void MainScene::initialize(Scene* mainScene){
 
     threadPool = std::make_unique<ThreadPool>(10);
     //world->load("saves/worldsave.bin");
+
+    inputManager.bindKey(GLFW_KEY_W    , MOVE_FORWARD , "Move forward ");
+    inputManager.bindKey(GLFW_KEY_S    , MOVE_BACKWARD, "Move backward");
+    inputManager.bindKey(GLFW_KEY_A    , STRAFE_LEFT  , "Strafe left");
+    inputManager.bindKey(GLFW_KEY_D    , STRAFE_RIGHT , "Strafe right");
+    inputManager.bindKey(GLFW_KEY_SPACE, MOVE_UP      , "Jump");
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
@@ -218,7 +215,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 }
 
 void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
-    if(boundKeys[1].isDown){
+    if(inputManager.isActive(SCROLL_ZOOM)){
         camFOV -= (float) yoffset * 5.0f;
 
         if(camFOV < minFOV) camFOV = minFOV;
@@ -232,10 +229,7 @@ void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
 }
 
 void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
-    for(int i = 0; i < boundKeys.size();i++){
-        if(key == boundKeys[i].key && action == GLFW_PRESS) boundKeys[i].isDown = true; 
-        else if(key == boundKeys[i].key && action == GLFW_RELEASE) boundKeys[i].isDown = false; 
-    }
+    inputManager.keyEvent(window,key,scancode,action,mods);
 
     if(key == GLFW_KEY_M && action == GLFW_PRESS){
         lineMode = !lineMode;
@@ -245,6 +239,20 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
+    if(rebind){
+        auto& [action, old_key, name, label] = rebind.value();
+        inputManager.unbindKey(old_key);
+        inputManager.bindKey(key, action, name);
+        rebind = std::nullopt;
+        
+        std::string keyname = getKeyName(key,0);
+        label->setText(keyname);
+
+        std::cout << "Rebound key" << std::endl;
+        return;
+    }
+    
+    
     if(key == GLFW_KEY_T && action == GLFW_PRESS && !chatOpen){
         chatOpen = true;
         this->setUILayer("chat");
@@ -482,15 +490,15 @@ void MainScene::physicsUpdate(){
 
         glm::vec3 camDir = glm::normalize(camera.getDirection());
         glm::vec3 horizontalDir = glm::normalize(glm::vec3(camDir.x, 0, camDir.z));
-        glm::vec3 rightDir = glm::normalize(glm::cross(camera.getUp(), horizontalDir));
+        glm::vec3 leftDir = glm::normalize(glm::cross(camera.getUp(), horizontalDir));
 
-        if(boundKeys[4].isDown) player.accelerate(rightDir * camSpeed);
-        if(boundKeys[5].isDown) player.accelerate(-rightDir * camSpeed);
-        if(boundKeys[3].isDown) player.accelerate(-horizontalDir * camSpeed);
-        if(boundKeys[2].isDown) player.accelerate(horizontalDir * camSpeed);
+        if(inputManager.isActive(STRAFE_RIGHT )) player.accelerate(-leftDir * camSpeed);
+        if(inputManager.isActive(STRAFE_LEFT  )) player.accelerate(leftDir * camSpeed);
+        if(inputManager.isActive(MOVE_BACKWARD)) player.accelerate(-horizontalDir * camSpeed);
+        if(inputManager.isActive(MOVE_FORWARD )) player.accelerate(horizontalDir * camSpeed);
 
-        if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * 0.2f);
-        if(boundKeys[0].isDown) player.accelerate(camera.getUp() * 0.2f);
+        //if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * 0.2f);
+        if(inputManager.isActive(MOVE_UP)) player.accelerate(camera.getUp() * 0.2f);
         /*if(
             boundKeys[0].isDown 
             && player.checkForCollision(world, false, {0,-0.1f,0}).collision
@@ -512,6 +520,9 @@ void MainScene::generateSurroundingChunks(){
 
     int pregenDistance = renderDistance + 1; 
     
+    int generatedTotal = 0;
+    int* gptr = &generatedTotal;
+
     bool notAllGenerated = true;
     while(notAllGenerated){
         notAllGenerated = false;
@@ -519,6 +530,8 @@ void MainScene::generateSurroundingChunks(){
             int chunkX = camWorldX + x;
             int chunkY = camWorldY + y;
             int chunkZ = camWorldZ + z;
+
+            //if(chunkY > 4) return;
 
             Chunk* meshlessChunk = world->getChunk(chunkX, chunkY, chunkZ);
             if(!meshlessChunk){
@@ -528,6 +541,7 @@ void MainScene::generateSurroundingChunks(){
                 if(world->isChunkLoadable(chunkX,chunkY,chunkZ)){
                     //std::cout << "Loading chunk" << std::endl;
                     world->loadChunk(chunkX,chunkY,chunkZ);
+                    generatedTotal++;
                     continue;
                 }
 
@@ -541,12 +555,16 @@ void MainScene::generateSurroundingChunks(){
                 else if(distance < 10 ) level = MID;
                 else if(distance < 13) level = MID_FAR;
 
-                bool success = threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level, bp](){
+                bool success = threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level, bp,gptr](){
                     worldp->generateChunk(chunkX, chunkY, chunkZ, level);
+                    (*gptr)++;
                 });
             }
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::cout << "Wating for chunks to generate... " << generatedTotal << "/" << pow(pregenDistance*2,3) << std::endl;
     }
+    std::cout << "Generating meshes..." << std::endl;
     for(int x = -renderDistance; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
         int chunkX = camWorldX + x;
         int chunkY = camWorldY + y;

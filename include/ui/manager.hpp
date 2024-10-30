@@ -319,6 +319,7 @@ class UIFrame{
         bool isFocusable(){return focusable;}
         bool isHoverable(){return hoverable;}
         bool isScrollable(){return scrollable;}
+        bool isUnderHover(){return state == HOVER;}
 
         virtual void appendChild(std::shared_ptr<UIFrame> child){
             child->parent = this;
@@ -439,7 +440,6 @@ class UIFlexFrame: public UIFrame{
 
     private:
         FlexDirection direction;
-        TValue elementMargin = {10};
         bool expandToChildren = false;
         int lastExpansion = 0;
 
@@ -451,7 +451,6 @@ class UIFlexFrame: public UIFrame{
     public:
         UIFlexFrame(UIManager& manager): UIFrame(manager) {}
         void setElementDirection(FlexDirection direction) {this->direction = direction;}
-        void setElementMargin(TValue margin) {elementMargin = margin;}
         void setExpand(bool value) {
             expandToChildren = value;
             if(!value) return;

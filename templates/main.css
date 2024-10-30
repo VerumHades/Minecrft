@@ -8,7 +8,6 @@
 .interactable:hover{
     background-color: rgb(2, 76, 170);
     border-color: rgb(9, 16, 87);
-    box-sizing: border-box;
 }
 
 #world_selection_frame{

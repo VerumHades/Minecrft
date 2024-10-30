@@ -141,6 +141,42 @@ int main() {
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
     */
+
+   /*
+      auto settingsFrame = menuScene->getUILayer("settings").getElementById("controlls_frame");
+
+    for(auto& [key,action]: inputManager.getBoundKeys()){
+        std::string kename = getKeyName(key,0);
+
+        std::cout << kename << std::endl;
+
+        auto frame = uiManager->createElement<UIFlexFrame>();
+        frame->setSize({OPERATION_MINUS,{PERCENT,100},{10}}, 40);
+
+        auto name = uiManager->createElement<UILabel>();
+        name->setText(action.name);
+        name->setSize({PERCENT,80},40);
+        name->setHoverable(false);
+        
+        auto keyname = uiManager->createElement<UILabel>();
+        keyname->setText(kename);
+        keyname->setSize({PERCENT,20},40);
+
+        keyname->onClicked = [this,  key, action, keyname]{
+            rebind = {action.action, key, action.name, keyname};
+        };
+
+        if(uiLoader->getCurrentStyle()){
+            uiLoader->getCurrentStyle()->applyTo(frame, "flex_frame", "", {"controlls_member"});
+            uiLoader->getCurrentStyle()->applyTo(name, "label", "", {"controlls_member_name"});
+            uiLoader->getCurrentStyle()->applyTo(keyname, "label", "", {"controlls_member_keyname"});
+        }
+
+        frame->appendChild(name);
+        frame->appendChild(keyname);
+        settingsFrame->appendChild(frame);
+    }
+   */
     {
         SceneManager sceneManager;
 
@@ -158,18 +194,16 @@ int main() {
 
         Scene* menuScene = sceneManager.getScene("menu");
 
-        mainSceneTemp->initialize(menuScene);
-
-        sceneManager.setScene("menu");
-        menuScene->setUILayer("default");
-
         UILoader loader = UILoader(sceneManager.getUIManager());
         loader.loadWindowFromXML(menuScene->getWindow(), "templates/menu.xml");
         auto* l = &loader;
 
+        mainSceneTemp->initialize(menuScene, l);
+
+        sceneManager.setScene("menu");
+        menuScene->setUILayer("default");
+
         auto startButton = menuScene->getUILayer("default").getElementById("new_world");
-
-
         auto scrollable = std::dynamic_pointer_cast<UIScrollableFrame>(menuScene->getUILayer("world_menu").getElementById("top_frame"));
         
         startButton->onClicked = [menuScene, mainSceneTemp, scrollable, l] {
@@ -200,6 +234,11 @@ int main() {
                 scrollable->appendChild(frame);
             }
             menuScene->setUILayer("world_menu");
+        };
+
+        auto toSettings = menuScene->getUILayer("default").getElementById("setttings");
+        toSettings->onClicked = [menuScene]{
+            menuScene->setUILayer("settings");
         };
 
         auto backButton = menuScene->getUILayer("world_menu").getElementById("back_to_menu");

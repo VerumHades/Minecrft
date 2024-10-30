@@ -651,7 +651,6 @@ void UIFlexFrame::calculateElementsTransforms(){
             child->calculateElementsTransforms();
             auto ct = child->getBoundingTransform();
 
-            size += getValueInPixels(elementMargin, direction == COLUMN);
             size += direction == COLUMN ? ct.width : ct.height;
         } 
         if(direction == COLUMN) width = {size};
@@ -663,14 +662,13 @@ void UIFlexFrame::calculateElementsTransforms(){
 void UIFlexFrame::calculateChildrenTransforms(){
     int offset = 0;
     for(auto& child: children){
-        offset += getValueInPixels(elementMargin, direction == COLUMN);
         
         child->calculateElementsTransforms();
         auto ct = child->getBoundingTransform();
 
         child->setPosition(
-            direction == COLUMN ? TValue(PIXELS,offset) : transform.width  / 2 - ct.width  / 2,
-            direction == ROWS   ? TValue(PIXELS,offset) : transform.height / 2 - ct.height / 2
+            direction == COLUMN ? TValue(PIXELS,offset) : static_cast<float>(transform.width ) / 2.0f - static_cast<float>(ct.width ) / 2.0f,
+            direction == ROWS   ? TValue(PIXELS,offset) : static_cast<float>(transform.height) / 2.0f - static_cast<float>(ct.height) / 2.0f
         );
         offset += 
             direction == COLUMN ?
@@ -687,7 +685,7 @@ UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
 
     body->setElementDirection(UIFlexFrame::ROWS);
     body->setExpand(true);
-    body->setSize({PERCENT,100},0);
+    body->setSize({OPERATION_MINUS,{PERCENT,100},{sliderWidth}},0);
 
     scrollable = true;
 

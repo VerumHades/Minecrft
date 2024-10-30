@@ -6,7 +6,7 @@
             width="300px" height="500px" 
             horizontal="false">
             <label width="100% - 2px" height="40px" id="new_world" class="interactable">New World</label>
-            <label width="100% - 2px" height="40px" class="interactable">Settings</label>
+            <label width="100% - 2px" height="40px" id="setttings" class="interactable">Settings</label>
         </flex_frame>
     </default>
     <world_menu>
@@ -27,6 +27,15 @@
         </flex_frame>
     </world_menu>
     <settings>
-        
+        <style src="templates/settings.css"></style>
+        <frame width="20%" height="100%" id="nav_bar">
+            
+        </frame>
+        <scrollable x="20%" width="80%" height="100%">
+            <flex_frame width="100% - 40px" expand="true" class="settings_section" id="controlls_frame" horizontal="false">
+                <label width="100%" height="40px" class="settings_section_title">Controlls</label>
+                
+            </flex_frame>
+        </scrollable>
     </settings>
 </window>

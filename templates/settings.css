@@ -1,0 +1,23 @@
+#nav_bar{
+    background-color: rgb(9, 16, 87);
+}
+
+
+.settings_section_title{
+    background-color: rgb(9, 16, 87);
+}
+
+.settings_section{
+    background-color: rgb(2, 76, 170);
+    border-color: rgb(9, 16, 87);
+
+    margin: 10px;
+}
+
+.controlls_member{
+    margin: 5px;
+}
+
+.controlls_member_keyname:hover{
+    background-color: rgb(2, 76, 170);
+}

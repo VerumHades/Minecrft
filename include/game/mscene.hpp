@@ -13,20 +13,17 @@
 
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
+#include <ui/loader.hpp>
 
 #include <game/world.hpp>
 #include <game/entity.hpp>
 #include <game/commands.hpp>
 #include <game/threadpool.hpp>
+#include <game/input.hpp>
 
 #include <scene.hpp>
 #include <set>
 #include <memory>
-
-struct BoundKey{
-    int key;
-    bool isDown;
-};
 
 class MainScene: public Scene{
     private:
@@ -47,7 +44,7 @@ class MainScene: public Scene{
         MultiChunkBuffer chunkBuffer;
 
         std::string worldPath = "saves/worldsave.bin";
-        int renderDistance = 8;
+        int renderDistance = 4;
         int selectedBlock = 2;
 
         bool running = false;
@@ -78,7 +75,17 @@ class MainScene: public Scene{
 
         bool updateVisibility = false;
 
-        std::vector<BoundKey> boundKeys;
+        enum ControllActions{
+            MOVE_FORWARD,
+            MOVE_BACKWARD,
+            STRAFE_LEFT,
+            STRAFE_RIGHT,
+            MOVE_UP,
+            SCROLL_ZOOM
+        };
+
+        KeyInputManager<ControllActions> inputManager;
+        std::optional<std::tuple<ControllActions, int,std::string,std::shared_ptr<UILabel>>> rebind;
 
         Font testFont = Font("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
 
@@ -93,7 +100,7 @@ class MainScene: public Scene{
         std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> loadedPositions;
         
     public:
-        void initialize(Scene* mainScene);
+        void initialize(Scene* mainScene, UILoader* uiLoader);
         void setWorldPath(std::string path) {worldPath = path;}
 
         void render() override;
