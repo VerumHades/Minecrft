@@ -21,3 +21,7 @@
 .controlls_member_keyname:hover{
     background-color: rgb(2, 76, 170);
 }
+
+.controlls_member_keyname:focus{
+    background-color: rgb(2, 76, 170);
+}

@@ -76,6 +76,7 @@ void UIStyle::parseQuery(std::string type, std::string value, std::string state,
     }
 
     if(state == ":hover") query.state = UIFrame::HOVER;
+    else if(state == ":focus") query.state = UIFrame::FOCUS;
     else query.state = UIFrame::BASE;
 
     if(type == "#"){
@@ -100,7 +101,7 @@ UIStyle::UIStyle(std::string path){
     f.read(source.data(), sz);   
 
     // Regex for individual queries
-    std::regex pattern(R"((#|\.|)([a-zA-Z_]+)(:hover|)?\{([\s\S]*?)\})"); 
+    std::regex pattern(R"((#|\.|)([a-zA-Z_]+)(:hover|:focus|)?\{([\s\S]*?)\})"); 
     // Remove all spaces
     source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
 

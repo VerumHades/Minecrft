@@ -141,42 +141,6 @@ int main() {
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
     */
-
-   /*
-      auto settingsFrame = menuScene->getUILayer("settings").getElementById("controlls_frame");
-
-    for(auto& [key,action]: inputManager.getBoundKeys()){
-        std::string kename = getKeyName(key,0);
-
-        std::cout << kename << std::endl;
-
-        auto frame = uiManager->createElement<UIFlexFrame>();
-        frame->setSize({OPERATION_MINUS,{PERCENT,100},{10}}, 40);
-
-        auto name = uiManager->createElement<UILabel>();
-        name->setText(action.name);
-        name->setSize({PERCENT,80},40);
-        name->setHoverable(false);
-        
-        auto keyname = uiManager->createElement<UILabel>();
-        keyname->setText(kename);
-        keyname->setSize({PERCENT,20},40);
-
-        keyname->onClicked = [this,  key, action, keyname]{
-            rebind = {action.action, key, action.name, keyname};
-        };
-
-        if(uiLoader->getCurrentStyle()){
-            uiLoader->getCurrentStyle()->applyTo(frame, "flex_frame", "", {"controlls_member"});
-            uiLoader->getCurrentStyle()->applyTo(name, "label", "", {"controlls_member_name"});
-            uiLoader->getCurrentStyle()->applyTo(keyname, "label", "", {"controlls_member_keyname"});
-        }
-
-        frame->appendChild(name);
-        frame->appendChild(keyname);
-        settingsFrame->appendChild(frame);
-    }
-   */
     {
         SceneManager sceneManager;
 

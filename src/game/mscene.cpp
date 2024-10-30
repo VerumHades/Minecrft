@@ -135,6 +135,45 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     inputManager.bindKey(GLFW_KEY_A    , STRAFE_LEFT  , "Strafe left");
     inputManager.bindKey(GLFW_KEY_D    , STRAFE_RIGHT , "Strafe right");
     inputManager.bindKey(GLFW_KEY_SPACE, MOVE_UP      , "Jump");
+
+    auto settingsFrame = menuScene->getUILayer("settings").getElementById("controlls_frame");
+
+    for(auto& [key,action]: inputManager.getBoundKeys()){
+        std::string kename = getKeyName(key,0);
+
+        std::cout << kename << std::endl;
+
+        auto frame = uiManager->createElement<UIFlexFrame>();
+        frame->setSize({OPERATION_MINUS,{PERCENT,100},{10}}, 40);
+
+        auto name = uiManager->createElement<UILabel>();
+        name->setText(action.name);
+        name->setSize({PERCENT,80},40);
+        name->setHoverable(false);
+        
+        auto keyname = uiManager->createElement<UILabel>();
+        keyname->setText(kename);
+        keyname->setSize({PERCENT,20},40);
+        keyname->setFocusable(true);
+
+        keyname->onKeyEvent = [this, key, action, keyname](GLFWwindow* window, int new_key, int /*scancode*/, int /*action*/, int /*mods*/){
+            inputManager.unbindKey(key);
+            inputManager.bindKey(new_key, action.action, action.name);
+
+            std::string new_name = getKeyName(new_key,0);
+            keyname->setText(new_name);
+        };
+
+        if(uiLoader->getCurrentStyle()){
+            uiLoader->getCurrentStyle()->applyTo(frame, "flex_frame", "", {"controlls_member"});
+            uiLoader->getCurrentStyle()->applyTo(name, "label", "", {"controlls_member_name"});
+            uiLoader->getCurrentStyle()->applyTo(keyname, "label", "", {"controlls_member_keyname"});
+        }
+
+        frame->appendChild(name);
+        frame->appendChild(keyname);
+        settingsFrame->appendChild(frame);
+    }
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
@@ -239,20 +278,6 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
-    if(rebind){
-        auto& [action, old_key, name, label] = rebind.value();
-        inputManager.unbindKey(old_key);
-        inputManager.bindKey(key, action, name);
-        rebind = std::nullopt;
-        
-        std::string keyname = getKeyName(key,0);
-        label->setText(keyname);
-
-        std::cout << "Rebound key" << std::endl;
-        return;
-    }
-    
-    
     if(key == GLFW_KEY_T && action == GLFW_PRESS && !chatOpen){
         chatOpen = true;
         this->setUILayer("chat");

@@ -85,7 +85,6 @@ class MainScene: public Scene{
         };
 
         KeyInputManager<ControllActions> inputManager;
-        std::optional<std::tuple<ControllActions, int,std::string,std::shared_ptr<UILabel>>> rebind;
 
         Font testFont = Font("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
 
