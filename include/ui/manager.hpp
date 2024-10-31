@@ -269,6 +269,8 @@ class UIFrame{
         
         void setHover(bool value) {
             hover = value;
+
+            if(state == FOCUS) return;
             if(hover) state = HOVER;
             else state = BASE;
         }

@@ -52,6 +52,40 @@ static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFram
     }},
     {"margin",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
         element->setAttribute(&UIFrame::Style::margin, parseTValue(value), state);
+    }},
+
+    {"border-top-width",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+        auto attr = element->getAttribute(&UIFrame::Style::borderWidth);
+        element->setAttribute(&UIFrame::Style::borderWidth, {parseTValue(value),attr[1],attr[2],attr[3]}, state);
+    }},
+    {"border-right-width",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+        auto attr = element->getAttribute(&UIFrame::Style::borderWidth);
+        element->setAttribute(&UIFrame::Style::borderWidth, {attr[0],parseTValue(value),attr[2],attr[3]}, state);
+    }},
+    {"border-bottom-width",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+        auto attr = element->getAttribute(&UIFrame::Style::borderWidth);
+        element->setAttribute(&UIFrame::Style::borderWidth, {attr[0],attr[1],parseTValue(value),attr[3]}, state);
+    }},
+    {"border-left-width",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+        auto attr = element->getAttribute(&UIFrame::Style::borderWidth);
+        element->setAttribute(&UIFrame::Style::borderWidth, {attr[0],attr[1],attr[2],parseTValue(value)}, state);
+    }},
+
+    {"border-top-color",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+        auto attr = element->getAttribute(&UIFrame::Style::borderColor);
+        element->setAttribute(&UIFrame::Style::borderColor, {parseColor(value),attr[1],attr[2],attr[3]}, state);
+    }},
+    {"border-right-color",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+        auto attr = element->getAttribute(&UIFrame::Style::borderColor);
+        element->setAttribute(&UIFrame::Style::borderColor, {attr[0],parseColor(value),attr[2],attr[3]}, state);
+    }},
+    {"border-bottom-color",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+        auto attr = element->getAttribute(&UIFrame::Style::borderColor);
+        element->setAttribute(&UIFrame::Style::borderColor, {attr[0],attr[1],parseColor(value),attr[3]}, state);
+    }},
+    {"border-left-color",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
+        auto attr = element->getAttribute(&UIFrame::Style::borderColor);
+        element->setAttribute(&UIFrame::Style::borderColor, {attr[0],attr[1],attr[2],parseColor(value)}, state);
     }}
 };
 

@@ -28,14 +28,17 @@
     </world_menu>
     <settings>
         <style src="templates/settings.css"></style>
-        <frame width="20%" height="100%" id="nav_bar">
-            
-        </frame>
-        <scrollable x="20%" width="80%" height="100%">
-            <flex_frame width="100% - 40px" expand="true" class="settings_section" id="controlls_frame" horizontal="false">
-                <label width="100%" height="40px" class="settings_section_title">Controlls</label>
+        <scrollable x="50% - 50m" width="80%" height="100%">
+            <flex_frame width="100% - 40px" expand="true" class="settings_section" horizontal="false">
+                <label width="100%" height="40px" class="settings_section_title">Keybinds</label>
+                <flex_frame width="100%" expand="true" id="keybind_container" horizontal="false">
+
+                </flex_frame>
+                <label width="100%" height="40px" class="settings_section_title">Mouse</label>
                 
             </flex_frame>
         </scrollable>
+
+        <style src="templates/main.css"></style> <!-- Return back to default style for dynamically added elements-->
     </settings>
 </window>

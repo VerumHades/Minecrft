@@ -79,7 +79,7 @@ void main()
 */
 
     vec4 full_color = texture(textureArray, vec3(TexCoords, TexIndex));
-    //if(full_color.a == 0) discard;
+    if(full_color.a < 0.1) discard;
     vec3 color = full_color.rgb;
 
     vec3 normal = normalize(-Normal);
@@ -94,9 +94,9 @@ void main()
     vec3 diffuse = diff * lightColor;
 
     // calculate shadow
-    float shadow = ShadowCalculation(FragPosLightSpace);       
+    //float shadow = ShadowCalculation(FragPosLightSpace);       
     
-    vec3 lighting = (ambient + (1.0 - shadow) * (1.0 - occlusion)) * color;
+    vec3 lighting = (ambient + (1.0) * (1.0 - occlusion)) * color;
     //vec3 lighting = vec3(shadow);
 
     //vec3 lighting = (ambient + (1.0 - shadow) * 1.0) * color;

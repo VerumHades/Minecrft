@@ -26,6 +26,9 @@ class ChunkMask{
             segments[z][y] &= ~(1ULL << (size - 1 - x));
             segmentsRotated[x][y] &= ~(1ULL << (size - 1 - z));
         }
+        bool get(uint32_t x,uint32_t y,uint32_t z){
+            return segments[z][y] & (1ULL << (size - 1 - x));
+        }
 };
 
 struct DynamicChunkMaskGroup{

@@ -37,7 +37,8 @@ class KeyInputManager{
         
         void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
             if(boundKeys.count(key) == 0) return;
-            actionStates[boundKeys[key].action] = (action == GLFW_PRESS);
+            if(action == GLFW_PRESS) actionStates[boundKeys[key].action] = true;
+            else if(action == GLFW_RELEASE) actionStates[boundKeys[key].action] = false;
         }
 
         const std::unordered_map<int, Keybind>& getBoundKeys() const {return boundKeys;}

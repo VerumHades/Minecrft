@@ -70,7 +70,7 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
         break;
     }
 
-    if(getBlockType(&value).untextured) mainGroup->solidMask.reset(x,y,z);
+    if(getBlockType(&value).nonSolid) mainGroup->solidMask.reset(x,y,z);
     else mainGroup->solidMask.set(x,y,z);
 
     return true;
@@ -115,16 +115,7 @@ void Chunk::generateMesh(MultiChunkBuffer& buffer, ThreadPool& pool){
     } 
 
     if(meshGenerated){
-        if(solidMesh->getVertices().size() == 0){
-            generatedEmptyMesh = true;
-        }
-        else if(reloadMesh){
-            buffer.swapChunkMesh(*solidMesh, getWorldPosition());
-            reloadMesh = false;
-        }
-        else buffer.addChunkMesh(*solidMesh, getWorldPosition());
-        
-        solidMesh = nullptr;
+        loadMesh(buffer);
         meshGenerated = false;
         pendingUpload = false;
         return;
@@ -148,19 +139,23 @@ void Chunk::generateMesh(MultiChunkBuffer& buffer, ThreadPool& pool){
     }*/
 }
 
-void Chunk::syncGenerateMesh(MultiChunkBuffer& buffer){
-    generateMeshes();
-
+void Chunk::loadMesh(MultiChunkBuffer&  buffer){
     if(solidMesh->getVertices().size() == 0){
         generatedEmptyMesh = true;
     }
     else if(reloadMesh){
         buffer.swapChunkMesh(*solidMesh, getWorldPosition());
+        if(onMeshReloaded) onMeshReloaded();
         reloadMesh = false;
     }
     else buffer.addChunkMesh(*solidMesh, getWorldPosition());
-    
+
     solidMesh = nullptr;
+}
+
+void Chunk::syncGenerateMesh(MultiChunkBuffer& buffer){
+    generateMeshes();
+    loadMesh(buffer);
 }
 
 /*
@@ -317,6 +312,9 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
 
     float scale = CHUNK_SIZE / size;
 
+    /*
+        Mesh chunk faces
+    */
     for(int z = 0; z < size - 1;z++){
         BlockBitPlanes<size> planesXforward = {0};
         BlockBitPlanes<size> planesXbackward = {0};
@@ -345,7 +343,7 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
 
         for(auto& [key,mask]: group->masks){
             BlockType type = predefinedBlocks[mask.block.type];
-            if(type.untextured) continue;
+            if(type.nonSolid || type.billboard) continue;
             //std::cout << "Solving plane: " << i << std::endl;
             //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
 
@@ -359,7 +357,78 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
             processFaces(greedyMeshPlane<size>(planesZbackward[static_cast<size_t>(mask.block.type)]), Z, false, type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
         }
     }
+    
+    /*
+        Mesh bilboards
+    */
 
+    for(auto& [key,mask]: group->masks){
+        BlockType type = predefinedBlocks[mask.block.type];
+        if(!type.billboard) continue;
+
+        for(int x = 0;x < size;x++) for(int y = 0;y < size;y++) for(int z = 0;z < size;z++){
+            if(!mask.get(x,y,z)) continue;
+
+            int normal = 0;
+
+            float occlusion[4] = {0,0,0,0};
+            glm::vec3 worldOffset = {worldX,worldY,worldZ};
+            glm::vec3 position = {x,y,z};
+            
+            std::array<glm::vec3, 4> vertices1 = {
+                (glm::vec3(0,1,0) + position) * scale + worldOffset,
+                (glm::vec3(1,1,1) + position) * scale + worldOffset,
+                (glm::vec3(1,0,1) + position) * scale + worldOffset,
+                (glm::vec3(0,0,0) + position) * scale + worldOffset
+            };
+
+            std::array<glm::vec3, 4> vertices2 = {
+                (glm::vec3(0,1,1) + position) * scale + worldOffset,
+                (glm::vec3(1,1,0) + position) * scale + worldOffset,
+                (glm::vec3(1,0,0) + position) * scale + worldOffset,
+                (glm::vec3(0,0,1) + position) * scale + worldOffset
+            };
+            
+            solidMesh->addQuadFaceGreedy(
+                vertices1.data(),
+                normal,
+                occlusion,
+                static_cast<float>(type.textures[0]), // Texture is the first one
+                true,
+                1,1
+            );
+            solidMesh->addQuadFaceGreedy(
+                vertices1.data(),
+                normal,
+                occlusion,
+                static_cast<float>(type.textures[0]), // Texture is the first one
+                false,
+                1,1
+            );
+
+            solidMesh->addQuadFaceGreedy(
+                vertices2.data(),
+                normal,
+                occlusion,
+                static_cast<float>(type.textures[0]), // Texture is the first one
+                true,
+                1,1
+            );
+            solidMesh->addQuadFaceGreedy(
+                vertices2.data(),
+                normal,
+                occlusion,
+                static_cast<float>(type.textures[0]), // Texture is the first one
+                false,
+                1,1
+            );
+        }
+    }
+
+
+    /*
+        Mesh cross chunk faces
+    */
     BlockBitPlanes<size> planesXforward = {0};
     BlockBitPlanes<size> planesXbackward = {0};
 
@@ -436,7 +505,7 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
 
     for(auto& key: fullAgregate){
         BlockType type = predefinedBlocks[key];
-        if(type.untextured) continue;
+        if(type.nonSolid || type.billboard) continue;
 
         processFaces(greedyMeshPlane<size>(planesXforward [static_cast<size_t>(key)]), X, false, type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
         processFaces(greedyMeshPlane<size>(planesXbackward[static_cast<size_t>(key)]), X, true , type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);

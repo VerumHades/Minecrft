@@ -480,11 +480,11 @@ UITransform UILabel::getTextPosition(UIManager& manager){
     auto textPosition = getAttribute(&Style::textPosition);
 
     int tx = 0;
-    if     (textPosition == UIFrame::Style::TextPosition::LEFT  ) tx = transform.x + textPadding;
-    else if(textPosition == UIFrame::Style::TextPosition::CENTER) tx = transform.x + transform.width  / 2 - textDimensions.x / 2;
-    else if(textPosition == UIFrame::Style::TextPosition::RIGHT ) tx = transform.x + transform.width - textDimensions.x - textPadding;
+    if     (textPosition == UIFrame::Style::TextPosition::LEFT  ) tx = contentTransform.x + textPadding;
+    else if(textPosition == UIFrame::Style::TextPosition::CENTER) tx = contentTransform.x + contentTransform.width  / 2 - textDimensions.x / 2;
+    else if(textPosition == UIFrame::Style::TextPosition::RIGHT ) tx = contentTransform.x + contentTransform.width - textDimensions.x - textPadding;
 
-    int ty = transform.y + transform.height / 2 - textDimensions.y / 2;
+    int ty = contentTransform.y + contentTransform.height / 2 - textDimensions.y / 2;
 
     return {
         tx,

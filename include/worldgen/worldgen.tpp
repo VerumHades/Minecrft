@@ -14,9 +14,11 @@ void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, 
     auto group = std::make_unique<ChunkMaskGroup<size>>();
     group->masks[BlockTypes::Grass] = {BlockTypes::Grass};
     group->masks[BlockTypes::Stone] = {BlockTypes::Stone};
+    group->masks[BlockTypes::GrassBillboard] = {BlockTypes::GrassBillboard};
 
     auto& grassMask = group->masks[BlockTypes::Grass];
     auto& stoneMask = group->masks[BlockTypes::Stone];
+    auto& grassBillboardMask = group->masks[BlockTypes::GrassBillboard];
 
     int jump = CHUNK_SIZE / size;
 
@@ -32,6 +34,8 @@ void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, 
             if(top){
                 grassMask.set(x,y,z);
                 group->solidMask.set(x,y,z);
+
+                if(top && rand() % 30 == 0) grassBillboardMask.set(x,y + 1,z);
             }
             else{
                 stoneMask.set(x,y,z);

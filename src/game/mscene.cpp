@@ -82,7 +82,7 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
         "textures/birch_log_top.png",
         "textures/blue_wool.png",
         "textures/sand.png",
-        "textures/pig.png"
+        "textures/grass_bilboard.png"
     };
     
     terrainProgram.initialize();
@@ -135,25 +135,28 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     inputManager.bindKey(GLFW_KEY_A    , STRAFE_LEFT  , "Strafe left");
     inputManager.bindKey(GLFW_KEY_D    , STRAFE_RIGHT , "Strafe right");
     inputManager.bindKey(GLFW_KEY_SPACE, MOVE_UP      , "Jump");
+    inputManager.bindKey(GLFW_KEY_LEFT_SHIFT, SCROLL_ZOOM, "Hold to zoom");
 
-    auto settingsFrame = menuScene->getUILayer("settings").getElementById("controlls_frame");
+    auto settingsFrame = menuScene->getUILayer("settings").getElementById("keybind_container");
 
     for(auto& [key,action]: inputManager.getBoundKeys()){
         std::string kename = getKeyName(key,0);
 
         std::cout << kename << std::endl;
 
-        auto frame = uiManager->createElement<UIFlexFrame>();
+        auto frame = uiManager->createElement<UIFrame>();
         frame->setSize({OPERATION_MINUS,{PERCENT,100},{10}}, 40);
 
         auto name = uiManager->createElement<UILabel>();
         name->setText(action.name);
         name->setSize({PERCENT,80},40);
+        name->setPosition(0,0);
         name->setHoverable(false);
         
         auto keyname = uiManager->createElement<UILabel>();
         keyname->setText(kename);
-        keyname->setSize({PERCENT,20},40);
+        keyname->setSize({OPERATION_MINUS,{PERCENT,20},5},40);
+        keyname->setPosition({PERCENT,80},0);
         keyname->setFocusable(true);
 
         keyname->onKeyEvent = [this, key, action, keyname](GLFWwindow* window, int new_key, int /*scancode*/, int /*action*/, int /*mods*/){
@@ -165,7 +168,7 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
         };
 
         if(uiLoader->getCurrentStyle()){
-            uiLoader->getCurrentStyle()->applyTo(frame, "flex_frame", "", {"controlls_member"});
+            uiLoader->getCurrentStyle()->applyTo(frame, "frame", "", {"controlls_member"});
             uiLoader->getCurrentStyle()->applyTo(name, "label", "", {"controlls_member_name"});
             uiLoader->getCurrentStyle()->applyTo(keyname, "label", "", {"controlls_member_keyname"});
         }
@@ -204,11 +207,11 @@ void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
         camPitch = -89.0f;
 
     if(abs(lastCamPitch - camPitch) > chunkVisibilityUpdateThreshold){
-        updateVisibility = true;
+        updateVisibility = 1;
         lastCamPitch = camPitch;
     }
     if(abs(lastCamYaw - camYaw) > chunkVisibilityUpdateThreshold){
-        updateVisibility = true;
+        updateVisibility = 1;
         lastCamYaw = camYaw;
     }
 
@@ -233,7 +236,6 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
         auto chunk = world->getChunkFromBlockPosition(hit.x, hit.y, hit.z);
         if(!chunk) return;
         regenerateChunkMesh(*chunk,world->getGetChunkRelativeBlockPosition(hit.x, hit.y, hit.z));
-        
     }
     else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hit){
         CollisionCheckResult result = world->checkForPointCollision(hit.lastX, hit.lastY, hit.lastZ, 1);
@@ -274,6 +276,10 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
         lineMode = !lineMode;
         if(!lineMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+
+    if(key == GLFW_KEY_K && action == GLFW_PRESS){
+        updateVisibility = 1;
     }
 }
 
@@ -412,6 +418,8 @@ void MainScene::render(){
 
 void MainScene::regenerateChunkMesh(Chunk& chunk){
     chunk.updateMesh();
+    chunk.syncGenerateMesh(chunkBuffer);
+    this->updateVisibility = 1;
     //chunkBuffer.unloadChunkMesh(chunk.getWorldPosition());
 }
 
@@ -443,7 +451,7 @@ void MainScene::generateMeshes(){
     };
 
 
-    if(updateVisibility){
+    if(updateVisibility > 0){
         std::vector<DrawElementsIndirectCommand> drawCommands = {};
         drawCommands.reserve(20000);
         auto* drawcmdnptr = &drawCommands;
@@ -478,7 +486,7 @@ void MainScene::generateMeshes(){
         //auto start = std::chrono::high_resolution_clock::now();
 
         chunkBuffer.updateDrawCalls(drawCommands);
-        updateVisibility = false;
+        updateVisibility--;
     }
     //End time point
     //auto end = std::chrono::high_resolution_clock::now();
@@ -586,7 +594,7 @@ void MainScene::generateSurroundingChunks(){
                 });
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         std::cout << "Wating for chunks to generate... " << generatedTotal << "/" << pow(pregenDistance*2,3) << std::endl;
     }
     std::cout << "Generating meshes..." << std::endl;

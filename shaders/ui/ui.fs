@@ -26,7 +26,7 @@ void main()
     
     if(screenPos.x < clipRegion.x || screenPos.y < clipRegion.y || screenPos.x > clipRegion.z || screenPos.y > clipRegion.w) discard;
     
-    bool isBorder = TexCoords.x < borderWidth.y || TexCoords.y < borderWidth.z || TexCoords.x > 1 - borderWidth.w || TexCoords.y > 1 - borderWidth.x;
+    bool isBorder = TexCoords.x < borderWidth.w || TexCoords.y < borderWidth.z || TexCoords.x > 1 - borderWidth.y || TexCoords.y > 1 - borderWidth.x;
     
     vec4 borderColor = vec4(1.0,0,0,1.0);
 

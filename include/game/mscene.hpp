@@ -44,7 +44,7 @@ class MainScene: public Scene{
         MultiChunkBuffer chunkBuffer;
 
         std::string worldPath = "saves/worldsave.bin";
-        int renderDistance = 4;
+        int renderDistance = 8;
         int selectedBlock = 2;
 
         bool running = false;
@@ -73,7 +73,7 @@ class MainScene: public Scene{
         int lastCamYaw = 0;
         float chunkVisibilityUpdateThreshold = 10.0f;
 
-        bool updateVisibility = false;
+        int updateVisibility = 0; // If greater than 0 decreses and the chunk draw calls update
 
         enum ControllActions{
             MOVE_FORWARD,

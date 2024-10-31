@@ -49,6 +49,8 @@ class Chunk: public Volume{
         bool meshGenerated = false;
         
         std::unique_ptr<Mesh> solidMesh;
+
+        void loadMesh(MultiChunkBuffer&  buffer);
         
     public:
         //std::optional<Mesh> transparentMesh;
@@ -57,6 +59,8 @@ class Chunk: public Volume{
         bool isMeshEmpty() {return generatedEmptyMesh;}
         bool isOnFrustum(PerspectiveCamera& cam) const;
         bool needsMeshReload(){return reloadMesh;}
+
+        std::function<void(void)> onMeshReloaded;
 
         Chunk(World& world, const glm::vec3& pos);
 
