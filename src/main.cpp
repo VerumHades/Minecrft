@@ -189,15 +189,16 @@ int main() {
                     mainSceneTemp->setWorldPath(filepath);
                     s->setScene("game");
                 };
-                if(l->getCurrentStyle()){
-                    l->getCurrentStyle()->applyTo(frame, "frame", "", {"world_option"});
-                    l->getCurrentStyle()->applyTo(temp, "label", "", {"world_option_label"});
-                }
+
+                l->getCurrentStyle().applyTo(frame, "frame", "", {"world_option"});
+                l->getCurrentStyle().applyTo(temp, "label", "", {"world_option_label"});
+                
 
                 frame->appendChild(temp);
                 scrollable->appendChild(frame);
             }
-            menuScene->setUILayer("world_menu");
+            
+            scrollable->calculateTransforms();
         };
 
         auto toSettings = menuScene->getUILayer("default").getElementById("setttings");
@@ -207,6 +208,11 @@ int main() {
 
         auto backButton = menuScene->getUILayer("world_menu").getElementById("back_to_menu");
         backButton->onClicked = [menuScene, mainSceneTemp] {
+            menuScene->setUILayer("default");
+        };
+
+        auto settingsBackButton = menuScene->getUILayer("settings").getElementById("settings_back_button");
+        settingsBackButton->onClicked = [menuScene, mainSceneTemp] {
             menuScene->setUILayer("default");
         };
 

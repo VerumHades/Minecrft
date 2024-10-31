@@ -142,8 +142,6 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     for(auto& [key,action]: inputManager.getBoundKeys()){
         std::string kename = getKeyName(key,0);
 
-        std::cout << kename << std::endl;
-
         auto frame = uiManager->createElement<UIFrame>();
         frame->setSize({OPERATION_MINUS,{PERCENT,100},{10}}, 40);
 
@@ -167,16 +165,30 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
             keyname->setText(new_name);
         };
 
-        if(uiLoader->getCurrentStyle()){
-            uiLoader->getCurrentStyle()->applyTo(frame, "frame", "", {"controlls_member"});
-            uiLoader->getCurrentStyle()->applyTo(name, "label", "", {"controlls_member_name"});
-            uiLoader->getCurrentStyle()->applyTo(keyname, "label", "", {"controlls_member_keyname"});
-        }
-
+        uiLoader->getCurrentStyle().applyTo(frame, "frame", "", {"controlls_member"});
+        uiLoader->getCurrentStyle().applyTo(name, "label", "", {"controlls_member_name"});
+        uiLoader->getCurrentStyle().applyTo(keyname, "label", "", {"controlls_member_keyname"});
+        
         frame->appendChild(name);
         frame->appendChild(keyname);
         settingsFrame->appendChild(frame);
     }
+
+    menuScene->getUILayer("settings").getElementById("settings_scrollable")->calculateTransforms();
+
+    auto mouse_settings = menuScene->getUILayer("settings").getElementById("mouse_sensitivity_container");
+
+    auto sensitivity_slider = uiManager->createElement<UISlider>();
+    sensitivity_slider->setValuePointer(&sensitivity);
+    sensitivity_slider->setSize({PERCENT,60},{PERCENT,100});
+    sensitivity_slider->setPosition({PERCENT,20},0);
+    sensitivity_slider->setMin(1);
+    sensitivity_slider->setMax(100);
+    sensitivity_slider->setDisplayValue(true);
+
+    uiLoader->getCurrentStyle().applyTo(sensitivity_slider, "slider", "", {"mouse_sensitivity_slider"});
+
+    mouse_settings->appendChild(sensitivity_slider);
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
@@ -187,13 +199,15 @@ void MainScene::resize(GLFWwindow* window, int width, int height){
 }
 
 void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
-     float xoffset = (float)mouseX - lastMouseX;
+    float xoffset = (float)mouseX - lastMouseX;
     float yoffset = lastMouseY - (float)mouseY; // Reversed since y-coordinates go from bottom to top
     lastMouseX = (int)mouseX;
     lastMouseY = (int)mouseY;
 
-    xoffset *= sensitivity;
-    yoffset *= sensitivity * 2;
+    float real_sensitivity = static_cast<float>(sensitivity) / 100.0f;
+
+    xoffset *= real_sensitivity;
+    yoffset *= real_sensitivity * 2;
 
     float camYaw = camera.getYaw() + xoffset;
     float camPitch = camera.getPitch() + yoffset;

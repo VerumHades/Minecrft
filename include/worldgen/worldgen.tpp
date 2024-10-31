@@ -8,17 +8,30 @@ static inline float transcribeNoiseValue(float value, float ry){
 }
 
 template <int size>
+static inline void set(int x, int y, int z, ChunkMask<size>& solid, ChunkMask<size>& target){
+    if(x < 0 || x > size || y < 0 || y > size || z < 0 || z > size) return;
+
+    target.set(x,y,z);
+    solid.set(x,y,z);
+}
+
+template <int size>
 void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ){
     //auto start = std::chrono::high_resolution_clock::now();
 
     auto group = std::make_unique<ChunkMaskGroup<size>>();
     group->masks[BlockTypes::Grass] = {BlockTypes::Grass};
     group->masks[BlockTypes::Stone] = {BlockTypes::Stone};
+    group->masks[BlockTypes::OakLog] = {BlockTypes::OakLog};
+    group->masks[BlockTypes::LeafBlock] = {BlockTypes::LeafBlock};
     group->masks[BlockTypes::GrassBillboard] = {BlockTypes::GrassBillboard};
 
     auto& grassMask = group->masks[BlockTypes::Grass];
     auto& stoneMask = group->masks[BlockTypes::Stone];
     auto& grassBillboardMask = group->masks[BlockTypes::GrassBillboard];
+
+    auto& oaklogMask = group->masks[BlockTypes::OakLog];
+    auto& leafMask = group->masks[BlockTypes::LeafBlock];
 
     int jump = CHUNK_SIZE / size;
 
@@ -32,14 +45,18 @@ void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, 
 
         if(value > 0.5){
             if(top){
-                grassMask.set(x,y,z);
-                group->solidMask.set(x,y,z);
+                set(x,y,z,group->solidMask,grassMask);
 
                 if(top && rand() % 30 == 0) grassBillboardMask.set(x,y + 1,z);
+                else if(top && rand() % 60 == 0) {
+                    set(x,y + 1,z,group->solidMask,oaklogMask);
+                    set(x,y + 2,z,group->solidMask,oaklogMask);
+                    set(x,y + 3,z,group->solidMask,oaklogMask);
+                    set(x,y + 4,z,group->solidMask,oaklogMask);
+                } 
             }
             else{
-                stoneMask.set(x,y,z);
-                group->solidMask.set(x,y,z);
+                set(x,y,z,group->solidMask,stoneMask);
             }
             //chunk.setBlock(x,y,z, {top ? BlockTypes::Grass : BlockTypes::Stone});
 

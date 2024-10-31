@@ -127,7 +127,7 @@ void UIStyle::parseQuery(std::string type, std::string value, std::string state,
     }
 }
 
-UIStyle::UIStyle(std::string path){
+void UIStyle::loadFromFile(std::string path){
     std::ifstream f(path, std::ios::in | std::ios::binary);
 
     const auto sz = std::filesystem::file_size(path);

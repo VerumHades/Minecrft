@@ -577,6 +577,8 @@ class UIManager{
         void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods);
         void scrollEvent(GLFWwindow* window, double xoffset, double yoffset);
 
+        void resetStates(); // Resets current elements in focus and hover to be none
+
         void render();
         void setCurrentWindow(UIWindowIdentifier id);
         UIWindow& getCurrentWindow();

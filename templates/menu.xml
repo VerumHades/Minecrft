@@ -1,6 +1,8 @@
 <window>
     <default>
         <style src="templates/main.css"></style>
+        <style src="templates/settings.css"></style>
+        
         <flex_frame 
             x="50% - 50m" y="50% - 50m" 
             width="300px" height="500px" 
@@ -27,18 +29,21 @@
         </flex_frame>
     </world_menu>
     <settings>
-        <style src="templates/settings.css"></style>
-        <scrollable x="50% - 50m" width="80%" height="100%">
+        <label width="8%" height="40px" class="interactable" id="settings_back_button">Back</label>
+        <scrollable x="50% - 50m" width="80%" height="100%" id="settings_scrollable">
             <flex_frame width="100% - 40px" expand="true" class="settings_section" horizontal="false">
                 <label width="100%" height="40px" class="settings_section_title">Keybinds</label>
                 <flex_frame width="100%" expand="true" id="keybind_container" horizontal="false">
 
                 </flex_frame>
                 <label width="100%" height="40px" class="settings_section_title">Mouse</label>
-                
+                <flex_frame width="100%" expand="true" horizontal="false">
+                    <frame id="mouse_sensitivity_container" width="100%" height="40px">
+                        <label width="20%" height="100%">Sensitivity:</label>
+                        
+                    </frame>
+                </flex_frame>
             </flex_frame>
         </scrollable>
-
-        <style src="templates/main.css"></style> <!-- Return back to default style for dynamically added elements-->
     </settings>
 </window>

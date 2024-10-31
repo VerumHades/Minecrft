@@ -10,6 +10,10 @@
     background-color: rgb(6, 10, 51);
 }
 
+#settings_back_button{
+    margin: 0px;
+}
+
 .settings_section{
     margin: 10px;
 }
@@ -18,8 +22,8 @@
     margin: 5px;
 }
 
-.controlls_member_keyname{
-    
+.mouse_sensitivity_slider{
+    background-color: rgb(2, 10, 30);
 }
 
 .controlls_member_keyname:hover{

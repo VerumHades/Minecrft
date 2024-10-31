@@ -39,8 +39,10 @@ class UIStyle{
         void parseQuery(std::string type, std::string value, std::string state, std::string source);
 
     public:
-        UIStyle(std::string path);
+        UIStyle(){};
 
+        // Load style from file, new styles are addded to the registry nothing is erased
+        void loadFromFile(std::string path);
         void applyTo(
             std::shared_ptr<UIFrame> element,
             std::string tag,
@@ -51,7 +53,7 @@ class UIStyle{
 
 class UILoader{
     private:
-        std::unique_ptr<UIStyle> currentStyle;
+        UIStyle style;
         std::shared_ptr<UIFrame> createElement(tinyxml2::XMLElement* source, UILayer& layer);
         std::shared_ptr<UIFrame> processElement(tinyxml2::XMLElement* source, UILayer& layer);
 
@@ -62,7 +64,7 @@ class UILoader{
             Loads a window its layers and elements from an xml source file.
         */
         bool loadWindowFromXML(UIWindow& window, std::string path);
-        std::unique_ptr<UIStyle>& getCurrentStyle(){return currentStyle;};
+        UIStyle& getCurrentStyle() {return style;};
 };
 
 TValue parseTValue(std::string source);

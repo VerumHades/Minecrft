@@ -67,7 +67,7 @@ class MainScene: public Scene{
 
         int lastMouseX = 0;
         int lastMouseY = 0;
-        float sensitivity = 0.1f;
+        int sensitivity = 10;
 
         int lastCamPitch = 0;
         int lastCamYaw = 0;

@@ -172,15 +172,14 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
             getAttributeValue(source,"height")
         );
 
-        if(currentStyle){
-            std::vector<std::string> classes = split(optGetAttribute(source,"class"), " ");
-            currentStyle->applyTo(
-                el,
-                source->Name(),
-                optGetAttribute(source,"id"),
-                classes
-            );
-        }
+        std::vector<std::string> classes = split(optGetAttribute(source,"class"), " ");
+        style.applyTo(
+            el,
+            source->Name(),
+            optGetAttribute(source,"id"),
+            classes
+        );
+        
 
         auto id = source->Attribute("id");
         if(id) layer.addElementWithID(id, el);
@@ -199,7 +198,7 @@ std::shared_ptr<UIFrame> UILoader::processElement(XMLElement* source, UILayer& l
             return nullptr;
         }
 
-        currentStyle = std::make_unique<UIStyle>(path);
+        style.loadFromFile(path);
         
         return nullptr;
     }

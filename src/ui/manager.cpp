@@ -299,13 +299,21 @@ void UIManager::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
     update();
 }
 
-void UIManager::setCurrentWindow(UIWindowIdentifier id){
+
+void UIManager::resetStates(){
     if(underHover){
         underHover->setHover(false);
         //if(underHover->onMouseLeave) underHover->onMouseLeave(*this);
     }
+    if(inFocus){
+        inFocus->setFocus(false);
+    }
     inFocus = nullptr;
     underHover = nullptr;
+}
+
+void UIManager::setCurrentWindow(UIWindowIdentifier id){
+    resetStates();
     currentWindow = id;
     update();
 }
@@ -639,7 +647,9 @@ void UISlider::getRenderingInformation(RenderYeetFunction& yeet){
         int tx = transform.x + transform.width + valueDisplayOffset;
         int ty = transform.y + transform.height / 2 - textDimensions.y / 2;
 
-        manager.buildTextRenderingInformation(yeet,clipRegion, text,tx,ty,1,{1,1,1,1});
+        auto extendedClip = clipRegion;
+        extendedClip.max.x += textDimensions.x + valueDisplayOffset + 5;
+        manager.buildTextRenderingInformation(yeet,extendedClip, text,tx,ty,1,{255,255,255,255});
     }
 }
 
