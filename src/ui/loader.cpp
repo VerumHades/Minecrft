@@ -156,12 +156,28 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
             [source, this]() {
                 return this->manager.createElement<UIScrollableFrame>(); 
             }
+        },
+        {
+            "image",
+            [source, this]() {
+                auto img = this->manager.createElement<UIImage>();
+
+                const char* content = source->Attribute("src");
+                if(!content){
+                    std::cerr << "Image element requires a source (src)." << std::endl;
+                }
+
+                img->loadFromFile(content);
+                return img; 
+            }
         }
     };
 
     auto it = elements.find(source->Name());
     if (it != elements.end()) {
         auto el = it->second();
+        if(!el) return nullptr;
+
         el->setPosition(
             getAttributeValue(source,"x"),
             getAttributeValue(source,"y")

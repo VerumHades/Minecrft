@@ -312,7 +312,7 @@ void WorldStream::loadHeader(){
     
     header = bitworks::readValue<Header>(file_stream);
 
-    std::cout << "Table start: " << header.chunk_table_start << " Chunk data start: " << header.chunk_data_start << std::endl;
+    //std::cout << "Table start: " << header.chunk_table_start << " Chunk data start: " << header.chunk_data_start << std::endl;
 }
 
 void WorldStream::loadTable(){
@@ -327,7 +327,7 @@ void WorldStream::loadTable(){
     }
 
     size_t size = tableData.read<size_t>();
-    std::cout << "Chunks total: " << size << std::endl;
+    //std::cout << "Chunks total: " << size << std::endl;
     for(int i = 0;i < size;i++){
         glm::vec3 position = {
             tableData.read<float>(),

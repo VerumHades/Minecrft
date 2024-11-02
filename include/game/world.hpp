@@ -68,8 +68,12 @@ class WorldStream{
         bool save(Chunk& chunk);
         void load(Chunk* chunk);
         bool hasChunkAt(glm::vec3 position);
+
         int getSeed() const {return header.seed;};
         std::string getName() const {return std::string(header.name);}
+        
+        int getChunkCount() {return chunkTable.size();}
+
         void setName(std::string name) {
             if(name.length() > 256) {
                 std::cerr << "Max world name length is 256 chars" << std::endl;

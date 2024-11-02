@@ -10,6 +10,7 @@
 #include <rendering/shaders.hpp>
 #include <rendering/texture.hpp>
 #include <rendering/camera.hpp>
+#include <rendering/loading.hpp>
 
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
@@ -32,6 +33,7 @@ class MainScene: public Scene{
         ModelManager modelManager;
 
         std::unique_ptr<ThreadPool> threadPool;
+        ChunkLoadingVisualizer loadVisualizer;
 
         ShaderProgram terrainProgram;
         ShaderProgram skyboxProgram;
@@ -47,6 +49,7 @@ class MainScene: public Scene{
         int renderDistance = 8;
         int selectedBlock = 2;
 
+        bool allGenerated = false;
         bool running = false;
         int threadsStopped = 0;
         

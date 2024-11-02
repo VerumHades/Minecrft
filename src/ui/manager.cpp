@@ -500,12 +500,15 @@ UITransform UILabel::getTextPosition(UIManager& manager){
     };
 }
 
-void UIImage::getRenderingInformation(RenderYeetFunction& yeet){
+void UIImage::loadFromFile(std::string path){
     if(!loaded){
         manager.getTextures()->addTexture(path);
         loaded = true;
     }
-    
+}
+
+void UIImage::getRenderingInformation(RenderYeetFunction& yeet){
+    if(!loaded) return;
     yeet(
         UIRenderInfo::Texture(
             transform.x,transform.y,transform.width,transform.height,
@@ -692,10 +695,10 @@ void UIFlexFrame::calculateChildrenTransforms(){
 UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
     this->body = std::make_shared<UIFlexFrame>(manager);
     
-
     body->setElementDirection(UIFlexFrame::ROWS);
     body->setExpand(true);
     body->setSize({OPERATION_MINUS,{PERCENT,100},{sliderWidth}},0);
+    body->setAttribute(&UIFrame::Style::backgroundColor, {0,0,0,0});
 
     scrollable = true;
 
