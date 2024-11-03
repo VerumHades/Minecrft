@@ -94,3 +94,7 @@ bool ThreadPool::deploy(std::function<void(void)> func){
 
     return true;
 }
+
+bool ThreadPool::finished(){
+    return nextThread.size() == maxThreads && pendingJobs.empty();
+}

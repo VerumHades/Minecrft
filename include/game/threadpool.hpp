@@ -49,4 +49,6 @@ class ThreadPool{
             Deploys pending jobs if possible
         */
         void deployPendingJobs();
+
+        bool finished();
 };

@@ -349,7 +349,15 @@ void MainScene::render(){
     deltatime = (float)(current - last);
     last = current;
 
-    if(!allGenerated){return;}
+    threadPool->deployPendingJobs();
+    if(!allGenerated){
+        glDisable(GL_DEPTH_TEST);
+        glDisable( GL_CULL_FACE );
+        uiManager->getFontManager().renderText(
+            "Generating chunks: " + std::to_string(world->chunksTotal()) + "/" + std::to_string(pow((renderDistance + 1)*2+1,3)),
+        10,40, 1.0, {1.0,1.0,1.00}, testFont);
+        return;
+    }
 
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
@@ -366,7 +374,6 @@ void MainScene::render(){
     //if(boundKeys[1].isDown) accelY -= 0.0006;
 
     world->loadMeshFromQueue(chunkBuffer);
-    threadPool->deployPendingJobs();
 
     generateMeshes();
 
@@ -530,6 +537,7 @@ void MainScene::physicsUpdate(){
         current = glfwGetTime();
         deltatime = (float)(current - last);
 
+        if(!allGenerated) continue;
         //std::cout << deltatime << "/" << tickTime << std::endl;
         if(deltatime < tickTime) continue;
         last = current;
@@ -586,10 +594,6 @@ void MainScene::generateSurroundingChunks(){
         if(world->isChunkLoadable(chunkX,chunkY,chunkZ)){
             //std::cout << "Loading chunk" << std::endl;
             world->loadChunk(chunkX,chunkY,chunkZ);
-            Chunk* chunk = world->getChunk(chunkX,chunkY,chunkZ);
-            if(!chunk) continue;
-
-            chunk->asyncGenerateAsyncUploadMesh(*threadPool, true);
             generatedTotal++;
         }
     }
@@ -617,11 +621,15 @@ void MainScene::generateSurroundingChunks(){
             else if(distance < 13) level = MID_FAR;
 
             threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level, bp,gptr](){
-                Chunk* chunk = worldp->generateChunk(chunkX, chunkY, chunkZ, level);
+                worldp->generateChunk(chunkX, chunkY, chunkZ, level);
                 (*gptr)++;
             });
             //if(!success){break;}
         }
+    }
+
+    while(!threadPool->finished()){ // Wait for everything to generate
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     std::cout << "Generating meshes..." << std::endl;

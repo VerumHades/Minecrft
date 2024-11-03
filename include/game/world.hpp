@@ -127,6 +127,7 @@ class World: public Collidable{
         void drawEntities(ModelManager& manager, Camera& camera, bool depthMode  = false);
         void updateEntities();
 
+        int chunksTotal() const {return chunks.size();}
         std::vector<Entity>& getEntities() {return entities;}
 };
 #endif

@@ -261,8 +261,6 @@ void World::loadMeshFromQueue(MultiChunkBuffer&  buffer){
     if(buffer.isChunkLoaded(position)) loaded = buffer.swapChunkMesh(*mesh, position);
     else loaded = buffer.addChunkMesh(*mesh, position);
 
-    std::cout << "Loaded mesh for: " << position.x << " " << position.y << " " << position.z << std::endl;
-
     if(loaded) meshLoadingQueue.pop();
 }
 
