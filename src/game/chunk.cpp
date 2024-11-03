@@ -155,7 +155,7 @@ std::vector<Face> greedyMeshPlane(std::array<uint_t<64>, 64> rows, int size){
             'start' is 4
         */    
         uint8_t start = count_leading_zeros(row); // Find the first
-        if(start == size){
+        if(start >= size){
             currentRow++;
             continue;
         }
