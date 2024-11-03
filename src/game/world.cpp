@@ -7,13 +7,13 @@ World::World(std::string filepath){
 
 std::shared_mutex chunkGenLock;
 
-void World::generateChunk(int x, int y, int z, LODLevel lod){
+Chunk* World::generateChunk(int x, int y, int z, LODLevel lod){
     const glm::vec3 key = glm::vec3(x,y,z);
 
     {
         std::shared_lock lock(chunkGenLock);
         auto it = this->chunks.find(key);
-        if (it != this->chunks.end()) return; 
+        if (it != this->chunks.end()) return it->second.get(); 
     }
 
     std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(*this, key);
@@ -26,6 +26,8 @@ void World::generateChunk(int x, int y, int z, LODLevel lod){
     std::unique_lock lock(chunkGenLock);
     this->chunks.emplace(key, std::move(chunk));
     this->stream->save(*chunks[key]);
+
+    return this->chunks[key].get();
 }
 
 Chunk* World::getChunk(int x, int y, int z){
@@ -245,6 +247,23 @@ bool World::setBlock(int x, int y, int z, Block index){
     return true;
 }
 
+void World::addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<Mesh> mesh){
+    std::lock_guard<std::mutex> lock(meshLoadingMutex);
+    meshLoadingQueue.push({position,std::move(mesh)});
+}
+void World::loadMeshFromQueue(MultiChunkBuffer&  buffer){
+    std::lock_guard<std::mutex> lock(meshLoadingMutex);
+    if(meshLoadingQueue.empty()) return;
+    auto& [position,mesh] = meshLoadingQueue.front();
+
+    bool loaded = false;
+    
+    if(buffer.isChunkLoaded(position)) loaded = buffer.swapChunkMesh(*mesh, position);
+    else loaded = buffer.addChunkMesh(*mesh, position);
+
+    if(loaded) meshLoadingQueue.pop();
+}
+
 void World::drawEntities(ModelManager& manager, Camera& camera, bool depthMode){
     for (auto& entity: this->entities) { 
         if(entity.getModelName() == "default") continue;
@@ -312,7 +331,7 @@ void WorldStream::loadHeader(){
     
     header = bitworks::readValue<Header>(file_stream);
 
-    std::cout << "Table start: " << header.chunk_table_start << " Chunk data start: " << header.chunk_data_start << std::endl;
+    //std::cout << "Table start: " << header.chunk_table_start << " Chunk data start: " << header.chunk_data_start << std::endl;
 }
 
 void WorldStream::loadTable(){
@@ -327,7 +346,7 @@ void WorldStream::loadTable(){
     }
 
     size_t size = tableData.read<size_t>();
-    std::cout << "Chunks total: " << size << std::endl;
+    //std::cout << "Chunks total: " << size << std::endl;
     for(int i = 0;i < size;i++){
         glm::vec3 position = {
             tableData.read<float>(),

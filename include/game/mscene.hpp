@@ -10,7 +10,6 @@
 #include <rendering/shaders.hpp>
 #include <rendering/texture.hpp>
 #include <rendering/camera.hpp>
-
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
 #include <ui/loader.hpp>
@@ -47,6 +46,7 @@ class MainScene: public Scene{
         int renderDistance = 8;
         int selectedBlock = 2;
 
+        bool allGenerated = false;
         bool running = false;
         int threadsStopped = 0;
         

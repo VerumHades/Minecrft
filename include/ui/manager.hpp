@@ -391,6 +391,7 @@ class UIImage: public UIFrame{
 
     public:
         UIImage(UIManager& manager): UIFrame(manager) {}
+        void loadFromFile(std::string path);
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 };
 

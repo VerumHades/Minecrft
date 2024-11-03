@@ -68,8 +68,12 @@ class WorldStream{
         bool save(Chunk& chunk);
         void load(Chunk* chunk);
         bool hasChunkAt(glm::vec3 position);
+
         int getSeed() const {return header.seed;};
         std::string getName() const {return std::string(header.name);}
+        
+        int getChunkCount() {return chunkTable.size();}
+
         void setName(std::string name) {
             if(name.length() > 256) {
                 std::cerr << "Max world name length is 256 chars" << std::endl;
@@ -90,16 +94,27 @@ class World: public Collidable{
         std::unique_ptr<WorldStream> stream;
         WorldGenerator generator;
 
+        struct MeshLoadingMember{
+            glm::ivec3 position;
+            std::unique_ptr<Mesh> mesh;
+        };
+
+        std::mutex meshLoadingMutex;
+        std::queue<MeshLoadingMember> meshLoadingQueue;
+
     public:
         World(std::string filepath);
         Block* getBlock(int x, int y, int z);
         bool setBlock(int x, int y, int z, Block index);
 
-        void generateChunk(int x, int y, int z, LODLevel lod);
+        Chunk* generateChunk(int x, int y, int z, LODLevel lod);
 
         bool isChunkLoadable(int x, int y, int z);
         void loadChunk(int x, int y, int z);
-        
+
+        void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<Mesh> mesh);
+        void loadMeshFromQueue(MultiChunkBuffer&  buffer);
+
         Chunk* getChunk(int x, int y, int z);
         Chunk* getChunkFromBlockPosition(int x, int y, int z);
         glm::vec3 getGetChunkRelativeBlockPosition(int x, int y, int z);
@@ -112,6 +127,7 @@ class World: public Collidable{
         void drawEntities(ModelManager& manager, Camera& camera, bool depthMode  = false);
         void updateEntities();
 
+        int chunksTotal() const {return chunks.size();}
         std::vector<Entity>& getEntities() {return entities;}
 };
 #endif

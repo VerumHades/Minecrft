@@ -304,15 +304,15 @@ MultiChunkBuffer::~MultiChunkBuffer(){
     glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
 }*/
 
-void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::ivec3& pos){
-    if(loadedChunks.count(pos) != 0) return;
-    if(mesh.getVertices().size() == 0) return;
+bool MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::ivec3& pos){
+    if(loadedChunks.count(pos) != 0) return false;
+    if(mesh.getVertices().size() == 0) return false;
     
     //auto start  = std::chrono::high_resolution_clock::now();
 
     auto vertexAlloc = vertexAllocator.allocate(mesh.getVertices().size());
     auto indexAlloc = indexAllocator.allocate(mesh.getIndices().size());
-    if(vertexAlloc.failed || indexAlloc.failed) return;
+    if(vertexAlloc.failed || indexAlloc.failed) return false;
 
     size_t vertexBufferOffset = vertexAlloc.location;
     size_t indexBufferOffset = indexAlloc.location;
@@ -351,13 +351,15 @@ void MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::ivec3& pos){
 
     //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     //std::cout << "Mesh allocated and updated in: " << duration << " microseconds" << std::endl;
+    
+    return true;
 }
-void MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::ivec3& pos){
-    if(loadedChunks.count(pos) == 0) return;
+bool MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::ivec3& pos){
+    if(loadedChunks.count(pos) == 0) return false;
     
     auto vertexAlloc = vertexAllocator.allocate(mesh.getVertices().size());
     auto indexAlloc = indexAllocator.allocate(mesh.getIndices().size());
-    if(vertexAlloc.failed || indexAlloc.failed) return;
+    if(vertexAlloc.failed || indexAlloc.failed) return false;
     
     size_t vertexBufferOffset = vertexAlloc.location;
     size_t indexBufferOffset = indexAlloc.location;
@@ -397,6 +399,7 @@ void MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::ivec3& pos){
     indexAllocator.free(oldIndexBufferOffset);
 
     //updateDrawCalls();
+    return true;
 }
 void MultiChunkBuffer::unloadChunkMesh(const glm::ivec3& pos){
     if(loadedChunks.count(pos) == 0) return;

@@ -40,15 +40,9 @@ class Chunk: public Volume{
         void generateMeshes();
 
         bool generatedEmptyMesh = false;
-        bool reloadMesh = false;
-        bool pendingUpload = false;
-
         bool meshGenerating = false;
-        bool meshGenerated = false;
         
         std::unique_ptr<Mesh> solidMesh;
-
-        void loadMesh(MultiChunkBuffer&  buffer);
         
     public:
         //std::optional<Mesh> transparentMesh;
@@ -56,18 +50,30 @@ class Chunk: public Volume{
         bool isEmpty() const {return currentGroup && currentGroup->empty();}
         bool isMeshEmpty() {return generatedEmptyMesh;}
         bool isOnFrustum(PerspectiveCamera& cam) const;
-        bool needsMeshReload(){return reloadMesh;}
-
-        std::function<void(void)> onMeshReloaded;
 
         Chunk(World& world, const glm::vec3& pos);
 
         Block* getBlock(uint32_t x, uint32_t y, uint32_t z);
         bool setBlock(uint32_t x, uint32_t y, uint32_t z, Block value);
         
-        void generateMesh(MultiChunkBuffer& buffer, ThreadPool& pool);
-        void syncGenerateMesh(MultiChunkBuffer& buffer);
-        void updateMesh(); // Marks the mesh for updating
+        /*
+            Launches a thread if possible, the when the mesh is generated sends it to the worlds mesh loading queue,
+
+            ISNT RESPONSIBLE FOR ACTUALLY UPLOADING THE MESH
+        */
+        void asyncGenerateAsyncUploadMesh(ThreadPool& pool, bool reload);
+
+        /*
+            When the mesh is generated sends it to the worlds mesh loading queue,
+
+            ISNT RESPONSIBLE FOR ACTUALLY UPLOADING THE MESH
+        */
+        void syncGenerateAsyncUploadMesh();
+        
+        /*
+            Generates and uploads the newly generated chunk mesh right away
+        */
+        void syncGenerateSyncUploadMesh(MultiChunkBuffer& buffer);
 
         World& getWorld();
         const glm::ivec3& getWorldPosition(){

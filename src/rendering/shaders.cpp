@@ -1,6 +1,6 @@
 #include <rendering/shaders.hpp>
 
-uint32_t compileShader(const char* source, int type){
+uint32_t compileShader(const char* source, int type, std::string filename = ""){
     uint32_t shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
     glCompileShader(shader);
@@ -16,7 +16,7 @@ uint32_t compileShader(const char* source, int type){
         char* errorLog = (char*) calloc(maxLength, sizeof(char));
         glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]);
 
-        std::cout << "Error when compiling shader:" << errorLog << std::endl;
+        std::cout << "Error when compiling shader:" << errorLog << ((filename != "") ? "In file: " + filename : "") << std::endl;
         free(errorLog);
 
         // Provide the infolog in whatever manor you deem best.
@@ -50,7 +50,7 @@ void ShaderProgram::addShader(std::string filename, int type){
 
     file.close();  // Close the file
 
-    uint32_t shader = compileShader(source.c_str(), type);
+    uint32_t shader = compileShader(source.c_str(), type, filename);
     this->shaders.push_back(shader);
 }
 

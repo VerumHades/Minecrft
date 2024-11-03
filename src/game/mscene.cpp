@@ -316,10 +316,13 @@ void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int 
 
 void MainScene::open(GLFWwindow* window){
     running = true;
+    allGenerated = false;
 
     world = std::make_unique<World>(worldPath);
     world->getEntities().emplace_back(glm::vec3(-1,0,0), glm::vec3(0.6, 1.8, 0.6));
-    generateSurroundingChunks();
+
+    std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
+    generationThread.detach();
 
     //std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
@@ -346,6 +349,16 @@ void MainScene::render(){
     deltatime = (float)(current - last);
     last = current;
 
+    threadPool->deployPendingJobs();
+    if(!allGenerated){
+        glDisable(GL_DEPTH_TEST);
+        glDisable( GL_CULL_FACE );
+        uiManager->getFontManager().renderText(
+            "Generating chunks: " + std::to_string(world->chunksTotal()) + "/" + std::to_string(pow((renderDistance + 1)*2+1,3)),
+        10,40, 1.0, {1.0,1.0,1.00}, testFont);
+        return;
+    }
+
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 
@@ -359,6 +372,8 @@ void MainScene::render(){
     // std::cout << std::endl;
     //if(boundKeys[0].isDown) accelY += 0.0006;
     //if(boundKeys[1].isDown) accelY -= 0.0006;
+
+    world->loadMeshFromQueue(chunkBuffer);
 
     generateMeshes();
 
@@ -431,8 +446,7 @@ void MainScene::render(){
 }
 
 void MainScene::regenerateChunkMesh(Chunk& chunk){
-    chunk.updateMesh();
-    chunk.syncGenerateMesh(chunkBuffer);
+    chunk.syncGenerateSyncUploadMesh(chunkBuffer);
     this->updateVisibility = 1;
     //chunkBuffer.unloadChunkMesh(chunk.getWorldPosition());
 }
@@ -485,7 +499,7 @@ void MainScene::generateMeshes(){
                 Chunk* meshlessChunk = world->getChunk(pos.x, pos.y, pos.z);
                 if(!meshlessChunk) return;
                 if(meshlessChunk->isEmpty()) return;
-                if(meshlessChunk->needsMeshReload())  meshlessChunk->generateMesh(chunkBuffer, *threadPool);
+                //if(meshlessChunk->needsMeshReload())  meshlessChunk->asyncGenerateMesh(*threadPool, true);
                 if(meshlessChunk->isMeshEmpty()) return;
 
                 drawcmdnptr->push_back(this->chunkBuffer.getCommandFor(pos));
@@ -523,6 +537,7 @@ void MainScene::physicsUpdate(){
         current = glfwGetTime();
         deltatime = (float)(current - last);
 
+        if(!allGenerated) continue;
         //std::cout << deltatime << "/" << tickTime << std::endl;
         if(deltatime < tickTime) continue;
         last = current;
@@ -570,60 +585,70 @@ void MainScene::generateSurroundingChunks(){
     int generatedTotal = 0;
     int* gptr = &generatedTotal;
 
-    bool notAllGenerated = true;
-    while(notAllGenerated){
-        notAllGenerated = false;
-        for(int x = -pregenDistance; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
-            int chunkX = camWorldX + x;
-            int chunkY = camWorldY + y;
-            int chunkZ = camWorldZ + z;
+    for(int x = -pregenDistance ; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
+        int chunkX = camWorldX + x;
+        int chunkY = camWorldY + y;
+        int chunkZ = camWorldZ + z;
 
             //if(chunkY > 4) return;
-
-            Chunk* meshlessChunk = world->getChunk(chunkX, chunkY, chunkZ);
-            if(!meshlessChunk){
-                notAllGenerated = true;
-                //meshlessChunk = world->generateAndGetChunk(chunkX, chunkY, chunkZ);
-
-                if(world->isChunkLoadable(chunkX,chunkY,chunkZ)){
-                    //std::cout << "Loading chunk" << std::endl;
-                    world->loadChunk(chunkX,chunkY,chunkZ);
-                    generatedTotal++;
-                    continue;
-                }
-
-                World* worldp = world.get();
-                auto* bp = &chunkBuffer;
-                //std::cout << "Generating chunk" << std::endl;
-
-                LODLevel level = FAR;
-                float distance = glm::length(glm::vec3(x,y,z));
-                if(distance < 6 ) level = CLOSE;
-                else if(distance < 10 ) level = MID;
-                else if(distance < 13) level = MID_FAR;
-
-                bool success = threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level, bp,gptr](){
-                    worldp->generateChunk(chunkX, chunkY, chunkZ, level);
-                    (*gptr)++;
-                });
-            }
+        if(world->isChunkLoadable(chunkX,chunkY,chunkZ)){
+            //std::cout << "Loading chunk" << std::endl;
+            world->loadChunk(chunkX,chunkY,chunkZ);
+            generatedTotal++;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        std::cout << "Wating for chunks to generate... " << generatedTotal << "/" << pow(pregenDistance*2,3) << std::endl;
     }
+
+
+    World* worldp = world.get();
+    auto* bp = &chunkBuffer;
+        
+    for(int x = -pregenDistance ; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
+        int chunkX = camWorldX + x;
+        int chunkY = camWorldY + y;
+        int chunkZ = camWorldZ + z;
+
+        //if(chunkY > 4) return;
+
+        Chunk* meshlessChunk = world->getChunk(chunkX, chunkY, chunkZ);
+        if(!meshlessChunk){
+            //meshlessChunk = world->generateAndGetChunk(chunkX, chunkY, chunkZ);
+            //std::cout << "Generating chunk" << std::endl;
+
+            LODLevel level = FAR;
+            float distance = glm::length(glm::vec3(x,y,z));
+            if(distance < 6 ) level = CLOSE;
+            else if(distance < 10 ) level = MID;
+            else if(distance < 13) level = MID_FAR;
+
+            threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level, bp,gptr](){
+                worldp->generateChunk(chunkX, chunkY, chunkZ, level);
+                (*gptr)++;
+            });
+            //if(!success){break;}
+        }
+    }
+
+    while(!threadPool->finished()){ // Wait for everything to generate
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
     std::cout << "Generating meshes..." << std::endl;
     for(int x = -renderDistance; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
         int chunkX = camWorldX + x;
         int chunkY = camWorldY + y;
         int chunkZ = camWorldZ + z;
         
-        Chunk* meshlessChunk = world->getChunk(chunkX, chunkY, chunkZ);
-        if(!meshlessChunk){
-            std::cout << "Thats a bug mate!" << std::endl;
-            continue;
-        }
-        meshlessChunk->syncGenerateMesh(chunkBuffer);
+        threadPool->deploy([worldp,chunkX,chunkY,chunkZ, bp,gptr](){
+            Chunk* chunk = worldp->getChunk(chunkX, chunkY, chunkZ);
+            if(!chunk){
+                std::cerr << "Wtf?" << std::endl;
+                return;
+            }
+            chunk->syncGenerateAsyncUploadMesh();
+        });
     }
+    
+    allGenerated = true;
 }
 
 void UIAllocatorVisualizer::getRenderingInformation(RenderYeetFunction& yeet){
