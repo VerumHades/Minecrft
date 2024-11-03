@@ -182,7 +182,7 @@ int main() {
                 frame->setSize({PERCENT,80}, 200);
                 auto temp = s->getUIManager().createElement<UILabel>();
                 temp->setText(stream.getName());
-                temp->setSize({PERCENT,100},40);
+                temp->setSize({PERCENT,100}, 40);
                 temp->setHoverable(false);
 
                 frame->onClicked = [menuScene, mainSceneTemp, filepath] {

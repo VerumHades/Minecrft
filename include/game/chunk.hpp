@@ -34,10 +34,8 @@ class Chunk: public Volume{
     private:
         glm::ivec3 worldPosition = glm::ivec3(0,0,0);
         World& world; 
-        //Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {};
-        std::unique_ptr<DynamicChunkMaskGroup> currentGroup = {};
-        //unsigned char lightArray[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE][3];
-        //std::unique_ptr<ChunkTreeNode> rootNode = std::make_unique<ChunkTreeNode>();
+        
+        std::unique_ptr<DynamicChunkContents> currentGroup = {};
         
         void generateMeshes();
 
@@ -81,8 +79,8 @@ class Chunk: public Volume{
         template <int size>
         ChunkMaskGroup<size>* getMainGroupAs() { return static_cast<ChunkMaskGroup<size>*>(currentGroup.get()); }
 
-        std::unique_ptr<DynamicChunkMaskGroup>& getMainGroup() {return currentGroup;}
-        void setMainGroup(std::unique_ptr<DynamicChunkMaskGroup> group) {this->currentGroup = std::move(group);}
+        std::unique_ptr<DynamicChunkContents>& getMainGroup() {return currentGroup;}
+        void setMainGroup(std::unique_ptr<DynamicChunkContents> group) {this->currentGroup = std::move(group);}
 }; 
 
 struct Face{

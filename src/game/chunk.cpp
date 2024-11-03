@@ -32,10 +32,10 @@ Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     auto mainGroup = getMainGroupAs<64>();
     
     for(auto& [key,mask]: mainGroup->masks){
-        uint64_t row = mask.segments[z][y];
+        uint64_t row = mask.getAt(z,y);
 
         if(row & checkMask){
-            return &mask.block;
+            return &mask.getBlock();
         }
     }
 
@@ -54,24 +54,24 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     if(value.type != BlockTypes::Air){
         if(mainGroup->masks.count(value.type) == 0){
             mainGroup->masks[value.type] = {};
-            mainGroup->masks[value.type].block = value;
+            mainGroup->masks[value.type].getBlock() = value;
         }
 
         mainGroup->masks[value.type].set(x,y,z);
     }
 
     for(auto& [key,mask]: mainGroup->masks){
-        uint64_t row = mask.segments[z][y];
+        uint64_t row = mask.getAt(z,y);
 
         if(!(row & currentMask)) continue;
-        if(mask.block.type == value.type) continue;
+        if(mask.getBlock().type == value.type) continue;
 
         mask.reset(x,y,z);
         break;
     }
 
-    if(getBlockType(&value).nonSolid) mainGroup->solidMask.reset(x,y,z);
-    else mainGroup->solidMask.set(x,y,z);
+    if(getBlockType(&value).solid) mainGroup->solidMask.set(x,y,z);
+    else mainGroup->solidMask.reset(x,y,z);
 
     return true;
 }
@@ -161,20 +161,30 @@ void Chunk::syncGenerateMesh(MultiChunkBuffer& buffer){
 /*
     Generate greedy meshed faces from a plane of bits
 */
-template <int size>
-std::vector<Face> greedyMeshPlane(std::array<uint_t<size>, size> rows){
+std::vector<Face> greedyMeshPlane(std::array<uint_t<64>, 64> rows, int size){
     std::vector<Face> out = {};
+
+    /*
+        Moves bits to from the right to the left
+
+        if size = 4
+        00001111
+        then it gets converted to this for meshing (because count_leading_zeros starts from the left )
+        11110000
+    */
+    int size_to_real_size_adjustment = 64 - size;
+    for(int i = 0;i < size;i++) rows[i] <<= size_to_real_size_adjustment;
 
     int currentRow = 0;
     
     while(currentRow < size){
-        uint_t<size> row = rows[currentRow];
+        uint_t<64> row = rows[currentRow];
         /*
             0b00001101
 
             'start' is 4
         */    
-        uint8_t start = count_leading_zeros<uint_t<size>>(row); // Find the first
+        uint8_t start = count_leading_zeros(row); // Find the first
         if(start == size){
             currentRow++;
             continue;
@@ -186,7 +196,7 @@ std::vector<Face> greedyMeshPlane(std::array<uint_t<size>, size> rows){
             'width' is 2
         */    
         row <<= start; // Shift so the faces start
-        uint8_t width = count_leading_zeros<uint_t<size>>(~row); // Calculate width (negated counts '1') 
+        uint8_t width = count_leading_zeros(~row); // Calculate width (negated counts '1') 
         row >>= start; // Return to original position
 
         /*
@@ -199,7 +209,7 @@ std::vector<Face> greedyMeshPlane(std::array<uint_t<size>, size> rows){
 
                 4. 0b00001100 AND with the row to create the faces mask
         */
-        uint_t<size> mask = ~0ULL;
+        uint_t<64> mask = ~0ULL;
 
         //  Shifting by 64 is undefined behaviour for some reason ¯\_(ツ)_/¯
         if((start + width) != size) mask = ~(mask >> (start + width));
@@ -229,11 +239,10 @@ std::vector<Face> greedyMeshPlane(std::array<uint_t<size>, size> rows){
 
 */
 
-template <int size>
-static inline std::unordered_set<BlockTypes> mergeMaskKeys(const std::unordered_map<BlockTypes, ChunkMask<size>>& a, const std::unordered_map<BlockTypes, ChunkMask<size>>& b){
+static inline std::unordered_set<BlockTypes> mergeMaskKeys(const std::unordered_set<BlockTypes>& a, const std::unordered_set<BlockTypes>& b){
     std::unordered_set<BlockTypes> out;
-    for(auto& [key,_]: a) out.emplace(key);
-    for(auto& [key,_]: b) out.emplace(key);
+    for(auto& key: a) out.emplace(key);
+    for(auto& key: b) out.emplace(key);
     return out;
 }
 
@@ -302,59 +311,63 @@ static inline void processFaces(std::vector<Face> faces, FaceDirection direction
     }
 }   
 
-template <int size>
-std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, ChunkMaskGroup<size>* group){
+std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, DynamicChunkContents* group){
     auto solidMesh = std::make_unique<Mesh>();
     //this->solidMesh->setVertexFormat(VertexFormat({3,1,2,1,1}));  // Unused
     float worldX = worldPosition.x * CHUNK_SIZE;
     float worldY = worldPosition.y * CHUNK_SIZE;
     float worldZ = worldPosition.z * CHUNK_SIZE;
 
+    int size = group->getSize();
     float scale = CHUNK_SIZE / size;
+
+    auto groupMaskTypes = group->getMaskTypes();
 
     /*
         Mesh chunk faces
     */
     for(int z = 0; z < size - 1;z++){
-        BlockBitPlanes<size> planesXforward = {0};
-        BlockBitPlanes<size> planesXbackward = {0};
+        BlockBitPlanes<64> planesXforward = {0};
+        BlockBitPlanes<64> planesXbackward = {0};
 
-        BlockBitPlanes<size> planesYforward = {0};
-        BlockBitPlanes<size> planesYbackward = {0};
+        BlockBitPlanes<64> planesYforward = {0};
+        BlockBitPlanes<64> planesYbackward = {0};
 
-        BlockBitPlanes<size> planesZforward = {0};
-        BlockBitPlanes<size> planesZbackward = {0};
+        BlockBitPlanes<64> planesZforward = {0};
+        BlockBitPlanes<64> planesZbackward = {0};
         
         for(int y = 0;y < size;y++){
-            for(auto& [key,mask]: group->masks){
-                uint_t<size> allFacesX = (mask.segmentsRotated[z][y] | mask.segmentsRotated[z + 1][y]) & (group->solidMask.segmentsRotated[z][y] ^ group->solidMask.segmentsRotated[z + 1][y]);
-                planesXforward[ (size_t) mask.block.type][y] = group->solidMask.segmentsRotated[z][y] & allFacesX;
-                planesXbackward[(size_t) mask.block.type][y] = group->solidMask.segmentsRotated[z + 1][y] & allFacesX;
+            for(auto& key: groupMaskTypes){
+                auto& mask = group->getMask(key);
 
-                uint_t<size> allFacesY = (mask.segments[y][z] | mask.segments[y][z + 1]) & (group->solidMask.segments[y][z] ^ group->solidMask.segments[y][z + 1]);
-                planesYforward[ (size_t) mask.block.type][y] = group->solidMask.segments[y][z] & allFacesY;
-                planesYbackward[(size_t) mask.block.type][y] = group->solidMask.segments[y][z + 1] & allFacesY;
+                uint_t<64> allFacesX = (mask.getRotatedAt(z,y) | mask.getRotatedAt(z + 1,y)) & (group->getSolidMask().getRotatedAt(z,y) ^ group->getSolidMask().getRotatedAt(z + 1,y));
+                planesXforward[ (size_t) mask.getBlock().type][y] = group->getSolidMask().getRotatedAt(z,y) & allFacesX;
+                planesXbackward[(size_t) mask.getBlock().type][y] = group->getSolidMask().getRotatedAt(z + 1,y) & allFacesX;
 
-                uint_t<size> allFacesZ = (mask.segments[z][y] | mask.segments[z + 1][y]) & (group->solidMask.segments[z][y] ^ group->solidMask.segments[z + 1][y]);
-                planesZforward[ (size_t) mask.block.type][y] = group->solidMask.segments[z][y] & allFacesZ;
-                planesZbackward[(size_t) mask.block.type][y] = group->solidMask.segments[z + 1][y] & allFacesZ;
+                uint_t<64> allFacesY = (mask.getAt(y,z) | mask.getAt(y,z + 1)) & (group->getSolidMask().getAt(y,z) ^ group->getSolidMask().getAt(y,z + 1));
+                planesYforward[ (size_t) mask.getBlock().type][y] = group->getSolidMask().getAt(y,z) & allFacesY;
+                planesYbackward[(size_t) mask.getBlock().type][y] = group->getSolidMask().getAt(y,z + 1) & allFacesY;
+
+                uint_t<46> allFacesZ = (mask.getAt(z,y) | mask.getAt(z + 1,y)) & (group->getSolidMask().getAt(z,y) ^ group->getSolidMask().getAt(z + 1,y));
+                planesZforward[ (size_t) mask.getBlock().type][y] = group->getSolidMask().getAt(z,y) & allFacesZ;
+                planesZbackward[(size_t) mask.getBlock().type][y] = group->getSolidMask().getAt(z + 1,y) & allFacesZ;
             }
         }
 
-        for(auto& [key,mask]: group->masks){
-            BlockType type = predefinedBlocks[mask.block.type];
-            if(type.nonSolid || type.billboard) continue;
+        for(auto& key: groupMaskTypes){
+            BlockType type = predefinedBlocks[key];
+            if(!type.solid || type.billboard) continue;
             //std::cout << "Solving plane: " << i << std::endl;
             //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
 
-            processFaces(greedyMeshPlane<size>(planesXforward [static_cast<size_t>(mask.block.type)]), X, true , type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
-            processFaces(greedyMeshPlane<size>(planesXbackward[static_cast<size_t>(mask.block.type)]), X, false, type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
+            processFaces(greedyMeshPlane(planesXforward [static_cast<size_t>(key)], size), X, true , type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
+            processFaces(greedyMeshPlane(planesXbackward[static_cast<size_t>(key)], size), X, false, type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
 
-            processFaces(greedyMeshPlane<size>(planesYforward [static_cast<size_t>(mask.block.type)]), Y, true , type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
-            processFaces(greedyMeshPlane<size>(planesYbackward[static_cast<size_t>(mask.block.type)]), Y, false, type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
+            processFaces(greedyMeshPlane(planesYforward [static_cast<size_t>(key)], size), Y, true , type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
+            processFaces(greedyMeshPlane(planesYbackward[static_cast<size_t>(key)], size), Y, false, type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
 
-            processFaces(greedyMeshPlane<size>(planesZforward [static_cast<size_t>(mask.block.type)]), Z, true , type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
-            processFaces(greedyMeshPlane<size>(planesZbackward[static_cast<size_t>(mask.block.type)]), Z, false, type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
+            processFaces(greedyMeshPlane(planesZforward [static_cast<size_t>(key)], size), Z, true , type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
+            processFaces(greedyMeshPlane(planesZbackward[static_cast<size_t>(key)], size), Z, false, type, solidMesh.get(), worldX, worldY, worldZ, z, scale);
         }
     }
     
@@ -362,8 +375,10 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
         Mesh bilboards
     */
 
-    for(auto& [key,mask]: group->masks){
-        BlockType type = predefinedBlocks[mask.block.type];
+    for(auto& key: groupMaskTypes){
+        auto& mask = group->getMask(key);
+
+        BlockType type = predefinedBlocks[mask.getBlock().type];
         if(!type.billboard) continue;
 
         for(int x = 0;x < size;x++) for(int y = 0;y < size;y++) for(int z = 0;z < size;z++){
@@ -429,14 +444,14 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
     /*
         Mesh cross chunk faces
     */
-    BlockBitPlanes<size> planesXforward = {0};
-    BlockBitPlanes<size> planesXbackward = {0};
+    BlockBitPlanes<64> planesXforward = {0};
+    BlockBitPlanes<64> planesXbackward = {0};
 
-    BlockBitPlanes<size> planesYforward = {0};
-    BlockBitPlanes<size> planesYbackward = {0};
+    BlockBitPlanes<64> planesYforward = {0};
+    BlockBitPlanes<64> planesYbackward = {0};
 
-    BlockBitPlanes<size> planesZforward = {0};
-    BlockBitPlanes<size> planesZbackward = {0};
+    BlockBitPlanes<64> planesZforward = {0};
+    BlockBitPlanes<64> planesZbackward = {0};
     
 
     Chunk* nextX = world.getChunk(worldPosition.x - 1,worldPosition.y,worldPosition.z);
@@ -444,7 +459,7 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
     Chunk* nextZ = world.getChunk(worldPosition.x,worldPosition.y,worldPosition.z - 1);
 
     if(!nextX || !nextY || !nextZ){
-        std::cout << "Mesh generating when chunks are missing?" << std::endl;
+        std::cerr << "Mesh generating when chunks are missing?" << std::endl;
         return solidMesh;
     }
 
@@ -453,17 +468,17 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
         return solidMesh;
     }
 
-    const ChunkMask<size>& nextXSolid = nextX->getMainGroupAs<size>()->solidMask;
-    const ChunkMask<size>& nextYSolid = nextY->getMainGroupAs<size>()->solidMask;
-    const ChunkMask<size>& nextZSolid = nextZ->getMainGroupAs<size>()->solidMask;
+    DynamicChunkMask& nextXSolid = nextX->getMainGroup()->getSolidMask();
+    DynamicChunkMask& nextYSolid = nextY->getMainGroup()->getSolidMask();
+    DynamicChunkMask& nextZSolid = nextZ->getMainGroup()->getSolidMask();
 
-    auto& nextXmasks = nextX->getMainGroupAs<size>()->masks;
-    auto& nextYmasks = nextY->getMainGroupAs<size>()->masks;
-    auto& nextZmasks = nextZ->getMainGroupAs<size>()->masks;
+    auto& nextXGroup = nextX->getMainGroup();
+    auto& nextYGroup = nextY->getMainGroup();
+    auto& nextZGroup = nextZ->getMainGroup();
     
-    std::unordered_set<BlockTypes> agregateTypesX = mergeMaskKeys(group->masks,nextXmasks);
-    std::unordered_set<BlockTypes> agregateTypesY = mergeMaskKeys(group->masks,nextYmasks);
-    std::unordered_set<BlockTypes> agregateTypesZ = mergeMaskKeys(group->masks,nextZmasks);
+    std::unordered_set<BlockTypes> agregateTypesX = mergeMaskKeys(groupMaskTypes,nextXGroup->getMaskTypes());
+    std::unordered_set<BlockTypes> agregateTypesY = mergeMaskKeys(groupMaskTypes,nextYGroup->getMaskTypes());
+    std::unordered_set<BlockTypes> agregateTypesZ = mergeMaskKeys(groupMaskTypes,nextZGroup->getMaskTypes());
 
     std::unordered_set<BlockTypes> fullAgregate;
     fullAgregate.insert(agregateTypesX.begin(),agregateTypesX.end());
@@ -472,49 +487,49 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
 
     for(int y = 0;y < size;y++){
         for(auto& key: agregateTypesX){
-            const uint64_t localMaskRow = group->masks.count(key) != 0 ? group->masks.at(key).segmentsRotated[0] [y] : 0ULL;
-            const uint64_t otherMaskRow = nextXmasks.count(key)   != 0 ? nextXmasks.at(key).segmentsRotated[size - 1][y]   : 0ULL;
+            const uint64_t localMaskRow = group->hasMask(key)     ? group->getMask(key).getRotatedAt(0,y) : 0ULL;
+            const uint64_t otherMaskRow = nextXGroup->hasMask(key) ? nextXGroup->getMask(key).getRotatedAt(size - 1,y)   : 0ULL;
             
-            uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (group->solidMask.segmentsRotated[0][y] ^ nextXSolid.segmentsRotated[size - 1][y]);
+            uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (group->getSolidMask().getRotatedAt(0,y) ^ nextXSolid.getRotatedAt(size - 1,y));
 
-            planesXforward[ (size_t)key][y] =  group->solidMask.segmentsRotated[0][y] & allFacesX;
-            planesXbackward[(size_t)key][y] =  nextXSolid.segmentsRotated[size - 1][y] & allFacesX;
+            planesXforward[ (size_t)key][y] =  group->getSolidMask().getRotatedAt(0,y) & allFacesX;
+            planesXbackward[(size_t)key][y] =  nextXSolid.getRotatedAt(size - 1,y) & allFacesX;
         }
 
         for(auto& key: agregateTypesY){
-            const uint64_t localMaskRow = group->masks.count(key) != 0 ? group->masks.at(key).segments[y] [0] : 0ULL;
-            const uint64_t otherMaskRow = nextYmasks.count(key)   != 0 ? nextYmasks.at(key).segments[y][size - 1]   : 0ULL;
+            const uint64_t localMaskRow = group->hasMask(key)     ? group->getMask(key).getAt(y,0) : 0ULL;
+            const uint64_t otherMaskRow = nextYGroup->hasMask(key) ? nextYGroup->getMask(key).getAt(y,size - 1)   : 0ULL;
             
-            uint64_t allFacesY =  (localMaskRow | otherMaskRow) & (group->solidMask.segments[y][0] ^ nextYSolid.segments[y][size - 1]);
+            uint64_t allFacesY =  (localMaskRow | otherMaskRow) & (group->getSolidMask().getAt(y,0) ^ nextYSolid.getAt(y,size - 1));
 
-            planesYforward[ (size_t) key][y] = group->solidMask.segments[y][0] & allFacesY;
-            planesYbackward[(size_t) key][y] = nextYSolid.segments[y][size - 1] & allFacesY;
+            planesYforward[ (size_t) key][y] = group->getSolidMask().getAt(y,0) & allFacesY;
+            planesYbackward[(size_t) key][y] = nextYSolid.getAt(y,size - 1) & allFacesY;
         }
 
         for(auto& key: agregateTypesZ){
-            const uint64_t localMaskRow = group->masks.count(key) != 0 ? group->masks.at(key).segments[0] [y] : 0ULL;
-            const uint64_t otherMaskRow = nextZmasks.count(key)   != 0 ? nextZmasks.at(key).segments[size - 1][y]   : 0ULL;
+            const uint64_t localMaskRow = group->hasMask(key)     ? group->getMask(key).getAt(0,y) : 0ULL;
+            const uint64_t otherMaskRow = nextZGroup->hasMask(key) ? nextZGroup->getMask(key).getAt(size - 1,y)   : 0ULL;
             
 
-            uint64_t allFacesZ =  (localMaskRow | otherMaskRow) & (group->solidMask.segments[0][y] ^ nextZSolid.segments[size - 1][y]);
+            uint64_t allFacesZ =  (localMaskRow | otherMaskRow) & (group->getSolidMask().getAt(0,y) ^ nextZSolid.getAt(size - 1,y));
                 
-            planesZforward[ (size_t) key][y] =  group->solidMask.segments[0][y] & allFacesZ;
-            planesZbackward[(size_t) key][y] =  nextZSolid.segments[size - 1][y] & allFacesZ;
+            planesZforward[ (size_t) key][y] =  group->getSolidMask().getAt(0,y) & allFacesZ;
+            planesZbackward[(size_t) key][y] =  nextZSolid.getAt(size - 1,y) & allFacesZ;
         }
     }
 
     for(auto& key: fullAgregate){
         BlockType type = predefinedBlocks[key];
-        if(type.nonSolid || type.billboard) continue;
+        if(!type.solid || type.billboard) continue;
 
-        processFaces(greedyMeshPlane<size>(planesXforward [static_cast<size_t>(key)]), X, false, type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
-        processFaces(greedyMeshPlane<size>(planesXbackward[static_cast<size_t>(key)]), X, true , type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
+        processFaces(greedyMeshPlane(planesXforward [static_cast<size_t>(key)], size), X, false, type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
+        processFaces(greedyMeshPlane(planesXbackward[static_cast<size_t>(key)], size), X, true , type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
 
-        processFaces(greedyMeshPlane<size>(planesYforward [static_cast<size_t>(key)]), Y, false, type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
-        processFaces(greedyMeshPlane<size>(planesYbackward[static_cast<size_t>(key)]), Y, true , type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
+        processFaces(greedyMeshPlane(planesYforward [static_cast<size_t>(key)], size), Y, false, type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
+        processFaces(greedyMeshPlane(planesYbackward[static_cast<size_t>(key)], size), Y, true , type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
 
-        processFaces(greedyMeshPlane<size>(planesZforward [static_cast<size_t>(key)]), Z, false, type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
-        processFaces(greedyMeshPlane<size>(planesZbackward[static_cast<size_t>(key)]), Z, true , type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
+        processFaces(greedyMeshPlane(planesZforward [static_cast<size_t>(key)], size), Z, false, type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
+        processFaces(greedyMeshPlane(planesZbackward[static_cast<size_t>(key)], size), Z, true , type, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
     }
     //std::cout << "Vertices:" << solidMesh.get()->getIndices().size() << std::endl;
 
@@ -523,11 +538,7 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
 
 void Chunk::generateMeshes(){
     //std::cout << "Generating mesh for: " << getMainGroup()->getSize() << " " << isMainGroupOfSize(64) << " " << isMainGroupOfSize(32) << std::endl;
-    if     (isMainGroupOfSize(64)) solidMesh = generateChunkMesh<64>(world, worldPosition, getMainGroupAs<64>());
-    else if(isMainGroupOfSize(32)) solidMesh = generateChunkMesh<32>(world, worldPosition, getMainGroupAs<32>());
-    else if(isMainGroupOfSize(16)) solidMesh = generateChunkMesh<16>(world, worldPosition, getMainGroupAs<16>());
-    else if(isMainGroupOfSize(8))  solidMesh = generateChunkMesh<8> (world, worldPosition, getMainGroupAs<8> ());
-    else solidMesh = std::make_unique<Mesh>(); // Fall back to empty;
+    solidMesh = generateChunkMesh(world, worldPosition, getMainGroup().get());
 }
 
 static inline bool isOnOrForwardPlane(const Plane& plane, glm::vec3 center){

@@ -36,16 +36,16 @@ typedef struct Block{
 
 struct BlockType {
     bool transparent = false;
-    bool nonSolid = false;
+    bool solid = false;
     bool repeatTexture = false;
     bool billboard = false;
     std::vector<unsigned char> textures = {};
     std::vector<RectangularCollider> colliders = {{0, 0, 0, 1.0f, 1.0f, 1.0f}};
 
     // Constructor for convenience
-    BlockType(bool transparent = false, bool nonSolid = false, bool billboard = false, bool repeatTexture = false,
+    BlockType(bool transparent = false, bool solid = false, bool billboard = false, bool repeatTexture = false,
               std::vector<unsigned char> textures = {}, std::vector<RectangularCollider> colliders = {})
-        : transparent(transparent), nonSolid(nonSolid), repeatTexture(repeatTexture),
+        : transparent(transparent), solid(solid), repeatTexture(repeatTexture),
           textures(std::move(textures)), billboard(billboard) {}
 };
 
