@@ -321,7 +321,6 @@ void MainScene::open(GLFWwindow* window){
     world = std::make_unique<World>(worldPath);
     world->getEntities().emplace_back(glm::vec3(-1,0,0), glm::vec3(0.6, 1.8, 0.6));
 
-    loadVisualizer.setup(camera.getScreenWidth(), camera.getScreenHeight());
     std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
     generationThread.detach();
 
@@ -350,14 +349,7 @@ void MainScene::render(){
     deltatime = (float)(current - last);
     last = current;
 
-
-    if(!allGenerated){
-        glEnable(GL_DEPTH_TEST);
-        glDisable( GL_CULL_FACE );
-
-        loadVisualizer.render(renderDistance);
-        return;
-    }
+    if(!allGenerated){return;}
 
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
@@ -372,6 +364,9 @@ void MainScene::render(){
     // std::cout << std::endl;
     //if(boundKeys[0].isDown) accelY += 0.0006;
     //if(boundKeys[1].isDown) accelY -= 0.0006;
+
+    world->loadMeshFromQueue(chunkBuffer);
+    threadPool->deployPendingJobs();
 
     generateMeshes();
 
@@ -444,8 +439,7 @@ void MainScene::render(){
 }
 
 void MainScene::regenerateChunkMesh(Chunk& chunk){
-    chunk.updateMesh();
-    chunk.syncGenerateMesh(chunkBuffer);
+    chunk.syncGenerateSyncUploadMesh(chunkBuffer);
     this->updateVisibility = 1;
     //chunkBuffer.unloadChunkMesh(chunk.getWorldPosition());
 }
@@ -498,7 +492,7 @@ void MainScene::generateMeshes(){
                 Chunk* meshlessChunk = world->getChunk(pos.x, pos.y, pos.z);
                 if(!meshlessChunk) return;
                 if(meshlessChunk->isEmpty()) return;
-                if(meshlessChunk->needsMeshReload())  meshlessChunk->generateMesh(chunkBuffer, *threadPool);
+                //if(meshlessChunk->needsMeshReload())  meshlessChunk->asyncGenerateMesh(*threadPool, true);
                 if(meshlessChunk->isMeshEmpty()) return;
 
                 drawcmdnptr->push_back(this->chunkBuffer.getCommandFor(pos));
@@ -583,7 +577,7 @@ void MainScene::generateSurroundingChunks(){
     int generatedTotal = 0;
     int* gptr = &generatedTotal;
 
-    for(int x = -pregenDistance +1; x <= pregenDistance; x++) for(int y = -pregenDistance+1; y <= pregenDistance; y++) for(int z = -pregenDistance+1; z <= pregenDistance; z++){
+    for(int x = -pregenDistance ; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
         int chunkX = camWorldX + x;
         int chunkY = camWorldY + y;
         int chunkZ = camWorldZ + z;
@@ -592,12 +586,19 @@ void MainScene::generateSurroundingChunks(){
         if(world->isChunkLoadable(chunkX,chunkY,chunkZ)){
             //std::cout << "Loading chunk" << std::endl;
             world->loadChunk(chunkX,chunkY,chunkZ);
-            loadVisualizer.addChunk({chunkX,chunkY,chunkZ});
+            Chunk* chunk = world->getChunk(chunkX,chunkY,chunkZ);
+            if(!chunk) continue;
+
+            chunk->asyncGenerateAsyncUploadMesh(*threadPool, true);
             generatedTotal++;
         }
     }
 
-    for(int x = -pregenDistance +1; x <= pregenDistance; x++) for(int y = -pregenDistance+1; y <= pregenDistance; y++) for(int z = -pregenDistance+1; z <= pregenDistance; z++){
+
+    World* worldp = world.get();
+    auto* bp = &chunkBuffer;
+        
+    for(int x = -pregenDistance ; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
         int chunkX = camWorldX + x;
         int chunkY = camWorldY + y;
         int chunkZ = camWorldZ + z;
@@ -607,10 +608,6 @@ void MainScene::generateSurroundingChunks(){
         Chunk* meshlessChunk = world->getChunk(chunkX, chunkY, chunkZ);
         if(!meshlessChunk){
             //meshlessChunk = world->generateAndGetChunk(chunkX, chunkY, chunkZ);
-
-            World* worldp = world.get();
-            auto* bp = &chunkBuffer;
-            auto* loadVisualizerPtr = &loadVisualizer;
             //std::cout << "Generating chunk" << std::endl;
 
             LODLevel level = FAR;
@@ -619,33 +616,31 @@ void MainScene::generateSurroundingChunks(){
             else if(distance < 10 ) level = MID;
             else if(distance < 13) level = MID_FAR;
 
-            while(!threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level, bp,gptr,loadVisualizerPtr](){
-                worldp->generateChunk(chunkX, chunkY, chunkZ, level);
-                loadVisualizerPtr->addChunk({chunkX,chunkY,chunkZ});
+            threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level, bp,gptr](){
+                Chunk* chunk = worldp->generateChunk(chunkX, chunkY, chunkZ, level);
                 (*gptr)++;
-            })){
-                std::cout << "Wating for chunks to generate... " << generatedTotal << "/" << pow(pregenDistance*2,3) << std::endl;
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            };
+            });
             //if(!success){break;}
         }
     }
-    
+
     std::cout << "Generating meshes..." << std::endl;
     for(int x = -renderDistance; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
         int chunkX = camWorldX + x;
         int chunkY = camWorldY + y;
         int chunkZ = camWorldZ + z;
         
-        Chunk* meshlessChunk = world->getChunk(chunkX, chunkY, chunkZ);
-        if(!meshlessChunk){
-            std::cout << "Thats a bug mate!" << std::endl;
-            continue;
-        }
-        meshlessChunk->syncGenerateMesh(chunkBuffer);
+        threadPool->deploy([worldp,chunkX,chunkY,chunkZ, bp,gptr](){
+            Chunk* chunk = worldp->getChunk(chunkX, chunkY, chunkZ);
+            if(!chunk){
+                std::cerr << "Wtf?" << std::endl;
+                return;
+            }
+            chunk->syncGenerateAsyncUploadMesh();
+        });
     }
-
-   allGenerated = true;
+    
+    allGenerated = true;
 }
 
 void UIAllocatorVisualizer::getRenderingInformation(RenderYeetFunction& yeet){

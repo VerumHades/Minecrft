@@ -128,8 +128,8 @@ class MultiChunkBuffer{
         
         void initialize(uint32_t renderDistance);
 
-        void addChunkMesh(Mesh& mesh, const glm::ivec3& pos);
-        void swapChunkMesh(Mesh& mesh, const glm::ivec3& pos);
+        bool addChunkMesh(Mesh& mesh, const glm::ivec3& pos);
+        bool swapChunkMesh(Mesh& mesh, const glm::ivec3& pos);
         void unloadChunkMesh(const glm::ivec3& pos);
         void unloadFarawayChunks(const glm::ivec3& from, float treshold);
         void clear();

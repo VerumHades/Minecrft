@@ -34,7 +34,19 @@ class ThreadPool{
         std::vector<std::unique_ptr<SleepyThread>> threads = {};
         size_t maxThreads = 0;
 
+        std::queue<std::function<void(void)>> pendingJobs;
+
+        bool deployInternal(std::function<void(void)>& func);
+
     public:
         ThreadPool(size_t maxThreads);
+        /*
+            Deploys the job immidiately or adds it to processing queue
+        */
         bool deploy(std::function<void(void)> func);
+
+        /*
+            Deploys pending jobs if possible
+        */
+        void deployPendingJobs();
 };

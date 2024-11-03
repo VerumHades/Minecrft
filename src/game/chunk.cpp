@@ -76,36 +76,37 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     return true;
 }
 
-void Chunk::updateMesh(){
-    reloadMesh = true;
-    generatedEmptyMesh = false;
+void Chunk::syncGenerateAsyncUploadMesh(){
+    generateMeshes();
+
+    //End time point
+    //auto end = std::chrono::high_resolution_clock::now();
+
+    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    //std::cout << "Execution time: " << duration << " microseconds" << std::endl;
+    if(solidMesh->getVertices().size() == 0){
+        generatedEmptyMesh = true;
+        return;
+    }
+    
+    world.addToChunkMeshLoadingQueue(this->worldPosition, std::move(this->solidMesh));
 }
 
-void Chunk::generateMesh(MultiChunkBuffer& buffer, ThreadPool& pool){
+void Chunk::asyncGenerateAsyncUploadMesh(ThreadPool& pool, bool reload){
     if(
         !world.getChunk(worldPosition.x - 1,worldPosition.y,worldPosition.z) ||
         !world.getChunk(worldPosition.x,worldPosition.y - 1,worldPosition.z) ||
         !world.getChunk(worldPosition.x,worldPosition.y,worldPosition.z - 1) 
     ) return;
 
+    if(reload) generatedEmptyMesh = false;
+
     if(
-        !meshGenerated && !meshGenerating && !pendingUpload && !generatedEmptyMesh && 
-        ((!buffer.isChunkLoaded(worldPosition) && !isEmpty()) || reloadMesh) // If chunk isnt loaded at all
+        !meshGenerating && !generatedEmptyMesh && !isEmpty()
     ){
         bool success = pool.deploy([this](){
-            //auto start = std::chrono::high_resolution_clock::now();
-
-            generateMeshes();
-
-            //End time point
-            //auto end = std::chrono::high_resolution_clock::now();
-
-            //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-            //std::cout << "Execution time: " << duration << " microseconds" << std::endl;
-
+            syncGenerateAsyncUploadMesh();
             meshGenerating = false;
-            meshGenerated = true;
-            pendingUpload = true;
         });
         if(!success) return;
 
@@ -113,49 +114,18 @@ void Chunk::generateMesh(MultiChunkBuffer& buffer, ThreadPool& pool){
         //generateChunkMeshThread(chunk);
         return;
     } 
-
-    if(meshGenerated){
-        loadMesh(buffer);
-        meshGenerated = false;
-        pendingUpload = false;
-        return;
-    }
-
-    /*if(
-        buffer.isChunkLoaded(glm::vec3(worldPosition.x + 1,worldPosition.y,worldPosition.z)) &&
-        buffer.isChunkLoaded(glm::vec3(worldPosition.x,worldPosition.y + 1,worldPosition.z)) &&
-        buffer.isChunkLoaded(glm::vec3(worldPosition.x,worldPosition.y,worldPosition.z + 1)) &&
-        getMainGroup()
-    ){
-        setMainGroup(nullptr);
-    }*/
-
-    /*if(!buffersLoaded && !buffersInQue && meshGenerated){
-        buffersInQue = true;
-        this->bufferLoadQue.push(getWorldPosition());
-        //printf("Vertices:%i Indices:%i\n", solidMesh->vertices_count, solidMesh->indices_count)
-        updated = true;
-        if(isDrawn) return chunk;
-    }*/
 }
 
-void Chunk::loadMesh(MultiChunkBuffer&  buffer){
+void Chunk::syncGenerateSyncUploadMesh(MultiChunkBuffer& buffer){
+    generateMeshes();
+
     if(solidMesh->getVertices().size() == 0){
         generatedEmptyMesh = true;
     }
-    else if(reloadMesh){
-        buffer.swapChunkMesh(*solidMesh, getWorldPosition());
-        if(onMeshReloaded) onMeshReloaded();
-        reloadMesh = false;
-    }
+    else if(buffer.isChunkLoaded(worldPosition)) buffer.swapChunkMesh(*solidMesh, getWorldPosition());
     else buffer.addChunkMesh(*solidMesh, getWorldPosition());
 
     solidMesh = nullptr;
-}
-
-void Chunk::syncGenerateMesh(MultiChunkBuffer& buffer){
-    generateMeshes();
-    loadMesh(buffer);
 }
 
 /*

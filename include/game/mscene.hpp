@@ -10,8 +10,6 @@
 #include <rendering/shaders.hpp>
 #include <rendering/texture.hpp>
 #include <rendering/camera.hpp>
-#include <rendering/loading.hpp>
-
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
 #include <ui/loader.hpp>
@@ -33,7 +31,6 @@ class MainScene: public Scene{
         ModelManager modelManager;
 
         std::unique_ptr<ThreadPool> threadPool;
-        ChunkLoadingVisualizer loadVisualizer;
 
         ShaderProgram terrainProgram;
         ShaderProgram skyboxProgram;

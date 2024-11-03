@@ -14,12 +14,13 @@ void SleepyThread::run(){
 
         if(stopThread) break;
 
+        isAwake = false;
+        
         if (func) {
             func();
             func = nullptr;
         }
 
-        isAwake = false;
         onAvailable();
     }
 }
@@ -47,8 +48,10 @@ ThreadPool::ThreadPool(size_t mthreads){
 
     for(int i = 0;i < mthreads;i++){
         auto t = std::make_unique<SleepyThread>();
-        t->onAvailable = [this,i]{
+        auto* threadPointer = t.get();
+        t->onAvailable = [this,i,threadPointer]{
             std::lock_guard<std::mutex> lock(this->updateMutex);
+            
             this->nextThread.push(i);
             //std::cout << "Thread made available: " << i << std::endl;
         };
@@ -57,17 +60,37 @@ ThreadPool::ThreadPool(size_t mthreads){
     }
 }
 
-bool ThreadPool::deploy(std::function<void(void)> func){
+void ThreadPool::deployPendingJobs(){
     std::lock_guard<std::mutex> lock(this->updateMutex);
-    
-    if(nextThread.empty()) return false;
 
+    while(!pendingJobs.empty()){
+        auto job = pendingJobs.front();
+        if(deployInternal(job)) pendingJobs.pop();
+        else break;
+    }
+}
+
+bool ThreadPool::deployInternal(std::function<void(void)>& func){
+    if(nextThread.empty()) return false;
     //std::cout << "Deploying thread!" << std::endl;
 
     auto& next = threads[nextThread.front()];
     nextThread.pop();
 
     next->awake(func);
+
+    return true;
+}
+
+bool ThreadPool::deploy(std::function<void(void)> func){
+    std::lock_guard<std::mutex> lock(this->updateMutex);
+    
+    if(nextThread.empty()){
+        pendingJobs.push(func);
+        return true;
+    }
+
+    deployInternal(func);
 
     return true;
 }

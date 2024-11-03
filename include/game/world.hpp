@@ -94,16 +94,27 @@ class World: public Collidable{
         std::unique_ptr<WorldStream> stream;
         WorldGenerator generator;
 
+        struct MeshLoadingMember{
+            glm::ivec3 position;
+            std::unique_ptr<Mesh> mesh;
+        };
+
+        std::mutex meshLoadingMutex;
+        std::queue<MeshLoadingMember> meshLoadingQueue;
+
     public:
         World(std::string filepath);
         Block* getBlock(int x, int y, int z);
         bool setBlock(int x, int y, int z, Block index);
 
-        void generateChunk(int x, int y, int z, LODLevel lod);
+        Chunk* generateChunk(int x, int y, int z, LODLevel lod);
 
         bool isChunkLoadable(int x, int y, int z);
         void loadChunk(int x, int y, int z);
-        
+
+        void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<Mesh> mesh);
+        void loadMeshFromQueue(MultiChunkBuffer&  buffer);
+
         Chunk* getChunk(int x, int y, int z);
         Chunk* getChunkFromBlockPosition(int x, int y, int z);
         glm::vec3 getGetChunkRelativeBlockPosition(int x, int y, int z);
