@@ -38,24 +38,10 @@ struct compressed_24bit{
         std::string to_string();
 };
 
-namespace bitworks{
-    template <typename T>
-    static inline void saveValue(std::fstream &file, T value){
-        file.write(reinterpret_cast<const char*>(&value), sizeof(T));
-    }
-
-    template <typename T>
-    static inline T readValue(std::fstream &file) {
-        T value;
-        file.read(reinterpret_cast<char*>(&value), sizeof(T));
-        return value;
-    }
+struct CompressedArray{
+    std::vector<compressed_24bit> data;
+    size_t source_size;
 };
-
-template <typename T>
-inline uint8_t count_leading_zeros(T x) {
-    return std::countl_zero(x);
-}
 
 /*
     Type that selects the smallest type that fits the set number of bits
@@ -77,56 +63,183 @@ using uint_t = typename std::conditional<
     >::type
 >::type;
 
-template <int bits>
-class BitArray3D{
-    private:
-        uint_t<bits> values[bits][bits] = {0};
-
-    public:
-        static const size_t size_bits = bits * bits * bits;
-        static const size_t size = bits * bits;
-        static const size_t bits_total = bits;
-        
-        uint_t<bits>* operator[] (int index)
-        {
-            return values[index];
-        }
-        const uint_t<bits>* operator[](int index) const {
-            return values[index];  
-        }
-        uint_t<bits>* getAsFlatArray(){
-            return reinterpret_cast<uint_t<bits>*>(values); 
-        }
-
-        BitArray3D<bits> rotate(){
-            BitArray3D<bits> rotated;
-
-            for(int z = 0;z < bits;z++){
-                for(int y = 0; y < bits;y++){
-                    uint_t<bits> value = this->values[z][y];
-
-                    for(int x = 0;x < bits;x++){
-                        uint_t<bits> mask = 1ULL << (bits - 1 - x);
-
-                        if(!(value & mask)) continue;
-
-                        rotated[x][y] |= (1ULL << (bits - 1 - z));
-                    }
-                }
-            }
-
-            return rotated;
-        }
-
-        std::vector<compressed_24bit> compress();
-        void loadFromCompressed(std::vector<compressed_24bit> data);
-
-        bool operator == (const BitArray3D<bits>& array) const {
-            return std::memcmp(values, array.values, size * sizeof(uint_t<bits>)) == 0;
-        }
+class DynamicBitArray3D;
+/*
+    A simple dynamic 2D array saved in memory as a contiguous block
+*/
+class Dynamic2DArray{
+    virtual size_t getSize() = 0;
+    virtual uint_t<64> get(uint32_t x, uint32_t y) = 0;
+    virtual void set(uint32_t x, uint32_t y, uint_t<64> value);
 };
 
+template <typename T>
+class Array2D: public Dynamic2DArray{
+    private:
+        std::vector<T> data;
+
+        friend class DynamicBitArray3D;
+    
+    public:
+        uint_t<64> get(uint32_t x, uint32_t y){
+            if(x < 0 || x >= size || y < 0 || y >= size) return 0ULL;
+            
+            switch(actualSize){
+                case BIT8 : return internalArray8Bit .get(x,y);
+                case BIT16: return internalArray16Bit.get(x,y);
+                case BIT32: return internalArray32Bit.get(x,y);
+                case BIT64: return internalArray64Bit.get(x,y);
+            }
+        }
+        void set(uint32_t x, uint32_t y, uint_t<64> value){
+            if(x < 0 || x >= size || y < 0 || y >= size) return;
+
+            switch(actualSize){
+                case BIT8 : internalArray8Bit .get(x,y) = value; break;
+                case BIT16: internalArray16Bit.get(x,y) = value; break;
+                case BIT32: internalArray32Bit.get(x,y) = value; break;
+                case BIT64: internalArray64Bit.get(x,y) = value; break;
+            }
+        }
+
+        T& get(size_t x, size_t y){ 
+            return data[x + (y * size)];   
+        }
+        ~Dynamic2DArray(){
+            if(data) delete[] data;
+        }
+        
+        T* getData() { return data; };
+
+        size_t getSize() override {return size;}
+};
+
+namespace bitworks{
+    template <typename T>
+    static inline void saveValue(std::fstream &file, T value){
+        file.write(reinterpret_cast<const char*>(&value), sizeof(T));
+    }
+
+    template <typename T>
+    static inline T readValue(std::fstream &file) {
+        T value;
+        file.read(reinterpret_cast<char*>(&value), sizeof(T));
+        return value;
+    }
+
+    /*
+        Compresses an array of unsigned integers to an array of 3 byte chunks that each represents a number of consecutive ones or zeroes
+
+        - array => the array to be compressed
+        - size  => the length of the array
+    */
+    template <int bits>
+    CompressedArray compress(uint_t<bits>* array, size_t size);
+
+    /*
+        Converts a series of 3 byte values that indicate a number of ones or zeros to an actual array of ones and zeroes
+
+        - compressed_data => data for decompression
+    */
+    template <int bits>
+    uint_t<bits>* decompress(CompressedArray compressed_data);
+};
+
+template <typename T>
+inline uint8_t count_leading_zeros(T x) {
+    return std::countl_zero(x);
+}
+
 #include <rendering/bitworks.tpp>
+/*
+    A 3D array of bits with a dynamic size.
+    (A 2D array of unsigned integers)
+
+    Max size of 64 (Size is size in all directions, total amount of bits would be 64^3)
+*/
+class DynamicBitArray3D{
+    private:        
+        Dynamic2DArray<uint_t<8> > internalArray8Bit ;
+        Dynamic2DArray<uint_t<16>> internalArray16Bit;
+        Dynamic2DArray<uint_t<32>> internalArray32Bit;
+        Dynamic2DArray<uint_t<64>> internalArray64Bit;
+
+        size_t size = 0;
+        enum{
+            BIT8,
+            BIT16,
+            BIT32,
+            BIT64
+        } actualSize;
+
+    public:
+        DynamicBitArray3D(size_t size): size(size){
+            if     (size <= 8)  { internalArray8Bit .setup(size); actualSize = BIT8 ; }
+            else if(size <= 16) { internalArray16Bit.setup(size); actualSize = BIT16; }
+            else if(size <= 32) { internalArray32Bit.setup(size); actualSize = BIT32; }
+            else if(size <= 64) { internalArray64Bit.setup(size); actualSize = BIT64; }
+            else std::runtime_error("DynamicBitArray3D has a max size of 64!");
+        }
+
+        DynamicBitArray3D(size_t size, CompressedArray data): size(size){
+            if     (size <= 8)  { internalArray8Bit .setup(size, bitworks::decompress<8> (data)); actualSize = BIT8 ; }
+            else if(size <= 16) { internalArray16Bit.setup(size, bitworks::decompress<16>(data)); actualSize = BIT16; }
+            else if(size <= 32) { internalArray32Bit.setup(size, bitworks::decompress<32>(data)); actualSize = BIT32; }
+            else if(size <= 64) { internalArray64Bit.setup(size, bitworks::decompress<64>(data)); actualSize = BIT64; }
+            else std::runtime_error("DynamicBitArray3D has a max size of 64!");
+        }
+        
+        uint_t<64> get(uint32_t x, uint32_t y){
+            if(x < 0 || x >= size || y < 0 || y >= size) return 0ULL;
+            
+            switch(actualSize){
+                case BIT8 : return internalArray8Bit .get(x,y);
+                case BIT16: return internalArray16Bit.get(x,y);
+                case BIT32: return internalArray32Bit.get(x,y);
+                case BIT64: return internalArray64Bit.get(x,y);
+            }
+        }
+        void set(uint32_t x, uint32_t y, uint_t<64> value){
+            if(x < 0 || x >= size || y < 0 || y >= size) return;
+
+            switch(actualSize){
+                case BIT8 : internalArray8Bit .get(x,y) = value; break;
+                case BIT16: internalArray16Bit.get(x,y) = value; break;
+                case BIT32: internalArray32Bit.get(x,y) = value; break;
+                case BIT64: internalArray64Bit.get(x,y) = value; break;
+            }
+        }
+
+        void set(uint32_t x, uint32_t y, uint32_t z){
+            if(z < 0 || z >= size) return;
+
+            set(x,y, get(x,y) | (1ULL << (size - 1 - z)));
+        }
+
+        void reset(uint32_t x, uint32_t y, uint32_t z){
+            if(z < 0 || z >= size) return;
+
+            set(x,y, get(x,y) & ~(1ULL << (size - 1 - z)));
+        }
+
+        bool get(uint32_t x, uint32_t y, uint32_t z){
+            if(z < 0 || z >= size) return false;
+
+            return get(x,y) & (1ULL << (size - 1 - z)); 
+        }
+
+        CompressedArray compress(){
+            switch(actualSize){
+                case BIT8 : return bitworks::compress<8 >(internalArray8Bit.getData() , size * size);
+                case BIT16: return bitworks::compress<16>(internalArray16Bit.getData(), size * size); 
+                case BIT32: return bitworks::compress<32>(internalArray32Bit.getData(), size * size); 
+                case BIT64: return bitworks::compress<64>(internalArray64Bit.getData(), size * size); 
+            }
+        }
+
+        DynamicBitArray3D getRotated();
+        size_t getSize(){return size;}
+};
 
 template <int size>
 using BitPlane = std::array<uint_t<size>, size>;

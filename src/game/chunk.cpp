@@ -6,10 +6,6 @@ static inline void fillChunkLevel(Chunk& chunk, uint32_t y, Block value){
     }
 }
 
-Chunk::Chunk(World& world, const glm::vec3& pos): world(world), worldPosition(pos) {
-    currentGroup = std::make_unique<ChunkMaskGroup<64>>();
-}
-
 Block::Block(){
     this->type = BlockTypes::Air;
 }
@@ -29,9 +25,8 @@ Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     if(!isMainGroupOfSize(64)) return nullptr;
     
     uint64_t checkMask = (1ULL << (63 - x));
-    auto mainGroup = getMainGroupAs<64>();
     
-    for(auto& [key,mask]: mainGroup->masks){
+    for(auto& [key,mask]: currentGroup->getMasks()){
         uint64_t row = mask.getAt(z,y);
 
         if(row & checkMask){
@@ -49,18 +44,16 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
     if(!isMainGroupOfSize(64)) return false;
 
     uint64_t currentMask = (1ULL << (63 - x));
-    auto mainGroup = getMainGroupAs<64>();
 
     if(value.type != BlockTypes::Air){
-        if(mainGroup->masks.count(value.type) == 0){
-            mainGroup->masks[value.type] = {};
-            mainGroup->masks[value.type].getBlock() = value;
+        if(currentGroup->getMasks().count(value.type) == 0){
+            currentGroup->setMask(value.type, {64,value});
         }
 
-        mainGroup->masks[value.type].set(x,y,z);
+        currentGroup->getMask(value.type).set(x,y,z);
     }
 
-    for(auto& [key,mask]: mainGroup->masks){
+    for(auto& [key,mask]: currentGroup->getMasks()){
         uint64_t row = mask.getAt(z,y);
 
         if(!(row & currentMask)) continue;
@@ -70,8 +63,8 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
         break;
     }
 
-    if(getBlockType(&value).solid) mainGroup->solidMask.set(x,y,z);
-    else mainGroup->solidMask.reset(x,y,z);
+    if(getBlockType(&value).solid) currentGroup->getSolidMask().set(x,y,z);
+    else currentGroup->getSolidMask().reset(x,y,z);
 
     return true;
 }
@@ -507,8 +500,8 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
 }
 
 void Chunk::generateMeshes(){
-    //std::cout << "Generating mesh for: " << getMainGroup()->getSize() << " " << isMainGroupOfSize(64) << " " << isMainGroupOfSize(32) << std::endl;
-    solidMesh = generateChunkMesh(world, worldPosition, getMainGroup().get());
+    //std::cout << "Generating mesh for: " << getMainGroup()->size() << " " << isMainGroupOfSize(64) << " " << isMainGroupOfSize(32) << std::endl;
+    solidMesh = generateChunkMesh(world, worldPosition, currentGroup.get());
 }
 
 static inline bool isOnOrForwardPlane(const Plane& plane, glm::vec3 center){

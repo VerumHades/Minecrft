@@ -38,11 +38,9 @@ class WorldGenerator{
         WorldGenerator(int seed);
         WorldGenerator(){seed = 1948;}
 
-        template <int size>
-        void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ);
+        void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ, size_t size);
 };
 
 #include <game/chunk.hpp>
-#include <worldgen/worldgen.tpp>
 
 #endif

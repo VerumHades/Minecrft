@@ -5,84 +5,70 @@
 
 #define CHUNK_SIZE 64
 
-enum LODLevel{
-    CLOSE,
-    MID,
-    MID_FAR,
-    FAR
-};
-
 class DynamicChunkMask{
-    public:
-        virtual uint_t<64> getAt(uint32_t z,uint32_t y) = 0;
-        virtual uint_t<64> getRotatedAt(uint32_t x,uint32_t y) = 0;
-        virtual bool get(uint32_t x,uint32_t y,uint32_t z) = 0;
-        virtual Block& getBlock() = 0;
-        virtual int getSize() = 0;
-};
-
-template <int size>
-class ChunkMask: public DynamicChunkMask{
-    public:
+    private:
         Block block = {BlockTypes::Air};
-        BitArray3D<size> segments = {}; 
-        BitArray3D<size> segmentsRotated = {}; 
+        DynamicBitArray3D segments; 
+        DynamicBitArray3D segmentsRotated; 
 
-        ChunkMask(){}
-        ChunkMask(Block block): block(block){}
+    public:
+        DynamicChunkMask(size_t size, Block block): segments(size), segmentsRotated(size), block(block) {}
+        DynamicChunkMask(size_t size, CompressedArray segments): segments(size), segmentsRotated(size){
+            this->segments = DynamicBitArray3D(size, segments);
+            this->segmentsRotated = this->segments.getRotated();
+        }
         
         void set(uint32_t x,uint32_t y,uint32_t z) {
-            segments[z][y] |= (1ULL << (size - 1 - x));
-            segmentsRotated[x][y] |= (1ULL << (size - 1 - z));
+            segments.set(z,y,x);
+            segmentsRotated.set(x,y,z);
         }
         void reset(uint32_t x,uint32_t y,uint32_t z) {
-            segments[z][y] &= ~(1ULL << (size - 1 - x));
-            segmentsRotated[x][y] &= ~(1ULL << (size - 1 - z));
+            segments.reset(z,y,x);
+            segmentsRotated.reset(x,y,z);
         }
-        bool get(uint32_t x,uint32_t y,uint32_t z) override {
-            return segments[z][y] & (1ULL << (size - 1 - x));
+        bool get(uint32_t x,uint32_t y,uint32_t z) {
+            return segments.get(x,y,z);
         }
 
-        uint_t<64> getAt(uint32_t z,uint32_t y) override { 
-            return segments[z][y];
+        uint_t<64> getAt(uint32_t z,uint32_t y) { 
+            return segments.get(z, y);
         };
-        uint_t<64> getRotatedAt(uint32_t x,uint32_t y) override {
-            return segmentsRotated[x][y];
+        uint_t<64> getRotatedAt(uint32_t x,uint32_t y) {
+            return segmentsRotated.get(x, y);
         };
 
-        Block& getBlock() override {
+        Block& getBlock(){
             return block;
         }
 
-        int getSize() override {return size;}
+        size_t getSize() {return segments.getSize();}
+
+        DynamicBitArray3D& getSegments() { return segments; };
 };
 
-struct DynamicChunkContents{
-    virtual DynamicChunkMask& getSolidMask() = 0;
-    virtual DynamicChunkMask& getMask(BlockTypes type) = 0;
-    virtual bool hasMask(BlockTypes type) = 0;
-    virtual std::unordered_set<BlockTypes> getMaskTypes() = 0;
-
-    virtual int getSize() = 0;
-    virtual bool empty() = 0;
-};
-
-template <int size>
-struct ChunkMaskGroup: public DynamicChunkContents{
-    ChunkMask<size> solidMask = {};
-    std::unordered_map<BlockTypes,ChunkMask<size>> masks = {};
+class DynamicChunkContents{
+    private:
+        DynamicChunkMask solidMask;
+        std::unordered_map<BlockTypes,DynamicChunkMask> masks = {};
     
-    std::unordered_set<BlockTypes> getMaskTypes() override {
-        std::unordered_set<BlockTypes> keys;
-        for (auto& [type, _] : masks) {
-            keys.emplace(type); 
-        }
-        return keys;
-    }
-    DynamicChunkMask& getSolidMask() override { return solidMask;};
-    DynamicChunkMask& getMask(BlockTypes type) override { return masks[type];};
-    bool hasMask(BlockTypes type) override { return masks.count(type) != 0;}
+    public:
+        DynamicChunkContents(size_t size): solidMask(size, BlockTypes::Air) {}
 
-    int getSize() override {return size;}
-    bool empty() override {return masks.size() == 0;}
+        std::unordered_set<BlockTypes> getMaskTypes() {
+            std::unordered_set<BlockTypes> keys;
+            for (auto& [type, _] : masks) {
+                keys.emplace(type); 
+            }
+            return keys;
+        }
+        DynamicChunkMask& getMask(BlockTypes type) { return masks.at(type);};
+        bool hasMask(BlockTypes type) { return masks.count(type) != 0;}
+
+        std::unordered_map<BlockTypes,DynamicChunkMask>& getMasks() {return masks;};
+        DynamicChunkMask& getSolidMask() {return solidMask;}
+        void setSolidMask(DynamicChunkMask mask) { solidMask = mask;}
+        void setMask(BlockTypes type, DynamicChunkMask mask) {masks.emplace(type,mask);}
+
+        size_t getSize() {return solidMask.getSize();}
+        bool empty() {return masks.size() == 0;}
 };

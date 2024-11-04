@@ -1,12 +1,12 @@
 #include <rendering/bitworks.hpp>
 
 template <int bits>
-std::vector<compressed_24bit> BitArray3D<bits>::compress(){
+CompressedArray bitworks::compress(uint_t<bits>* flatArray, size_t size){
     std::vector<compressed_24bit> compressedOutput = {};
 
-    uint_t<bits> firstBitMask = (1ULL << (bits - 1));
+    const size_t size_bits = size * bits;
+    const uint_t<bits> firstBitMask = (1ULL << (bits - 1));
 
-    uint_t<bits>* flatArray = getAsFlatArray();
     uint_t<bits> currentBits = flatArray[0];
 
     size_t currentIndex = 0;
@@ -15,7 +15,7 @@ std::vector<compressed_24bit> BitArray3D<bits>::compress(){
 
     while(globalBit < size_bits){
         uint8_t start_value = (firstBitMask & currentBits) >> (bits - 1); // Check what the current first value is
-        uint8_t count = count_leading_zeros(!start_value ? currentBits : ~currentBits);
+        uint8_t count = count_leading_zeros<uint_t<bits>>(!start_value ? currentBits : ~currentBits);
 
         if(localBit + count > bits) count = bits - localBit;
 
@@ -44,18 +44,20 @@ std::vector<compressed_24bit> BitArray3D<bits>::compress(){
         compressedOutput.push_back(compressed);
     }   
 
-    return compressedOutput;
+    return {compressedOutput, size};
 }
 
 template <int bits>
-void BitArray3D<bits>::loadFromCompressed(std::vector<compressed_24bit> data){
-    uint_t<bits>* flatArray = getAsFlatArray();
+uint_t<bits>* bitworks::decompress(CompressedArray compressed_data){
+    const size_t size = compressed_data.source_size;
+
+    uint_t<bits>* flatArray = new uint_t<bits>[size];
 
     size_t arrayIndex = 0;
     size_t dataIndex  = 0;
     size_t currentBit = 0;
     
-    compressed_24bit cdata = data[0];
+    compressed_24bit cdata = compressed_data.data[0];
     while(true){
         size_t bitsLeft = bits - currentBit; // Find the remaining amount of bits in the current 64bit
         
@@ -78,13 +80,11 @@ void BitArray3D<bits>::loadFromCompressed(std::vector<compressed_24bit> data){
 
         cdata.setValue(cdata.getValue() - count);
         if(cdata.getValue() == 0){ // If the current compressed 24bit is completed move onto the next
-            if(dataIndex + 1 >= data.size()) break; // break if there is no next
+            if(dataIndex + 1 >= compressed_data.data.size()) break; // break if there is no next
 
-            cdata = data[++dataIndex];
+            cdata = compressed_data.data[++dataIndex];
         }
     }
 
-    /*for(int i = 0;i < BitArray3D::size;i++){
-        std::cout << std::bitset<64>(flatArray[i]) << std::endl;
-    }*/
+    return flatArray;
 }

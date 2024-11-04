@@ -107,7 +107,7 @@ class World: public Collidable{
         Block* getBlock(int x, int y, int z);
         bool setBlock(int x, int y, int z, Block index);
 
-        Chunk* generateChunk(int x, int y, int z, LODLevel lod);
+        Chunk* generateChunk(int x, int y, int z, int lod);
 
         bool isChunkLoadable(int x, int y, int z);
         void loadChunk(int x, int y, int z);

@@ -135,6 +135,7 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     inputManager.bindKey(GLFW_KEY_A    , STRAFE_LEFT  , "Strafe left");
     inputManager.bindKey(GLFW_KEY_D    , STRAFE_RIGHT , "Strafe right");
     inputManager.bindKey(GLFW_KEY_SPACE, MOVE_UP      , "Jump");
+    inputManager.bindKey(GLFW_KEY_LEFT_CONTROL, MOVE_DOWN, "Move down when flying");
     inputManager.bindKey(GLFW_KEY_LEFT_SHIFT, SCROLL_ZOOM, "Hold to zoom");
 
     auto settingsFrame = menuScene->getUILayer("settings").getElementById("keybind_container");
@@ -561,6 +562,7 @@ void MainScene::physicsUpdate(){
 
         //if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * 0.2f);
         if(inputManager.isActive(MOVE_UP)) player.accelerate(camera.getUp() * 0.2f);
+        if(inputManager.isActive(MOVE_DOWN)) player.accelerate(-camera.getUp() * 0.2f);
         /*if(
             boundKeys[0].isDown 
             && player.checkForCollision(world, false, {0,-0.1f,0}).collision
@@ -614,14 +616,10 @@ void MainScene::generateSurroundingChunks(){
             //meshlessChunk = world->generateAndGetChunk(chunkX, chunkY, chunkZ);
             //std::cout << "Generating chunk" << std::endl;
 
-            LODLevel level = FAR;
-            float distance = glm::length(glm::vec3(x,y,z));
-            if(distance < 6 ) level = CLOSE;
-            else if(distance < 10 ) level = MID;
-            else if(distance < 13) level = MID_FAR;
+            int distance = glm::length(glm::vec3(x,y,z)) / 3;
 
-            threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level, bp,gptr](){
-                worldp->generateChunk(chunkX, chunkY, chunkZ, level);
+            threadPool->deploy([worldp,chunkX,chunkY,chunkZ, distance, bp,gptr](){
+                worldp->generateChunk(chunkX, chunkY, chunkZ, 64 - distance);
                 (*gptr)++;
             });
             //if(!success){break;}

@@ -81,6 +81,7 @@ class MainScene: public Scene{
             STRAFE_LEFT,
             STRAFE_RIGHT,
             MOVE_UP,
+            MOVE_DOWN,
             SCROLL_ZOOM
         };
 
