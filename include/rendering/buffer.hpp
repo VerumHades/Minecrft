@@ -40,7 +40,7 @@ class GLBuffer{
         uint32_t getID(){ return data; } 
 };
 
-class GLStripBuffer{
+/*class GLStripBuffer{
     private:
         uint32_t data;
         uint32_t vao;
@@ -61,10 +61,10 @@ class GLStripBuffer{
         size_t appendData(const float* data, size_t size);
         // Inserts data at a given location
         bool insertData(size_t start, const float* data, size_t size);
-        bool resize(size_t newSize);
+        //bool resize(size_t newSize);
 
         void draw();
-};
+};*/
 
 class GLDoubleBuffer{
     private:
@@ -122,6 +122,9 @@ class MultiChunkBuffer{
         DrawElementsIndirectCommand* persistentMappedBuffer;
         
         std::unordered_map<glm::ivec3, LoadedChunk, IVec3Hash, IVec3Equal> loadedChunks;
+
+        void extendVertexBuffer(size_t size);
+        void extendIndexBuffer(size_t size);
 
     public:
         ~MultiChunkBuffer();

@@ -33,8 +33,8 @@ class Allocator{
         std::list<MemBlock> blocks = {};
         std::multimap<size_t,MemBlockIterator> freeBlocks = {};
         std::unordered_map<size_t,MemBlockIterator> takenBlocks = {};
-
-        AllocatorMemoryRequest requestMemory;
+        
+        std::function<bool(size_t)> requestMemory;
 
         void markFree(MemBlockIterator block){
             block->used = false;
@@ -42,7 +42,7 @@ class Allocator{
         }
 
     public:
-        Allocator(size_t memsize, AllocatorMemoryRequest requestMemory):  memsize(memsize), requestMemory(requestMemory) {
+        Allocator(size_t memsize, std::function<bool(size_t)> requestMemory):  memsize(memsize), requestMemory(requestMemory) {
             markFree(blocks.insert(blocks.end(),{0, memsize, false}));
         };
         Allocator(){
@@ -52,6 +52,11 @@ class Allocator{
         AllocationResult allocate(size_t size);
         void free(size_t location);
         void clear();
+
+        void appendBlock(size_t size){
+            memsize += size;
+            markFree(blocks.insert(blocks.end(),{0, size, false}));
+        }
 
         const std::list<MemBlock>& getBlocks() {return blocks;};
         const size_t& getMemorySize(){return memsize;}
