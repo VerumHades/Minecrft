@@ -13,9 +13,8 @@ class DynamicChunkMask{
 
     public:
         DynamicChunkMask(size_t size, Block block): segments(size), segmentsRotated(size), block(block) {}
-        DynamicChunkMask(size_t size, CompressedArray segments): segments(size), segmentsRotated(size){
-            this->segments = DynamicBitArray3D(size, segments);
-            this->segmentsRotated = this->segments.getRotated();
+        DynamicChunkMask(size_t size, CompressedArray segments_compressed): segments(size, segments_compressed), segmentsRotated(size){
+            this->segmentsRotated.loadAsRotated(segments);
         }
         
         void set(uint32_t x,uint32_t y,uint32_t z) {
@@ -66,8 +65,8 @@ class DynamicChunkContents{
 
         std::unordered_map<BlockTypes,DynamicChunkMask>& getMasks() {return masks;};
         DynamicChunkMask& getSolidMask() {return solidMask;}
-        void setSolidMask(DynamicChunkMask mask) { solidMask = mask;}
-        void setMask(BlockTypes type, DynamicChunkMask mask) {masks.emplace(type,mask);}
+        void setSolidMask(DynamicChunkMask mask) { solidMask = std::move(mask);}
+        void setMask(BlockTypes type, DynamicChunkMask mask) {masks.emplace(type,std::move(mask));}
 
         size_t getSize() {return solidMask.getSize();}
         bool empty() {return masks.size() == 0;}

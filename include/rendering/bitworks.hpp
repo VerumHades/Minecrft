@@ -11,6 +11,7 @@
 #include <array>
 #include <iostream>
 #include <string>
+#include <memory>
 
 #include <game/blocks.hpp>
 
@@ -68,50 +69,40 @@ class DynamicBitArray3D;
     A simple dynamic 2D array saved in memory as a contiguous block
 */
 class Dynamic2DArray{
-    virtual size_t getSize() = 0;
-    virtual uint_t<64> get(uint32_t x, uint32_t y) = 0;
-    virtual void set(uint32_t x, uint32_t y, uint_t<64> value);
+    public:
+        virtual size_t getSize() = 0;
+        virtual uint_t<64> get(uint32_t x, uint32_t y) = 0;
+        virtual void set(uint32_t x, uint32_t y, uint_t<64> value) = 0;
 };
 
 template <typename T>
 class Array2D: public Dynamic2DArray{
     private:
-        std::vector<T> data;
-
-        friend class DynamicBitArray3D;
+        T* data;
+        size_t size;
     
     public:
-        uint_t<64> get(uint32_t x, uint32_t y){
-            if(x < 0 || x >= size || y < 0 || y >= size) return 0ULL;
-            
-            switch(actualSize){
-                case BIT8 : return internalArray8Bit .get(x,y);
-                case BIT16: return internalArray16Bit.get(x,y);
-                case BIT32: return internalArray32Bit.get(x,y);
-                case BIT64: return internalArray64Bit.get(x,y);
-            }
-        }
-        void set(uint32_t x, uint32_t y, uint_t<64> value){
-            if(x < 0 || x >= size || y < 0 || y >= size) return;
-
-            switch(actualSize){
-                case BIT8 : internalArray8Bit .get(x,y) = value; break;
-                case BIT16: internalArray16Bit.get(x,y) = value; break;
-                case BIT32: internalArray32Bit.get(x,y) = value; break;
-                case BIT64: internalArray64Bit.get(x,y) = value; break;
-            }
-        }
-
-        T& get(size_t x, size_t y){ 
-            return data[x + (y * size)];   
-        }
-        ~Dynamic2DArray(){
-            if(data) delete[] data;
-        }
+        Array2D(size_t size, T* data): size(size), data(data){}
+        Array2D(size_t size): size(size) {data = new T[size * size];}
         
-        T* getData() { return data; };
+        Array2D(const Array2D&) = delete;
+        Array2D& operator=(const Array2D&) = delete;
+
+        uint_t<64> get(uint32_t x, uint32_t y) override {
+            if(x < 0 || x >= size || y < 0 || y >= size) return 0ULL;
+            return data[x + (y * size)];
+        }
+        void set(uint32_t x, uint32_t y, uint_t<64> value) override {
+            if(x < 0 || x >= size || y < 0 || y >= size) return;
+            data[x + (y * size)] = value;
+        }
 
         size_t getSize() override {return size;}
+        T* getData() {return data;};
+
+        ~Array2D(){
+            delete[] data;
+        }
 };
 
 namespace bitworks{
@@ -159,10 +150,7 @@ inline uint8_t count_leading_zeros(T x) {
 */
 class DynamicBitArray3D{
     private:        
-        Dynamic2DArray<uint_t<8> > internalArray8Bit ;
-        Dynamic2DArray<uint_t<16>> internalArray16Bit;
-        Dynamic2DArray<uint_t<32>> internalArray32Bit;
-        Dynamic2DArray<uint_t<64>> internalArray64Bit;
+        std::unique_ptr<Dynamic2DArray> array;
 
         size_t size = 0;
         enum{
@@ -174,40 +162,30 @@ class DynamicBitArray3D{
 
     public:
         DynamicBitArray3D(size_t size): size(size){
-            if     (size <= 8)  { internalArray8Bit .setup(size); actualSize = BIT8 ; }
-            else if(size <= 16) { internalArray16Bit.setup(size); actualSize = BIT16; }
-            else if(size <= 32) { internalArray32Bit.setup(size); actualSize = BIT32; }
-            else if(size <= 64) { internalArray64Bit.setup(size); actualSize = BIT64; }
+            if     (size <= 8)  { array = std::make_unique<Array2D<uint_t<8 >>>(size); actualSize = BIT8 ; }
+            else if(size <= 16) { array = std::make_unique<Array2D<uint_t<16>>>(size); actualSize = BIT16; }
+            else if(size <= 32) { array = std::make_unique<Array2D<uint_t<32>>>(size); actualSize = BIT32; }
+            else if(size <= 64) { array = std::make_unique<Array2D<uint_t<64>>>(size); actualSize = BIT64; }
             else std::runtime_error("DynamicBitArray3D has a max size of 64!");
         }
 
         DynamicBitArray3D(size_t size, CompressedArray data): size(size){
-            if     (size <= 8)  { internalArray8Bit .setup(size, bitworks::decompress<8> (data)); actualSize = BIT8 ; }
-            else if(size <= 16) { internalArray16Bit.setup(size, bitworks::decompress<16>(data)); actualSize = BIT16; }
-            else if(size <= 32) { internalArray32Bit.setup(size, bitworks::decompress<32>(data)); actualSize = BIT32; }
-            else if(size <= 64) { internalArray64Bit.setup(size, bitworks::decompress<64>(data)); actualSize = BIT64; }
+            if     (size <= 8)  { array = std::make_unique<Array2D<uint_t<8 >>>(size,bitworks::decompress<8> (data)); actualSize = BIT8 ; }
+            else if(size <= 16) { array = std::make_unique<Array2D<uint_t<16>>>(size,bitworks::decompress<16>(data)); actualSize = BIT16; }
+            else if(size <= 32) { array = std::make_unique<Array2D<uint_t<32>>>(size,bitworks::decompress<32>(data)); actualSize = BIT32; }
+            else if(size <= 64) { array = std::make_unique<Array2D<uint_t<64>>>(size,bitworks::decompress<64>(data)); actualSize = BIT64; }
             else std::runtime_error("DynamicBitArray3D has a max size of 64!");
         }
         
         uint_t<64> get(uint32_t x, uint32_t y){
             if(x < 0 || x >= size || y < 0 || y >= size) return 0ULL;
             
-            switch(actualSize){
-                case BIT8 : return internalArray8Bit .get(x,y);
-                case BIT16: return internalArray16Bit.get(x,y);
-                case BIT32: return internalArray32Bit.get(x,y);
-                case BIT64: return internalArray64Bit.get(x,y);
-            }
+            return array->get(x,y);
         }
         void set(uint32_t x, uint32_t y, uint_t<64> value){
             if(x < 0 || x >= size || y < 0 || y >= size) return;
 
-            switch(actualSize){
-                case BIT8 : internalArray8Bit .get(x,y) = value; break;
-                case BIT16: internalArray16Bit.get(x,y) = value; break;
-                case BIT32: internalArray32Bit.get(x,y) = value; break;
-                case BIT64: internalArray64Bit.get(x,y) = value; break;
-            }
+            array->set(x,y,value);
         }
 
         void set(uint32_t x, uint32_t y, uint32_t z){
@@ -228,16 +206,29 @@ class DynamicBitArray3D{
             return get(x,y) & (1ULL << (size - 1 - z)); 
         }
 
+        DynamicBitArray3D(DynamicBitArray3D&& other) noexcept {
+            this->actualSize = other.actualSize;
+            this->array = std::move(other.array);
+        }
+
+        DynamicBitArray3D& operator=(DynamicBitArray3D&& other) {
+            if (this != &other) {  // Prevent self-assignment
+                this->actualSize = other.actualSize;
+                this->array = std::move(other.array);
+            }
+            return *this; // Return *this to allow chaining (e.g., a = b = c)
+        }
+
         CompressedArray compress(){
             switch(actualSize){
-                case BIT8 : return bitworks::compress<8 >(internalArray8Bit.getData() , size * size);
-                case BIT16: return bitworks::compress<16>(internalArray16Bit.getData(), size * size); 
-                case BIT32: return bitworks::compress<32>(internalArray32Bit.getData(), size * size); 
-                case BIT64: return bitworks::compress<64>(internalArray64Bit.getData(), size * size); 
+                case BIT8 : return bitworks::compress<8 >(static_cast<Array2D<uint_t<8> >*>(array.get())->getData(), size * size);
+                case BIT16: return bitworks::compress<16>(static_cast<Array2D<uint_t<16>>*>(array.get())->getData(), size * size); 
+                case BIT32: return bitworks::compress<32>(static_cast<Array2D<uint_t<32>>*>(array.get())->getData(), size * size); 
+                case BIT64: return bitworks::compress<64>(static_cast<Array2D<uint_t<64>>*>(array.get())->getData(), size * size); 
             }
         }
 
-        DynamicBitArray3D getRotated();
+        void loadAsRotated(DynamicBitArray3D& array);
         size_t getSize(){return size;}
 };
 
