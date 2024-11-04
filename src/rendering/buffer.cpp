@@ -229,8 +229,8 @@ void MultiChunkBuffer::initialize(uint32_t renderDistance){
     /*
         These values are gross estimates and will probably need dynamic adjusting later
     */
-    maxVertices = maxDrawCalls * vertexFormat.getVertexSize() * 1000; // Estimate that every chunk has about 50000 vertices at max
-    maxIndices = maxDrawCalls * 1200; // Same for indices
+    maxVertices = maxDrawCalls * vertexFormat.getVertexSize() * 1000 * 2; // Estimate that every chunk has about 50000 vertices at max
+    maxIndices = maxDrawCalls * 1200 * 2; // Same for indices
     vertexAllocator = Allocator(maxVertices, [this](size_t requested){
         // Atempt to trash unused chunks
         return false;

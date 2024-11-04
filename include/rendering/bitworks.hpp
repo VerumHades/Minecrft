@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include <memory>
+#include <variant>
 
 #include <game/blocks.hpp>
 
@@ -64,47 +65,6 @@ using uint_t = typename std::conditional<
     >::type
 >::type;
 
-class DynamicBitArray3D;
-/*
-    A simple dynamic 2D array saved in memory as a contiguous block
-*/
-class Dynamic2DArray{
-    public:
-        virtual size_t getSize() = 0;
-        virtual uint_t<64> get(uint32_t x, uint32_t y) = 0;
-        virtual void set(uint32_t x, uint32_t y, uint_t<64> value) = 0;
-};
-
-template <typename T>
-class Array2D: public Dynamic2DArray{
-    private:
-        T* data;
-        size_t size;
-    
-    public:
-        Array2D(size_t size, T* data): size(size), data(data){}
-        Array2D(size_t size): size(size) {data = new T[size * size];}
-        
-        Array2D(const Array2D&) = delete;
-        Array2D& operator=(const Array2D&) = delete;
-
-        uint_t<64> get(uint32_t x, uint32_t y) override {
-            if(x < 0 || x >= size || y < 0 || y >= size) return 0ULL;
-            return data[x + (y * size)];
-        }
-        void set(uint32_t x, uint32_t y, uint_t<64> value) override {
-            if(x < 0 || x >= size || y < 0 || y >= size) return;
-            data[x + (y * size)] = value;
-        }
-
-        size_t getSize() override {return size;}
-        T* getData() {return data;};
-
-        ~Array2D(){
-            delete[] data;
-        }
-};
-
 namespace bitworks{
     template <typename T>
     static inline void saveValue(std::fstream &file, T value){
@@ -133,7 +93,7 @@ namespace bitworks{
         - compressed_data => data for decompression
     */
     template <int bits>
-    uint_t<bits>* decompress(CompressedArray compressed_data);
+    void decompress(CompressedArray compressed_data, std::vector<uint_t<bits>>& result);
 };
 
 template <typename T>
@@ -150,7 +110,12 @@ inline uint8_t count_leading_zeros(T x) {
 */
 class DynamicBitArray3D{
     private:        
-        std::unique_ptr<Dynamic2DArray> array;
+        std::variant<
+            std::vector<uint8_t>,
+            std::vector<uint16_t>,
+            std::vector<uint32_t>,
+            std::vector<uint64_t>
+        > storage;
 
         size_t size = 0;
         enum{
@@ -160,71 +125,73 @@ class DynamicBitArray3D{
             BIT64
         } actualSize;
 
+        void selectStorage(){
+            if     (size <= 8)  { storage = std::vector<uint8_t> (size * size); actualSize = BIT8 ; }
+            else if(size <= 16) { storage = std::vector<uint16_t>(size * size); actualSize = BIT16; }
+            else if(size <= 32) { storage = std::vector<uint32_t>(size * size); actualSize = BIT32; }
+            else if(size <= 64) { storage = std::vector<uint64_t>(size * size); actualSize = BIT64; }
+            else std::runtime_error("DynamicBitArray3D has a max size of 64!");
+        }
+
     public:
         DynamicBitArray3D(size_t size): size(size){
-            if     (size <= 8)  { array = std::make_unique<Array2D<uint_t<8 >>>(size); actualSize = BIT8 ; }
-            else if(size <= 16) { array = std::make_unique<Array2D<uint_t<16>>>(size); actualSize = BIT16; }
-            else if(size <= 32) { array = std::make_unique<Array2D<uint_t<32>>>(size); actualSize = BIT32; }
-            else if(size <= 64) { array = std::make_unique<Array2D<uint_t<64>>>(size); actualSize = BIT64; }
-            else std::runtime_error("DynamicBitArray3D has a max size of 64!");
+           selectStorage();
         }
 
         DynamicBitArray3D(size_t size, CompressedArray data): size(size){
-            if     (size <= 8)  { array = std::make_unique<Array2D<uint_t<8 >>>(size,bitworks::decompress<8> (data)); actualSize = BIT8 ; }
-            else if(size <= 16) { array = std::make_unique<Array2D<uint_t<16>>>(size,bitworks::decompress<16>(data)); actualSize = BIT16; }
-            else if(size <= 32) { array = std::make_unique<Array2D<uint_t<32>>>(size,bitworks::decompress<32>(data)); actualSize = BIT32; }
-            else if(size <= 64) { array = std::make_unique<Array2D<uint_t<64>>>(size,bitworks::decompress<64>(data)); actualSize = BIT64; }
-            else std::runtime_error("DynamicBitArray3D has a max size of 64!");
+            selectStorage();
+
+            if     (size <= 8)  { bitworks::decompress<8> (data, std::get<std::vector<uint8_t>> (storage)); actualSize = BIT8 ; }
+            else if(size <= 16) { bitworks::decompress<16>(data, std::get<std::vector<uint16_t>>(storage)); actualSize = BIT16; }
+            else if(size <= 32) { bitworks::decompress<32>(data, std::get<std::vector<uint32_t>>(storage)); actualSize = BIT32; }
+            else if(size <= 64) { bitworks::decompress<64>(data, std::get<std::vector<uint64_t>>(storage)); actualSize = BIT64; }
         }
         
         uint_t<64> get(uint32_t x, uint32_t y){
-            if(x < 0 || x >= size || y < 0 || y >= size) return 0ULL;
+            if(x >= size || y >= size) return 0ULL;
             
-            return array->get(x,y);
+            uint_t<64> result = 0ULL;
+            auto* resultPointer = &result;
+            
+            std::visit([this, resultPointer,x,y](auto& array) {
+                *resultPointer = array[x + (y * size)];
+            }, storage);
+
+            return result;
         }
         void set(uint32_t x, uint32_t y, uint_t<64> value){
-            if(x < 0 || x >= size || y < 0 || y >= size) return;
+            if(x >= size || y >= size) return;
 
-            array->set(x,y,value);
+            std::visit([this, value,x,y](auto& array) {
+                array[x + (y * size)] = value;
+            }, storage);
         }
 
         void set(uint32_t x, uint32_t y, uint32_t z){
-            if(z < 0 || z >= size) return;
+            if(z >= size) return;
 
             set(x,y, get(x,y) | (1ULL << (size - 1 - z)));
         }
 
         void reset(uint32_t x, uint32_t y, uint32_t z){
-            if(z < 0 || z >= size) return;
+            if(z >= size) return;
 
             set(x,y, get(x,y) & ~(1ULL << (size - 1 - z)));
         }
 
         bool get(uint32_t x, uint32_t y, uint32_t z){
-            if(z < 0 || z >= size) return false;
+            if(z >= size) return false;
 
             return get(x,y) & (1ULL << (size - 1 - z)); 
         }
 
-        DynamicBitArray3D(DynamicBitArray3D&& other) noexcept {
-            this->actualSize = other.actualSize;
-            this->array = std::move(other.array);
-        }
-
-        DynamicBitArray3D& operator=(DynamicBitArray3D&& other) {
-            if (this != &other) {  // Prevent self-assignment
-                this->actualSize = other.actualSize;
-                this->array = std::move(other.array);
-            }
-            return *this; // Return *this to allow chaining (e.g., a = b = c)
-        }
-
         CompressedArray compress(){
             switch(actualSize){
-                case BIT8 : return bitworks::compress<8 >(static_cast<Array2D<uint_t<8> >*>(array.get())->getData(), size * size);
-                case BIT16: return bitworks::compress<16>(static_cast<Array2D<uint_t<16>>*>(array.get())->getData(), size * size); 
-                case BIT32: return bitworks::compress<32>(static_cast<Array2D<uint_t<32>>*>(array.get())->getData(), size * size); 
-                case BIT64: return bitworks::compress<64>(static_cast<Array2D<uint_t<64>>*>(array.get())->getData(), size * size); 
+                case BIT8 : return bitworks::compress<8 >(std::get<std::vector<uint8_t>> (storage).data(), size * size);
+                case BIT16: return bitworks::compress<16>(std::get<std::vector<uint16_t>>(storage).data(), size * size); 
+                case BIT32: return bitworks::compress<32>(std::get<std::vector<uint32_t>>(storage).data(), size * size); 
+                case BIT64: return bitworks::compress<64>(std::get<std::vector<uint64_t>>(storage).data(), size * size); 
+                default: throw std::logic_error("Unknown bit size encountered in compress method.");
             }
         }
 

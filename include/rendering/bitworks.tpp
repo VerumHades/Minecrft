@@ -48,10 +48,8 @@ CompressedArray bitworks::compress(uint_t<bits>* flatArray, size_t size){
 }
 
 template <int bits>
-uint_t<bits>* bitworks::decompress(CompressedArray compressed_data){
+void bitworks::decompress(CompressedArray compressed_data, std::vector<uint_t<bits>>& result){
     const size_t size = compressed_data.source_size;
-
-    uint_t<bits>* flatArray = new uint_t<bits>[size];
 
     size_t arrayIndex = 0;
     size_t dataIndex  = 0;
@@ -73,8 +71,8 @@ uint_t<bits>* bitworks::decompress(CompressedArray compressed_data){
         
         uint_t<bits> mask = ~0ULL >> currentBit;
             
-        if(cdata.getMode() == 0) flatArray[arrayIndex] &= ~mask;
-        else flatArray[arrayIndex] |= mask;
+        if(cdata.getMode() == 0) result[arrayIndex] &= ~mask;
+        else result[arrayIndex] |= mask;
 
         currentBit += count;
 
@@ -85,6 +83,4 @@ uint_t<bits>* bitworks::decompress(CompressedArray compressed_data){
             cdata = compressed_data.data[++dataIndex];
         }
     }
-
-    return flatArray;
 }

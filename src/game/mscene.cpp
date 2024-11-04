@@ -616,7 +616,7 @@ void MainScene::generateSurroundingChunks(){
             //meshlessChunk = world->generateAndGetChunk(chunkX, chunkY, chunkZ);
             //std::cout << "Generating chunk" << std::endl;
 
-            int distance = glm::length(glm::vec3(x,y,z)) / 3;
+            int distance = 0;///glm::length(glm::vec3(x,y,z)) / 3;
 
             threadPool->deploy([worldp,chunkX,chunkY,chunkZ, distance, bp,gptr](){
                 worldp->generateChunk(chunkX, chunkY, chunkZ, 64 - distance);

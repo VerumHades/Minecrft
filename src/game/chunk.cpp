@@ -351,7 +351,7 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
 
             float occlusion[4] = {0,0,0,0};
             glm::vec3 worldOffset = {worldX,worldY,worldZ};
-            glm::vec3 position = {x,y,z};
+            glm::vec3 position = {z,y,x};
             
             std::array<glm::vec3, 4> vertices1 = {
                 (glm::vec3(0,1,0) + position) * scale + worldOffset,
