@@ -488,11 +488,14 @@ void WorldStream::load(Chunk* chunk){
     source.read<int>();
 
     std::unique_ptr<DynamicChunkContents> outputDataGroup = std::make_unique<DynamicChunkContents>(64);
-    outputDataGroup->setSolidMask(DynamicChunkMask(64, {source.vread<compressed_24bit>(), 64 * 64}));
+
+    DynamicChunkMask solidMask = DynamicChunkMask(64, {source.vread<compressed_24bit>(), 64 * 64});
+    outputDataGroup->setSolidMask(solidMask);
 
     for(int layerIndex = 0; layerIndex < layerCount; layerIndex++){
         int type = source.read<int>();
-        outputDataGroup->setMask(static_cast<BlockTypes>(type), DynamicChunkMask(64, {source.vread<compressed_24bit>(), 64 * 64}));
+        DynamicChunkMask mask =  DynamicChunkMask(64, {source.vread<compressed_24bit>(), 64 * 64});
+        outputDataGroup->setMask(static_cast<BlockTypes>(type),mask);
     }
 
     chunk->setMainGroup(std::move(outputDataGroup));

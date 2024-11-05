@@ -88,10 +88,6 @@ struct DrawElementsIndirectCommand {
 
 class MultiChunkBuffer{
     private:
-        uint32_t maxDrawCalls = 0; // Calculated in the constructor
-        uint32_t maxVertices = 0;
-        uint32_t maxIndices = 0;
-
         VertexFormat vertexFormat;
 
         uint32_t indirectBuffer;
@@ -101,7 +97,16 @@ class MultiChunkBuffer{
 
         Allocator vertexAllocator;
         Allocator indexAllocator;
-    
+        size_t drawCallBufferSize = 0;
+        size_t drawCallCount = 0;
+        size_t bufferOffset = 0;
+
+        size_t maxDrawCalls = 0;
+
+        DrawElementsIndirectCommand* persistentDrawCallBuffer;
+        float* persistentVertexBuffer;
+        uint32_t* persistentIndexBuffer;
+        
         struct LoadedChunk{ 
             size_t vertexData;
             size_t indexData;
@@ -114,17 +119,18 @@ class MultiChunkBuffer{
             size_t indexDataSize;
         };
 
-        //void setDrawCall(size_t index, uint32_t firstIndex, uint32_t count, uint32_t baseVertex);
-
-        size_t drawCallBufferSize = 0;
-        size_t drawCallCount = 0;
-        size_t bufferOffset = 0;
-        DrawElementsIndirectCommand* persistentMappedBuffer;
-        
         std::unordered_map<glm::ivec3, LoadedChunk, IVec3Hash, IVec3Equal> loadedChunks;
 
-        void extendVertexBuffer(size_t size);
-        void extendIndexBuffer(size_t size);
+        /*
+            Allocates and copies the buffer into the respective buffers,
+
+            returns the a tuple: 
+                - bool => did the allocation succeed
+                - size_t => vertex data offset in the vertex buffer
+                - size_t => index data offset in the index buffer 
+            
+        */
+        std::tuple<bool,size_t,size_t> allocateAndUploadMesh(Mesh& mesh);
 
     public:
         ~MultiChunkBuffer();

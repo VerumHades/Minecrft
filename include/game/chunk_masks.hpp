@@ -65,8 +65,9 @@ class DynamicChunkContents{
 
         std::unordered_map<BlockTypes,DynamicChunkMask>& getMasks() {return masks;};
         DynamicChunkMask& getSolidMask() {return solidMask;}
-        void setSolidMask(DynamicChunkMask mask) { solidMask = std::move(mask);}
-        void setMask(BlockTypes type, DynamicChunkMask mask) {masks.emplace(type,std::move(mask));}
+        void setSolidMask(DynamicChunkMask& mask) { solidMask = std::move(mask);}
+        void setMask(BlockTypes type, DynamicChunkMask& mask) {masks.emplace(type,std::move(mask));}
+        void createMask(BlockTypes  type, int size) {DynamicChunkMask mask = {size,type}; setMask(type, mask);}
 
         size_t getSize() {return solidMask.getSize();}
         bool empty() {return masks.size() == 0;}

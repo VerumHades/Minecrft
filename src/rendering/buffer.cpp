@@ -191,66 +191,61 @@ void MultiChunkBuffer::unloadFarawayChunks(const glm::ivec3& from, float treshol
     }
 }
 
-GLuint resizeBuffer(GLuint oldBuffer, size_t oldSize, size_t newSize) {
-    GLuint newBuffer;
-    glGenBuffers(1, &newBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, newBuffer);
+/*
+    Creates a persistently mapped buffer,
+    returns a tuple of [buffer_id, pointer to mapped data]
+*/
+template <typename T>
+static std::tuple<uint32_t, T*> createPersistentBuffer(size_t size, uint32_t type){
+    uint32_t buffer;
+    glGenBuffers(1, &buffer);
+    glBindBuffer(type, buffer);
+    glBufferStorage(type, size, nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 
+    T* pointer = static_cast<T*>(glMapBufferRange(type, 0, size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
 
-    glBufferData(GL_ARRAY_BUFFER, newSize, nullptr, GL_STATIC_DRAW); 
+    if(!pointer) {
+        throw std::runtime_error("Failed to map persistent buffer.");
+    }
 
-    glBindBuffer(GL_COPY_READ_BUFFER, oldBuffer); 
-    glBindBuffer(GL_COPY_WRITE_BUFFER, newBuffer);     
-
-    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, oldSize);
-
-    glDeleteBuffers(1, &oldBuffer);
-
-    return newBuffer;
+    return {buffer,pointer};
 }
+
+
+std::string formatSize(size_t bytes) {
+    const char* suffixes[] = {"B", "KB", "MB", "GB", "TB"};
+    size_t suffixIndex = 0;
+    double size = static_cast<double>(bytes);
+
+    // Loop to reduce size and find appropriate suffix
+    while (size >= 1024 && suffixIndex < 4) {  // Up to TB
+        size /= 1024;
+        ++suffixIndex;
+    }
+
+    // Format size with 2 decimal places
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(2) << size << " " << suffixes[suffixIndex];
+    return out.str();
+}
+
 
 void MultiChunkBuffer::initialize(uint32_t renderDistance){
     vertexFormat = VertexFormat({3,1,2,1,1});
-
-    maxDrawCalls = pow(renderDistance*2, 3);
+    
+    maxDrawCalls = pow(renderDistance * 2, 3);
 
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-    
-    CHECK_GL_ERROR();
-    /*
-        These values are gross estimates and will probably need dynamic adjusting later
-    */
-    maxVertices = maxDrawCalls * vertexFormat.getVertexSize() * 1000 * 2; // Estimate that every chunk has about 50000 vertices at max
-    maxIndices = maxDrawCalls * 1200 * 2; // Same for indices
-    vertexAllocator = Allocator(maxVertices, [this](size_t requested_amount) {
-        extendVertexBuffer(requested_amount * 2);
-        std::cout << "Extending vertex buffer!" << std::endl;
-        return true;
-    });
-    indexAllocator = Allocator(maxIndices, [this](size_t requested_amount) {
-        extendIndexBuffer(requested_amount * 2);
-        std::cout << "Extending index buffer!" << std::endl;
-        return true;
-    });
 
     /*
         Create and map buffer for draw calls
     */
-    GLsizeiptr bufferSize = sizeof(DrawElementsIndirectCommand) * maxDrawCalls * 2;
 
-    glGenBuffers(1, &indirectBuffer);
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
-
-    glBufferStorage(GL_DRAW_INDIRECT_BUFFER, bufferSize, nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-
-    persistentMappedBuffer = static_cast<DrawElementsIndirectCommand*>(
-        glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, 0, bufferSize, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT)
+    std::tie(indirectBuffer, persistentDrawCallBuffer) = createPersistentBuffer<DrawElementsIndirectCommand>(
+        sizeof(DrawElementsIndirectCommand) * maxDrawCalls * 2,
+        GL_DRAW_INDIRECT_BUFFER
     );
-
-    if (!persistentMappedBuffer) {
-        throw std::runtime_error("Failed to map persistent buffer for multichunk buffer.");
-    }
 
     drawCallBufferSize = maxDrawCalls;
 
@@ -259,15 +254,38 @@ void MultiChunkBuffer::initialize(uint32_t renderDistance){
     /*
         Create and map vertex and index buffers
     */
-    glGenBuffers(1, &vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, maxVertices * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+    size_t totalMemoryToAllocate = (1024ULL * 1024ULL * 1024ULL) / 2ULL; // 500MB of video memory
+
+    size_t vertexPerFace = vertexFormat.getVertexSize() * 4; // For vertices per face
+    size_t indexPerFace  = 6;
+
+    size_t total = vertexPerFace + indexPerFace;
+    size_t segment = totalMemoryToAllocate / total;
+
+    size_t vertexSpaceTotal = segment * vertexPerFace;
+    size_t indexSpaceTotal = segment * indexPerFace;
+    
+    size_t maxVertexCount = vertexSpaceTotal / sizeof(float);
+    size_t maxIndexCount  = indexSpaceTotal / sizeof(uint32_t);
+
+    std::cout << "Video RAM allocated for vertices total: " << formatSize(vertexSpaceTotal) << std::endl;
+    std::cout << "Video RAM allocated for indices total : " << formatSize(indexSpaceTotal)  << std::endl;
+    std::cout << "Total Video RAM allocated: " << formatSize(vertexSpaceTotal + indexSpaceTotal) << std::endl;
+
+    vertexAllocator = Allocator(maxVertexCount, [this](size_t requested_amount) {return false;});
+    indexAllocator = Allocator(maxIndexCount, [this](size_t requested_amount) {return false;});
+
+    std::tie(vertexBuffer, persistentVertexBuffer) = createPersistentBuffer<float>(
+        maxVertexCount * sizeof(float),
+        GL_ARRAY_BUFFER
+    );
 
     CHECK_GL_ERROR();
 
-    glGenBuffers(1, &indexBuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, maxIndices * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
+    std::tie(indexBuffer, persistentIndexBuffer) = createPersistentBuffer<uint32_t>(
+        maxIndexCount * sizeof(uint32_t),
+        GL_ELEMENT_ARRAY_BUFFER
+    );
 
     CHECK_GL_ERROR();
 
@@ -280,23 +298,32 @@ MultiChunkBuffer::~MultiChunkBuffer(){
     glDeleteBuffers(1,  &indirectBuffer);
     glDeleteVertexArrays(1, &vao);
 }
+std::tuple<bool,size_t,size_t> MultiChunkBuffer::allocateAndUploadMesh(Mesh& mesh){
+    auto vertexAlloc = vertexAllocator.allocate(mesh.getVertices().size());
+    auto indexAlloc = indexAllocator.allocate(mesh.getIndices().size());
 
-void MultiChunkBuffer::extendVertexBuffer(size_t size){
-    size_t newMax = (maxVertices + size);
+    if(vertexAlloc.failed || indexAlloc.failed) return {false,0,0};
 
-    vertexBuffer = resizeBuffer(vertexBuffer, maxVertices * sizeof(float), newMax * sizeof(float));
-    maxVertices = newMax;
+    size_t vertexBufferOffset = vertexAlloc.location;
+    size_t indexBufferOffset = indexAlloc.location;
 
-    vertexAllocator.appendBlock(size);
-}
+    /*
+        Allocate space for vertex data and save it
+    */
+    std::memcpy(
+        persistentVertexBuffer + vertexBufferOffset, // Copy to the vertex buffer at the offset
+        mesh.getVertices().data(), // Copy the vertex data
+        mesh.getVertices().size() *  sizeof(float) // Copy the size of the data in bytes
+    );
+    //mappedVertexBuffer + vertexBufferOffset, mesh.getVertices().data(), mesh.getVertices().size() *  sizeof(GLfloat)
+    
+    std::memcpy(
+        persistentIndexBuffer + indexBufferOffset, // Copy to the vertex buffer at the offset
+        mesh.getIndices().data(), // Copy the vertex data
+        mesh.getIndices().size() *  sizeof(uint32_t) // Copy the size of the data in bytes
+    );
 
-void MultiChunkBuffer::extendIndexBuffer(size_t size){
-    size_t newMax = (maxIndices + size);
-
-    indexBuffer = resizeBuffer(indexBuffer, maxIndices * sizeof(uint32_t), newMax * sizeof(uint32_t));
-    maxIndices = newMax;
-
-    indexAllocator.appendBlock(size);
+    return {true, vertexBufferOffset, indexBufferOffset};
 }
 
 bool MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::ivec3& pos){
@@ -305,29 +332,8 @@ bool MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::ivec3& pos){
     
     //auto start  = std::chrono::high_resolution_clock::now();
 
-    auto vertexAlloc = vertexAllocator.allocate(mesh.getVertices().size());
-    auto indexAlloc = indexAllocator.allocate(mesh.getIndices().size());
-
-    if(vertexAlloc.failed || indexAlloc.failed) return false;
-
-    size_t vertexBufferOffset = vertexAlloc.location;
-    size_t indexBufferOffset = indexAlloc.location;
-
-    /*
-        Allocate space for vertex data and save it
-    */
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferSubData(GL_ARRAY_BUFFER, vertexBufferOffset * sizeof(float), mesh.getVertices().size() *  sizeof(float), mesh.getVertices().data());
-    //mappedVertexBuffer + vertexBufferOffset, mesh.getVertices().data(), mesh.getVertices().size() *  sizeof(GLfloat)
-    
-    CHECK_GL_ERROR();
-    /*
-        Allocate data for index data, find position of vertex data and offset the indices
-    */
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, indexBufferOffset * sizeof(uint32_t), mesh.getIndices().size() * sizeof(uint32_t), mesh.getIndices().data());
-
-    CHECK_GL_ERROR();
+    auto [success, vertexBufferOffset, indexBufferOffset] = allocateAndUploadMesh(mesh);
+    if(!success) return false;
     /*
         Register the chunk save it as loaded
     */
@@ -353,33 +359,16 @@ bool MultiChunkBuffer::addChunkMesh(Mesh& mesh, const glm::ivec3& pos){
 bool MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::ivec3& pos){
     if(loadedChunks.count(pos) == 0) return false;
     
-    auto vertexAlloc = vertexAllocator.allocate(mesh.getVertices().size());
-    auto indexAlloc = indexAllocator.allocate(mesh.getIndices().size());
-
-    if(vertexAlloc.failed || indexAlloc.failed) return false;
-    
-    size_t vertexBufferOffset = vertexAlloc.location;
-    size_t indexBufferOffset = indexAlloc.location;
+    auto [success, vertexBufferOffset, indexBufferOffset] = allocateAndUploadMesh(mesh);
+    if(!success) return false;
 
     LoadedChunk& chunk = loadedChunks.at(pos);
-    /*
-        Allocate space for new vertex data and save it
-    */
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferSubData(GL_ARRAY_BUFFER, vertexBufferOffset * sizeof(float), mesh.getVertices().size() *  sizeof(float), mesh.getVertices().data());
-    CHECK_GL_ERROR();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, indexBufferOffset * sizeof(uint32_t), mesh.getIndices().size() * sizeof(uint32_t), mesh.getIndices().data());
-    CHECK_GL_ERROR();
+
+    vertexAllocator.free(chunk.vertexData);
+    indexAllocator .free(chunk.indexData);
     /*
         Change the draw call arguments
     */
-    size_t oldVertexBufferOffset = chunk.vertexData;
-    size_t oldIndexBufferOffset = chunk.indexData;
-
-    //bool drawCall = drawCallMap.count(pos);
-    //if(drawCall) removeDrawCall(pos);
-
     chunk.vertexData = vertexBufferOffset;
     chunk.indexData = indexBufferOffset;
     
@@ -387,15 +376,6 @@ bool MultiChunkBuffer::swapChunkMesh(Mesh& mesh, const glm::ivec3& pos){
     chunk.count = mesh.getIndices().size();
     chunk.baseVertex = vertexBufferOffset / vertexFormat.getVertexSize();
 
-    //if(drawCall) addDrawCall(pos);
-    /*
-        Free the old data
-    */
-
-    vertexAllocator.free(oldVertexBufferOffset);
-    indexAllocator.free(oldIndexBufferOffset);
-
-    //updateDrawCalls();
     return true;
 }
 void MultiChunkBuffer::unloadChunkMesh(const glm::ivec3& pos){
@@ -422,11 +402,11 @@ void MultiChunkBuffer::updateDrawCalls(std::vector<DrawElementsIndirectCommand>&
     }
 
     bufferOffset = (bufferOffset + maxDrawCalls) % (maxDrawCalls * 2);
-    std::memcpy(persistentMappedBuffer + bufferOffset, commands.data(), sizeof(DrawElementsIndirectCommand) * commands.size());
+    std::memcpy(persistentDrawCallBuffer + bufferOffset, commands.data(), sizeof(DrawElementsIndirectCommand) * commands.size());
 
     drawCallCount = commands.size();
 
-    std::memcpy(persistentMappedBuffer, commands.data(), sizeof(DrawElementsIndirectCommand) * commands.size());
+    std::memcpy(persistentDrawCallBuffer, commands.data(), sizeof(DrawElementsIndirectCommand) * commands.size());
 
     drawCallCount = commands.size();
 

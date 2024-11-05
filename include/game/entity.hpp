@@ -40,6 +40,7 @@ class Entity{
         CollisionCheckResult checkForCollision(Collidable& collidable, bool withVelocity, glm::vec3 offset = {0,0,0});
         
         void accelerate(glm::vec3 direction);
+        void setGravity(bool value){hasGravity = value;}
 
         const glm::vec3& getPosition() {return position;};
         void setPosition(const glm::vec3& position) {this->position = position;}

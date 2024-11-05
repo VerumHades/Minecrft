@@ -47,7 +47,8 @@ bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
 
     if(value.type != BlockTypes::Air){
         if(currentGroup->getMasks().count(value.type) == 0){
-            currentGroup->setMask(value.type, {64,value});
+            DynamicChunkMask mask = {64,value};
+            currentGroup->setMask(value.type, mask);
         }
 
         currentGroup->getMask(value.type).set(x,y,z);
@@ -147,8 +148,8 @@ std::vector<Face> greedyMeshPlane(std::array<uint_t<64>, 64> rows, int size){
 
             'start' is 4
         */    
-        uint8_t start = count_leading_zeros(row); // Find the first
-        if(start >= size){
+        uint8_t start = std::min(count_leading_zeros(row), (uint8_t) size); // Find the first
+        if(start == size){
             currentRow++;
             continue;
         }
@@ -159,7 +160,7 @@ std::vector<Face> greedyMeshPlane(std::array<uint_t<64>, 64> rows, int size){
             'width' is 2
         */    
         row <<= start; // Shift so the faces start
-        uint8_t width = count_leading_zeros(~row); // Calculate width (negated counts '1') 
+        uint8_t width = std::min(count_leading_zeros(~row), static_cast<uint8_t>(size - start)); // Calculate width (negated counts '1') 
         row >>= start; // Return to original position
 
         /*
@@ -282,7 +283,9 @@ std::unique_ptr<Mesh> generateChunkMesh(World& world, glm::ivec3 worldPosition, 
     float worldZ = worldPosition.z * CHUNK_SIZE;
 
     int size = group->getSize();
-    float scale = CHUNK_SIZE / size;
+    float scale = static_cast<float>(CHUNK_SIZE) / static_cast<float>(size);
+
+    //std::cout << "Scale: " << scale << " size: " << size << std::endl;
 
     auto groupMaskTypes = group->getMaskTypes();
 

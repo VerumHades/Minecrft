@@ -94,10 +94,9 @@ static inline float transcribeNoiseValue(float value, float ry){
     return value;
 }
 
-static inline void set(DynamicChunkContents* group, int x, int y, int z, BlockTypes type){
-    if(!group->hasMask(type)) group->setMask(type, {64, type});
+static inline void set(DynamicChunkContents* group, int x, int y, int z, BlockTypes type, bool solid){
     group->getMask(type).set(x,y,z);
-    if(predefinedBlocks[type].solid) group->getSolidMask().set(x,y,z);
+    if(solid) group->getSolidMask().set(x,y,z);
 }
 
 void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ, size_t size){
@@ -105,39 +104,48 @@ void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, 
 
     std::unique_ptr<DynamicChunkContents> outputDataGroup = std::make_unique<DynamicChunkContents>(size);
 
-    int jump = CHUNK_SIZE / size;
+    /*
+        MAKE SURE THAT ALL THE MASKS EXIST, CRASHES OTHERWISE!
+    */
+    outputDataGroup->createMask(BlockTypes::OakLog, size);
+    outputDataGroup->createMask(BlockTypes::Grass, size);
+    outputDataGroup->createMask(BlockTypes::LeafBlock, size);
+    outputDataGroup->createMask(BlockTypes::Dirt, size);
+    outputDataGroup->createMask(BlockTypes::GrassBillboard, size);
+
+    float jump = static_cast<float>(CHUNK_SIZE) / static_cast<float>(size);
 
     for(int x = 0;x < size;x++) for(int y = 0;y < size;y++) for(int z = 0;z < size;z++){
-        float rx = (float)(x * jump + chunkX * CHUNK_SIZE);
-        float ry = (float)(y * jump + chunkY * CHUNK_SIZE);
-        float rz = (float)(z * jump + chunkZ * CHUNK_SIZE);
+        float rx = static_cast<float>(x) * jump + chunkX * CHUNK_SIZE;
+        float ry = static_cast<float>(y) * jump + chunkY * CHUNK_SIZE;
+        float rz = static_cast<float>(z) * jump + chunkZ * CHUNK_SIZE;
         
         float value = transcribeNoiseValue(noise.GetNoise(rx, ry, rz),  ry);
         bool top = transcribeNoiseValue(noise.GetNoise(rx, ry + jump, rz), ry + jump) <= 0.5;
 
         if(value > 0.5){
             if(top){
-                set(outputDataGroup.get(), x, y, z, BlockTypes::Grass);
+                set(outputDataGroup.get(), x, y, z, BlockTypes::Grass, true);
 
-                if(top && rand() % 3 == 0) set(outputDataGroup.get(),x,y + 1,z,BlockTypes::GrassBillboard);
+                if(top && rand() % 30 == 0) set(outputDataGroup.get(),x,y + 1,z,BlockTypes::GrassBillboard, false);
                 else if(top && rand() % 60 == 0) {  
-                    set(outputDataGroup.get(),x,y + 1,z,BlockTypes::OakLog);
-                    set(outputDataGroup.get(),x,y + 2,z,BlockTypes::OakLog);
-                    set(outputDataGroup.get(),x,y + 3,z,BlockTypes::OakLog);
-                    set(outputDataGroup.get(),x,y + 4,z,BlockTypes::OakLog);
+                    set(outputDataGroup.get(),x,y + 1,z,BlockTypes::OakLog, true);
+                    set(outputDataGroup.get(),x,y + 2,z,BlockTypes::OakLog, true);
+                    set(outputDataGroup.get(),x,y + 3,z,BlockTypes::OakLog, true);
+                    set(outputDataGroup.get(),x,y + 4,z,BlockTypes::OakLog, true);
 
                     for(int i = -2; i < 3;i++) for(int j = -2;j < 3;j++) for(int g = 0;g < 2;g++){
                         if(i == 0 && j == 0 && g == 0) continue;
-                        set(outputDataGroup.get(),x + i,y + 4 + g,z + j,BlockTypes::LeafBlock);
+                        set(outputDataGroup.get(),x + i,y + 4 + g,z + j,BlockTypes::LeafBlock, true);
                     }
 
                     for(int i = -1; i < 2;i++) for(int j = -1;j < 2;j++){
-                        set(outputDataGroup.get(),x + i,y + 6,z + j,BlockTypes::LeafBlock);
+                        set(outputDataGroup.get(),x + i,y + 6,z + j,BlockTypes::LeafBlock, true);
                     }
                 } 
             }
             else{
-                set(outputDataGroup.get(),x,y,z,BlockTypes::Dirt);
+                set(outputDataGroup.get(),x,y,z,BlockTypes::Dirt, true);
             }
             //chunk.setBlock(x,y,z, {top ? BlockTypes::Grass : BlockTypes::Stone});
 

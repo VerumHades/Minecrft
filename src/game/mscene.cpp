@@ -320,7 +320,8 @@ void MainScene::open(GLFWwindow* window){
     allGenerated = false;
 
     world = std::make_unique<World>(worldPath);
-    world->getEntities().emplace_back(glm::vec3(-1,0,0), glm::vec3(0.6, 1.8, 0.6));
+    world->getEntities().emplace_back(glm::vec3(0,-100,0), glm::vec3(0.6, 1.8, 0.6));
+    world->getEntities()[0].setGravity(false);
 
     std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
     generationThread.detach();
@@ -616,10 +617,12 @@ void MainScene::generateSurroundingChunks(){
             //meshlessChunk = world->generateAndGetChunk(chunkX, chunkY, chunkZ);
             //std::cout << "Generating chunk" << std::endl;
 
-            int distance = 0;///glm::length(glm::vec3(x,y,z)) / 3;
+            int distance = glm::length(glm::vec3(x,y,z)) / 2;
+            int level = std::max(64 - distance * 4, 1);
+            //std::cout << "Level:" << level << std::endl;
 
-            threadPool->deploy([worldp,chunkX,chunkY,chunkZ, distance, bp,gptr](){
-                worldp->generateChunk(chunkX, chunkY, chunkZ, 64 - distance);
+            threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level, bp,gptr](){
+                worldp->generateChunk(chunkX, chunkY, chunkZ, level);
                 (*gptr)++;
             });
             //if(!success){break;}
@@ -627,7 +630,7 @@ void MainScene::generateSurroundingChunks(){
     }
 
     while(!threadPool->finished()){ // Wait for everything to generate
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     std::cout << "Generating meshes..." << std::endl;
