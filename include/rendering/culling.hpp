@@ -18,25 +18,33 @@ struct Plane
 
 	float getSignedDistanceToPlane(const glm::vec3& point) const
 	{
-		return glm::dot(normal, point) + distance;
+		return glm::dot(normal, point) - distance;
 	}
+
+    bool isForwardOfPlane(const glm::vec3& point) const{
+        return getSignedDistanceToPlane(point) >= 0; 
+    }
 };
 
-inline bool isAABBOnOrForwardPlane(const Plane& plane, glm::vec3 center, int extent){
-    // Calculate AABB extents
-    glm::vec3 extents(extent, extent, extent);
+inline bool isAABBOnOrForwardPlane(const Plane& plane, glm::vec3& min, glm::vec3& max){
+    std::array<glm::vec3, 8> points = {
+        min, // min.x,min.y,min.z
+        {min.x,max.y,min.z},
+        {min.x,max.y,max.z},
+        {min.x,min.y,max.z},
+        {max.x,min.y,min.z},
+        {max.x,max.y,min.z},
+        max,
+        {max.x,min.y,max.z}
+    };
 
-    // Calculate the projection interval radius of the AABB onto the plane normal
-    const float projectionRadius =
-        std::abs(plane.normal.x) * extents.x +
-        std::abs(plane.normal.y) * extents.y +
-        std::abs(plane.normal.z) * extents.z;
+    bool value = plane.isForwardOfPlane(points[0]);
 
-    // Calculate the distance from the AABB center to the plane
-    const float centerDistance = plane.getSignedDistanceToPlane(center);
+    for(int i = 1;i < 8;i++){
+        if(value != plane.isForwardOfPlane(points[i])) return true; // The AABB intersects the plane
+    }
 
-    // If the center is within the radius of the projection interval, the AABB is in front or intersecting the plane
-    return centerDistance + projectionRadius >= 0;
+    return value;
 }
 
 struct Frustum
@@ -50,21 +58,20 @@ struct Frustum
     Plane farFace;
     Plane nearFace;
 
-    bool isAABBWithing(glm::vec3 position, int extent){
-        //Get global scale thanks to our transform
-        return  isAABBOnOrForwardPlane(leftFace  , position, extent) ||
-                isAABBOnOrForwardPlane(rightFace , position, extent) ||
-                isAABBOnOrForwardPlane(topFace   , position, extent) ||
-                isAABBOnOrForwardPlane(bottomFace, position, extent) ||
-                isAABBOnOrForwardPlane(nearFace  , position, extent) ||
-                isAABBOnOrForwardPlane(farFace   , position, extent);
+    bool isAABBWithing(glm::vec3 min, glm::vec3 max){
+        return  isAABBOnOrForwardPlane(leftFace  , min, max) &&
+                isAABBOnOrForwardPlane(rightFace , min, max) &&
+                isAABBOnOrForwardPlane(topFace   , min, max) &&
+                isAABBOnOrForwardPlane(bottomFace, min, max) &&
+                isAABBOnOrForwardPlane(nearFace  , min, max) &&
+                isAABBOnOrForwardPlane(farFace   , min, max);
     }
 };
 
 using ChunkFoundCallback = std::function<void(glm::ivec3 position)>;
 /*
-    Find all chunks in a render distances that are inside the frustum. 
+    Find all chunks in a render distance that are inside the frustum. 
     Calls the 'chunkFound' function with its relative position to the center.
-    Will break if renderDistance is not even.
+    Will break if renderDistance is not 2^X.
 */
 void findVisibleChunks(Frustum& frustum, int renderDistance, ChunkFoundCallback chunkFound);

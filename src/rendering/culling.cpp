@@ -14,7 +14,7 @@ void processSubChunks(Frustum& frustum, glm::ivec3 offset, int size, ChunkFoundC
         glm::ivec3 pos = offset + glm::ivec3(x * sub_size, y * sub_size, z * sub_size);
         //std::cout << pos.x << " " << pos.y << " " << pos.z  << " of size: " << sub_size << std::endl;
         
-        if(!frustum.isAABBWithing(pos * real_size + (glm::ivec3(real_size) / 2), real_size)) continue;
+        if(!frustum.isAABBWithing(pos * real_size, pos * real_size + real_size)) continue;
         
         if(sub_size == 1){
             chunkFound(pos);

@@ -617,8 +617,10 @@ void MainScene::generateSurroundingChunks(){
             //meshlessChunk = world->generateAndGetChunk(chunkX, chunkY, chunkZ);
             //std::cout << "Generating chunk" << std::endl;
 
-            int distance = glm::length(glm::vec3(x,y,z)) / 2;
-            int level = std::max(64 - distance * 4, 1);
+            //int distance = glm::length(glm::vec3(x,y,z)) / 4;
+            //int level = std::max(64 - distance * 16, 1);
+
+            int level = 8;
             //std::cout << "Level:" << level << std::endl;
 
             threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level, bp,gptr](){
