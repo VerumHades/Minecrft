@@ -3,10 +3,9 @@
 const int halfChunkSize = (CHUNK_SIZE / 2);
 void processSubChunks(Frustum& frustum, glm::ivec3 offset, int size, ChunkFoundCallback& chunkFound){
     int sub_size = size / 2;
-    int real_size = CHUNK_SIZE * sub_size;
 
     if(sub_size < 1){
-        std::cout << "shouldnt happen" << std::endl;
+        std::cerr << "shouldnt happen" << std::endl;
         return;
     }
 
@@ -14,7 +13,8 @@ void processSubChunks(Frustum& frustum, glm::ivec3 offset, int size, ChunkFoundC
         glm::ivec3 pos = offset + glm::ivec3(x * sub_size, y * sub_size, z * sub_size);
         //std::cout << pos.x << " " << pos.y << " " << pos.z  << " of size: " << sub_size << std::endl;
         
-        if(!frustum.isAABBWithing(pos * real_size, pos * real_size + real_size)) continue;
+        glm::ivec3 min = pos * CHUNK_SIZE;
+        if(!frustum.isAABBWithing(min, min + CHUNK_SIZE * sub_size)) continue;
         
         if(sub_size == 1){
             chunkFound(pos);

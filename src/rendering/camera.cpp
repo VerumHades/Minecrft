@@ -46,14 +46,14 @@ void PerspectiveCamera::calculateFrustum(){
     localFrustum.topFace    = {origin                          ,glm::cross(CamRight, frontMultFar - CamUp * halfVSide) };
     localFrustum.bottomFace = {origin                          ,glm::cross(frontMultFar + CamUp * halfVSide, CamRight) };
 
-    glm::vec3 pos = this->position.getValue();
+    /*glm::vec3 pos = this->position.getValue();
 
     frustum.nearFace   = {localFrustum.nearFace  .distance + pos, localFrustum.nearFace  .normal};
     frustum.farFace    = {localFrustum.farFace   .distance + pos, localFrustum.farFace   .normal};
     frustum.rightFace  = {localFrustum.rightFace .distance + pos, localFrustum.rightFace .normal};
     frustum.leftFace   = {localFrustum.leftFace  .distance + pos, localFrustum.leftFace  .normal};
     frustum.topFace    = {localFrustum.topFace   .distance + pos, localFrustum.topFace   .normal};
-    frustum.bottomFace = {localFrustum.bottomFace.distance + pos, localFrustum.bottomFace.normal};
+    frustum.bottomFace = {localFrustum.bottomFace.distance + pos, localFrustum.bottomFace.normal};*/
 }
 
 PerspectiveCamera::PerspectiveCamera(){
