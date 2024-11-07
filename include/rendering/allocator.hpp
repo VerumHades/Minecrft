@@ -10,11 +10,6 @@
 
 using AllocatorMemoryRequest = std::function<bool(size_t)>;
 
-struct AllocationResult{
-    size_t location;
-    bool failed;
-};
-
 class Allocator{
     private:
         size_t memsize;
@@ -49,7 +44,7 @@ class Allocator{
             memsize = 0;
         }
 
-        AllocationResult allocate(size_t size);
+        std::tuple<bool,size_t> allocate(size_t size);
         void free(size_t location);
         void clear();
 
@@ -73,11 +68,11 @@ class PoolAllocator{
             for(int i = 0;i < memsize;i++) freeLocations.push(i);
         }
         // Allocates the first empty block
-        AllocationResult allocate(){
-            if(freeLocations.empty()) return {0,true};
+        std::tuple<bool,size_t> allocate(){
+            if(freeLocations.empty()) return {false,0};
             size_t loc = freeLocations.front();
             freeLocations.pop();
-            return {loc};
+            return {true,loc};
         }
         // Does no checks to validate the free, can cause issues
         void free(size_t ptr){

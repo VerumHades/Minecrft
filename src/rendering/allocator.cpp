@@ -3,7 +3,7 @@
 /*
     Allocates memory to the block of closest size, resizes blocks to be exactly the size of the allocation.
 */
-AllocationResult Allocator::allocate(size_t size){
+std::tuple<bool,size_t> Allocator::allocate(size_t size){
     auto it = freeBlocks.lower_bound(size);
 
     if(it == freeBlocks.end()){
@@ -13,7 +13,7 @@ AllocationResult Allocator::allocate(size_t size){
             return allocate(size);
         }
         else{
-            return {0, true};
+            return {false, 0};
         }
     }
 
@@ -42,7 +42,7 @@ AllocationResult Allocator::allocate(size_t size){
     //    std::cout << "(" << block.start << ":" << block.size << ")[" << (block.used ? "used" : "unused") << "] ";
     //}
     //std::cout << std::endl;
-    return {selectedBlock->start,false};
+    return {true, selectedBlock->start};
 }   
 
 void Allocator::clear(){

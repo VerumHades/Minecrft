@@ -29,12 +29,26 @@ class MeshRegion{
 
         
         /*
-            If the region is completely meshed, thus drawing it can only be done by drawing the whole region
+            If the region has a single joined mesh
         */
         bool merged = false;
+        /*
+            If region is a part of a higher merged mesh
+        */
+        bool part_of_parent_mesh = false;
 
         /*
             If possible reorganizes all subregion meshes into one large mesh that can be drawn with a single draw call
+
+            Fails if:
+                - The region is already meshed
+                - The region is a level 1 region (cannot be merged, because it has no subregions)
+                - Not all subregions are meshed
+                - Not all subregions meshes are (one mesh for subregion) or can be made contiquous (by merging)
+                - Not all subregions exist
+                - There is not enough space to allocate for the new mesh
+
+            Will try to merge subregions
         */
         bool merge();
 
@@ -96,7 +110,7 @@ class MeshRegion{
 
             will return {0,0,0} if no parent is present
         */
-        glm::ivec3 getParentRelativePosition();
+        std::tuple<uint32_t,uint32_t,uint32_t> getParentRelativePosition();
 
         // Creates a draw command from current mesh information
         DrawElementsIndirectCommand generateDrawCommand();
@@ -114,6 +128,11 @@ class MeshRegion{
             return if the operation was successful.
         */
         bool setSubregionMeshState(uint32_t x, uint32_t y, uint32_t z, bool state);
+        
+        /*
+            If the regions mesh is contiguous, that means if its merged or that its level 1.
+        */
+        bool hasContiguousMesh() {return merged || transform.level <= 1; }
 };
 
 struct TransformHash{

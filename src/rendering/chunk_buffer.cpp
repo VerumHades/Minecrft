@@ -8,9 +8,11 @@ bool MeshRegion::setSubregionMeshState(uint32_t x, uint32_t y, uint32_t z, bool 
     else      child_states &= ~(1 << index);
 
     if(child_states == 0xFF){ // If all children are meshed
-        // Join all the meshes if neccesary
         auto* parent = getParentRegion();
-        if(parent) parent->setSubregionMeshState()
+        if(parent){
+            auto [relative_x, relative_y, relative_z] = getParentRelativePosition();
+            parent->setSubregionMeshState(relative_x, relative_y, relative_z, true);
+        }
     }
     else if(merged){
         // Split apart the meshes because they are no longer valid
@@ -28,7 +30,7 @@ MeshRegion* MeshRegion::getParentRegion(){
     return manager.getRegion({parent_position, parent_level});
 }
 
-glm::ivec3 MeshRegion::getParentRelativePosition(){
+std::tuple<uint32_t,uint32_t,uint32_t> MeshRegion::getParentRelativePosition(){
     auto* parent = getParentRegion();
     if(!parent) return {0,0,0};
 
@@ -98,6 +100,73 @@ bool MeshRegion::moveMesh(size_t new_vertex_position, size_t new_index_position,
     mesh_information.first_index = new_index_position;
     mesh_information.base_vertex = new_vertex_position / manager.getVertexFormat().getVertexSize(); // Calculate the base vertex in a single vertex sizes
     
+    return true;
+}
+
+bool MeshRegion::merge(){
+    if(transform.level <= 1) return false; // Cannot merge level 1 mesh
+    if(child_states != 0xFF) return false; // Not all children are meshed
+    if(merged) return false; // Cant merge a mesh twice
+
+    size_t vertex_size_total = 0;
+    size_t index_size_total = 0;
+
+    for(int x = 0; x < 2; x++)
+    for(int y = 0; y < 2; y++) 
+    for(int z = 0; z < 2; z++)
+    { // Go trough all subregions and merge them if possible
+        MeshRegion* subregion = getSubregion(x,y,z);
+        if(!subregion) return false; // Region doesn't exist
+        
+        if(subregion->hasContiguousMesh() || subregion->merge()){
+            vertex_size_total += subregion->mesh_information.vertex_data_size;
+            index_size_total  += subregion->mesh_information.index_data_size;
+        } // A mergable mesh
+        else return false; // Fail if isn't and cannot be made contiguous
+    }
+    
+    auto [vertex_success, new_vertex_position] = manager.getVertexAllocator().allocate(vertex_size_total);
+    auto [index_success , new_index_position] = manager.getIndexAllocator().allocate(index_size_total);
+
+    if(!vertex_success || !index_success) return false; // Failed to allocate space for the new mesh
+
+    size_t vertex_offset = 0;
+    size_t index_offset  = 0;
+
+    // All meshes should be mergable at this point
+    for(int x = 0; x < 2; x++)
+    for(int y = 0; y < 2; y++) 
+    for(int z = 0; z < 2; z++)
+    { // Go trough all subregions and merge them if possible
+        MeshRegion* subregion = getSubregion(x,y,z);
+        if(!subregion) return false; // Region doesn't exist, but this would have already failed in the previous loop
+
+        bool moved = subregion->moveMesh(
+            new_vertex_position + vertex_offset,
+            new_index_position  + index_offset,
+            vertex_offset / manager.getVertexFormat().getVertexSize() // Offset is in individual floats, this division makes it in vertices 
+        ); 
+
+        if(!moved) throw std::runtime_error("Mesh move failed when merging, something is very wrong."); // Shouldnt ever happen, there is no way to revert moved meshes so just crash
+
+        vertex_offset += subregion->mesh_information.vertex_data_size;
+        index_offset  += subregion->mesh_information.index_data_size;
+
+        manager.getVertexAllocator().free(subregion->mesh_information.vertex_data_start);
+        manager.getIndexAllocator().free(subregion->mesh_information.index_data_start);
+
+        subregion->part_of_parent_mesh = true;
+    }
+
+    mesh_information.vertex_data_start = new_vertex_position;
+    mesh_information.index_data_start = new_index_position;
+
+    mesh_information.first_index = new_index_position;
+    mesh_information.base_vertex = new_vertex_position / manager.getVertexFormat().getVertexSize(); // Calculate the base vertex in a single vertex sizes
+
+    mesh_information.vertex_data_size = vertex_size_total;
+    mesh_information.index_data_size = index_size_total;
+
     return true;
 }
 
@@ -228,13 +297,10 @@ MeshRegionManager::~MeshRegionManager(){
     glDeleteVertexArrays(1, &vao);
 }
 std::tuple<bool,size_t,size_t> MeshRegionManager::allocateAndUploadMesh(Mesh& mesh){
-    auto vertexAlloc = vertexAllocator.allocate(mesh.getVertices().size());
-    auto indexAlloc = indexAllocator.allocate(mesh.getIndices().size());
+    auto [vertexSuccess, vertexBufferOffset] = vertexAllocator.allocate(mesh.getVertices().size());
+    auto [indexSuccess, indexBufferOffset] = indexAllocator.allocate(mesh.getIndices().size());
 
-    if(vertexAlloc.failed || indexAlloc.failed) return {false,0,0};
-
-    size_t vertexBufferOffset = vertexAlloc.location;
-    size_t indexBufferOffset = indexAlloc.location;
+    if(!vertexSuccess || !indexSuccess) return {false,0,0};
 
     /*
         Allocate space for vertex data and save it
