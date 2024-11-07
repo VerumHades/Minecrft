@@ -6,6 +6,7 @@
 
 #include <rendering/texture.hpp>
 #include <rendering/buffer.hpp>
+#include <rendering/chunk_buffer.hpp>
 #include <rendering/mesh.hpp>
 #include <rendering/camera.hpp>
 #include <rendering/model.hpp>
@@ -73,7 +74,7 @@ class Chunk: public Volume{
         /*
             Generates and uploads the newly generated chunk mesh right away
         */
-        void syncGenerateSyncUploadMesh(MultiChunkBuffer& buffer);
+        void syncGenerateSyncUploadMesh(MeshRegionManager& buffer);
 
         World& getWorld();
         const glm::ivec3& getWorldPosition(){

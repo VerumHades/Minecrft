@@ -14,6 +14,8 @@
 #include <fstream>
 #include <string>
 
+#include <rendering/chunk_buffer.hpp>
+
 #include <game/entity.hpp>
 #include <game/world_saving.hpp>
 #include <game/chunk.hpp>
@@ -113,7 +115,7 @@ class World: public Collidable{
         void loadChunk(int x, int y, int z);
 
         void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<Mesh> mesh);
-        void loadMeshFromQueue(MultiChunkBuffer&  buffer);
+        void loadMeshFromQueue(MeshRegionManager&  buffer);
 
         Chunk* getChunk(int x, int y, int z);
         Chunk* getChunkFromBlockPosition(int x, int y, int z);

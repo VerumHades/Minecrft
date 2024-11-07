@@ -110,7 +110,7 @@ void Chunk::asyncGenerateAsyncUploadMesh(ThreadPool& pool, bool reload){
     } 
 }
 
-void Chunk::syncGenerateSyncUploadMesh(MultiChunkBuffer& buffer){
+void Chunk::syncGenerateSyncUploadMesh(MeshRegionManager& buffer){
     generateMeshes();
 
     if(solidMesh->getVertices().size() == 0){

@@ -12,13 +12,11 @@
 #include <list>
 
 #include <rendering/mesh.hpp>
-#include <rendering/allocator.hpp>
 
 #include <chrono>
 
 void checkGLError(const char *file, int line);
 #define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
-class Mesh;
 
 class GLBuffer{
     private:
@@ -75,85 +73,5 @@ class GLDoubleBuffer{
         GLBuffer& getBuffer();
         GLBuffer& getBackBuffer();
 };
-
-#include <vec_hash.hpp>
-
-struct DrawElementsIndirectCommand {
-    GLuint  count;      // Number of indices for the current draw call.
-    GLuint  instanceCount; // Number of instances to render.
-    GLuint  firstIndex; // Offset into the element array buffer.
-    GLuint  baseVertex; // Base vertex for index calculations.
-    GLuint  baseInstance; // Base instance for instanced rendering.
-};
-
-class MultiChunkBuffer{
-    private:
-        VertexFormat vertexFormat;
-
-        uint32_t indirectBuffer;
-        uint32_t vertexBuffer;
-        uint32_t indexBuffer;
-        uint32_t vao;
-
-        Allocator vertexAllocator;
-        Allocator indexAllocator;
-        size_t drawCallBufferSize = 0;
-        size_t drawCallCount = 0;
-        size_t bufferOffset = 0;
-
-        size_t maxDrawCalls = 0;
-
-        DrawElementsIndirectCommand* persistentDrawCallBuffer;
-        float* persistentVertexBuffer;
-        uint32_t* persistentIndexBuffer;
-        
-        struct LoadedChunk{ 
-            size_t vertexData;
-            size_t indexData;
-
-            size_t firstIndex;
-            size_t count;
-            size_t baseVertex;
-
-            size_t vertexDataSize;
-            size_t indexDataSize;
-        };
-
-        std::unordered_map<glm::ivec3, LoadedChunk, IVec3Hash, IVec3Equal> loadedChunks;
-
-        /*
-            Allocates and copies the buffer into the respective buffers,
-
-            returns the a tuple: 
-                - bool => did the allocation succeed
-                - size_t => vertex data offset in the vertex buffer
-                - size_t => index data offset in the index buffer 
-            
-        */
-        std::tuple<bool,size_t,size_t> allocateAndUploadMesh(Mesh& mesh);
-
-    public:
-        ~MultiChunkBuffer();
-        
-        void initialize(uint32_t renderDistance);
-
-        bool addChunkMesh(Mesh& mesh, const glm::ivec3& pos);
-        bool swapChunkMesh(Mesh& mesh, const glm::ivec3& pos);
-        void unloadChunkMesh(const glm::ivec3& pos);
-        void unloadFarawayChunks(const glm::ivec3& from, float treshold);
-        void clear();
-        bool isChunkLoaded(const glm::ivec3& pos){
-            return loadedChunks.count(pos) != 0;
-        }
-
-        void updateDrawCalls(std::vector<DrawElementsIndirectCommand>& commands);
-        DrawElementsIndirectCommand getCommandFor(const glm::ivec3& pos);
-        void draw();
-
-        Allocator& getVertexAllocator() {return vertexAllocator;};
-        Allocator& getIndexAllocator() {return indexAllocator;};
-};
-
-#include <rendering/mesh.hpp>
 
 #endif

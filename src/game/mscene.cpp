@@ -482,18 +482,20 @@ void MainScene::generateMeshes(){
 
 
     if(updateVisibility > 0){
-        std::vector<DrawElementsIndirectCommand> drawCommands = {};
-        drawCommands.reserve(20000);
-        auto* drawcmdnptr = &drawCommands;
         auto istart = std::chrono::high_resolution_clock::now();
 
         //int consideredTotal = 0;
         //int *tr = &consideredTotal;
 
+        DrawElementsIndirectCommand* drawCallBuffer = chunkBuffer.getCommandBuffer();
+
+        int  drawCallIndex = 0;
+        int* drawCallIndexPointer = &drawCallIndex;
+
         findVisibleChunks(
             camera.getLocalFrustum(), 
             renderDistance, 
-            [drawcmdnptr, camWorldPosition, this](glm::ivec3 local_position){
+            [this, camWorldPosition, drawCallBuffer, drawCallIndexPointer](glm::ivec3 local_position){
                 auto pos = local_position + camWorldPosition;
 
                 //(*tr)++;
@@ -504,9 +506,11 @@ void MainScene::generateMeshes(){
                 //if(meshlessChunk->needsMeshReload())  meshlessChunk->asyncGenerateMesh(*threadPool, true);
                 if(meshlessChunk->isMeshEmpty()) return;
 
-                drawcmdnptr->push_back(this->chunkBuffer.getCommandFor(pos));
+                drawCallBuffer[(*drawCallIndexPointer)++] = this->chunkBuffer.getCommandFor(pos);
             }
         );
+
+        chunkBuffer.setDrawCallCount(drawCallIndex + 1);
 
         //std::cout << (consideredTotal / pow(renderDistance*2,3)) * 100 << "%" << std::endl;
         //End time point
@@ -514,8 +518,6 @@ void MainScene::generateMeshes(){
         std::cout << "Iterated over all chunks in: " << std::chrono::duration_cast<std::chrono::microseconds>(iend - istart).count() << " microseconds" << std::endl;
         
         //auto start = std::chrono::high_resolution_clock::now();
-
-        chunkBuffer.updateDrawCalls(drawCommands);
         updateVisibility--;
     }
     //End time point

@@ -248,7 +248,7 @@ void World::addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<Mesh
     std::lock_guard<std::mutex> lock(meshLoadingMutex);
     meshLoadingQueue.push({position,std::move(mesh)});
 }
-void World::loadMeshFromQueue(MultiChunkBuffer&  buffer){
+void World::loadMeshFromQueue(MeshRegionManager&  buffer){
     std::lock_guard<std::mutex> lock(meshLoadingMutex);
     if(meshLoadingQueue.empty()) return;
     auto& [position,mesh] = meshLoadingQueue.front();
