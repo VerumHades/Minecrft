@@ -195,7 +195,7 @@ void GLSkybox::load(std::array<std::string, 6> filenames){
 
     CHECK_GL_ERROR();;
 
-    this->vertexBuffer = VBO;
+    this->vertexBufferID = VBO;
     this->vao = vao;
 }
 void GLSkybox::draw(){
@@ -215,7 +215,7 @@ void GLSkybox::draw(){
     glDepthMask(GL_TRUE);
 }
 GLSkybox::~GLSkybox(){
-    glDeleteBuffers(1 , &this->vertexBuffer);
+    glDeleteBuffers(1 , &this->vertexBufferID);
     glDeleteVertexArrays(1, &this->vao);
 }
 

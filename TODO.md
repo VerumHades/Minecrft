@@ -33,6 +33,7 @@
   - [ ] Transpose planes to save 1/2 of all memory taken by blocks
   - [ ] ~~Use a compute shader to do frustum culling~~
   - [x] Compute frustum culling using a spatial octree
+  - [ ] Make mesh registry check if region meshes arent already saved contiguously
 
 - [ ] Add missing features:
   - [ ] Add support for non solid blocks (Stairs and such)

@@ -10,7 +10,7 @@
 
 struct TransformHash;
 struct TransformEqual;
-class MeshRegionManager;
+class ChunkMeshRegistry;
 
 class MeshRegion{
     private:
@@ -27,7 +27,8 @@ class MeshRegion{
 
         } transform;
 
-        
+        ChunkMeshRegistry& registry;
+        MeshRegion(Transform& transform, ChunkMeshRegistry& registry): transform(transform), registry(registry) {}
         /*
             If the region has a single joined mesh
         */
@@ -53,6 +54,12 @@ class MeshRegion{
         bool merge();
 
         /*
+            If merged breaks up the mesh back into subregions
+        */
+        bool split();
+
+
+        /*
             Moves the mesh information in memory to a new position, only possible on level 1 regions or merged regions.
             
             Does no checks for intersection with existing meshes.
@@ -64,9 +71,14 @@ class MeshRegion{
             index_offset = an offset to apply to all indices
         */
         bool moveMesh(size_t new_vertex_position, size_t new_index_position, size_t index_offset = 0);
+        /*
+            Recalculates mesh indices to have no offset
+        */
+        void recalculateIndicies();
 
         /*
-            Information valid only if everything is merged, marks the respective positions and sizes of space allocated for the agregate mesh
+            Information drawable only if everything is merged, marks the respective positions and sizes of space allocated for the mesh
+            Information will remain valid even for regions merged within parent regions but it will not be drawable
         */
         struct MeshInformation{ 
             size_t vertex_data_start;
@@ -79,7 +91,14 @@ class MeshRegion{
             size_t first_index;
             size_t count;
             size_t base_vertex;
+
+            size_t index_offset = 0; // The last offset applied to the mesh when moved
         } mesh_information;
+
+        /*
+            Updates mesh information, will cause parent regions to split apart if they merged this one
+        */
+        bool updateMeshInformation(MeshInformation information);
 
         /*
             Returns an index from subregions relative position
@@ -110,29 +129,37 @@ class MeshRegion{
 
             will return {0,0,0} if no parent is present
         */
-        std::tuple<uint32_t,uint32_t,uint32_t> getParentRelativePosition();
+        glm::ivec3 getParentRelativePosition();
 
-        // Creates a draw command from current mesh information
-        DrawElementsIndirectCommand generateDrawCommand();
-
-        MeshRegionManager& manager;
+        /*
+            Returns the position of the regions parent
+        */
+        glm::ivec3 getParentPosition() {return transform.position / 2;}
 
         friend struct TransformHash;
         friend struct TransformEqual;
-        friend class MeshRegionManager;
-
-    public:
+        friend class ChunkMeshRegistry;
         /*
             Sets the state for a subregion in the 'child_states', coordinates are relative coordinates in the subregions level.
 
             return if the operation was successful.
         */
         bool setSubregionMeshState(uint32_t x, uint32_t y, uint32_t z, bool state);
+
+        /*
+            Sets the regions mesh state in the parent if possible
+        */
+        bool setStateInParent(bool value);
+    public:
+        
         
         /*
             If the regions mesh is contiguous, that means if its merged or that its level 1.
         */
         bool hasContiguousMesh() {return merged || transform.level <= 1; }
+        
+        // Creates a draw command from current mesh information
+        DrawElementsIndirectCommand generateDrawCommand();
 };
 
 struct TransformHash{
@@ -160,14 +187,14 @@ struct DrawElementsIndirectCommand {
     GLuint  baseInstance; // Base instance for instanced rendering.
 };
 
-class MeshRegionManager{
+class ChunkMeshRegistry{
     private:
         VertexFormat vertexFormat;
 
         uint32_t vao;
-        uint32_t indirectBuffer;
-        uint32_t vertexBuffer;
-        uint32_t indexBuffer;
+        uint32_t indirectBufferID;
+        uint32_t vertexBufferID;
+        uint32_t indexBufferID;
 
         Allocator vertexAllocator;
         Allocator indexAllocator;
@@ -202,8 +229,14 @@ class MeshRegionManager{
 
         std::unordered_map<glm::ivec3, LoadedChunk, IVec3Hash, IVec3Equal> loadedChunks;
 
+        // Highest region level, no regions higher than maxRegionLevel will be registered or created
+        const static uint32_t maxRegionLevel = 4;
+        
+        // index 0 is level 1, precalculated sizes
+        std::vector<uint32_t> actualRegionSizes;
 
         std::unordered_map<MeshRegion::Transform, MeshRegion, TransformHash, TransformEqual> regions;
+
         /*
             Allocates and copies the buffer into the respective buffers,
 
@@ -216,17 +249,10 @@ class MeshRegionManager{
         std::tuple<bool,size_t,size_t> allocateAndUploadMesh(Mesh& mesh);
 
     public:
-        ~MeshRegionManager();
+        ~ChunkMeshRegistry();
         
         void initialize(uint32_t renderDistance);
 
-        /*
-            Creates and uploads a mesh region and registers it to the position 
-        */
-        //bool addMeshRegion(std::vector<std::unique_ptr<Mesh>>& meshes,const glm::ivec3& position);
-
-        bool addChunkMesh(Mesh& mesh, const glm::ivec3& pos);
-        bool swapChunkMesh(Mesh& mesh, const glm::ivec3& pos);
         void unloadChunkMesh(const glm::ivec3& pos);
         void unloadFarawayChunks(const glm::ivec3& from, float treshold);
         void clear();
@@ -234,9 +260,36 @@ class MeshRegionManager{
             return loadedChunks.count(pos) != 0;
         }
 
+        /*
+            Uploads the mesh as a level 1 region. (All parents are automatically created if they dont already exist)
+
+            Empty meshes will be ingnored and fail. (Empty or non-existent regions are considered empty meshes automatically)
+        */
+        bool addMesh(Mesh& mesh, const glm::ivec3& pos);
+
+        /*
+            Updates a mesh, splits regions if old mesh is a part of them
+        */
+        bool updateMesh(Mesh& mesh, const glm::ivec3& pos);
+
+        /*
+            Creates a region and all its parents if they dont already exist.
+
+            returns a `nullptr` on failure
+        */
+        MeshRegion* createRegion(MeshRegion::Transform transform);
+
         MeshRegion* getRegion(MeshRegion::Transform transform) {
             if(!regions.contains(transform)) return nullptr;
-            return &regions[transform];
+            return &regions.at(transform);
+        }
+
+        /*
+            Return the real size of a region based on its level
+        */
+        uint32_t getRegionSizeForLevel(uint32_t level) {
+            if(level < 1 || level > maxRegionLevel) return 0;
+            return actualRegionSizes[level - 1];
         }
 
         float* getVertexBuffer(){ return persistentVertexBuffer; }

@@ -56,7 +56,7 @@ class GLTextureArray: public BindableTexture{
 
 class GLSkybox: public BindableTexture{
     private:
-        uint32_t vertexBuffer;
+        uint32_t vertexBufferID;
         uint32_t vao;
     public:
         void load(std::array<std::string, 6> filenames);

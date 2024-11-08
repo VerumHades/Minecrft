@@ -40,7 +40,7 @@ class MainScene: public Scene{
         GLSkybox skybox;
         std::unique_ptr<World> world;
 
-        MeshRegionManager chunkBuffer;
+        ChunkMeshRegistry chunkBuffer;
 
         std::string worldPath = "saves/worldsave.bin";
         int renderDistance = 8;

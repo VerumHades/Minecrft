@@ -115,7 +115,7 @@ class World: public Collidable{
         void loadChunk(int x, int y, int z);
 
         void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<Mesh> mesh);
-        void loadMeshFromQueue(MeshRegionManager&  buffer);
+        void loadMeshFromQueue(ChunkMeshRegistry&  buffer);
 
         Chunk* getChunk(int x, int y, int z);
         Chunk* getChunkFromBlockPosition(int x, int y, int z);

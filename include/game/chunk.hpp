@@ -74,7 +74,7 @@ class Chunk: public Volume{
         /*
             Generates and uploads the newly generated chunk mesh right away
         */
-        void syncGenerateSyncUploadMesh(MeshRegionManager& buffer);
+        void syncGenerateSyncUploadMesh(ChunkMeshRegistry& buffer);
 
         World& getWorld();
         const glm::ivec3& getWorldPosition(){
