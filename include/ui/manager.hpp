@@ -48,7 +48,11 @@ enum Units{
     WINDOW_HEIGHT, // Percentage of the window height
     
     MY_PERCENT, // Percentage of the size of the widget
-    PERCENT, // The percentage of parent
+    /*
+        The percentage of parent.
+        Subtracts elements own margin and border sizes from the width, 100% is a perfect fit even with a margin and border
+    */
+    PERCENT,
 
     OPERATION_PLUS    , // TValue + TValue (resolved to pixels)
     OPERATION_MINUS   , // TValue - TValue (resolved to pixels)
@@ -265,7 +269,7 @@ class UIFrame{
         Style baseStyle = {
             Style::TextPosition::LEFT,
             UIColor{255,255,255,255},
-            UIColor{0,0,0,255},
+            UIColor{0,0,0,0},
             std::array<TValue,4>{0,0,0,0},
             std::array<UIColor,4>{UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
             TValue(0)

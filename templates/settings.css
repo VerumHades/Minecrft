@@ -2,9 +2,9 @@
 
 .settings_section_title{
     border-bottom-width: 5px;
-    border-bottom-color: rgb(2, 76, 170);
+    border-bottom-color: rgb(105, 117, 101);
 
-    background-color: rgb(6, 10, 51);
+    background-color: rgb(24, 28, 20);
 }
 
 #settings_back_button{
@@ -20,13 +20,13 @@
 }
 
 .mouse_sensitivity_slider{
-    background-color: rgb(2, 10, 30);
+    background-color: rgb(24, 28, 20);
 }
 
 .controlls_member_keyname:hover{
-    background-color: rgb(2, 76, 170);
+    background-color: rgb(105, 117, 101);
 }
 
 .controlls_member_keyname:focus{
-    background-color: rgb(2, 76, 170);
+    background-color: rgb(105, 117, 101);
 }
