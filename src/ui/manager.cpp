@@ -725,7 +725,7 @@ UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
     auto layout = std::make_shared<UIFlexLayout>();
 
     layout->setExpand(true);
-    layout->setDirection(UIFlexLayout::HORIZONTAL);
+    layout->setDirection(UIFlexLayout::VERTICAL);
     
     body->setLayout(layout);
 

@@ -18,22 +18,22 @@ class DynamicChunkMask{
         }
         
         void set(uint32_t x,uint32_t y,uint32_t z) {
-            segments.set(z,y,x);
-            segmentsRotated.set(x,y,z);
+            segments.setBit(z,y,x);
+            segmentsRotated.setBit(x,y,z);
         }
         void reset(uint32_t x,uint32_t y,uint32_t z) {
-            segments.reset(z,y,x);
-            segmentsRotated.reset(x,y,z);
+            segments.resetBit(z,y,x);
+            segmentsRotated.resetBit(x,y,z);
         }
         bool get(uint32_t x,uint32_t y,uint32_t z) {
-            return segments.get(x,y,z);
+            return segments.getBit(x,y,z);
         }
 
         uint_t<64> getAt(uint32_t z,uint32_t y) { 
-            return segments.get(z, y);
+            return segments.getRow(z, y);
         };
         uint_t<64> getRotatedAt(uint32_t x,uint32_t y) {
-            return segmentsRotated.get(x, y);
+            return segmentsRotated.getRow(x, y);
         };
 
         Block& getBlock(){

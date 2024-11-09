@@ -255,8 +255,8 @@ void World::loadMeshFromQueue(ChunkMeshRegistry&  buffer){
 
     bool loaded = false;
     
-    if(buffer.isChunkLoaded(position)) loaded = buffer.swapChunkMesh(*mesh, position);
-    else loaded = buffer.addChunkMesh(*mesh, position);
+    if(buffer.isChunkLoaded(position)) loaded = buffer.updateMesh(*mesh, position);
+    else loaded = buffer.addMesh(*mesh, position);
 
     if(loaded) meshLoadingQueue.pop();
 }

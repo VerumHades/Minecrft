@@ -6,7 +6,9 @@
 #include <rendering/allocator.hpp>
 #include <rendering/buffer.hpp>
 
-#include <unordered_set>
+#include <sstream>    
+#include <iomanip>    
+#include <string>    
 
 struct TransformHash;
 struct TransformEqual;
@@ -214,20 +216,6 @@ class ChunkMeshRegistry{
         DrawElementsIndirectCommand* persistentDrawCallBuffer;
         float* persistentVertexBuffer;
         uint32_t* persistentIndexBuffer;
-        
-        struct LoadedChunk{ 
-            size_t vertexData;
-            size_t indexData;
-
-            size_t firstIndex;
-            size_t count;
-            size_t baseVertex;
-
-            size_t vertexDataSize;
-            size_t indexDataSize;
-        };
-
-        std::unordered_map<glm::ivec3, LoadedChunk, IVec3Hash, IVec3Equal> loadedChunks;
 
         // Highest region level, no regions higher than maxRegionLevel will be registered or created
         const static uint32_t maxRegionLevel = 4;
@@ -253,11 +241,9 @@ class ChunkMeshRegistry{
         
         void initialize(uint32_t renderDistance);
 
-        void unloadChunkMesh(const glm::ivec3& pos);
-        void unloadFarawayChunks(const glm::ivec3& from, float treshold);
         void clear();
         bool isChunkLoaded(const glm::ivec3& pos){
-            return loadedChunks.count(pos) != 0;
+            return getRegion({pos,1}) != nullptr;
         }
 
         /*

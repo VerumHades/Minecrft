@@ -11,6 +11,8 @@ bool MeshRegion::setSubregionMeshState(uint32_t x, uint32_t y, uint32_t z, bool 
     else if(merged){
         // Split apart the meshes because they are no longer valid
     }
+
+    return true;
 }
 
 bool MeshRegion::setStateInParent(bool state){
@@ -50,8 +52,8 @@ MeshRegion* MeshRegion::getSubregion(uint32_t x, uint32_t y, uint32_t z){
     return  registry.getRegion({subregion_position, subregion_level});
 }
 
-bool MeshRegion::moveMesh(size_t new_vertex_position, size_t new_index_position, size_t index_offset = 0){
-    if(!merged && (transform.level != 1)) return; // Moving is not possible for non level 1 or merged regions
+bool MeshRegion::moveMesh(size_t new_vertex_position, size_t new_index_position, size_t index_offset){
+    if(!merged && (transform.level != 1)) return false; // Moving is not possible for non level 1 or merged regions
 
     float*   vertex_buffer = registry.getVertexBuffer();
     uint32_t* index_buffer = registry.getIndexBuffer();
@@ -212,6 +214,7 @@ bool MeshRegion::updateMeshInformation(MeshInformation information){
     }
 
     mesh_information = information;
+    return true;
 }
 
 DrawElementsIndirectCommand MeshRegion::generateDrawCommand(){
@@ -222,14 +225,6 @@ DrawElementsIndirectCommand MeshRegion::generateDrawCommand(){
         static_cast<GLuint>(mesh_information.base_vertex),
         0
     };
-}
-
-void ChunkMeshRegistry::unloadFarawayChunks(const glm::ivec3& from, float treshold){
-    for(auto& [position, chunk]: this->loadedChunks){
-        float distance = glm::distance(glm::vec3(from), glm::vec3(position));
-        if(distance <= treshold) continue;
-        unloadChunkMesh(position);
-    }
 }
 
 /*
@@ -404,22 +399,36 @@ bool ChunkMeshRegistry::updateMesh(Mesh& mesh, const glm::ivec3& pos){
     auto [success, vertexBufferOffset, indexBufferOffset] = allocateAndUploadMesh(mesh);
     if(!success) return false;
 
-    LoadedChunk& chunk = loadedChunks.at(pos);
+    auto& region = regions.at(transform);
 
-    vertexAllocator.free(chunk.vertexData);
-    indexAllocator .free(chunk.indexData);
-    /*
-        Change the draw call arguments
-    */
-    chunk.vertexData = vertexBufferOffset;
-    chunk.indexData = indexBufferOffset;
-    
-    chunk.firstIndex = indexBufferOffset;
-    chunk.count = mesh.getIndices().size();
-    chunk.baseVertex = vertexBufferOffset / vertexFormat.getVertexSize();
+    bool update_success = region.updateMeshInformation(
+        {
+            vertexBufferOffset,
+            indexBufferOffset,
+
+            mesh.getVertices().size(),
+            mesh.getIndices().size(),
+
+            indexBufferOffset,
+            mesh.getIndices().size(),
+            vertexBufferOffset / vertexFormat.getVertexSize(),
+        }
+    );
+    if(!update_success){ // If updating the information fails clean up the allocations
+        vertexAllocator.free(vertexBufferOffset);
+        indexAllocator .free(indexBufferOffset);
+        return false;
+    }
+
+    region.setStateInParent(true);
+
+    vertexAllocator.free(region.mesh_information.vertex_data_start);
+    indexAllocator .free(region.mesh_information.index_data_start);
+
+    return true;
 }   
 
-/*bool ChunkMeshRegistry::swapChunkMesh(Mesh& mesh, const glm::ivec3& pos){
+/*bool ChunkMeshRegistry::updateMesh(Mesh& mesh, const glm::ivec3& pos){
     if(loadedChunks.count(pos) == 0) return false;
     
     auto [success, vertexBufferOffset, indexBufferOffset] = allocateAndUploadMesh(mesh);
@@ -439,26 +448,18 @@ bool ChunkMeshRegistry::updateMesh(Mesh& mesh, const glm::ivec3& pos){
 
     return true;
 }*/
-void ChunkMeshRegistry::unloadChunkMesh(const glm::ivec3& pos){
-    if(loadedChunks.count(pos) == 0) return;
-    //removeDrawCall(pos);
-    vertexAllocator.free(loadedChunks[pos].vertexData);
-    indexAllocator.free(loadedChunks[pos].indexData);
-    loadedChunks.erase(pos);
-}
 
 DrawElementsIndirectCommand ChunkMeshRegistry::getCommandFor(const glm::ivec3& position){
-    if(loadedChunks.count(position) == 0) return {};
+    MeshRegion* region = getRegion({position,1});
+    if(!region) return {};
 
-    LoadedChunk& chunk = loadedChunks.at(position);
-
-    return {static_cast<GLuint>(chunk.count),1,static_cast<GLuint>(chunk.firstIndex),static_cast<GLuint>(chunk.baseVertex),0};
+    return region->generateDrawCommand();
 }
 
 MeshRegion* ChunkMeshRegistry::createRegion(MeshRegion::Transform transform){
     if(transform.level > maxRegionLevel) return nullptr; // Over the max region level
 
-    regions.emplace(transform, transform, *this);
+    regions.emplace(transform, MeshRegion(transform, *this));
     auto& region = regions.at(transform);
 
     if(!region.getParentRegion()) 
@@ -501,5 +502,5 @@ void ChunkMeshRegistry::draw(){
 void ChunkMeshRegistry::clear(){
     vertexAllocator.clear();
     indexAllocator.clear();
-    loadedChunks.clear();
+    regions.clear();
 }

@@ -274,7 +274,7 @@ class UIFrame{
         Style focusStyle;
 
 
-        std::shared_ptr<UILayout> layout = std::make_shared<UILayout>();
+        std::shared_ptr<UILayout> layout;
 
         Style& getStyleForState(State state){
             switch(state){
@@ -348,11 +348,11 @@ class UIFrame{
 
         std::function<void(UIManager& manager, int offsetX, int offsetY)> onScroll;
 
-        void setPosition(TValue x, TValue y){this->x = x; this->y = y;calculateTransforms();}
+        void setPosition(TValue x, TValue y){this->x = x; this->y = y;}
         void setX(TValue x) {this->x = x;}
         void setY(TValue y) {this->y = y;}
 
-        void setSize(TValue width, TValue height) {this->width = width; this->height = height;calculateTransforms();}
+        void setSize(TValue width, TValue height) {this->width = width; this->height = height;}
         void setWidth(TValue width) {this->width = width;}
         void setHeight(TValue height) {this->height = height;}
         

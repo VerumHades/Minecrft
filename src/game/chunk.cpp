@@ -116,8 +116,8 @@ void Chunk::syncGenerateSyncUploadMesh(ChunkMeshRegistry& buffer){
     if(solidMesh->getVertices().size() == 0){
         generatedEmptyMesh = true;
     }
-    else if(buffer.isChunkLoaded(worldPosition)) buffer.swapChunkMesh(*solidMesh, getWorldPosition());
-    else buffer.addChunkMesh(*solidMesh, getWorldPosition());
+    else if(buffer.isChunkLoaded(worldPosition)) buffer.updateMesh(*solidMesh, getWorldPosition());
+    else buffer.addMesh(*solidMesh, getWorldPosition());
 
     solidMesh = nullptr;
 }

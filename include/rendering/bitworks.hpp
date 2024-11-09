@@ -147,7 +147,7 @@ class DynamicBitArray3D{
             else if(size <= 64) { bitworks::decompress<64>(data, std::get<std::vector<uint64_t>>(storage)); actualSize = BIT64; }
         }
         
-        uint_t<64> get(uint32_t x, uint32_t y){
+        uint_t<64> getRow(uint32_t x, uint32_t y){
             if(x >= size || y >= size) return 0ULL;
             
             uint_t<64> result = 0ULL;
@@ -159,7 +159,7 @@ class DynamicBitArray3D{
 
             return result;
         }
-        void set(uint32_t x, uint32_t y, uint_t<64> value){
+        void setRow(uint32_t x, uint32_t y, uint_t<64> value){
             if(x >= size || y >= size) return;
 
             std::visit([this, value,x,y](auto& array) {
@@ -167,22 +167,22 @@ class DynamicBitArray3D{
             }, storage);
         }
 
-        void set(uint32_t x, uint32_t y, uint32_t z){
+        void setBit(uint32_t x, uint32_t y, uint32_t z){
             if(z >= size) return;
 
-            set(x,y, get(x,y) | (1ULL << (size - 1 - z)));
+            setRow(x,y, getRow(x,y) | (1ULL << (size - 1 - z)));
         }
 
-        void reset(uint32_t x, uint32_t y, uint32_t z){
+        void resetBit(uint32_t x, uint32_t y, uint32_t z){
             if(z >= size) return;
 
-            set(x,y, get(x,y) & ~(1ULL << (size - 1 - z)));
+            setRow(x,y, getRow(x,y) & ~(1ULL << (size - 1 - z)));
         }
 
-        bool get(uint32_t x, uint32_t y, uint32_t z){
+        bool getBit(uint32_t x, uint32_t y, uint32_t z){
             if(z >= size) return false;
 
-            return get(x,y) & (1ULL << (size - 1 - z)); 
+            return getRow(x,y) & (1ULL << (size - 1 - z)); 
         }
 
         CompressedArray compress(){
