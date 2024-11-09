@@ -419,7 +419,7 @@ bool ChunkMeshRegistry::updateMesh(Mesh& mesh, const glm::ivec3& pos){
     chunk.baseVertex = vertexBufferOffset / vertexFormat.getVertexSize();
 }   
 
-bool ChunkMeshRegistry::swapChunkMesh(Mesh& mesh, const glm::ivec3& pos){
+/*bool ChunkMeshRegistry::swapChunkMesh(Mesh& mesh, const glm::ivec3& pos){
     if(loadedChunks.count(pos) == 0) return false;
     
     auto [success, vertexBufferOffset, indexBufferOffset] = allocateAndUploadMesh(mesh);
@@ -429,9 +429,7 @@ bool ChunkMeshRegistry::swapChunkMesh(Mesh& mesh, const glm::ivec3& pos){
 
     vertexAllocator.free(chunk.vertexData);
     indexAllocator .free(chunk.indexData);
-    /*
-        Change the draw call arguments
-    */
+
     chunk.vertexData = vertexBufferOffset;
     chunk.indexData = indexBufferOffset;
     
@@ -440,7 +438,7 @@ bool ChunkMeshRegistry::swapChunkMesh(Mesh& mesh, const glm::ivec3& pos){
     chunk.baseVertex = vertexBufferOffset / vertexFormat.getVertexSize();
 
     return true;
-}
+}*/
 void ChunkMeshRegistry::unloadChunkMesh(const glm::ivec3& pos){
     if(loadedChunks.count(pos) == 0) return;
     //removeDrawCall(pos);

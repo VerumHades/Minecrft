@@ -3,47 +3,47 @@
         <style src="templates/main.css"></style>
         <style src="templates/settings.css"></style>
         
-        <flex_frame 
+        <frame class = "vertical_flex" 
             x="50% - 50m" y="50% - 50m" 
             width="300px" height="500px" 
-            horizontal="false">
+           >
             <label width="100% - 2px" height="40px" id="new_world" class="interactable">New World</label>
             <label width="100% - 2px" height="40px" id="setttings" class="interactable">Settings</label>
-        </flex_frame>
+        </frame>
     </default>
     <world_menu>
-        <flex_frame x="50% - 50m" y="0px" width="70%" height="100%" horizontal="false" id="world_selection_frame">
+        <frame class = "vertical_flex" x="50% - 50m" y="0px" width="70%" height="100%" id="world_selection_frame">
             <scrollable id="top_frame" width="100%" height="80%">
                 
             </scrollable>
             <frame id="bottom_frame" width="100% - 2px" height="20%">
                 <label id="back_to_menu" width="140px" height="40px" class="interactable">Back</label>
-                <flex_frame x="25%" width="50%" height="100%" horizontal="false">
-                    <flex_frame width="100%" height="100px" horizontal="false">
+                <frame class = "vertical_flex" x="25%" width="50%" height="100%">
+                    <frame class = "vertical_flex" width="100%" height="100px">
                         <label width="100% - 20px" height="40px" id="new_world_name_label">New world name:</label>
                         <input width="100% - 20px" height="40px" id="new_world_name"></input>
-                    </flex_frame>
+                    </frame>
                     <label width="100% - 20px" height="40px" class="interactable" id="create_new_world">Create</label>
-                </flex_frame>
+                </frame>
             </frame>
-        </flex_frame>
+        </frame>
     </world_menu>
     <settings>
         <label width="8%" height="40px" class="interactable" id="settings_back_button">Back</label>
         <scrollable x="50% - 50m" width="80%" height="100%" id="settings_scrollable">
-            <flex_frame width="100% - 40px" expand="true" class="settings_section" horizontal="false">
+            <frame class = "vertical_flex_expand settings_sectio" width="100% - 40px">
                 <label width="100%" height="40px" class="settings_section_title">Keybinds</label>
-                <flex_frame width="100%" expand="true" id="keybind_container" horizontal="false">
+                <frame class = "vertical_flex_expand" width="100%" id="keybind_container">
 
-                </flex_frame>
+                </frame>
                 <label width="100%" height="40px" class="settings_section_title">Mouse</label>
-                <flex_frame width="100%" expand="true" horizontal="false">
+                <frame class = "vertical_flex_expand" width="100%" >
                     <frame id="mouse_sensitivity_container" width="100%" height="40px">
                         <label width="20%" height="100%">Sensitivity:</label>
                         
                     </frame>
-                </flex_frame>
-            </flex_frame>
+                </frame>
+            </frame>
         </scrollable>
     </settings>
 </window>

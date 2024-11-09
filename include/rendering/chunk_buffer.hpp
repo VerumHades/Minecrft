@@ -12,6 +12,14 @@ struct TransformHash;
 struct TransformEqual;
 class ChunkMeshRegistry;
 
+struct DrawElementsIndirectCommand {
+    GLuint  count;      // Number of indices for the current draw call.
+    GLuint  instanceCount; // Number of instances to render.
+    GLuint  firstIndex; // Offset into the element array buffer.
+    GLuint  baseVertex; // Base vertex for index calculations.
+    GLuint  baseInstance; // Base instance for instanced rendering.
+};
+
 class MeshRegion{
     private:
         struct Transform{
@@ -177,14 +185,6 @@ struct TransformEqual {
     bool operator()(const MeshRegion::Transform& a, const MeshRegion::Transform& b) const {
         return a.position == b.position && a.level == b.level;
     }
-};
-
-struct DrawElementsIndirectCommand {
-    GLuint  count;      // Number of indices for the current draw call.
-    GLuint  instanceCount; // Number of instances to render.
-    GLuint  firstIndex; // Offset into the element array buffer.
-    GLuint  baseVertex; // Base vertex for index calculations.
-    GLuint  baseInstance; // Base instance for instanced rendering.
 };
 
 class ChunkMeshRegistry{

@@ -192,6 +192,7 @@ struct UIRenderInfo{
 };
 
 class UIManager;
+class UIFrame;
 
 /*
     Functionaly very similar to yield in an iterator, but slightly different
@@ -200,6 +201,39 @@ class UIManager;
 */
 using RenderYeetFunction = std::function<void(UIRenderInfo info, UIRegion clipRegion)>;
 
+/*
+    Base class for all layouts
+*/
+class UILayout{
+    public:
+        /*
+            Resizes or changes the element itself
+        */
+        virtual void arrangeSelf(UIFrame* frame) {};
+        /*
+            Organizes all of the elements children in some defined way
+        */
+        virtual void arrangeChildren(UIFrame* frame);
+};
+
+class UIFlexLayout: public UILayout{
+    public:
+        enum FlexDirection{
+            HORIZONTAL,
+            VERTICAL
+        };
+
+    private:
+        FlexDirection direction;
+        bool expandToChildren = false;
+
+    public:
+        void setExpand(bool value) {expandToChildren = value;}
+        void setDirection(FlexDirection direction) {this->direction = direction;}
+        
+        void arrangeSelf(UIFrame* frame) override;
+        void arrangeChildren(UIFrame* frame) override;
+};
 /*
     Core element that every other element inherits from
 */
@@ -238,6 +272,9 @@ class UIFrame{
         };
         Style hoverStyle;
         Style focusStyle;
+
+
+        std::shared_ptr<UILayout> layout = std::make_shared<UILayout>();
 
         Style& getStyleForState(State state){
             switch(state){
@@ -312,9 +349,18 @@ class UIFrame{
         std::function<void(UIManager& manager, int offsetX, int offsetY)> onScroll;
 
         void setPosition(TValue x, TValue y){this->x = x; this->y = y;calculateTransforms();}
+        void setX(TValue x) {this->x = x;}
+        void setY(TValue y) {this->y = y;}
+
         void setSize(TValue width, TValue height) {this->width = width; this->height = height;calculateTransforms();}
+        void setWidth(TValue width) {this->width = width;}
+        void setHeight(TValue height) {this->height = height;}
+        
         TValue& getWidth(){return width;}
         TValue& getHeight(){return height;}
+
+        void setLayout(std::shared_ptr<UILayout> layout) {this->layout = layout;}
+        std::shared_ptr<UILayout>& getLayout(){return layout;}
 
         void setHoverable(bool value) {hoverable = value;}
         void setFocusable(bool value) {focusable = value;}
@@ -350,6 +396,9 @@ class UIFrame{
         }
 
         const UITransform& getBoundingTransform() const {return boundingTransform;}
+        const UITransform& getContentTransform() const {return contentTransform;}
+
+        virtual std::vector<std::shared_ptr<UIFrame>>& getChildren(){return children;}
 
         virtual void calculateElementsTransforms();
         virtual void calculateChildrenTransforms();
@@ -434,49 +483,10 @@ class UISlider: public UIFrame{
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 };
 
-class UIFlexFrame: public UIFrame{
-    public:
-        enum FlexDirection{
-            COLUMN,
-            ROWS,
-        };
-
-    private:
-        FlexDirection direction;
-        bool expandToChildren = false;
-        int lastExpansion = 0;
-
-        bool isChildValid(std::shared_ptr<UIFrame>& child){
-            if(!expandToChildren) return true;
-            return child->getWidth().hasParentReference() || child->getHeight().hasParentReference();
-        }
-
-    public:
-        UIFlexFrame(UIManager& manager): UIFrame(manager) {}
-        void setElementDirection(FlexDirection direction) {this->direction = direction;}
-        void setExpand(bool value) {
-            expandToChildren = value;
-            if(!value) return;
-
-            for(auto& child: children){
-                if(isChildValid(child)) continue;
-                throw std::runtime_error("Invalid child size for expanding UIFlexFrame!");
-            }
-        }
-
-        void calculateElementsTransforms() override;
-        void calculateChildrenTransforms() override;
-
-        void appendChild(std::shared_ptr<UIFrame> child) override{
-            if(!isChildValid(child)) std::runtime_error("Invalid child size for expanding UIFlexFrame!");
-
-            UIFrame::appendChild(child);
-        }
-};
 
 class UIScrollableFrame: public UIFrame{
     private:
-        std::shared_ptr<UIFlexFrame> body;
+        std::shared_ptr<UIFrame> body;
         std::shared_ptr<UISlider> slider;
 
         int sliderWidth = 15;

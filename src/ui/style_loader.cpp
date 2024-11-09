@@ -27,66 +27,72 @@ UIColor parseColor(std::string source){
     return {255,0,0};
 }
 
+#define ATTRIBUTE_LAMBDA(attr, func) \
+    [](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state) { \
+        element->setAttribute(&UIFrame::Style::attr, func(value), state); \
+    }
 
+#define BORDER_LAMBDA(attr, func, index) \
+    [](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state) { \
+        auto parsed = func(value); \
+        auto attrVec = element->getAttribute(&UIFrame::Style::attr); \
+        if (index == -1) { \
+            attrVec = {parsed, parsed, parsed, parsed}; \
+        } else { \
+            attrVec[index] = parsed; \
+        } \
+        element->setAttribute(&UIFrame::Style::attr, attrVec, state); \
+    }
 
 static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFrame>, std::string, UIFrame::State)>> attributeApplyFunctions = {
+    {"background-color", ATTRIBUTE_LAMBDA(backgroundColor, parseColor)},
+    {"color",            ATTRIBUTE_LAMBDA(textColor, parseColor)},
+    {"margin",           ATTRIBUTE_LAMBDA(margin, parseTValue)},
+
     {
-        "background-color",
-        [](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-            element->setAttribute(&UIFrame::Style::backgroundColor, parseColor(value), state);
+        "display", [](auto element, auto value, auto){
+            if(value == "flex") element->setLayout(std::make_shared<UIFlexLayout>());
+            else element->setLayout(std::make_shared<UILayout>());
         }
     },
     {
-        "color",
-        [](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-            element->setAttribute(&UIFrame::Style::textColor, parseColor(value), state);
+        "flex-direction", [](auto element, auto value, auto){
+            if(auto flex_frame = std::dynamic_pointer_cast<UIFlexLayout>(element->getLayout())){
+                if     (value == "column") flex_frame->setDirection(UIFlexLayout::VERTICAL);
+                else if(value == "row")    flex_frame->setDirection(UIFlexLayout::HORIZONTAL);
+                else std::cerr << value << " is not a valid flex direction. Use 'column' or 'row'." << std::endl;
+            }
+            else std::cerr << "Settings flex properties for an element that doesnt use a flex layout?" << std::endl;
         }
     },
-    {"border-width",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-        auto v = parseTValue(value);
-        element->setAttribute(&UIFrame::Style::borderWidth, {v,v,v,v}, state);
-    }},
-    {"border-color",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-        auto c = parseColor(value);
-        element->setAttribute(&UIFrame::Style::borderColor, {c,c,c,c}, state);
-    }},
-    {"margin",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-        element->setAttribute(&UIFrame::Style::margin, parseTValue(value), state);
-    }},
+    {
+        "flex-expand", [](auto element, auto value, auto){
+            if(auto flex_frame = std::dynamic_pointer_cast<UIFlexLayout>(element->getLayout())){
+                if     (value == "true")  flex_frame->setExpand(true);
+                else if(value == "false") flex_frame->setExpand(false);
+                else std::cerr << value << " is not a valid flex expand value. Use 'true' or 'false'." << std::endl;
+            }
+            else std::cerr << "Settings flex properties for an element that doesnt use a flex layout?" << std::endl;
+        }
+    },
 
-    {"border-top-width",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-        auto attr = element->getAttribute(&UIFrame::Style::borderWidth);
-        element->setAttribute(&UIFrame::Style::borderWidth, {parseTValue(value),attr[1],attr[2],attr[3]}, state);
-    }},
-    {"border-right-width",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-        auto attr = element->getAttribute(&UIFrame::Style::borderWidth);
-        element->setAttribute(&UIFrame::Style::borderWidth, {attr[0],parseTValue(value),attr[2],attr[3]}, state);
-    }},
-    {"border-bottom-width",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-        auto attr = element->getAttribute(&UIFrame::Style::borderWidth);
-        element->setAttribute(&UIFrame::Style::borderWidth, {attr[0],attr[1],parseTValue(value),attr[3]}, state);
-    }},
-    {"border-left-width",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-        auto attr = element->getAttribute(&UIFrame::Style::borderWidth);
-        element->setAttribute(&UIFrame::Style::borderWidth, {attr[0],attr[1],attr[2],parseTValue(value)}, state);
-    }},
-
-    {"border-top-color",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-        auto attr = element->getAttribute(&UIFrame::Style::borderColor);
-        element->setAttribute(&UIFrame::Style::borderColor, {parseColor(value),attr[1],attr[2],attr[3]}, state);
-    }},
-    {"border-right-color",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-        auto attr = element->getAttribute(&UIFrame::Style::borderColor);
-        element->setAttribute(&UIFrame::Style::borderColor, {attr[0],parseColor(value),attr[2],attr[3]}, state);
-    }},
-    {"border-bottom-color",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-        auto attr = element->getAttribute(&UIFrame::Style::borderColor);
-        element->setAttribute(&UIFrame::Style::borderColor, {attr[0],attr[1],parseColor(value),attr[3]}, state);
-    }},
-    {"border-left-color",[](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state){
-        auto attr = element->getAttribute(&UIFrame::Style::borderColor);
-        element->setAttribute(&UIFrame::Style::borderColor, {attr[0],attr[1],attr[2],parseColor(value)}, state);
-    }}
+    {"left",   [](auto element, auto value, auto) { element->setX(parseTValue(value)); }},
+    {"top",    [](auto element, auto value, auto) { element->setY(parseTValue(value)); }},
+    {"width",  [](auto element, auto value, auto) { element->setWidth(parseTValue(value)); }},
+    {"height", [](auto element, auto value, auto) { element->setHeight(parseTValue(value)); }},
+    
+    {"border-width",        BORDER_LAMBDA(borderWidth, parseTValue, -1)},
+    {"border-color",        BORDER_LAMBDA(borderColor, parseColor, -1)},
+    
+    {"border-top-width",    BORDER_LAMBDA(borderWidth, parseTValue, 0)},
+    {"border-right-width",  BORDER_LAMBDA(borderWidth, parseTValue, 1)},
+    {"border-bottom-width", BORDER_LAMBDA(borderWidth, parseTValue, 2)},
+    {"border-left-width",   BORDER_LAMBDA(borderWidth, parseTValue, 3)},
+    
+    {"border-top-color",    BORDER_LAMBDA(borderColor, parseColor, 0)},
+    {"border-right-color",  BORDER_LAMBDA(borderColor, parseColor, 1)},
+    {"border-bottom-color", BORDER_LAMBDA(borderColor, parseColor, 2)},
+    {"border-left-color",   BORDER_LAMBDA(borderColor, parseColor, 3)},
 };
 
 void UIStyle::parseQuery(std::string type, std::string value, std::string state, std::string source){

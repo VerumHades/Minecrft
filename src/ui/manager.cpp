@@ -389,8 +389,9 @@ static inline void reduceRegionTo(UIRegion& target, UIRegion& to){
 }
 
 void UIFrame::calculateElementsTransforms(){
-    auto margin = getAttribute(&UIFrame::Style::margin);
+    if(layout) layout->arrangeSelf(this);
 
+    auto margin = getAttribute(&UIFrame::Style::margin);
     auto borderWidth = getAttribute(&Style::borderWidth);
     borderSizes = {
         getValueInPixels(borderWidth[0], false),
@@ -456,6 +457,7 @@ void UIFrame::calculateElementsTransforms(){
 }
 
 void UIFrame::calculateChildrenTransforms(){
+    if(layout) layout->arrangeChildren(this);
     for(auto& child: children){
         child->calculateTransforms();
     }
@@ -464,6 +466,64 @@ void UIFrame::calculateChildrenTransforms(){
 void UIFrame::calculateTransforms(){
     calculateElementsTransforms();
     calculateChildrenTransforms();
+}
+
+
+void UILayout::arrangeChildren(UIFrame* frame){
+    int offsetX = 0;
+    int offsetY = 0;
+    int greatestY = 0;
+
+    auto& frame_bounding_transform = frame->getBoundingTransform();
+    for(auto& child: frame->getChildren()){
+        auto& bounding_transform = child->getBoundingTransform();
+
+        if(offsetX + bounding_transform.width > frame_bounding_transform.width){
+            offsetX = 0;
+            offsetY += greatestY;
+            greatestY = 0;
+        }
+
+        child->setPosition(offsetX,offsetY);
+        
+        offsetX += child->getBoundingTransform().width;
+        greatestY = std::max(offsetY,greatestY);
+    }
+}
+
+void UIFlexLayout::arrangeSelf(UIFrame* frame){
+    if(expandToChildren){
+        int size = 0;
+            
+        for(auto& child: frame->getChildren()){
+            child->calculateElementsTransforms();
+            auto ct = child->getBoundingTransform();
+
+            size += direction == HORIZONTAL ? ct.width : ct.height;
+        } 
+
+        if(direction == HORIZONTAL) frame->setSize(size,frame->getHeight());
+        else                    frame->setSize(frame->getWidth(), size);
+    }
+}
+void UIFlexLayout::arrangeChildren(UIFrame* frame) {
+    int offset = 0;
+
+    auto& content_transform = frame->getContentTransform();
+    for(auto& child: frame->getChildren()){
+        
+        child->calculateElementsTransforms();
+        auto ct = child->getBoundingTransform();
+
+        child->setPosition(
+            direction == HORIZONTAL ? TValue(PIXELS,offset) : static_cast<float>(content_transform.width ) / 2.0f - static_cast<float>(ct.width ) / 2.0f,
+            direction == VERTICAL   ? TValue(PIXELS,offset) : static_cast<float>(content_transform.height) / 2.0f - static_cast<float>(ct.height) / 2.0f
+        );
+        offset += 
+            direction == HORIZONTAL ?
+            ct.width :
+            ct.height;
+    }
 }
 
 void UILabel::getRenderingInformation(RenderYeetFunction& yeet) {
@@ -656,49 +716,18 @@ void UISlider::getRenderingInformation(RenderYeetFunction& yeet){
     }
 }
 
-void UIFlexFrame::calculateElementsTransforms(){
-    if(expandToChildren){
-        int size = 0;
-            
-        for(auto& child: children){
-            child->calculateElementsTransforms();
-            auto ct = child->getBoundingTransform();
-
-            size += direction == COLUMN ? ct.width : ct.height;
-        } 
-        if(direction == COLUMN) width = {size};
-        else height = {size};
-    }
-    UIFrame::calculateElementsTransforms();
-}
-
-void UIFlexFrame::calculateChildrenTransforms(){
-    int offset = 0;
-    for(auto& child: children){
-        
-        child->calculateElementsTransforms();
-        auto ct = child->getBoundingTransform();
-
-        child->setPosition(
-            direction == COLUMN ? TValue(PIXELS,offset) : static_cast<float>(transform.width ) / 2.0f - static_cast<float>(ct.width ) / 2.0f,
-            direction == ROWS   ? TValue(PIXELS,offset) : static_cast<float>(transform.height) / 2.0f - static_cast<float>(ct.height) / 2.0f
-        );
-        offset += 
-            direction == COLUMN ?
-            ct.width :
-            ct.height;
-
-        child->calculateTransforms();
-    }
-}
-
 UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
-    this->body = std::make_shared<UIFlexFrame>(manager);
+    this->body = std::make_shared<UIFrame>(manager);
     
-    body->setElementDirection(UIFlexFrame::ROWS);
-    body->setExpand(true);
     body->setSize({OPERATION_MINUS,{PERCENT,100},{sliderWidth}},0);
     body->setAttribute(&UIFrame::Style::backgroundColor, {0,0,0,0});
+    
+    auto layout = std::make_shared<UIFlexLayout>();
+
+    layout->setExpand(true);
+    layout->setDirection(UIFlexLayout::HORIZONTAL);
+    
+    body->setLayout(layout);
 
     scrollable = true;
 

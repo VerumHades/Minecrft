@@ -10,6 +10,17 @@
     border-color: rgb(9, 16, 87);
 }
 
+.vertical_flex{
+    display: flex;
+    flex-direction: column;
+}
+
+.vertical_flex_expand{
+    display: flex;
+    flex-direction: column;
+    flex-expand: true;
+}
+
 #world_selection_frame{
     background-color: rgb(6, 10, 51);
 }

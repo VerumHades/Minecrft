@@ -135,17 +135,6 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
             }
         },
         {
-            "flex_frame",
-            [source, this]() {
-                auto frm = this->manager.createElement<UIFlexFrame>(); 
-
-                frm->setElementDirection(source->BoolAttribute("horizontal", true) ? UIFlexFrame::COLUMN : UIFlexFrame::ROWS);
-                frm->setExpand(source->BoolAttribute("expand", false));
-
-                return frm;
-            }
-        },
-        {
             "input",
             [source, this]() {
                 return this->manager.createElement<UIInput>(); 
