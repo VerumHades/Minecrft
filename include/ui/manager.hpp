@@ -327,6 +327,8 @@ class UIFrame{
         UIBorderSizes borderSizes     = {0,0,0,0};
         UIRegion clipRegion           = {{0,0},{0,0}};
         UIRegion contentClipRegion    = {{0,0},{0,0}};
+        int margin_x = 0;
+        int margin_y = 0;
 
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 

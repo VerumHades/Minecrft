@@ -21,6 +21,11 @@
     flex-expand: true;
 }
 
+.center{
+    left: 50% - 50m;
+    top: 50% - 50m;
+}
+
 #world_selection_frame{
     background-color: rgb(6, 10, 51);
 }

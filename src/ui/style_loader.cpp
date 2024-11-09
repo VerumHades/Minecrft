@@ -100,7 +100,7 @@ void UIStyle::parseQuery(std::string type, std::string value, std::string state,
     query.value = value;
 
     // Match for individual attributes
-    std::regex pattern(R"(([a-zA-Z\-]+):([a-zA-Z0-9,()]+);)"); 
+    std::regex pattern(R"(([a-zA-Z\-]+):([a-zA-Z0-9,()\- %]+);)"); 
 
     auto matches_begin = std::sregex_iterator(source.begin(), source.end(), pattern);
     auto matches_end = std::sregex_iterator();

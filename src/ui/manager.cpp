@@ -227,7 +227,11 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
         case PERCENT:
             if(parent){
                 auto t = parent->contentTransform;
-                return static_cast<float>(horizontal ? t.width : t.height) / 100.0f * value.value;
+                return static_cast<float>(
+                    horizontal ? 
+                    t.width  - borderSizes.left - borderSizes.right  - margin_x * 2: 
+                    t.height - borderSizes.top  - borderSizes.bottom - margin_y * 2
+                ) / 100.0f * value.value;
             }
             else return (( horizontal ? manager.getScreenWidth() : manager.getScreenHeight() )  / 100.0f) * value.value;
     }
@@ -400,8 +404,8 @@ void UIFrame::calculateElementsTransforms(){
         getValueInPixels(borderWidth[3], true )
     };
 
-    int margin_x = getValueInPixels(margin, true );
-    int margin_y = getValueInPixels(margin, false);
+    margin_x = getValueInPixels(margin, true );
+    margin_y = getValueInPixels(margin, false);
 
     UITransform internalTransform = {
         getValueInPixels(x     , true ),
