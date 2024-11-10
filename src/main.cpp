@@ -180,20 +180,19 @@ int main() {
                 
                 auto frame = s->getUIManager().createElement<UIFrame>();
                 frame->setSize({PERCENT,80}, 200);
-                frame->setIdentifiers("frame", {"world_option"});
                 
                 auto temp = s->getUIManager().createElement<UILabel>();
                 temp->setText(stream.getName());
                 temp->setSize({PERCENT,100}, 40);
                 temp->setHoverable(false);
-                temp->setIdentifiers("label", {"world_option_label"});
+                temp->setIdentifiers({"world_option_label"});
 
                 auto chunkCountLabel = s->getUIManager().createElement<UILabel>();
                 chunkCountLabel->setText("Number of saved chunks: " + std::to_string(stream.getChunkCount()));
                 chunkCountLabel->setSize({PERCENT,100},40);
                 chunkCountLabel->setPosition(0,45);
                 chunkCountLabel->setHoverable(false);
-                chunkCountLabel->setIdentifiers("label", {"world_option_chunk_count_label"});
+                chunkCountLabel->setIdentifiers({"world_option_chunk_count_label"});
 
                 frame->onClicked = [menuScene, mainSceneTemp, filepath] {
                     mainSceneTemp->setWorldPath(filepath);

@@ -111,16 +111,6 @@ static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFram
             else std::cerr << "Settings flex properties for an element that doesnt use a flex layout?" << std::endl;
         }
     },
-    {
-        "flex-expand", [](auto element, auto value, auto){
-            if(auto flex_frame = std::dynamic_pointer_cast<UIFlexLayout>(element->getLayout())){
-                if     (value == "true")  flex_frame->setExpand(true);
-                else if(value == "false") flex_frame->setExpand(false);
-                else std::cerr << value << " is not a valid flex expand value. Use 'true' or 'false'." << std::endl;
-            }
-            else std::cerr << "Settings flex properties for an element that doesnt use a flex layout?" << std::endl;
-        }
-    },
 
     {"left",   [](auto element, auto value, auto) { element->setX(parseTValue(value)); }},
     {"top",    [](auto element, auto value, auto) { element->setY(parseTValue(value)); }},
@@ -143,6 +133,7 @@ static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFram
 
 std::vector<UIStyle::UIStyleQueryAttribute> UIStyle::parseQueryAttributes(std::string source){
     std::vector<UIStyleQueryAttribute> attributes;
+    source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
 
     std::regex pattern(R"(([a-zA-Z\-]+):([a-zA-Z0-9,()\- %#]+);)"); 
 
@@ -162,6 +153,10 @@ std::vector<UIStyle::UIStyleQueryAttribute> UIStyle::parseQueryAttributes(std::s
     return attributes;
 }
 UIStyle::UIStyleSelector UIStyle::parseQuerySelector(std::string source){
+    source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
+
+    if(source == "*") return {UIStyleSelector::ANY, UIFrame::BASE};
+
     std::regex pattern("((\\.|#|)([a-zA-Z0-9_]+)(:([a-zA-Z]+))?)");
 
     std::string state, type, value;
@@ -196,22 +191,22 @@ void UIStyle::parseQuery(std::string selectors, std::string source){
     int attribute_index = attribute_registry.size();
     attribute_registry.push_back(attributes);
 
-    for(auto selector_string: split(selectors, ",")){
-        auto selector = parseQuerySelector(selector_string);
-        if(selector.type == UIStyleSelector::NONE) continue;
-
-        UIStyleQuery query = {
-            selector,
-            attribute_index
-        };
-
-        switch (selector.type)
-        {
-            case UIStyleSelector::ID:    addQuery(selector.value, id_queries, query); break;
-            case UIStyleSelector::CLASS: addQuery(selector.value, class_queries, query); break;
-            case UIStyleSelector::TAG:   addQuery(selector.value, tag_queries, query); break;
-            default: break;
+    for(auto selector_whole_string: split(selectors, ",")){
+        std::vector<UIStyleSelector> selectors = {};
+        for(auto selector_string: split(selector_whole_string, " ")){
+            auto selector = parseQuerySelector(selector_string);
+            
+            if(selector.type == UIStyleSelector::NONE){
+                std::cerr << "Invalid selector: '" << selector_string << "'." << std::endl; 
+                continue;
+            }
+            selectors.insert(selectors.begin(), selector);
         }
+
+        queries.push_back({
+            selectors,
+            attribute_index
+        });
     }
 }
 
@@ -221,7 +216,6 @@ void UIStyle::loadFromFile(std::string path){
     const auto sz = std::filesystem::file_size(path);
     std::string source(sz, '\0');
     f.read(source.data(), sz);   
-    source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
     // Regex for individual queries
     std::regex pattern(R"(([^{]+)?\{([\s\S]*?)\})"); 
     
@@ -235,22 +229,55 @@ void UIStyle::loadFromFile(std::string path){
     }
 }
 
+bool UIStyle::UIStyleSelector::isSelectorMatch(UIFrame* element){
+    switch (type)
+    {
+        case ANY: return true;
+        case ID:  return element->getIdentifiers().id  == value;
+        case TAG: return element->getIdentifiers().tag == value;
+        case CLASS: 
+            for(auto element_class: element->getIdentifiers().classes){
+                if(element_class == value) return true;
+            }
+            return false;
+        default:
+            return false;
+    }
+}
+
+void UIStyle::applyToAndAllChildren(std::shared_ptr<UIFrame> element){
+    applyTo(element);
+    for(auto& child: element->getChildren()){
+        applyToAndAllChildren(child);
+    }
+}
+
 void UIStyle::applyTo(
     std::shared_ptr<UIFrame> element
 ){
-    if(tag_queries.count(element->identifiers.tag) != 0)
-        for(auto& q: tag_queries[element->identifiers.tag]) q.applyTo(element,this);
+    for(auto query: queries){
+        auto& selectors = query.selector; // Selectors of the element, and parents
+        //std::cout << "Solving query." << std::endl;
 
-    for(auto& classname: element->identifiers.classes)
-        if(class_queries.count(classname) != 0)
-            for(auto& q: class_queries[classname]) q.applyTo(element,this);
+        bool failed = false;
+        UIFrame* current_element = element.get();
+        for(auto& selector: selectors){
+            //if(selectors.size() > 1)std::cout << selector.value << std::endl;
+            if(
+                !current_element ||
+                !selector.isSelectorMatch(current_element)
+            ){
+                failed = true;
+                break;
+            }
 
-    if(id_queries.count(element->identifiers.id) != 0)
-        for(auto& q: id_queries[element->identifiers.id]) q.applyTo(element,this);
-}
+            current_element = current_element->parent;
+        }
 
-void UIStyle::UIStyleQuery::applyTo(std::shared_ptr<UIFrame> element, UIStyle* style){
-    for(auto& attr: style->attribute_registry[registry_index]){
-        attributeApplyFunctions[attr.name](element, attr.value, selector.state);
-    }    
+        if(failed) continue;
+
+        for(auto& attr: attribute_registry[query.registry_index]){
+            attributeApplyFunctions[attr.name](element, attr.value, query.selector[0].state);
+        }   
+    }
 }

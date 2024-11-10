@@ -51,6 +51,8 @@ std::tuple<size_t, size_t> findMostImportantOperator(std::string source){
 TValue parseTValue(std::string source){
     source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
     
+    if(source == "fit-content") return TValue(Units::FIT_CONTENT, 0);
+
     auto [op_position,op_index] = findMostImportantOperator(source);
 
     if(op_position != std::string::npos){
@@ -163,12 +165,10 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
             getAttributeValue(source,"height")
         );
 
-
+        auto split_classes_array = split(optGetAttribute(source,"class"), " ");
+        el->identifiers.classes.insert(split_classes_array.begin(), split_classes_array.end());
         el->identifiers.id = optGetAttribute(source,"id");
-        el->identifiers.classes = split(optGetAttribute(source,"class"), " ");
         el->identifiers.tag = source->Name();
-
-        style.applyTo(el);
 
         auto id = source->Attribute("id");
         if(id) layer.addElementWithID(id, el);
@@ -238,6 +238,8 @@ bool UILoader::loadWindowFromXML(UIWindow& window, std::string path){
             auto processed = processElement(layer_child, window.getLayer(name));
             if(!processed) continue;
             window.getLayer(name).addElement(processed);
+
+            style.applyToAndAllChildren(processed);
         }
     }
 

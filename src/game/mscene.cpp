@@ -145,21 +145,21 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
 
         auto frame = uiManager->createElement<UIFrame>();
         frame->setSize({OPERATION_MINUS,{PERCENT,100},{10}}, 40);
-        frame->setIdentifiers("frame", {"controlls_member"});
+        frame->setIdentifiers({"controlls_member"});
 
         auto name = uiManager->createElement<UILabel>();
         name->setText(action.name);
         name->setSize({PERCENT,80},40);
         name->setPosition(0,0);
         name->setHoverable(false);
-        name->setIdentifiers("label", {"controlls_member_name"});
+        name->setIdentifiers({"controlls_member_name"});
         
         auto keyname = uiManager->createElement<UILabel>();
         keyname->setText(kename);
         keyname->setSize({OPERATION_MINUS,{PERCENT,20},5},40);
         keyname->setPosition({PERCENT,80},0);
         keyname->setFocusable(true);
-        keyname->setIdentifiers("label", {"controlls_member_keyname"});
+        keyname->setIdentifiers({"controlls_member_keyname"});
 
         keyname->onKeyEvent = [this, key, action, keyname](GLFWwindow* window, int new_key, int /*scancode*/, int /*action*/, int /*mods*/){
             inputManager.unbindKey(key);
@@ -189,7 +189,7 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     sensitivity_slider->setMin(1);
     sensitivity_slider->setMax(100);
     sensitivity_slider->setDisplayValue(true);
-    sensitivity_slider->setIdentifiers("slider", {"mouse_sensitivity_slider"});
+    sensitivity_slider->setIdentifiers({"mouse_sensitivity_slider"});
 
     uiLoader->getCurrentStyle().applyTo(sensitivity_slider);
 

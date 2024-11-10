@@ -7,12 +7,24 @@
     background-color: rgb(24, 28, 20);
 }
 
+#settings_scrollable{
+    display: flex;
+    flex-direction: column;
+}
+
 #settings_back_button{
     margin: 0px;
 }
 
 .settings_section{
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
     margin: 10px;
+
+    background-color: rgb(24, 28, 20);
+    border-width: 5px;
+    border-color: rgb(24, 28, 20);
 }
 
 .controlls_member{

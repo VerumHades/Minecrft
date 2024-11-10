@@ -17,32 +17,30 @@ class UIStyle{
         struct UIStyleSelector{
             enum {
                 NONE,
+                ANY,
                 ID,
                 CLASS,
                 TAG
             } type;
             UIFrame::State state;
             std::string value;
+
+            bool isSelectorMatch(UIFrame* element);
         };
 
         struct UIStyleQuery{
-            UIStyleSelector selector;
+            std::vector<UIStyleSelector> selector;
             int registry_index; // Index of attributes in the attributes registry
-            
-            void applyTo(std::shared_ptr<UIFrame> element, UIStyle* style);
         };
 
+        /*
+            Queries defined for multiple selectors at once with same attributes, so that meaningless duplicates arent stored
+        */
         std::vector<std::vector<UIStyleQueryAttribute>> attribute_registry;
-        using QueryMap = std::unordered_map<std::string, std::vector<UIStyleQuery>>;
-
-        QueryMap tag_queries;
-        QueryMap class_queries;
-        QueryMap id_queries;
-
-        void addQuery(std::string name, QueryMap& map, UIStyleQuery& query){
-            if(map.count(name) == 0) map[name] = {};
-            map[name].push_back(query);
-        }
+        /*
+            
+        */
+        std::vector<UIStyleQuery> queries;
 
         std::vector<UIStyleQueryAttribute> parseQueryAttributes(std::string source);
         UIStyleSelector parseQuerySelector(std::string source);
@@ -55,6 +53,7 @@ class UIStyle{
         // Load style from file, new styles are addded to the registry nothing is erased
         void loadFromFile(std::string path);
         void applyTo(std::shared_ptr<UIFrame> element);
+        void applyToAndAllChildren(std::shared_ptr<UIFrame> element);
 };
 
 class UILoader{

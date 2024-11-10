@@ -217,6 +217,9 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
         case OPERATION_MULTIPLY: return getValueInPixels(value.operands[0], horizontal) * getValueInPixels(value.operands[1], horizontal);
         case OPERATION_DIVIDE  : return getValueInPixels(value.operands[0], horizontal) / getValueInPixels(value.operands[1], horizontal);
 
+        case FIT_CONTENT: return horizontal ? contentTransform.width : contentTransform.height;
+
+
         case MY_PERCENT: 
             return static_cast<float>(
                 horizontal ? 
@@ -226,7 +229,7 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
 
         case PERCENT:
             if(parent){
-                auto t = parent->contentTransform;
+                auto t = parent->viewportTransform;
                 return static_cast<float>(
                     horizontal ? 
                     t.width  - borderSizes.left - borderSizes.right  - margin_x * 2: 
@@ -234,6 +237,9 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
                 ) / 100.0f * value.value;
             }
             else return (( horizontal ? manager.getScreenWidth() : manager.getScreenHeight() )  / 100.0f) * value.value;
+        default:
+            std::cerr << "Invalid TValue?" << std::endl;
+            return 0;
     }
 }
 
@@ -393,10 +399,11 @@ static inline void reduceRegionTo(UIRegion& target, UIRegion& to){
 }
 
 void UIFrame::calculateElementsTransforms(){
-    if(layout) layout->arrangeSelf(this);
-
     auto margin = getAttribute(&UIFrame::Style::margin);
     auto borderWidth = getAttribute(&Style::borderWidth);
+
+    if(layout) contentTransform = layout->calculateContentTransform(this);
+
     borderSizes = {
         getValueInPixels(borderWidth[0], false),
         getValueInPixels(borderWidth[1], true ),
@@ -438,19 +445,22 @@ void UIFrame::calculateElementsTransforms(){
         internalTransform.height + borderSizes.bottom + borderSizes.top
     };
 
-    contentTransform = {
+    viewportTransform = {
         internalTransform.x + offset_x + margin_x + borderSizes.left,
         internalTransform.y + offset_y + margin_y + borderSizes.top,
         internalTransform.width,
         internalTransform.height
     };
+
+    if(layout) contentTransform = layout->calculateContentTransform(this);
+    else contentTransform = viewportTransform;
     //std::cout << internalTransform.to_string() << std::endl;
     //std::cout << boundingTransform.to_string() << std::endl;
     //std::cout << transform.to_string() << std::endl;
     //std::cout << contentTransform.to_string() << std::endl;
 
     clipRegion        = transform.asRegion();
-    contentClipRegion = contentTransform.asRegion();
+    contentClipRegion = viewportTransform.asRegion();
 
     if(parent){
         reduceRegionTo(clipRegion       , parent->contentClipRegion);
@@ -472,43 +482,53 @@ void UIFrame::calculateTransforms(){
     calculateChildrenTransforms();
 }
 
+UITransform UILayout::calculateContentTransform(UIFrame* frame){
+    return frame->getViewportTransform();
+}
 
 void UILayout::arrangeChildren(UIFrame* frame){
     int offsetX = 0;
     int offsetY = 0;
     int greatestY = 0;
 
-    auto& frame_bounding_transform = frame->getBoundingTransform();
+    auto& frame_content_transform = frame->getContentTransform();
     for(auto& child: frame->getChildren()){
         auto& bounding_transform = child->getBoundingTransform();
+        
+        greatestY = std::max(child->getBoundingTransform().height,greatestY);
 
-        if(offsetX + bounding_transform.width > frame_bounding_transform.width){
+        if(offsetX + bounding_transform.width > frame_content_transform.width){
             offsetX = 0;
             offsetY += greatestY;
             greatestY = 0;
+
+            child->setPosition(offsetX,offsetY);
+            continue;
         }
 
         child->setPosition(offsetX,offsetY);
         
         offsetX += child->getBoundingTransform().width;
-        greatestY = std::max(offsetY,greatestY);
     }
 }
 
-void UIFlexLayout::arrangeSelf(UIFrame* frame){
-    if(expandToChildren){
-        int size = 0;
-            
-        for(auto& child: frame->getChildren()){
-            child->calculateElementsTransforms();
-            auto ct = child->getBoundingTransform();
+UITransform UIFlexLayout::calculateContentTransform(UIFrame* frame){
+    auto& viewport_transform = frame->getViewportTransform();
+    int size = 0;
+        
+    for(auto& child: frame->getChildren()){
+        child->calculateElementsTransforms();
+        auto ct = child->getBoundingTransform();
 
-            size += direction == HORIZONTAL ? ct.width : ct.height;
-        } 
+        size += direction == HORIZONTAL ? ct.width : ct.height;
+    } 
 
-        if(direction == HORIZONTAL) frame->setSize(size,frame->getHeight());
-        else                    frame->setSize(frame->getWidth(), size);
-    }
+    return {
+        viewport_transform.x,
+        viewport_transform.y,
+        direction == HORIZONTAL ? size : viewport_transform.width,
+        direction == VERTICAL   ? size : viewport_transform.height
+    };
 }
 void UIFlexLayout::arrangeChildren(UIFrame* frame) {
     int offset = 0;
@@ -584,6 +604,8 @@ void UIImage::getRenderingInformation(RenderYeetFunction& yeet){
 }
 
 UIInput::UIInput(UIManager& manager): UILabel(manager) {
+    identifiers.tag = "input";
+
     this->focusable = true;
 
     onKeyTyped = [this](GLFWwindow* window, unsigned int codepoint){
@@ -721,18 +743,8 @@ void UISlider::getRenderingInformation(RenderYeetFunction& yeet){
 }
 
 UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
-    this->body = std::make_shared<UIFrame>(manager);
+    identifiers.tag = "scrollable";
     
-    body->setSize({OPERATION_MINUS,{PERCENT,100},{sliderWidth}},0);
-    body->setAttribute(&UIFrame::Style::backgroundColor, {0,0,0,0});
-    
-    auto layout = std::make_shared<UIFlexLayout>();
-
-    layout->setExpand(true);
-    layout->setDirection(UIFlexLayout::VERTICAL);
-    
-    body->setLayout(layout);
-
     scrollable = true;
 
     onScroll = [this](UIManager& manager, double xoffset, double yoffset){
@@ -742,7 +754,7 @@ UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
         calculateTransforms();
     };
 
-    slider = std::make_shared<UISlider>(manager);
+    /*slider = std::make_shared<UISlider>(manager);
     slider->setOrientation(UISlider::VERTICAL);
     slider->setDisplayValue(false);
     slider->setHandleWidth(60);
@@ -753,21 +765,17 @@ UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
         calculateTransforms();
     };
 
-    UIFrame::appendChild(this->body);
-    UIFrame::appendChild(slider);
+    UIFrame::appendChild(slider);*/
 }
 
 void UIScrollableFrame::calculateElementsTransforms(){
     UIFrame::calculateElementsTransforms();
-
-    auto bodyT = body->getBoundingTransform();
-
     //std::cout << bodyT.height << std::endl;
-    scrollMax = std::max(bodyT.height - contentTransform.height, 0);
-    body->setPosition(0,-scroll);
+    scrollMax = std::max(contentTransform.height - viewportTransform.height, 0);
     //body->setSize(bodyT.width - sliderWidth, t.height);
-    
-    slider->setPosition(contentTransform.width - sliderWidth,0);
-    slider->setSize(sliderWidth, contentTransform.height);
-    slider->setMax(scrollMax);
+    contentTransform.y -= scroll;
+
+    /*slider->setPosition(viewportTransform.width - sliderWidth,0);
+    slider->setSize(sliderWidth, viewportTransform.height);
+    slider->setMax(scrollMax);*/
 }

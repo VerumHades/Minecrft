@@ -8,6 +8,7 @@
 #include <queue>
 #include <functional>
 #include <optional>
+#include <unordered_set>
 
 /*
     Structure used for all colors in the ui, always RGBA
@@ -53,6 +54,7 @@ enum Units{
         Subtracts elements own margin and border sizes from the width, 100% is a perfect fit even with a margin and border
     */
     PERCENT,
+    FIT_CONTENT, // Size of the content transform
 
     OPERATION_PLUS    , // TValue + TValue (resolved to pixels)
     OPERATION_MINUS   , // TValue - TValue (resolved to pixels)
@@ -215,7 +217,7 @@ class UILayout{
         /*
             Resizes or changes the element itself
         */
-        virtual void arrangeSelf(UIFrame* frame) {};
+        virtual UITransform calculateContentTransform(UIFrame* frame);
         /*
             Organizes all of the elements children in some defined way
         */
@@ -237,7 +239,7 @@ class UIFlexLayout: public UILayout{
         void setExpand(bool value) {expandToChildren = value;}
         void setDirection(FlexDirection direction) {this->direction = direction;}
         
-        void arrangeSelf(UIFrame* frame) override;
+        UITransform calculateContentTransform(UIFrame* frame) override;
         void arrangeChildren(UIFrame* frame) override;
 };
 /*
@@ -280,8 +282,8 @@ class UIFrame{
         Style focusStyle;
 
         struct Identifiers{
-            std::string tag = "";
-            std::vector<std::string> classes = {};
+            std::string tag = "frame";
+            std::unordered_set<std::string> classes = {};
             std::string id = "";
         } identifiers;
 
@@ -333,7 +335,8 @@ class UIFrame{
         int getValueInPixels(TValue value, bool horizontal);
         
         UITransform transform         = {0,0,0,0}; // Transform that includes the border
-        UITransform contentTransform  = {0,0,0,0}; // Transform for only content
+        UITransform viewportTransform = {0,0,0,0}; // Transform for only visible content
+        UITransform contentTransform  = {0,0,0,0}; // Whole tranform for content
         UITransform boundingTransform = {0,0,0,0}; // Transform that includes margin
         UIBorderSizes borderSizes     = {0,0,0,0};
         UIRegion clipRegion           = {{0,0},{0,0}};
@@ -348,7 +351,10 @@ class UIFrame{
         friend class UIStyle;
 
     public:
-        UIFrame(UIManager& manager): manager(manager) {}
+        UIFrame(UIManager& manager): manager(manager) {
+            identifiers.tag = "frame";
+            //layout = std::make_unique<UILayout>();
+        }
         /*
             Event lambdas
         */
@@ -371,8 +377,9 @@ class UIFrame{
         void setWidth(TValue width) {this->width = width;}
         void setHeight(TValue height) {this->height = height;}
 
-        void setIdentifiers(std::string tag, std::vector<std::string> classes = {}, std::string id = "") {identifiers = {tag,classes,id};}
-        
+        void setIdentifiers(std::unordered_set<std::string> classes = {}, std::string id = "") {identifiers = {identifiers.tag,classes,id};}
+        Identifiers& getIdentifiers() {return identifiers;}
+
         TValue& getWidth(){return width;}
         TValue& getHeight(){return height;}
 
@@ -413,6 +420,7 @@ class UIFrame{
         }
 
         const UITransform& getBoundingTransform() const {return boundingTransform;}
+        const UITransform& getViewportTransform() const {return viewportTransform;}
         const UITransform& getContentTransform() const {return contentTransform;}
 
         virtual std::vector<std::shared_ptr<UIFrame>>& getChildren(){return children;}
@@ -431,7 +439,7 @@ class UILabel: public UIFrame{
         UITransform getTextPosition(UIManager& manager);
 
     public:
-        UILabel(UIManager& manager): UIFrame(manager) {}
+        UILabel(UIManager& manager): UIFrame(manager) {identifiers.tag = "label";}
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 
         void setText(std::string text) {this->text = text;}
@@ -456,7 +464,7 @@ class UIImage: public UIFrame{
         bool loaded = false;
 
     public:
-        UIImage(UIManager& manager): UIFrame(manager) {}
+        UIImage(UIManager& manager): UIFrame(manager) {identifiers.tag = "image";}
         void loadFromFile(std::string path);
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 };
@@ -503,7 +511,6 @@ class UISlider: public UIFrame{
 
 class UIScrollableFrame: public UIFrame{
     private:
-        std::shared_ptr<UIFrame> body;
         std::shared_ptr<UISlider> slider;
 
         int sliderWidth = 15;
@@ -512,9 +519,6 @@ class UIScrollableFrame: public UIFrame{
         int scrollMax = 1000;
     public:
         UIScrollableFrame(UIManager& manager);
-        void appendChild(std::shared_ptr<UIFrame> child) override {body->appendChild(child);};
-        void clearChildren() override {body->clearChildren();}
-
         void calculateElementsTransforms() override;
 
 };
