@@ -5,26 +5,34 @@
 #include <regex>
 #include <filesystem>
 
-struct UIStyleQueryAttribute{
-    std::string name;
-    std::string value;
-};
-
-struct UIStyleQuery{
-    enum {
-        ID,
-        CLASS,
-        TAG
-    } type;
-    UIFrame::State state;
-    std::string value;
-    std::vector<UIStyleQueryAttribute> attributes;
-    
-    void applyTo(std::shared_ptr<UIFrame> element);
-};
+std::vector<std::string> split(std::string s, const std::string& delimiter);
 
 class UIStyle{
     private:
+        struct UIStyleQueryAttribute{
+            std::string name;
+            std::string value;
+        };
+
+        struct UIStyleSelector{
+            enum {
+                NONE,
+                ID,
+                CLASS,
+                TAG
+            } type;
+            UIFrame::State state;
+            std::string value;
+        };
+
+        struct UIStyleQuery{
+            UIStyleSelector selector;
+            int registry_index; // Index of attributes in the attributes registry
+            
+            void applyTo(std::shared_ptr<UIFrame> element, UIStyle* style);
+        };
+
+        std::vector<std::vector<UIStyleQueryAttribute>> attribute_registry;
         using QueryMap = std::unordered_map<std::string, std::vector<UIStyleQuery>>;
 
         QueryMap tag_queries;
@@ -36,19 +44,17 @@ class UIStyle{
             map[name].push_back(query);
         }
 
-        void parseQuery(std::string type, std::string value, std::string state, std::string source);
+        std::vector<UIStyleQueryAttribute> parseQueryAttributes(std::string source);
+        UIStyleSelector parseQuerySelector(std::string source);
+        void parseQuery(std::string selectors, std::string source);
+
+        friend struct UIStyleQuery;
 
     public:
         UIStyle(){};
-
         // Load style from file, new styles are addded to the registry nothing is erased
         void loadFromFile(std::string path);
-        void applyTo(
-            std::shared_ptr<UIFrame> element,
-            std::string tag,
-            std::string id,
-            const std::vector<std::string>& classes
-        );
+        void applyTo(std::shared_ptr<UIFrame> element);
 };
 
 class UILoader{

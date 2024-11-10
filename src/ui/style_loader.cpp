@@ -1,30 +1,76 @@
 #include <ui/loader.hpp>
 
-UIColor parseColor(std::string source){
-    //source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
+std::vector<std::string> split(std::string s, const std::string& delimiter) {
+    std::vector<std::string> tokens;
+    size_t pos = 0;
+    std::string token;
+    while ((pos = s.find(delimiter)) != std::string::npos) {
+        token = s.substr(0, pos);
+        tokens.push_back(token);
+        s.erase(0, pos + delimiter.length());
+    }
+    tokens.push_back(s);
 
+    return tokens;
+}
+
+UIColor parseColor(std::string source) {
+    source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
+
+    // Regex for RGB and RGBA formats
     std::regex RGBpattern(R"(rgb\((\d+),(\d+),(\d+)\))");
     std::regex RGBApattern(R"(rgba\((\d+),(\d+),(\d+),(\d+)\))");
+
+    // Regex for hex colors
+    std::regex hexPattern(R"((#?)(?:([0-9a-fA-F]{3})|([0-9a-fA-F]{6})|([0-9a-fA-F]{8})))");
+
     std::smatch matches;
 
     if (std::regex_match(source, matches, RGBpattern)) {
-        int r = std::stoi(matches[1].str());      
-        int g = std::stoi(matches[2].str());   
-        int b = std::stoi(matches[3].str());      
-
-        return {r,g,b};  
+        int r = std::stoi(matches[1].str());
+        int g = std::stoi(matches[2].str());
+        int b = std::stoi(matches[3].str());
+        return {r, g, b};
     }
     else if (std::regex_match(source, matches, RGBApattern)) {
-        int r = std::stoi(matches[1].str());      
-        int g = std::stoi(matches[2].str());   
-        int b = std::stoi(matches[3].str());         
-        int a = std::stoi(matches[4].str());  
+        int r = std::stoi(matches[1].str());
+        int g = std::stoi(matches[2].str());
+        int b = std::stoi(matches[3].str());
+        int a = std::stoi(matches[4].str());
+        return {r, g, b, a};
+    }
+    else if (std::regex_match(source, matches, hexPattern)) {
+        // Remove the leading '#' if it's there
+        std::string hexCode = matches[0].str();
+        if (hexCode[0] == '#') {
+            hexCode = hexCode.substr(1);
+        }
 
-        return {r,g,b,a};  
+        int r = 0, g = 0, b = 0, a = 255;
+
+        if (hexCode.length() == 3) {
+            // Short form: #RGB
+            r = std::stoi(hexCode.substr(0, 1) + std::string(1, hexCode[0]), nullptr, 16);
+            g = std::stoi(hexCode.substr(1, 1) + std::string(1, hexCode[1]), nullptr, 16);
+            b = std::stoi(hexCode.substr(2, 1) + std::string(1, hexCode[2]), nullptr, 16);
+        } else if (hexCode.length() == 6) {
+            // Full form: #RRGGBB
+            r = std::stoi(hexCode.substr(0, 2), nullptr, 16);
+            g = std::stoi(hexCode.substr(2, 2), nullptr, 16);
+            b = std::stoi(hexCode.substr(4, 2), nullptr, 16);
+        } else if (hexCode.length() == 8) {
+            // With alpha: #RRGGBBAA
+            r = std::stoi(hexCode.substr(0, 2), nullptr, 16);
+            g = std::stoi(hexCode.substr(2, 2), nullptr, 16);
+            b = std::stoi(hexCode.substr(4, 2), nullptr, 16);
+            a = std::stoi(hexCode.substr(6, 2), nullptr, 16);
+        }
+
+        return {r, g, b, a};
     }
 
     std::cerr << "Invalid color string: " << source << std::endl;
-    return {255,0,0};
+    return {255, 0, 0};  
 }
 
 #define ATTRIBUTE_LAMBDA(attr, func) \
@@ -95,12 +141,10 @@ static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFram
     {"border-left-color",   BORDER_LAMBDA(borderColor, parseColor, 3)},
 };
 
-void UIStyle::parseQuery(std::string type, std::string value, std::string state, std::string source){
-    UIStyleQuery query = {};
-    query.value = value;
+std::vector<UIStyle::UIStyleQueryAttribute> UIStyle::parseQueryAttributes(std::string source){
+    std::vector<UIStyleQueryAttribute> attributes;
 
-    // Match for individual attributes
-    std::regex pattern(R"(([a-zA-Z\-]+):([a-zA-Z0-9,()\- %]+);)"); 
+    std::regex pattern(R"(([a-zA-Z\-]+):([a-zA-Z0-9,()\- %#]+);)"); 
 
     auto matches_begin = std::sregex_iterator(source.begin(), source.end(), pattern);
     auto matches_end = std::sregex_iterator();
@@ -112,24 +156,62 @@ void UIStyle::parseQuery(std::string type, std::string value, std::string state,
             std::cerr << "Unsuported attribute in css file: " << match[1] << std::endl;
             continue;
         }
-        query.attributes.push_back({match[1],match[2]});
+        attributes.push_back({match[1],match[2]});
     }
 
-    if(state == ":hover") query.state = UIFrame::HOVER;
-    else if(state == ":focus") query.state = UIFrame::FOCUS;
+    return attributes;
+}
+UIStyle::UIStyleSelector UIStyle::parseQuerySelector(std::string source){
+    std::regex pattern("((\\.|#|)([a-zA-Z0-9_]+)(:([a-zA-Z]+))?)");
+
+    std::string state, type, value;
+
+    std::smatch matches;
+    if (std::regex_match(source, matches, pattern)) {
+        type  = matches[2];
+        value = matches[3];
+        state = matches[5]; 
+    } else {
+        std::cerr << "Invalid selector: " << source << std::endl; 
+        return {};
+    }
+
+    UIStyleSelector query = {};
+
+    if(state == "hover") query.state = UIFrame::HOVER;
+    else if(state == "focus") query.state = UIFrame::FOCUS;
     else query.state = UIFrame::BASE;
 
-    if(type == "#"){
-        query.type = UIStyleQuery::ID;
-        addQuery(value, id_queries, query);
-    }
-    else if(type == "."){
-        query.type = UIStyleQuery::CLASS;
-        addQuery(value, class_queries, query);
-    }
-    else{
-        query.type = UIStyleQuery::TAG;
-        addQuery(value, tag_queries, query);
+    if     (type == "#") query.type = UIStyleSelector::ID;
+    else if(type == ".") query.type = UIStyleSelector::CLASS;
+    else                 query.type = UIStyleSelector::TAG;
+    
+    query.value = value;
+
+    return query;
+}
+
+void UIStyle::parseQuery(std::string selectors, std::string source){
+    auto attributes = parseQueryAttributes(source);
+    int attribute_index = attribute_registry.size();
+    attribute_registry.push_back(attributes);
+
+    for(auto selector_string: split(selectors, ",")){
+        auto selector = parseQuerySelector(selector_string);
+        if(selector.type == UIStyleSelector::NONE) continue;
+
+        UIStyleQuery query = {
+            selector,
+            attribute_index
+        };
+
+        switch (selector.type)
+        {
+            case UIStyleSelector::ID:    addQuery(selector.value, id_queries, query); break;
+            case UIStyleSelector::CLASS: addQuery(selector.value, class_queries, query); break;
+            case UIStyleSelector::TAG:   addQuery(selector.value, tag_queries, query); break;
+            default: break;
+        }
     }
 }
 
@@ -139,41 +221,36 @@ void UIStyle::loadFromFile(std::string path){
     const auto sz = std::filesystem::file_size(path);
     std::string source(sz, '\0');
     f.read(source.data(), sz);   
-
-    // Regex for individual queries
-    std::regex pattern(R"((#|\.|)([a-zA-Z_]+)(:hover|:focus|)?\{([\s\S]*?)\})"); 
-    // Remove all spaces
     source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
-
+    // Regex for individual queries
+    std::regex pattern(R"(([^{]+)?\{([\s\S]*?)\})"); 
+    
     auto matches_begin = std::sregex_iterator(source.begin(), source.end(), pattern);
     auto matches_end = std::sregex_iterator();
 
     for (std::sregex_iterator i = matches_begin; i != matches_end; ++i) {
         std::smatch match = *i;
         
-        parseQuery(match[1],match[2],match[3],match[4]);
+        parseQuery(match[1],match[2]);
     }
 }
 
 void UIStyle::applyTo(
-    std::shared_ptr<UIFrame> element,
-    std::string tag,
-    std::string id,
-    const std::vector<std::string>& classes
+    std::shared_ptr<UIFrame> element
 ){
-    if(tag_queries.count(tag) != 0)
-        for(auto& q: tag_queries[tag]) q.applyTo(element);
+    if(tag_queries.count(element->identifiers.tag) != 0)
+        for(auto& q: tag_queries[element->identifiers.tag]) q.applyTo(element,this);
 
-    for(auto& classname: classes)
+    for(auto& classname: element->identifiers.classes)
         if(class_queries.count(classname) != 0)
-            for(auto& q: class_queries[classname]) q.applyTo(element);
+            for(auto& q: class_queries[classname]) q.applyTo(element,this);
 
-    if(id_queries.count(id) != 0)
-        for(auto& q: id_queries[id]) q.applyTo(element);
+    if(id_queries.count(element->identifiers.id) != 0)
+        for(auto& q: id_queries[element->identifiers.id]) q.applyTo(element,this);
 }
 
-void UIStyleQuery::applyTo(std::shared_ptr<UIFrame> element){
-    for(auto& attr: attributes){
-        attributeApplyFunctions[attr.name](element, attr.value, state);
+void UIStyle::UIStyleQuery::applyTo(std::shared_ptr<UIFrame> element, UIStyle* style){
+    for(auto& attr: style->attribute_registry[registry_index]){
+        attributeApplyFunctions[attr.name](element, attr.value, selector.state);
     }    
 }

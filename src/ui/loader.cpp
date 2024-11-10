@@ -5,20 +5,6 @@ static const std::vector<std::tuple<std::string, int, Units>> operators = {
     {"+", 0, OPERATION_PLUS }
 };
 
-std::vector<std::string> split(std::string s, const std::string& delimiter) {
-    std::vector<std::string> tokens;
-    size_t pos = 0;
-    std::string token;
-    while ((pos = s.find(delimiter)) != std::string::npos) {
-        token = s.substr(0, pos);
-        tokens.push_back(token);
-        s.erase(0, pos + delimiter.length());
-    }
-    tokens.push_back(s);
-
-    return tokens;
-}
-
 /*
     Return a tuple of [operator position in the string, operator index in registry]
 */
@@ -177,14 +163,12 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
             getAttributeValue(source,"height")
         );
 
-        std::vector<std::string> classes = split(optGetAttribute(source,"class"), " ");
-        style.applyTo(
-            el,
-            source->Name(),
-            optGetAttribute(source,"id"),
-            classes
-        );
-        
+
+        el->identifiers.id = optGetAttribute(source,"id");
+        el->identifiers.classes = split(optGetAttribute(source,"class"), " ");
+        el->identifiers.tag = source->Name();
+
+        style.applyTo(el);
 
         auto id = source->Attribute("id");
         if(id) layer.addElementWithID(id, el);

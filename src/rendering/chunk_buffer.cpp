@@ -7,7 +7,10 @@ bool MeshRegion::setSubregionMeshState(uint32_t x, uint32_t y, uint32_t z, bool 
     if(state) child_states |=  (1 << index); 
     else      child_states &= ~(1 << index);
 
-    if(child_states == 0xFF) setStateInParent(true); // If all children are meshed
+    if(child_states == 0xFF){
+        setStateInParent(true); // If all children are meshed
+        std::cout << merge() << std::endl;
+    }
     else if(merged){
         // Split apart the meshes because they are no longer valid
     }

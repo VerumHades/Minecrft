@@ -197,6 +197,8 @@ struct UIRenderInfo{
 
 class UIManager;
 class UIFrame;
+class UILoader;
+class UIStyle;
 
 /*
     Functionaly very similar to yield in an iterator, but slightly different
@@ -277,6 +279,11 @@ class UIFrame{
         Style hoverStyle;
         Style focusStyle;
 
+        struct Identifiers{
+            std::string tag = "";
+            std::vector<std::string> classes = {};
+            std::string id = "";
+        } identifiers;
 
         std::shared_ptr<UILayout> layout;
 
@@ -337,6 +344,8 @@ class UIFrame{
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 
         friend class UIManager;
+        friend class UILoader;
+        friend class UIStyle;
 
     public:
         UIFrame(UIManager& manager): manager(manager) {}
@@ -361,6 +370,8 @@ class UIFrame{
         void setSize(TValue width, TValue height) {this->width = width; this->height = height;}
         void setWidth(TValue width) {this->width = width;}
         void setHeight(TValue height) {this->height = height;}
+
+        void setIdentifiers(std::string tag, std::vector<std::string> classes = {}, std::string id = "") {identifiers = {tag,classes,id};}
         
         TValue& getWidth(){return width;}
         TValue& getHeight(){return height;}

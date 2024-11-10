@@ -21,13 +21,15 @@
     flex-expand: true;
 }
 
+#main_menu_selection{
+    border-width: 1px;
+    border-color: rgb(105, 117, 101);
+    background-color: rgb(24, 28, 20);
+}
+
 .center{
     left: 50% - 50m;
     top: 50% - 50m;
-}
-
-#world_selection_frame{
-    background-color: rgb(24, 28, 20);
 }
 
 .world_option{
@@ -43,12 +45,14 @@
 
 }
 #top_frame{
+    border-width: 1px;
+    border-color: rgb(105, 117, 101);
     background-color: rgb(24, 28, 20);
 }
 #bottom_frame{
-    border-top-width: 3px;
-    border-top-color: rgb(105, 117, 101);
-    border-color: rgb(60, 61, 55);
+    border-width: 1px;
+    border-color: rgb(105, 117, 101);
+    background-color: rgb(24, 28, 20);
 }
 
 #new_world_name_label{
