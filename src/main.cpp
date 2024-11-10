@@ -199,13 +199,13 @@ int main() {
                     s->setScene("game");
                 };
 
-                l->getCurrentStyle().applyTo(frame);
-                l->getCurrentStyle().applyTo(temp);
-                l->getCurrentStyle().applyTo(chunkCountLabel);
-
                 frame->appendChild(temp);
                 frame->appendChild(chunkCountLabel);
                 scrollable->appendChild(frame);
+
+                l->getCurrentStyle().applyTo(frame);
+                l->getCurrentStyle().applyTo(temp);
+                l->getCurrentStyle().applyTo(chunkCountLabel);
             }
             
             scrollable->calculateTransforms();

@@ -36,14 +36,12 @@
     background-color: rgb(60, 61, 55);
 }
 
-#top_frame frame label{
+#top_frame label{
     background-color: rgb(60, 61, 55);
     border-bottom-width: 5px;
     border-bottom-color: rgb(105, 117, 101);
 }
-.world_option_chunk_count_label{
 
-}
 #top_frame, #bottom_frame{
     border-width: 1px;
     border-color: rgb(105, 117, 101);

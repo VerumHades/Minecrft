@@ -169,13 +169,14 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
             keyname->setText(new_name);
         };
 
+        frame->appendChild(name);
+        frame->appendChild(keyname);
+        settingsFrame->appendChild(frame);
+    
         uiLoader->getCurrentStyle().applyTo(frame);
         uiLoader->getCurrentStyle().applyTo(name);
         uiLoader->getCurrentStyle().applyTo(keyname);
         
-        frame->appendChild(name);
-        frame->appendChild(keyname);
-        settingsFrame->appendChild(frame);
     }
 
     menuScene->getUILayer("settings").getElementById("settings_scrollable")->calculateTransforms();
@@ -190,10 +191,11 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     sensitivity_slider->setMax(100);
     sensitivity_slider->setDisplayValue(true);
     sensitivity_slider->setIdentifiers({"mouse_sensitivity_slider"});
+    
+    mouse_settings->appendChild(sensitivity_slider);
 
     uiLoader->getCurrentStyle().applyTo(sensitivity_slider);
 
-    mouse_settings->appendChild(sensitivity_slider);
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){

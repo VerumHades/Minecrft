@@ -262,7 +262,6 @@ void UIStyle::applyTo(
         bool failed = false;
         UIFrame* current_element = element.get();
         for(auto& selector: selectors){
-            //if(selectors.size() > 1)std::cout << selector.value << std::endl;
             if(
                 !current_element ||
                 !selector.isSelectorMatch(current_element)

@@ -26,6 +26,16 @@ class UIStyle{
             std::string value;
 
             bool isSelectorMatch(UIFrame* element);
+            std::string to_string(){
+                std::string prefix = "";
+                switch(type){
+                    case ID: prefix = "#"; break;
+                    case CLASS: prefix = "."; break; 
+                    case ANY: prefix = "*"; break;
+                    default: break;
+                }
+                return prefix + value; 
+            }
         };
 
         struct UIStyleQuery{

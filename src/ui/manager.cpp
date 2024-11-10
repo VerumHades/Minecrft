@@ -738,7 +738,7 @@ void UISlider::getRenderingInformation(RenderYeetFunction& yeet){
 
         auto extendedClip = clipRegion;
         extendedClip.max.x += textDimensions.x + valueDisplayOffset + 5;
-        manager.buildTextRenderingInformation(yeet,extendedClip, text,tx,ty,1,{255,255,255,255});
+        manager.buildTextRenderingInformation(yeet,extendedClip, text,tx,ty,1,getAttribute(&Style::textColor));
     }
 }
 

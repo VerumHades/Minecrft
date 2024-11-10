@@ -18,6 +18,10 @@ void Scene::setUILayer(std::string name){
     glfwSetInputMode(sceneManager->getGLFWWindow(), GLFW_CURSOR, layer.cursorMode);
     sceneManager->setEventLocks(layer.eventLocks);
 
+    for(auto& element: layer.getElements()){
+        element->calculateTransforms();
+    }
+
     uiManager->resetStates();
 }
 
