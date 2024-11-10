@@ -7,6 +7,7 @@ bool MeshRegion::setSubregionMeshState(uint32_t x, uint32_t y, uint32_t z, bool 
     if(state) child_states |=  (1 << index); 
     else      child_states &= ~(1 << index);
 
+    //std::cout << std::bitset<8>(child_states) << " at " << x << " " << y << " " << z <<std::endl;
     if(child_states == 0xFF){
         setStateInParent(true); // If all children are meshed
         std::cout << merge() << std::endl;
@@ -56,7 +57,11 @@ MeshRegion* MeshRegion::getSubregion(uint32_t x, uint32_t y, uint32_t z){
 }
 
 bool MeshRegion::moveMesh(size_t new_vertex_position, size_t new_index_position, size_t index_offset){
-    if(!merged && (transform.level != 1)) return false; // Moving is not possible for non level 1 or merged regions
+    if(!merged && (transform.level != 1)) return false; // Moving is not possible for non level 1 or non merged regions
+    if(meshless){
+        std::cerr << "Alright but moving a meshless mesh makes no sense." << std::endl;
+        return true;
+    }
 
     float*   vertex_buffer = registry.getVertexBuffer();
     uint32_t* index_buffer = registry.getIndexBuffer();
@@ -66,11 +71,13 @@ bool MeshRegion::moveMesh(size_t new_vertex_position, size_t new_index_position,
         new_vertex_position < 0
     
     ) return false; // Do not overflow the vertex buffer
+    
 
     if(
         new_index_position  + mesh_information.index_data_size  > registry.getIndexBufferSize() ||
         new_index_position < 0
     ) return false; // Do not overflow the index buffer 
+    
 
     // Cpoy the vertex data
     std::memcpy(
@@ -120,6 +127,7 @@ bool MeshRegion::merge(){
     { // Go trough all subregions and merge them if possible
         MeshRegion* subregion = getSubregion(x,y,z);
         if(!subregion) return false; // Region doesn't exist
+        if(subregion->meshless) continue;
         
         if(subregion->hasContiguousMesh() || subregion->merge()){
             vertex_size_total += subregion->mesh_information.vertex_data_size;
@@ -129,7 +137,7 @@ bool MeshRegion::merge(){
     }
     
     auto [vertex_success, new_vertex_position] = registry.getVertexAllocator().allocate(vertex_size_total);
-    auto [index_success , new_index_position] = registry.getIndexAllocator().allocate(index_size_total);
+    auto [index_success , new_index_position]  = registry.getIndexAllocator().allocate(index_size_total);
 
     if(!vertex_success || !index_success) return false; // Failed to allocate space for the new mesh
 
@@ -143,6 +151,7 @@ bool MeshRegion::merge(){
     { // Go trough all subregions and merge them if possible
         MeshRegion* subregion = getSubregion(x,y,z);
         if(!subregion) return false; // Region doesn't exist, but this would have already failed in the previous loop
+        if(subregion->meshless) continue;
 
         bool moved = subregion->moveMesh(
             new_vertex_position + vertex_offset,
@@ -155,8 +164,8 @@ bool MeshRegion::merge(){
         vertex_offset += subregion->mesh_information.vertex_data_size;
         index_offset  += subregion->mesh_information.index_data_size;
 
-        registry.getVertexAllocator().free(subregion->mesh_information.vertex_data_start);
-        registry.getIndexAllocator().free(subregion->mesh_information.index_data_start);
+        //registry.getVertexAllocator().free(subregion->mesh_information.vertex_data_start);
+        //registry.getIndexAllocator() .free(subregion->mesh_information.index_data_start);
 
         subregion->part_of_parent_mesh = true;
     }
@@ -171,6 +180,8 @@ bool MeshRegion::merge(){
     mesh_information.index_data_size = index_size_total;
 
     mesh_information.index_offset = 0;
+
+    merged = true;
 
     return true;
 }
@@ -194,15 +205,42 @@ bool MeshRegion::split(){
         if(!parent_region->split()) return false; // Parent region couldn't be split, so this can't either
     }
 
+    auto& vertex_allocator = registry.getVertexAllocator();
+    auto& index_allocator  = registry.getIndexAllocator();
+
+    auto vertex_iterator = std::prev(vertex_allocator.getTakenMemoryBlockAt(mesh_information.vertex_data_start));
+    auto index_iterator  = std::prev(index_allocator.getTakenMemoryBlockAt(mesh_information.index_data_start));
+    
+    /*
+        Free your own mesh
+    */
+    registry.getVertexAllocator().free(mesh_information.vertex_data_start);
+    registry.getIndexAllocator() .free(mesh_information.index_data_start);
+
     for(int x = 0; x < 2; x++)
     for(int y = 0; y < 2; y++) 
     for(int z = 0; z < 2; z++)
     { // Go trough all subregions and merge them if possible
         MeshRegion* subregion = getSubregion(x,y,z);
         if(!subregion) return false; // Region doesn't exist
+        if(subregion->meshless) continue;
         
         subregion->recalculateIndicies();
         subregion->part_of_parent_mesh = false;
+
+        vertex_allocator.insertBlock(
+            std::next(vertex_iterator),
+            subregion->mesh_information.vertex_data_start,
+            subregion->mesh_information.vertex_data_size,
+            false
+        );
+
+        index_allocator.insertBlock(
+            std::next(index_iterator),
+            subregion->mesh_information.index_data_start,
+            subregion->mesh_information.index_data_size,
+            false
+        );
     }
 
     merged = false;
@@ -371,8 +409,12 @@ bool ChunkMeshRegistry::addMesh(Mesh& mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
     
     if(getRegion(transform)) return false; // Mesh and region already exist
-    if(mesh.getVertices().size() == 0) return false; // Dont register empty meshes
-    
+    if(mesh.getVertices().size() == 0){
+        MeshRegion* region = createRegion(transform);
+        region->setStateInParent(true);
+        return true;
+    }
+
     auto [success, vertexBufferOffset, indexBufferOffset] = allocateAndUploadMesh(mesh);
     if(!success) return false;
     
@@ -404,6 +446,9 @@ bool ChunkMeshRegistry::updateMesh(Mesh& mesh, const glm::ivec3& pos){
 
     auto& region = regions.at(transform);
 
+    size_t old_vertex_data = region.mesh_information.vertex_data_start;
+    size_t old_index_data  = region.mesh_information.index_data_start;
+
     bool update_success = region.updateMeshInformation(
         {
             vertexBufferOffset,
@@ -425,32 +470,11 @@ bool ChunkMeshRegistry::updateMesh(Mesh& mesh, const glm::ivec3& pos){
 
     region.setStateInParent(true);
 
-    vertexAllocator.free(region.mesh_information.vertex_data_start);
-    indexAllocator .free(region.mesh_information.index_data_start);
+    vertexAllocator.free(old_vertex_data);
+    indexAllocator .free(old_index_data);
 
     return true;
 }   
-
-/*bool ChunkMeshRegistry::updateMesh(Mesh& mesh, const glm::ivec3& pos){
-    if(loadedChunks.count(pos) == 0) return false;
-    
-    auto [success, vertexBufferOffset, indexBufferOffset] = allocateAndUploadMesh(mesh);
-    if(!success) return false;
-
-    LoadedChunk& chunk = loadedChunks.at(pos);
-
-    vertexAllocator.free(chunk.vertexData);
-    indexAllocator .free(chunk.indexData);
-
-    chunk.vertexData = vertexBufferOffset;
-    chunk.indexData = indexBufferOffset;
-    
-    chunk.firstIndex = indexBufferOffset;
-    chunk.count = mesh.getIndices().size();
-    chunk.baseVertex = vertexBufferOffset / vertexFormat.getVertexSize();
-
-    return true;
-}*/
 
 DrawElementsIndirectCommand ChunkMeshRegistry::getCommandFor(const glm::ivec3& position){
     MeshRegion* region = getRegion({position,1});

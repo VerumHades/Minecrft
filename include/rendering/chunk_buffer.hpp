@@ -9,6 +9,7 @@
 #include <sstream>    
 #include <iomanip>    
 #include <string>    
+#include <bitset>
 
 struct TransformHash;
 struct TransformEqual;
@@ -28,12 +29,12 @@ class MeshRegion{
             /*
                 Position within its level, actual position is 2^level * position
             */
-            glm::ivec3 position;
+            glm::ivec3 position = {0,0,0};
             /*
                 Smallest is 1.
                 The actuall size of a region based on its level is: 2^level
             */
-            uint32_t level;
+            uint32_t level = 1;
 
         } transform;
 
@@ -47,6 +48,11 @@ class MeshRegion{
             If region is a part of a higher merged mesh
         */
         bool part_of_parent_mesh = false;
+        /*
+            Has no mesh
+        */
+        bool meshless = false;
+
 
         /*
             If possible reorganizes all subregion meshes into one large mesh that can be drawn with a single draw call
@@ -91,16 +97,16 @@ class MeshRegion{
             Information will remain valid even for regions merged within parent regions but it will not be drawable
         */
         struct MeshInformation{ 
-            size_t vertex_data_start;
-            size_t index_data_start;
+            size_t vertex_data_start = 0;
+            size_t index_data_start  = 0;
 
-            size_t vertex_data_size;
-            size_t index_data_size;
+            size_t vertex_data_size = 0;
+            size_t index_data_size  = 0;
 
             // Information for the draw call
-            size_t first_index;
-            size_t count;
-            size_t base_vertex;
+            size_t first_index = 0;
+            size_t count = 0;
+            size_t base_vertex  = 0;
 
             size_t index_offset = 0; // The last offset applied to the mesh when moved
         } mesh_information;
@@ -122,7 +128,7 @@ class MeshRegion{
 
             Level 1 regions are complete when they have their corresponding mesh
         */
-        uint8_t child_states;
+        uint8_t child_states = 0x00;
         
         /*
             Returns a pointer to the regions parent, if the region has no parents return nullptr
@@ -144,7 +150,13 @@ class MeshRegion{
         /*
             Returns the position of the regions parent
         */
-        glm::ivec3 getParentPosition() {return transform.position / 2;}
+        glm::ivec3 getParentPosition() {
+            return {
+                std::floor(static_cast<float>(transform.position.x) / 2.0f),
+                std::floor(static_cast<float>(transform.position.y) / 2.0f),
+                std::floor(static_cast<float>(transform.position.z) / 2.0f)
+            };
+        }
 
         friend struct TransformHash;
         friend struct TransformEqual;
@@ -166,7 +178,7 @@ class MeshRegion{
         /*
             If the regions mesh is contiguous, that means if its merged or that its level 1.
         */
-        bool hasContiguousMesh() {return merged || transform.level <= 1; }
+        bool hasContiguousMesh() {return merged || transform.level == 1; }
         
         // Creates a draw command from current mesh information
         DrawElementsIndirectCommand generateDrawCommand();
@@ -249,7 +261,7 @@ class ChunkMeshRegistry{
         /*
             Uploads the mesh as a level 1 region. (All parents are automatically created if they dont already exist)
 
-            Empty meshes will be ingnored and fail. (Empty or non-existent regions are considered empty meshes automatically)
+            Empty meshes will be ingnored. But registered as empty regions.
         */
         bool addMesh(Mesh& mesh, const glm::ivec3& pos);
 

@@ -78,10 +78,7 @@ void Chunk::syncGenerateAsyncUploadMesh(){
 
     //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     //std::cout << "Execution time: " << duration << " microseconds" << std::endl;
-    if(solidMesh->getVertices().size() == 0){
-        generatedEmptyMesh = true;
-        return;
-    }
+    if(solidMesh->getVertices().size() == 0) generatedEmptyMesh = true;
     
     world.addToChunkMeshLoadingQueue(this->worldPosition, std::move(this->solidMesh));
 }
@@ -113,10 +110,9 @@ void Chunk::asyncGenerateAsyncUploadMesh(ThreadPool& pool, bool reload){
 void Chunk::syncGenerateSyncUploadMesh(ChunkMeshRegistry& buffer){
     generateMeshes();
 
-    if(solidMesh->getVertices().size() == 0){
-        generatedEmptyMesh = true;
-    }
-    else if(buffer.isChunkLoaded(worldPosition)) buffer.updateMesh(*solidMesh, getWorldPosition());
+    if(solidMesh->getVertices().size() == 0) generatedEmptyMesh = true;
+    
+    if(buffer.isChunkLoaded(worldPosition)) buffer.updateMesh(*solidMesh, getWorldPosition());
     else buffer.addMesh(*solidMesh, getWorldPosition());
 
     solidMesh = nullptr;

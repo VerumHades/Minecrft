@@ -45,13 +45,20 @@ class Allocator{
         }
 
         std::tuple<bool,size_t> allocate(size_t size);
-        void free(size_t location);
+        void free(size_t location, std::string fail_prefix = "");
         void clear();
 
-        void appendBlock(size_t size){
-            memsize += size;
-            markFree(blocks.insert(blocks.end(),{0, size, false}));
-        }
+        /*
+            Returns the iterator to a taken memory block, if it doesnt fint it returns the end of the blocks list.
+        */
+        MemBlockIterator getTakenMemoryBlockAt(size_t location);
+
+        /*
+            Forcefully inserts an block, completely trusts the caller to know this to be right and not intersect with other existing blocks.
+
+            Be carefuly when using it.
+        */
+        bool insertBlock(MemBlockIterator where, size_t start, size_t size, bool free);
 
         const std::list<MemBlock>& getBlocks() {return blocks;};
         const size_t& getMemorySize(){return memsize;}
