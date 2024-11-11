@@ -124,6 +124,7 @@ class UIAllocatorVisualizer: public UIFrame{
         Allocator* watched;
     public:
         UIAllocatorVisualizer(UIManager& manager): UIFrame(manager){};
+        void setWatched(Allocator* allocator) {this->watched = allocator;};
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 };
 

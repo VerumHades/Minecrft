@@ -47,6 +47,14 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     this->getUILayer("chat").eventLocks = {true, true, true, true};
     this->getUILayer("menu").eventLocks = {true, true, true, true};
     this->getUILayer("settings").eventLocks = {true, true, true, true};
+    
+    auto vertex_allocator_visualizer = uiManager->createElement<UIAllocatorVisualizer>();
+    vertex_allocator_visualizer->setWatched(&chunkBuffer.getVertexAllocator());
+    vertex_allocator_visualizer->setPosition(10,10);
+    vertex_allocator_visualizer->setSize(1000,100);
+
+    this->getUILayer("default").addElement(vertex_allocator_visualizer);
+    this->setUILayer("default");
 
     Model& bob = modelManager.createModel("bob");
     bob.loadFromFile("models/test.gltf", "");
@@ -493,30 +501,7 @@ void MainScene::generateMeshes(){
         //int consideredTotal = 0;
         //int *tr = &consideredTotal;
 
-        DrawElementsIndirectCommand* drawCallBuffer = chunkBuffer.getCommandBuffer();
-
-        int  drawCallIndex = 0;
-        int* drawCallIndexPointer = &drawCallIndex;
-
-        findVisibleChunks(
-            camera.getLocalFrustum(), 
-            renderDistance, 
-            [this, camWorldPosition, drawCallBuffer, drawCallIndexPointer](glm::ivec3 local_position){
-                auto pos = local_position + camWorldPosition;
-
-                //(*tr)++;
-
-                Chunk* meshlessChunk = world->getChunk(pos.x, pos.y, pos.z);
-                if(!meshlessChunk) return;
-                if(meshlessChunk->isEmpty()) return;
-                //if(meshlessChunk->needsMeshReload())  meshlessChunk->asyncGenerateMesh(*threadPool, true);
-                if(meshlessChunk->isMeshEmpty()) return;
-
-                drawCallBuffer[(*drawCallIndexPointer)++] = this->chunkBuffer.getCommandFor(pos);
-            }
-        );
-
-        chunkBuffer.setDrawCallCount(drawCallIndex + 1);
+        chunkBuffer.updateDrawCalls(camera.getPosition(), camera.getFrustum());
 
         //std::cout << (consideredTotal / pow(renderDistance*2,3)) * 100 << "%" << std::endl;
         //End time point

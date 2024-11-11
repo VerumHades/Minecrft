@@ -10,7 +10,7 @@ bool MeshRegion::setSubregionMeshState(uint32_t x, uint32_t y, uint32_t z, bool 
     //std::cout << std::bitset<8>(child_states) << " at " << x << " " << y << " " << z <<std::endl;
     if(child_states == 0xFF){
         setStateInParent(true); // If all children are meshed
-        std::cout << merge() << std::endl;
+        if(!merge()) std::cout << "Merge failed!" << std::endl;
     }
     else if(merged){
         // Split apart the meshes because they are no longer valid
@@ -101,6 +101,8 @@ bool MeshRegion::moveMesh(size_t new_vertex_position, size_t new_index_position,
         }
     }
 
+    //std::cout << "Moved to: " << new_vertex_position << "of size: " << mesh_information.vertex_data_size << std::endl;
+
     // Register the changes
     mesh_information.vertex_data_start = new_vertex_position;
     mesh_information.index_data_start = new_index_position;
@@ -120,6 +122,7 @@ bool MeshRegion::merge(){
 
     size_t vertex_size_total = 0;
     size_t index_size_total = 0;
+    size_t count_total = 0;
 
     for(int x = 0; x < 2; x++)
     for(int y = 0; y < 2; y++) 
@@ -132,8 +135,14 @@ bool MeshRegion::merge(){
         if(subregion->hasContiguousMesh() || subregion->merge()){
             vertex_size_total += subregion->mesh_information.vertex_data_size;
             index_size_total  += subregion->mesh_information.index_data_size;
+            count_total += subregion->mesh_information.count;
         } // A mergable mesh
         else return false; // Fail if isn't and cannot be made contiguous
+    }
+
+    if(vertex_size_total == 0 || index_size_total == 0){
+        meshless = true;
+        return true;
     }
     
     auto [vertex_success, new_vertex_position] = registry.getVertexAllocator().allocate(vertex_size_total);
@@ -144,6 +153,8 @@ bool MeshRegion::merge(){
     size_t vertex_offset = 0;
     size_t index_offset  = 0;
 
+    //std::cout << "Merge result: " << vertex_size_total << " " << index_size_total << std::endl;
+
     // All meshes should be mergable at this point
     for(int x = 0; x < 2; x++)
     for(int y = 0; y < 2; y++) 
@@ -152,6 +163,9 @@ bool MeshRegion::merge(){
         MeshRegion* subregion = getSubregion(x,y,z);
         if(!subregion) return false; // Region doesn't exist, but this would have already failed in the previous loop
         if(subregion->meshless) continue;
+
+        registry.getVertexAllocator().free(subregion->mesh_information.vertex_data_start);
+        registry.getIndexAllocator() .free(subregion->mesh_information.index_data_start);
 
         bool moved = subregion->moveMesh(
             new_vertex_position + vertex_offset,
@@ -164,9 +178,6 @@ bool MeshRegion::merge(){
         vertex_offset += subregion->mesh_information.vertex_data_size;
         index_offset  += subregion->mesh_information.index_data_size;
 
-        //registry.getVertexAllocator().free(subregion->mesh_information.vertex_data_start);
-        //registry.getIndexAllocator() .free(subregion->mesh_information.index_data_start);
-
         subregion->part_of_parent_mesh = true;
     }
 
@@ -174,6 +185,7 @@ bool MeshRegion::merge(){
     mesh_information.index_data_start = new_index_position;
 
     mesh_information.first_index = new_index_position;
+    mesh_information.count = count_total;
     mesh_information.base_vertex = new_vertex_position / registry.getVertexFormat().getVertexSize(); // Calculate the base vertex in a single vertex sizes
 
     mesh_information.vertex_data_size = vertex_size_total;
@@ -409,8 +421,10 @@ bool ChunkMeshRegistry::addMesh(Mesh& mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
     
     if(getRegion(transform)) return false; // Mesh and region already exist
+
     if(mesh.getVertices().size() == 0){
         MeshRegion* region = createRegion(transform);
+        region->meshless = true;
         region->setStateInParent(true);
         return true;
     }
@@ -497,6 +511,63 @@ MeshRegion* ChunkMeshRegistry::createRegion(MeshRegion::Transform transform){
     return &regions.at(transform);
 }
 
+
+const int halfChunkSize = (CHUNK_SIZE / 2);
+void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* region, int& drawCallIndex){
+    if(region->meshless) return; // Meshless chunks are not drawn, regardless of level
+
+    int level_size_in_chunks = getRegionSizeForLevel(region->transform.level);
+    int level_size_in_blocks = level_size_in_chunks * CHUNK_SIZE; 
+
+    glm::ivec3 min = region->transform.position * level_size_in_blocks;
+    if(!frustum.isAABBWithing(min, min + level_size_in_blocks)) return; // Not visible
+
+    if(region->hasContiguousMesh()){ // The region is directly drawable
+        persistentDrawCallBuffer[drawCallIndex++] = region->generateDrawCommand();
+        return;
+    }
+    if(region->transform.level <= 1) return; // Level one meshes have no further children
+
+    for(int x = 0; x < 2; x++)
+    for(int y = 0; y < 2; y++) 
+    for(int z = 0; z < 2; z++)
+    { // Go trough all subregions and check them if possible
+        MeshRegion* subregion = region->getSubregion(x,y,z);
+        if(!subregion) continue; // Region doesn't exist
+        if(subregion->meshless) continue; // Dont bother calling the function for meshless chunks
+        
+        processRegionForDrawing(frustum, subregion, drawCallIndex);
+    }
+    
+}
+
+void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum){
+    int index = 0;
+
+    int max_level_size_in_chunks = getRegionSizeForLevel(maxRegionLevel);
+
+    glm::ivec3 center_position = {
+        std::floor(static_cast<float>(camera_position.x) / (max_level_size_in_chunks * CHUNK_SIZE)),
+        std::floor(static_cast<float>(camera_position.y) / (max_level_size_in_chunks * CHUNK_SIZE)),
+        std::floor(static_cast<float>(camera_position.z) / (max_level_size_in_chunks * CHUNK_SIZE))
+    };
+
+    for(int x = -1;x <= 1;x++)
+    for(int y = -1;y <= 1;y++)
+    for(int z = -1;z <= 1;z++)
+    {   
+        auto position = center_position + glm::ivec3(x,y,z);
+        MeshRegion* region = getRegion({position, maxRegionLevel});
+        if(!region){
+            //std::cout << "Core region not found?" << std::endl;
+            continue;
+        }
+
+        processRegionForDrawing(frustum, region, index);
+    }   
+
+    drawCallCount = index;
+}
 /*void ChunkMeshRegistry::updateDrawCalls(std::vector<DrawElementsIndirectCommand>& commands){
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBufferID);
 

@@ -5,6 +5,7 @@
 #include <rendering/mesh.hpp>
 #include <rendering/allocator.hpp>
 #include <rendering/buffer.hpp>
+#include <rendering/culling.hpp>
 
 #include <sstream>    
 #include <iomanip>    
@@ -177,6 +178,8 @@ class MeshRegion{
         
         /*
             If the regions mesh is contiguous, that means if its merged or that its level 1.
+
+            This will be true for all drawable regions.
         */
         bool hasContiguousMesh() {return merged || transform.level == 1; }
         
@@ -248,6 +251,13 @@ class ChunkMeshRegistry{
         */
         std::tuple<bool,size_t,size_t> allocateAndUploadMesh(Mesh& mesh);
 
+        /*
+            Checks the region againist the frustum. Does an octree search among its children.
+            Ignores region that arent drawn.
+            Writes their calls directly into the draw call buffer begining at the draw call index.
+        */
+        void processRegionForDrawing(Frustum& frustum, MeshRegion* region, int& drawCallIndex);
+
     public:
         ~ChunkMeshRegistry();
         
@@ -257,6 +267,13 @@ class ChunkMeshRegistry{
         bool isChunkLoaded(const glm::ivec3& pos){
             return getRegion({pos,1}) != nullptr;
         }
+
+        /*
+            Updates draw calls to the ones visible in the frustum.
+
+            Takes the camera position in world coordinates
+        */
+        void updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum);
 
         /*
             Uploads the mesh as a level 1 region. (All parents are automatically created if they dont already exist)
@@ -285,7 +302,7 @@ class ChunkMeshRegistry{
         /*
             Return the real size of a region based on its level
         */
-        uint32_t getRegionSizeForLevel(uint32_t level) {
+        int getRegionSizeForLevel(uint32_t level) {
             if(level < 1 || level > maxRegionLevel) return 0;
             return actualRegionSizes[level - 1];
         }

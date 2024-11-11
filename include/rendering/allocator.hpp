@@ -45,7 +45,7 @@ class Allocator{
         }
 
         std::tuple<bool,size_t> allocate(size_t size);
-        void free(size_t location, std::string fail_prefix = "");
+        bool free(size_t location, std::string fail_prefix = "");
         void clear();
 
         /*
