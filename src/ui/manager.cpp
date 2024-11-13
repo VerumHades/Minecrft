@@ -2,8 +2,8 @@
 
 void UIManager::initialize(){
     uiProgram.initialize();
-    uiProgram.addShader("shaders/ui/ui.vs", GL_VERTEX_SHADER);
-    uiProgram.addShader("shaders/ui/ui.fs", GL_FRAGMENT_SHADER);
+    uiProgram.addShader("shaders/graphical/ui/ui.vs", GL_VERTEX_SHADER);
+    uiProgram.addShader("shaders/graphical/ui/ui.fs", GL_FRAGMENT_SHADER);
     uiProgram.compile();
     uiProgram.use();
 
@@ -161,6 +161,8 @@ void UIManager::update(){
         element->getRenderingInformation(yeetCapture);
     }
 
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
     //std::cout << mesh.getVertices().size() << std::endl;
 
     drawBuffer->loadMesh(mesh);

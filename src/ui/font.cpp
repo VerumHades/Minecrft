@@ -106,8 +106,8 @@ void Font::createAtlas(){
 void FontManager::initialize(){
     program = std::make_unique<ShaderProgram>();
     program->initialize();
-    program->addShader("shaders/ui/text.vs", GL_VERTEX_SHADER);
-    program->addShader("shaders/ui/text.fs", GL_FRAGMENT_SHADER);
+    program->addShader("shaders/graphical/ui/text.vs", GL_VERTEX_SHADER);
+    program->addShader("shaders/graphical/ui/text.fs", GL_FRAGMENT_SHADER);
     program->compile();
     program->use();
 

@@ -19,9 +19,11 @@
 #include <game/entity.hpp>
 #include <game/world_saving.hpp>
 #include <game/chunk.hpp>
-#include <worldgen/worldgen.hpp>
+#include <game/world/world_generation.hpp>
 #include <vec_hash.hpp>
 #include <game/threadpool.hpp>
+
+#include <game/world/world_stream.hpp>
 
 struct RaycastResult{
     Block* hitBlock;
@@ -35,57 +37,6 @@ struct RaycastResult{
     float lastZ;
 };
 
-
-class WorldStream{
-    private:
-        std::fstream file_stream;
-        std::unordered_map<glm::vec3, size_t, Vec3Hash, Vec3Equal> chunkTable = {}; // Chunk locations in the file
-        std::shared_mutex mutex;
-
-        struct Header{
-            char name[256];
-            int seed;
-
-            size_t chunk_table_start;
-            size_t chunk_table_size;
-
-            size_t chunk_data_start;
-            size_t chunk_data_end;
-        };
-
-        Header header;
-
-        ByteArray serializeTableData();
-        void saveHeader();
-        void loadHeader();
-
-        void loadTable();
-        void saveTable();
-
-        size_t moveChunk(size_t from, size_t to);
-
-    public:
-        WorldStream(std::string filepath);
-        ~WorldStream();
-        bool save(Chunk& chunk);
-        void load(Chunk* chunk);
-        bool hasChunkAt(glm::vec3 position);
-
-        int getSeed() const {return header.seed;};
-        std::string getName() const {return std::string(header.name);}
-        
-        int getChunkCount() {return chunkTable.size();}
-
-        void setName(std::string name) {
-            if(name.length() > 256) {
-                std::cerr << "Max world name length is 256 chars" << std::endl;
-                return;
-            }
-            std::strcpy(header.name,name.c_str()); // Boo unsafe
-            saveHeader();
-        }
-};
-
 class ModelManager;
 
 class World: public Collidable{
@@ -95,15 +46,7 @@ class World: public Collidable{
 
         std::unique_ptr<WorldStream> stream;
         WorldGenerator generator;
-
-        struct MeshLoadingMember{
-            glm::ivec3 position;
-            std::unique_ptr<Mesh> mesh;
-        };
-
-        std::mutex meshLoadingMutex;
-        std::queue<MeshLoadingMember> meshLoadingQueue;
-
+        
     public:
         World(std::string filepath);
         Block* getBlock(int x, int y, int z);
@@ -113,9 +56,6 @@ class World: public Collidable{
 
         bool isChunkLoadable(int x, int y, int z);
         void loadChunk(int x, int y, int z);
-
-        void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<Mesh> mesh);
-        void loadMeshFromQueue(ChunkMeshRegistry&  buffer);
 
         Chunk* getChunk(int x, int y, int z);
         Chunk* getChunkFromBlockPosition(int x, int y, int z);

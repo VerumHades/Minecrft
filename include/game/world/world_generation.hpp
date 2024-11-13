@@ -6,6 +6,7 @@
 #include <game/blocks.hpp>
 #include <game/chunk_masks.hpp>
 #include <memory>
+#include <rendering/shaders.hpp>
 
 #include <FastNoiseLite.h> 
 
@@ -34,11 +35,20 @@ class WorldGenerator{
     private:
         FastNoiseLite noise;
         int seed;
+
+        ShaderProgram computeProgram;
+        std::unique_ptr<GLPersistentBuffer<uint32_t>> computeBuffer;
+
     public:
         WorldGenerator(int seed);
         WorldGenerator(){seed = 1948;}
 
-        void generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ, size_t size);
+        void generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, int chunkZ, size_t size);
+        
+        /*
+            A gpu accelerated generation function
+        */
+        void generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, int chunkY, int chunkZ, size_t size);
 };
 
 #include <game/chunk.hpp>

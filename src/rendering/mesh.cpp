@@ -26,11 +26,6 @@ void VertexFormat::apply(){
     }
 }
 
-Mesh::Mesh(){
-    this->vertices.reserve(10000);
-    this->indices.reserve(10000);
-}
-
 void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height){
     const int greedyVertexSize = 8;
     

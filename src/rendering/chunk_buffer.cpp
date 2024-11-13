@@ -10,7 +10,7 @@ bool MeshRegion::setSubregionMeshState(uint32_t x, uint32_t y, uint32_t z, bool 
     //std::cout << std::bitset<8>(child_states) << " at " << x << " " << y << " " << z <<std::endl;
     if(child_states == 0xFF){
         setStateInParent(true); // If all children are meshed
-        if(!merge()) std::cout << "Merge failed!" << std::endl;
+        //if(!merge()) std::cout << "Merge failed!" << std::endl;
     }
     else if(merged){
         // Split apart the meshes because they are no longer valid
@@ -275,31 +275,10 @@ DrawElementsIndirectCommand MeshRegion::generateDrawCommand(){
         static_cast<GLuint>(mesh_information.count),
         1,
         static_cast<GLuint>(mesh_information.first_index),
-        static_cast<GLuint>(mesh_information.base_vertex),
+        static_cast<GLuint>(mesh_information.base_vertex - mesh_information.index_offset) ,
         0
     };
 }
-
-/*
-    Creates a persistently mapped buffer,
-    returns a tuple of [buffer_id, pointer to mapped data]
-*/
-template <typename T>
-static std::tuple<uint32_t, T*> createPersistentBuffer(size_t size, uint32_t type){
-    uint32_t buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(type, buffer);
-    glBufferStorage(type, size, nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-
-    T* pointer = static_cast<T*>(glMapBufferRange(type, 0, size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
-
-    if(!pointer) {
-        throw std::runtime_error("Failed to map persistent buffer.");
-    }
-
-    return {buffer,pointer};
-}
-
 std::string formatSize(size_t bytes) {
     const char* suffixes[] = {"B", "KB", "MB", "GB", "TB"};
     size_t suffixIndex = 0;
@@ -335,8 +314,8 @@ void ChunkMeshRegistry::initialize(uint32_t renderDistance){
         Create and map buffer for draw calls
     */
 
-    std::tie(indirectBufferID, persistentDrawCallBuffer) = createPersistentBuffer<DrawElementsIndirectCommand>(
-        sizeof(DrawElementsIndirectCommand) * maxDrawCalls * 2,
+    persistentDrawCallBuffer = std::make_unique<GLPersistentBuffer<DrawElementsIndirectCommand>>(
+        sizeof(DrawElementsIndirectCommand) * maxDrawCalls,
         GL_DRAW_INDIRECT_BUFFER
     );
 
@@ -347,7 +326,7 @@ void ChunkMeshRegistry::initialize(uint32_t renderDistance){
     /*
         Create and map vertex and index buffers
     */
-    size_t totalMemoryToAllocate = (1024ULL * 1024ULL * 1024ULL) / 2ULL; // 500MB of video memory
+    size_t totalMemoryToAllocate = (1024ULL * 1024ULL * 1024ULL) / 4ULL; // 1/4GB of video memory
 
     size_t vertexPerFace = vertexFormat.getVertexSize() * 4; // For vertices per face
     size_t indexPerFace  = 6;
@@ -368,14 +347,14 @@ void ChunkMeshRegistry::initialize(uint32_t renderDistance){
     vertexAllocator = Allocator(maxVertexCount, [this](size_t requested_amount) {return false;});
     indexAllocator = Allocator(maxIndexCount, [this](size_t requested_amount) {return false;});
 
-    std::tie(vertexBufferID, persistentVertexBuffer) = createPersistentBuffer<float>(
+    persistentVertexBuffer = std::make_unique<GLPersistentBuffer<float>>(
         maxVertexCount * sizeof(float),
         GL_ARRAY_BUFFER
     );
 
     CHECK_GL_ERROR();
 
-    std::tie(indexBufferID, persistentIndexBuffer) = createPersistentBuffer<uint32_t>(
+    persistentIndexBuffer = std::make_unique<GLPersistentBuffer<uint32_t>>(
         maxIndexCount * sizeof(uint32_t),
         GL_ELEMENT_ARRAY_BUFFER
     );
@@ -386,15 +365,12 @@ void ChunkMeshRegistry::initialize(uint32_t renderDistance){
 }
 
 ChunkMeshRegistry::~ChunkMeshRegistry(){
-    glDeleteBuffers(1, &vertexBufferID);
-    glDeleteBuffers(1, &indexBufferID);
-    glDeleteBuffers(1,  &indirectBufferID);
     glDeleteVertexArrays(1, &vao);
 }
 
-std::tuple<bool,size_t,size_t> ChunkMeshRegistry::allocateAndUploadMesh(Mesh& mesh){
-    auto [vertexSuccess, vertexBufferOffset] = vertexAllocator.allocate(mesh.getVertices().size());
-    auto [indexSuccess, indexBufferOffset] = indexAllocator.allocate(mesh.getIndices().size());
+std::tuple<bool,size_t,size_t> ChunkMeshRegistry::allocateAndUploadMesh(Mesh* mesh){
+    auto [vertexSuccess, vertexBufferOffset] = vertexAllocator.allocate(mesh->getVertices().size());
+    auto [indexSuccess, indexBufferOffset] = indexAllocator.allocate(mesh->getIndices().size());
 
     if(!vertexSuccess || !indexSuccess) return {false,0,0};
 
@@ -402,27 +378,27 @@ std::tuple<bool,size_t,size_t> ChunkMeshRegistry::allocateAndUploadMesh(Mesh& me
         Allocate space for vertex data and save it
     */
     std::memcpy(
-        persistentVertexBuffer + vertexBufferOffset, // Copy to the vertex buffer at the offset
-        mesh.getVertices().data(), // Copy the vertex data
-        mesh.getVertices().size() *  sizeof(float) // Copy the size of the data in bytes
+        persistentVertexBuffer->data() + vertexBufferOffset, // Copy to the vertex buffer at the offset
+        mesh->getVertices().data(), // Copy the vertex data
+        mesh->getVertices().size() *  sizeof(float) // Copy the size of the data in bytes
     );
-    //mappedVertexBuffer + vertexBufferOffset, mesh.getVertices().data(), mesh.getVertices().size() *  sizeof(GLfloat)
+    //mappedVertexBuffer + vertexBufferOffset, mesh->getVertices().data(), mesh->getVertices().size() *  sizeof(GLfloat)
     
     std::memcpy(
-        persistentIndexBuffer + indexBufferOffset, // Copy to the vertex buffer at the offset
-        mesh.getIndices().data(), // Copy the vertex data
-        mesh.getIndices().size() *  sizeof(uint32_t) // Copy the size of the data in bytes
+        persistentIndexBuffer->data()  + indexBufferOffset, // Copy to the vertex buffer at the offset
+        mesh->getIndices().data(), // Copy the vertex data
+        mesh->getIndices().size() *  sizeof(uint32_t) // Copy the size of the data in bytes
     );
 
     return {true, vertexBufferOffset, indexBufferOffset};
 }
 
-bool ChunkMeshRegistry::addMesh(Mesh& mesh, const glm::ivec3& pos){
+bool ChunkMeshRegistry::addMesh(Mesh* mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
     
     if(getRegion(transform)) return false; // Mesh and region already exist
 
-    if(mesh.getVertices().size() == 0){
+    if(mesh->getVertices().size() == 0){
         MeshRegion* region = createRegion(transform);
         region->meshless = true;
         region->setStateInParent(true);
@@ -437,11 +413,11 @@ bool ChunkMeshRegistry::addMesh(Mesh& mesh, const glm::ivec3& pos){
         vertexBufferOffset,
         indexBufferOffset,
 
-        mesh.getVertices().size(),
-        mesh.getIndices().size(),
+        mesh->getVertices().size(),
+        mesh->getIndices().size(),
 
         indexBufferOffset,
-        mesh.getIndices().size(),
+        mesh->getIndices().size(),
         vertexBufferOffset / vertexFormat.getVertexSize(),
     };
     region->setStateInParent(true);
@@ -449,11 +425,11 @@ bool ChunkMeshRegistry::addMesh(Mesh& mesh, const glm::ivec3& pos){
     return true;
 }
 
-bool ChunkMeshRegistry::updateMesh(Mesh& mesh, const glm::ivec3& pos){
+bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
 
     if(!getRegion(transform)) return false; // Mesh region doesn't exist
-    if(mesh.getVertices().size() == 0) return false; // Don't register empty meshes
+    if(mesh->getVertices().size() == 0) return false; // Don't register empty meshes
 
     auto [success, vertexBufferOffset, indexBufferOffset] = allocateAndUploadMesh(mesh);
     if(!success) return false;
@@ -468,11 +444,11 @@ bool ChunkMeshRegistry::updateMesh(Mesh& mesh, const glm::ivec3& pos){
             vertexBufferOffset,
             indexBufferOffset,
 
-            mesh.getVertices().size(),
-            mesh.getIndices().size(),
+            mesh->getVertices().size(),
+            mesh->getIndices().size(),
 
             indexBufferOffset,
-            mesh.getIndices().size(),
+            mesh->getIndices().size(),
             vertexBufferOffset / vertexFormat.getVertexSize(),
         }
     );
@@ -523,7 +499,7 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
     if(!frustum.isAABBWithing(min, min + level_size_in_blocks)) return; // Not visible
 
     if(region->hasContiguousMesh()){ // The region is directly drawable
-        persistentDrawCallBuffer[drawCallIndex++] = region->generateDrawCommand();
+        persistentDrawCallBuffer->data()[drawCallIndex++] = region->generateDrawCommand();
         return;
     }
     if(region->transform.level <= 1) return; // Level one meshes have no further children
@@ -552,9 +528,11 @@ void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& fru
         std::floor(static_cast<float>(camera_position.z) / (max_level_size_in_chunks * CHUNK_SIZE))
     };
 
-    for(int x = -1;x <= 1;x++)
-    for(int y = -1;y <= 1;y++)
-    for(int z = -1;z <= 1;z++)
+    const int range = 1;
+
+    for(int x = -range;x <= range;x++)
+    for(int y = -range;y <= range;y++)
+    for(int z = -range;z <= range;z++)
     {   
         auto position = center_position + glm::ivec3(x,y,z);
         MeshRegion* region = getRegion({position, maxRegionLevel});
@@ -567,32 +545,15 @@ void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& fru
     }   
 
     drawCallCount = index;
+    std::cout  << "Drawing with " << drawCallCount << " draw calls." << std::endl;
 }
-/*void ChunkMeshRegistry::updateDrawCalls(std::vector<DrawElementsIndirectCommand>& commands){
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBufferID);
-
-    if (commands.size() > maxDrawCalls) {
-        throw std::runtime_error("Exceeded maximum number of draw calls.");
-    }
-
-    bufferOffset = (bufferOffset + maxDrawCalls) % (maxDrawCalls * 2);
-    std::memcpy(persistentDrawCallBuffer + bufferOffset, commands.data(), sizeof(DrawElementsIndirectCommand) * commands.size());
-
-    drawCallCount = commands.size();
-
-    std::memcpy(persistentDrawCallBuffer, commands.data(), sizeof(DrawElementsIndirectCommand) * commands.size());
-
-    drawCallCount = commands.size();
-
-    CHECK_GL_ERROR();
-}*/
 
 void ChunkMeshRegistry::draw(){
     glBindVertexArray(vao);
 
     //int drawCalls = maxDrawCalls - freeDrawCallIndices.size();
     //std::cout << "Active draw calls: " << lastDrawCall << std::endl;
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)(bufferOffset * sizeof(DrawElementsIndirectCommand)), drawCallCount, sizeof(DrawElementsIndirectCommand));
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, drawCallCount, sizeof(DrawElementsIndirectCommand));
 
     CHECK_GL_ERROR();
 }

@@ -46,14 +46,14 @@ void PerspectiveCamera::calculateFrustum(){
     localFrustum.topFace    = {origin                          ,glm::cross(CamRight, frontMultFar - CamUp * halfVSide) };
     localFrustum.bottomFace = {origin                          ,glm::cross(frontMultFar + CamUp * halfVSide, CamRight) };
 
-    glm::vec3 pos = this->position.getValue();
+    origin = this->position.getValue();
 
-    frustum.nearFace   = {localFrustum.nearFace  .distance * localFrustum.nearFace  .normal + pos, localFrustum.nearFace  .normal};
-    frustum.farFace    = {localFrustum.farFace   .distance * localFrustum.farFace   .normal + pos, localFrustum.farFace   .normal};
-    frustum.rightFace  = {localFrustum.rightFace .distance * localFrustum.rightFace .normal + pos, localFrustum.rightFace .normal};
-    frustum.leftFace   = {localFrustum.leftFace  .distance * localFrustum.leftFace  .normal + pos, localFrustum.leftFace  .normal};
-    frustum.topFace    = {localFrustum.topFace   .distance * localFrustum.topFace   .normal + pos, localFrustum.topFace   .normal};
-    frustum.bottomFace = {localFrustum.bottomFace.distance * localFrustum.bottomFace.normal + pos, localFrustum.bottomFace.normal};
+    frustum.nearFace   = {origin + zNear * this->direction,  this->direction                                      };
+    frustum.farFace    = {origin + frontMultFar           , -this->direction                                      };
+    frustum.rightFace  = {origin                          ,glm::cross(frontMultFar - CamRight * halfHSide, CamUp) };
+    frustum.leftFace   = {origin                          ,glm::cross(CamUp,frontMultFar + CamRight  * halfHSide) };
+    frustum.topFace    = {origin                          ,glm::cross(CamRight, frontMultFar - CamUp * halfVSide) };
+    frustum.bottomFace = {origin                          ,glm::cross(frontMultFar + CamUp * halfVSide, CamRight) };
 }
 
 PerspectiveCamera::PerspectiveCamera(){
@@ -107,8 +107,8 @@ void DepthCamera::updateProjection(){
 
 void DepthCamera::initialize(){
     program.initialize();
-    program.addShader("shaders/depth.vs", GL_VERTEX_SHADER);
-    program.addShader("shaders/depth.fs", GL_FRAGMENT_SHADER);
+    program.addShader("shaders/graphical/depth.vs", GL_VERTEX_SHADER);
+    program.addShader("shaders/graphical/depth.fs", GL_FRAGMENT_SHADER);
     program.compile();
     program.use();
 

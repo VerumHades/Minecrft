@@ -67,6 +67,41 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
 		   id, severity_, type_, source_, message);
 }
 
+void printOpenGLLimits() {
+    GLint maxWorkGroupCount[3]; // [X, Y, Z]
+    GLint maxWorkGroupSize[3];  // [X, Y, Z]
+    GLint maxInvocations;       // Total invocations per work group
+    GLint maxSharedMemorySize;  // Total shared memory size for compute shaders
+    
+    // Query GL_MAX_COMPUTE_WORK_GROUP_COUNT
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &maxWorkGroupCount[0]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &maxWorkGroupCount[1]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &maxWorkGroupCount[2]);
+    
+    // Query GL_MAX_COMPUTE_WORK_GROUP_SIZE
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &maxWorkGroupSize[0]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &maxWorkGroupSize[1]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &maxWorkGroupSize[2]);
+    
+    // Query GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS
+    glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &maxInvocations);
+    
+    // Query GL_MAX_COMPUTE_SHARED_MEMORY_SIZE
+    glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &maxSharedMemorySize);
+    
+    // Output the queried values
+    std::cout << "GL_MAX_COMPUTE_WORK_GROUP_COUNT:" << std::endl;
+    std::cout << "  X: " << maxWorkGroupCount[0] << ", Y: " << maxWorkGroupCount[1] << ", Z: " << maxWorkGroupCount[2] << std::endl;
+    
+    std::cout << "GL_MAX_COMPUTE_WORK_GROUP_SIZE:" << std::endl;
+    std::cout << "  X: " << maxWorkGroupSize[0] << ", Y: " << maxWorkGroupSize[1] << ", Z: " << maxWorkGroupSize[2] << std::endl;
+    
+    std::cout << "GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS: " << maxInvocations << std::endl;
+    
+    std::cout << "GL_MAX_COMPUTE_SHARED_MEMORY_SIZE: " << maxSharedMemorySize << " bytes" << std::endl;
+}
+
+
 SceneManager* s;
 int main() {
     GLFWwindow* window;
@@ -120,10 +155,10 @@ int main() {
         std::cout << "Failed to initialize glad!" << std::endl;
         return -1;
     }
-
-
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
     
+    printOpenGLLimits();
+
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     
@@ -136,11 +171,13 @@ int main() {
     //glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
     /*
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
     */
+    
     {
         SceneManager sceneManager;
 

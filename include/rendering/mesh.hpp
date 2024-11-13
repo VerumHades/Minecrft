@@ -32,7 +32,7 @@ class Mesh{
     public:
         size_t vertexSize = 0;
 
-        Mesh();
+        Mesh(){}
 
         void setVertexFormat(const VertexFormat& format) {this->format = format;};
         void addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height);

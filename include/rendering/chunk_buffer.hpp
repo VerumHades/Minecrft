@@ -209,16 +209,12 @@ class ChunkMeshRegistry{
         VertexFormat vertexFormat;
 
         uint32_t vao;
-        uint32_t indirectBufferID;
-        uint32_t vertexBufferID;
-        uint32_t indexBufferID;
 
         Allocator vertexAllocator;
         Allocator indexAllocator;
         
         size_t drawCallBufferSize = 0;
         size_t drawCallCount = 0;
-        size_t bufferOffset = 0;
 
         size_t vertexBufferSize = 0;
         size_t indexBufferSize = 0;
@@ -228,12 +224,12 @@ class ChunkMeshRegistry{
 
         size_t maxDrawCalls = 0;
 
-        DrawElementsIndirectCommand* persistentDrawCallBuffer;
-        float* persistentVertexBuffer;
-        uint32_t* persistentIndexBuffer;
+        std::unique_ptr<GLPersistentBuffer<DrawElementsIndirectCommand>> persistentDrawCallBuffer;
+        std::unique_ptr<GLPersistentBuffer<float>> persistentVertexBuffer;
+        std::unique_ptr<GLPersistentBuffer<uint32_t>> persistentIndexBuffer;
 
         // Highest region level, no regions higher than maxRegionLevel will be registered or created
-        const static uint32_t maxRegionLevel = 4;
+        const static uint32_t maxRegionLevel = 5;
         
         // index 0 is level 1, precalculated sizes
         std::vector<uint32_t> actualRegionSizes;
@@ -249,7 +245,7 @@ class ChunkMeshRegistry{
                 - size_t => index data offset in the index buffer 
             
         */
-        std::tuple<bool,size_t,size_t> allocateAndUploadMesh(Mesh& mesh);
+        std::tuple<bool,size_t,size_t> allocateAndUploadMesh(Mesh* mesh);
 
         /*
             Checks the region againist the frustum. Does an octree search among its children.
@@ -280,12 +276,12 @@ class ChunkMeshRegistry{
 
             Empty meshes will be ingnored. But registered as empty regions.
         */
-        bool addMesh(Mesh& mesh, const glm::ivec3& pos);
+        bool addMesh(Mesh* mesh, const glm::ivec3& pos);
 
         /*
             Updates a mesh, splits regions if old mesh is a part of them
         */
-        bool updateMesh(Mesh& mesh, const glm::ivec3& pos);
+        bool updateMesh(Mesh* mesh, const glm::ivec3& pos);
 
         /*
             Creates a region and all its parents if they dont already exist.
@@ -307,15 +303,14 @@ class ChunkMeshRegistry{
             return actualRegionSizes[level - 1];
         }
 
-        float* getVertexBuffer(){ return persistentVertexBuffer; }
-        uint32_t* getIndexBuffer() { return persistentIndexBuffer; }
+        float* getVertexBuffer(){ return persistentVertexBuffer->data(); }
+        uint32_t* getIndexBuffer() { return persistentIndexBuffer->data(); }
 
         // The maximal number of floats the buffer can store
         size_t getVertexBufferSize() { return maxVertexCount; }
         // The maximal number of uint32_ts the buffer can store
         size_t getIndexBufferSize() { return maxIndexCount; }
 
-        DrawElementsIndirectCommand* getCommandBuffer() {return persistentDrawCallBuffer;};
         void setDrawCallCount(int value){drawCallCount = value;}
 
         DrawElementsIndirectCommand getCommandFor(const glm::ivec3& pos);

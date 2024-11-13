@@ -1,4 +1,4 @@
-#include <worldgen/worldgen.hpp>
+#include <game/world/world_generation.hpp>
 
 #define FNL_IMPL
 #include <FastNoiseLite.h>
@@ -79,6 +79,15 @@ std::mt19937 rng(dev());
 std::uniform_int_distribution<std::mt19937::result_type> dist6(1,10); // distribution in range [1, 6]
 
 WorldGenerator::WorldGenerator(int seed){
+    computeProgram.initialize();
+    computeProgram.addShader("shaders/compute/terrain_generation.glsl", GL_COMPUTE_SHADER);
+    computeProgram.compile();
+    computeProgram.use();
+
+    computeBuffer = std::make_unique<GLPersistentBuffer<uint32_t>>(512 * 512  * (512  / 32) * sizeof(uint32_t), GL_SHADER_STORAGE_BUFFER);
+
+    CHECK_GL_ERROR();
+
     //noise = std::make_unique<FastNoiseLite>();
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
     noise.SetFrequency(0.001f);
@@ -88,7 +97,7 @@ WorldGenerator::WorldGenerator(int seed){
 }
 
 static inline float transcribeNoiseValue(float value, float ry){
-    value -= std::max(ry / 256, -100.0f);
+    value -= std::max(ry / 256, 0.0f);
     value = std::max(0.0f, value);
 
     return value;
@@ -99,11 +108,10 @@ static inline void set(DynamicChunkContents* group, int x, int y, int z, BlockTy
     if(solid) group->getSolidMask().set(x,y,z);
 }
 
-void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, int chunkZ, size_t size){
-    //auto start = std::chrono::high_resolution_clock::now();
+void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, int chunkZ, size_t size){
+    auto start = std::chrono::high_resolution_clock::now();
 
     std::unique_ptr<DynamicChunkContents> outputDataGroup = std::make_unique<DynamicChunkContents>(size);
-
     /*
         MAKE SURE THAT ALL THE MASKS EXIST, CRASHES OTHERWISE!
     */
@@ -126,26 +134,9 @@ void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, 
         if(value > 0.5){
             if(top){
                 set(outputDataGroup.get(), x, y, z, BlockTypes::Grass, true);
-
-                if(top && rand() % 30 == 0) set(outputDataGroup.get(),x,y + 1,z,BlockTypes::GrassBillboard, false);
-                else if(top && rand() % 60 == 0) {  
-                    set(outputDataGroup.get(),x,y + 1,z,BlockTypes::OakLog, true);
-                    set(outputDataGroup.get(),x,y + 2,z,BlockTypes::OakLog, true);
-                    set(outputDataGroup.get(),x,y + 3,z,BlockTypes::OakLog, true);
-                    set(outputDataGroup.get(),x,y + 4,z,BlockTypes::OakLog, true);
-
-                    for(int i = -2; i < 3;i++) for(int j = -2;j < 3;j++) for(int g = 0;g < 2;g++){
-                        if(i == 0 && j == 0 && g == 0) continue;
-                        set(outputDataGroup.get(),x + i,y + 4 + g,z + j,BlockTypes::LeafBlock, true);
-                    }
-
-                    for(int i = -1; i < 2;i++) for(int j = -1;j < 2;j++){
-                        set(outputDataGroup.get(),x + i,y + 6,z + j,BlockTypes::LeafBlock, true);
-                    }
-                } 
             }
             else{
-                set(outputDataGroup.get(),x,y,z,BlockTypes::Dirt, true);
+                set(outputDataGroup.get(), x, y, z, BlockTypes::Dirt, true);
             }
             //chunk.setBlock(x,y,z, {top ? BlockTypes::Grass : BlockTypes::Stone});
 
@@ -153,7 +144,7 @@ void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, 
         }
     }
 
-    chunk.setMainGroup(std::move(outputDataGroup));
+    chunk->setMainGroup(std::move(outputDataGroup));
 
     //std::cout << "Generated with mask:" << chunk.getMainGroupAs<64>() << " " << chunk.getMainGroupAs<64>()->masks.size() << std::endl;
     
@@ -174,9 +165,52 @@ void WorldGenerator::generateTerrainChunk(Chunk& chunk, int chunkX, int chunkY, 
 
 
       // End time point
-    //auto end = std::chrono::high_resolution_clock::now();
+    auto end = std::chrono::high_resolution_clock::now();
 
-    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    //std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
 
 }   
+
+void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, int chunkY, int chunkZ, size_t size){
+    auto start = std::chrono::high_resolution_clock::now();
+    
+    std::cout << computeBuffer->getID() << std::endl;
+    computeProgram.use();
+    CHECK_GL_ERROR();
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, computeBuffer->getID());
+
+    CHECK_GL_ERROR();
+    /*
+        64 / 32 (division because one uint32_t is 32 bits) by 64 by 64
+    */
+    glDispatchCompute(64 / 32, 64, 64);
+
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+    CHECK_GL_ERROR();
+
+    std::unique_ptr<DynamicChunkContents> outputDataGroup = std::make_unique<DynamicChunkContents>(size);
+    /*
+        MAKE SURE THAT ALL THE MASKS EXIST, CRASHES OTHERWISE!
+    */
+    outputDataGroup->createMask(BlockTypes::Grass, size);
+
+    for(int x = 0;x < size;x++) for(int y = 0;y < size;y++) for(int z = 0;z < size;z++){
+        int half = x / 32;
+        uint32_t value = computeBuffer->data()[y * 2 + (z * 2 * 64) + half];
+        
+        if(value & (1UL << (x - half * 32))){
+            set(outputDataGroup.get(), x, y, z, BlockTypes::Grass, true);
+            //chunk.setBlock(x,y,z, {top ? BlockTypes::Grass : BlockTypes::Stone});
+
+            //if(top && rand() % 30 == 0) generateOakTree(chunk,x,y+1,z);
+        }
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
+}

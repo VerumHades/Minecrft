@@ -14,7 +14,8 @@
 #include <ui/font.hpp>
 #include <ui/loader.hpp>
 
-#include <game/world.hpp>
+#include <game/world/world.hpp>
+#include <game/world/mesh_generation.hpp>
 #include <game/entity.hpp>
 #include <game/commands.hpp>
 #include <game/threadpool.hpp>
@@ -40,10 +41,11 @@ class MainScene: public Scene{
         GLSkybox skybox;
         std::unique_ptr<World> world;
 
-        ChunkMeshRegistry chunkBuffer;
+        ChunkMeshRegistry chunkMeshRegistry;
+        ChunkMeshGenerator chunkMeshGenerator;
 
         std::string worldPath = "saves/worldsave.bin";
-        int renderDistance = 16;
+        int renderDistance = 8;
         int selectedBlock = 2;
 
         bool allGenerated = false;
@@ -108,8 +110,8 @@ class MainScene: public Scene{
         void close(GLFWwindow* window)  override;
         void resize(GLFWwindow* window, int width, int height)  override;
 
-        void regenerateChunkMesh(Chunk& chunk);
-        void regenerateChunkMesh(Chunk& chunk,glm::vec3 blockCoords);
+        void regenerateChunkMesh(Chunk* chunk);
+        void regenerateChunkMesh(Chunk* chunk,glm::vec3 blockCoords);
 
         void mouseMove(GLFWwindow* window, int x, int y)  override;
         void mouseEvent(GLFWwindow* window, int button, int action, int mods)  override;

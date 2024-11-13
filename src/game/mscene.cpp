@@ -49,12 +49,12 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     this->getUILayer("settings").eventLocks = {true, true, true, true};
     
     auto vertex_allocator_visualizer = uiManager->createElement<UIAllocatorVisualizer>();
-    vertex_allocator_visualizer->setWatched(&chunkBuffer.getVertexAllocator());
+    vertex_allocator_visualizer->setWatched(&chunkMeshRegistry.getVertexAllocator());
     vertex_allocator_visualizer->setPosition(10,10);
     vertex_allocator_visualizer->setSize(1000,100);
 
-    this->getUILayer("default").addElement(vertex_allocator_visualizer);
     this->setUILayer("default");
+    addElement(vertex_allocator_visualizer);
 
     Model& bob = modelManager.createModel("bob");
     bob.loadFromFile("models/test.gltf", "");
@@ -70,8 +70,8 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     };
 
     skyboxProgram.initialize();
-    skyboxProgram.addShader("shaders/skybox.vs", GL_VERTEX_SHADER);
-    skyboxProgram.addShader("shaders/skybox.fs", GL_FRAGMENT_SHADER);
+    skyboxProgram.addShader("shaders/graphical/skybox.vs", GL_VERTEX_SHADER);
+    skyboxProgram.addShader("shaders/graphical/skybox.fs", GL_FRAGMENT_SHADER);
     skyboxProgram.compile();
     skyboxProgram.use();
 
@@ -94,8 +94,8 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     };
     
     terrainProgram.initialize();
-    terrainProgram.addShader("shaders/terrain.vs", GL_VERTEX_SHADER);
-    terrainProgram.addShader("shaders/terrain.fs", GL_FRAGMENT_SHADER);
+    terrainProgram.addShader("shaders/graphical/terrain.vs", GL_VERTEX_SHADER);
+    terrainProgram.addShader("shaders/graphical/terrain.fs", GL_FRAGMENT_SHADER);
     terrainProgram.compile();
     terrainProgram.use();
 
@@ -128,14 +128,14 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
 
-    chunkBuffer.initialize(renderDistance);
+    chunkMeshRegistry.initialize(renderDistance);
 
     camera.setModelPosition({0,0,0});
     terrainProgram.updateUniform("modelMatrix");
 
     suncam.setCaptureSize(renderDistance * 2 * CHUNK_SIZE);
 
-    threadPool = std::make_unique<ThreadPool>(10);
+    threadPool = std::make_unique<ThreadPool>(12);
     //world->load("saves/worldsave.bin");
 
     inputManager.bindKey(GLFW_KEY_W    , MOVE_FORWARD , "Move forward ");
@@ -264,7 +264,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
         auto chunk = world->getChunkFromBlockPosition(hit.x, hit.y, hit.z);
         if(!chunk) return;
-        regenerateChunkMesh(*chunk,world->getGetChunkRelativeBlockPosition(hit.x, hit.y, hit.z));
+        regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(hit.x, hit.y, hit.z));
     }
     else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hit){
         CollisionCheckResult result = world->checkForPointCollision(hit.lastX, hit.lastY, hit.lastZ, 1);
@@ -280,7 +280,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
         auto chunk = world->getChunkFromBlockPosition(result.x, result.y,result.z);
         if(!chunk) return;
-        regenerateChunkMesh(*chunk,world->getGetChunkRelativeBlockPosition(result.x, result.y,result.z));
+        regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(result.x, result.y,result.z));
     }
 }
 
@@ -337,8 +337,10 @@ void MainScene::open(GLFWwindow* window){
     world->getEntities().emplace_back(glm::vec3(0,-100,0), glm::vec3(0.6, 1.8, 0.6));
     world->getEntities()[0].setGravity(false);
 
-    std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
-    generationThread.detach();
+    //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
+    //generationThread.detach();
+
+    generateSurroundingChunks();
 
     //std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
@@ -357,7 +359,7 @@ void MainScene::close(GLFWwindow* window){
     } 
 
     world = nullptr;
-    chunkBuffer.clear();
+    chunkMeshRegistry.clear();
 }
 
 void MainScene::render(){
@@ -389,7 +391,7 @@ void MainScene::render(){
     //if(boundKeys[0].isDown) accelY += 0.0006;
     //if(boundKeys[1].isDown) accelY -= 0.0006;
 
-    world->loadMeshFromQueue(chunkBuffer);
+    chunkMeshGenerator.loadMeshFromQueue(chunkMeshRegistry);
 
     generateMeshes();
 
@@ -420,9 +422,9 @@ void MainScene::render(){
     suncam.setModelPosition({0,0,0});
     terrainProgram.updateUniform("modelMatrix");
     suncam.prepareForRender();
-    chunkBuffer.draw();
+    chunkMeshRegistry.draw();
     
-    world->drawEntities(modelManager, suncam, true);
+    //world->drawEntities(modelManager, suncam, true);
     glEnable( GL_CULL_FACE );
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -442,7 +444,7 @@ void MainScene::render(){
 
     camera.setModelPosition({0,0,0});
     terrainProgram.updateUniform("modelMatrix");
-    chunkBuffer.draw();
+    chunkMeshRegistry.draw();
 
     world->drawEntities(modelManager, camera);
     //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
@@ -461,27 +463,27 @@ void MainScene::render(){
     glEnable( GL_CULL_FACE );
 }
 
-void MainScene::regenerateChunkMesh(Chunk& chunk){
-    chunk.syncGenerateSyncUploadMesh(chunkBuffer);
+void MainScene::regenerateChunkMesh(Chunk* chunk){
+    chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry);
     this->updateVisibility = 1;
-    //chunkBuffer.unloadChunkMesh(chunk.getWorldPosition());
+    //chunkMeshRegistry.unloadChunkMesh(chunk->getWorldPosition());
 }
 
 
 #define regenMesh(x,y,z) { \
     Chunk* temp = this->world->getChunk(x, y, z);\
-    if(temp) regenerateChunkMesh(*temp);\
+    if(temp) regenerateChunkMesh(temp);\
 }
-void MainScene::regenerateChunkMesh(Chunk& chunk, glm::vec3 blockCoords){
+void MainScene::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
     regenerateChunkMesh(chunk);
-    if(blockCoords.x == 0)              regenMesh((int) chunk.getWorldPosition().x - 1, (int) chunk.getWorldPosition().y, (int) chunk.getWorldPosition().z);
-    if(blockCoords.x == CHUNK_SIZE - 1) regenMesh((int) chunk.getWorldPosition().x + 1, (int) chunk.getWorldPosition().y, (int) chunk.getWorldPosition().z);
+    if(blockCoords.x == 0)              regenMesh((int) chunk->getWorldPosition().x - 1, (int) chunk->getWorldPosition().y, (int) chunk->getWorldPosition().z);
+    if(blockCoords.x == CHUNK_SIZE - 1) regenMesh((int) chunk->getWorldPosition().x + 1, (int) chunk->getWorldPosition().y, (int) chunk->getWorldPosition().z);
 
-    if(blockCoords.y == 0)              regenMesh((int) chunk.getWorldPosition().x, (int) chunk.getWorldPosition().y - 1, (int) chunk.getWorldPosition().z);
-    if(blockCoords.y == CHUNK_SIZE - 1) regenMesh((int) chunk.getWorldPosition().x, (int) chunk.getWorldPosition().y + 1, (int) chunk.getWorldPosition().z);
+    if(blockCoords.y == 0)              regenMesh((int) chunk->getWorldPosition().x, (int) chunk->getWorldPosition().y - 1, (int) chunk->getWorldPosition().z);
+    if(blockCoords.y == CHUNK_SIZE - 1) regenMesh((int) chunk->getWorldPosition().x, (int) chunk->getWorldPosition().y + 1, (int) chunk->getWorldPosition().z);
 
-    if(blockCoords.z == 0)              regenMesh((int) chunk.getWorldPosition().x, (int) chunk.getWorldPosition().y, (int) chunk.getWorldPosition().z - 1);
-    if(blockCoords.z == CHUNK_SIZE - 1) regenMesh((int) chunk.getWorldPosition().x, (int) chunk.getWorldPosition().y, (int) chunk.getWorldPosition().z + 1);
+    if(blockCoords.z == 0)              regenMesh((int) chunk->getWorldPosition().x, (int) chunk->getWorldPosition().y, (int) chunk->getWorldPosition().z - 1);
+    if(blockCoords.z == CHUNK_SIZE - 1) regenMesh((int) chunk->getWorldPosition().x, (int) chunk->getWorldPosition().y, (int) chunk->getWorldPosition().z + 1);
 }
 #undef regenMesh
 
@@ -501,16 +503,17 @@ void MainScene::generateMeshes(){
         //int consideredTotal = 0;
         //int *tr = &consideredTotal;
 
-        chunkBuffer.updateDrawCalls(camera.getPosition(), camera.getFrustum());
+        chunkMeshRegistry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
 
         //std::cout << (consideredTotal / pow(renderDistance*2,3)) * 100 << "%" << std::endl;
         //End time point
         auto iend = std::chrono::high_resolution_clock::now();
         std::cout << "Iterated over all chunks in: " << std::chrono::duration_cast<std::chrono::microseconds>(iend - istart).count() << " microseconds" << std::endl;
-        
+
         //auto start = std::chrono::high_resolution_clock::now();
-        updateVisibility--;
+        updateVisibility = 0;
     }
+
     //End time point
     //auto end = std::chrono::high_resolution_clock::now();
 
@@ -596,7 +599,7 @@ void MainScene::generateSurroundingChunks(){
 
 
     World* worldp = world.get();
-    auto* bp = &chunkBuffer;
+    auto* bp = &chunkMeshRegistry;
         
     for(int x = -pregenDistance ; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
         int chunkX = camWorldX + x;
@@ -611,16 +614,11 @@ void MainScene::generateSurroundingChunks(){
             //std::cout << "Generating chunk" << std::endl;
 
             //int distance = glm::length(glm::vec3(x,y,z)) / 4;
-            //int level = std::max(64 - distance * 16, 1);
+            int level = 64;
 
-            int level = 1;
+            //int level = 1;
             //std::cout << "Level:" << level << std::endl;
-
-            threadPool->deploy([worldp,chunkX,chunkY,chunkZ, level, bp,gptr](){
-                worldp->generateChunk(chunkX, chunkY, chunkZ, level);
-                (*gptr)++;
-            });
-            //if(!success){break;}
+            worldp->generateChunk(chunkX, chunkY, chunkZ, level);
         }
     }
 
@@ -628,19 +626,20 @@ void MainScene::generateSurroundingChunks(){
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
+    auto* mesh_generator_pointer = &chunkMeshGenerator;
     std::cout << "Generating meshes..." << std::endl;
     for(int x = -renderDistance; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
         int chunkX = camWorldX + x;
         int chunkY = camWorldY + y;
         int chunkZ = camWorldZ + z;
         
-        threadPool->deploy([worldp,chunkX,chunkY,chunkZ, bp,gptr](){
+        threadPool->deploy([worldp,chunkX,chunkY,chunkZ, mesh_generator_pointer](){
             Chunk* chunk = worldp->getChunk(chunkX, chunkY, chunkZ);
             if(!chunk){
                 std::cerr << "Wtf?" << std::endl;
                 return;
             }
-            chunk->syncGenerateAsyncUploadMesh();
+            mesh_generator_pointer->syncGenerateAsyncUploadMesh(chunk);
         });
     }
     

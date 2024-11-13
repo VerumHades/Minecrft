@@ -26,12 +26,6 @@ class ShaderProgram{
         int program;
         std::vector<int> shaders;
         std::unordered_map<std::string, std::reference_wrapper<UniformBase>> attachedUniforms;
-
-        int projLoc = -1;
-        int viewLoc = -1;
-        int modelLoc = -1;
-
-        bool isSkybox_ = false;
     public:
         void initialize();
         ~ShaderProgram();
@@ -48,14 +42,7 @@ class ShaderProgram{
         void updateUniforms();
         void updateUniform(std::string name);
 
-        int getProjLoc() {return projLoc;};
-        int getViewLoc() {return viewLoc;};
-        int getModelLoc() {return modelLoc;};
-
         int getUniformLocation(std::string name);
-
-        bool isSkybox(){return isSkybox_; }; 
-        void makeSkybox(){this->isSkybox_ = true;};
 
         int getID() {return program;};
         void attachUniform(UniformBase& uniform) {attachedUniforms.emplace(uniform.getName(), uniform);}

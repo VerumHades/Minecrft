@@ -259,13 +259,13 @@ void ModelManager::initialize(){
     modelDepthProgram = std::make_unique<ShaderProgram>();
 
     modelProgram->initialize();
-    modelProgram->addShader("shaders/model/model.vs", GL_VERTEX_SHADER);
-    modelProgram->addShader("shaders/model/model.fs", GL_FRAGMENT_SHADER);
+    modelProgram->addShader("shaders/graphical/model/model.vs", GL_VERTEX_SHADER);
+    modelProgram->addShader("shaders/graphical/model/model.fs", GL_FRAGMENT_SHADER);
     modelProgram->compile();
     
     modelDepthProgram->initialize();
-    modelDepthProgram->addShader("shaders/depth.vs", GL_VERTEX_SHADER);
-    modelDepthProgram->addShader("shaders/depth.fs", GL_FRAGMENT_SHADER);
+    modelDepthProgram->addShader("shaders/graphical/depth.vs", GL_VERTEX_SHADER);
+    modelDepthProgram->addShader("shaders/graphical/depth.fs", GL_FRAGMENT_SHADER);
     modelDepthProgram->compile();
 
     glUniform1i(modelProgram->getUniformLocation("texture"),0);

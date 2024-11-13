@@ -75,10 +75,6 @@ void ShaderProgram::compile(){
     for(int i = 0;i < this->shaders.size();i++){
         glDeleteShader(this->shaders[i]);
     }
-
-    this->projLoc = glGetUniformLocation(this->program, "projection");
-    this->viewLoc = glGetUniformLocation(this->program, "view");
-    this->modelLoc = glGetUniformLocation(this->program, "model");
 }
 
 void ShaderProgram::updateUniforms(){
