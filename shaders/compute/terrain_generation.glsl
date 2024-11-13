@@ -102,9 +102,41 @@ layout(std430, binding = 0) buffer TerrainData {
     uint data[];
 };
 
+// Simple 3D hash function
+float hash(vec3 p) {
+    return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+}
+
+float noise(vec3 p) {
+    // Get integer coordinates of the cell
+    vec3 i = floor(p);
+    // Get fractional part of p
+    vec3 f = fract(p);
+
+    // Compute fade curves for each coordinate
+    f = f * f * (3.0 - 2.0 * f);
+
+    // Sample the eight corners of the cube
+    float a = hash(i);
+    float b = hash(i + vec3(1.0, 0.0, 0.0));
+    float c = hash(i + vec3(0.0, 1.0, 0.0));
+    float d = hash(i + vec3(1.0, 1.0, 0.0));
+    float e = hash(i + vec3(0.0, 0.0, 1.0));
+    float f1 = hash(i + vec3(1.0, 0.0, 1.0));
+    float g = hash(i + vec3(0.0, 1.0, 1.0));
+    float h = hash(i + vec3(1.0, 1.0, 1.0));
+
+    // Trilinear interpolation of the noise values
+    return mix(
+        mix(mix(a, b, f.x), mix(c, d, f.x), f.y),
+        mix(mix(e, f1, f.x), mix(g, h, f.x), f.y),
+        f.z
+    );
+}
+
 void main() {
     // Each work group handles 32 blocks
-    uint groupIndex = gl_WorkGroupID.x;
+    uint groupIndex = gl_WorkGroupID.x + gl_WorkGroupID.y * 2 + gl_WorkGroupID.z * 64 * 2;
     uint bitIndex = gl_LocalInvocationID.x; // Thread-specific bit position (0 to 31)
 
     // Calculate the array index and bit mask for this work group's 32-bit uint
@@ -112,7 +144,7 @@ void main() {
     uint bitMask = 1u << bitIndex;
 
     // Determine if this block (bit) should be set or cleared
-    bool isActive = terrainHeight(gl_GlobalInvocationID) > 0.5;
+    bool isActive = noise(gl_GlobalInvocationID + vec3(gl_LocalInvocationID.x,0,0)) > 0.5;
 
     // Set or clear the bit within the uint
     if (isActive) {

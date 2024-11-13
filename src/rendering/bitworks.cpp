@@ -39,6 +39,9 @@ std::string compressed_24bit::to_string(){
 
 
 void DynamicBitArray3D::loadAsRotated(DynamicBitArray3D& array){
+    size = array.size;
+    selectStorage();
+
     for(int z = 0;z < size;z++){
         for(int y = 0; y < size;y++){
             uint_t<64> value = array.getRow(z,y);

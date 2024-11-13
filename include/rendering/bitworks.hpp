@@ -13,6 +13,7 @@
 #include <string>
 #include <memory>
 #include <variant>
+#include <cstring>
 
 #include <game/blocks.hpp>
 
@@ -145,6 +146,28 @@ class DynamicBitArray3D{
             else if(size <= 16) { bitworks::decompress<16>(data, std::get<std::vector<uint16_t>>(storage)); actualSize = BIT16; }
             else if(size <= 32) { bitworks::decompress<32>(data, std::get<std::vector<uint32_t>>(storage)); actualSize = BIT32; }
             else if(size <= 64) { bitworks::decompress<64>(data, std::get<std::vector<uint64_t>>(storage)); actualSize = BIT64; }
+        }
+
+        /*
+            Calls 'set64bitValue'.
+        */
+        DynamicBitArray3D(uint64_t* data){
+            set64BitValue(data);
+        }
+
+        /*
+            Copies a valid mask data (64 * 64 array of uint64_t).
+
+            Supplying incorrect or undersized data will result in undefined behaviour.
+        */
+        void set64BitValue(uint64_t* data){
+            size = 64;
+            storage = std::vector<uint64_t>(size * size); actualSize = BIT64;
+            std::memcpy(
+                std::get<std::vector<uint64_t>>(storage).data(),
+                data,
+                64 * 64 * sizeof(uint64_t)
+            );
         }
         
         uint_t<64> getRow(uint32_t x, uint32_t y){

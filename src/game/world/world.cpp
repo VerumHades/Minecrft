@@ -22,7 +22,7 @@ Chunk* World::generateChunk(int x, int y, int z, int lod){
 
     std::unique_lock lock(chunkGenLock);
     this->chunks.emplace(key, std::move(chunk));
-    this->stream->save(*chunks[key]);
+    //this->stream->save(*chunks[key]);
 
     return this->chunks[key].get();
 }

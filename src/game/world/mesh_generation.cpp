@@ -197,6 +197,7 @@ static inline void processFaces(std::vector<ChunkMeshGenerator::Face> faces, Fac
 
 std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosition, DynamicChunkContents* group){
     auto solidMesh = std::make_unique<Mesh>();
+    if(!group) return solidMesh;
     //this->solidMesh->setVertexFormat(VertexFormat({3,1,2,1,1}));  // Unused
     float worldX = worldPosition.x * CHUNK_SIZE;
     float worldY = worldPosition.y * CHUNK_SIZE;

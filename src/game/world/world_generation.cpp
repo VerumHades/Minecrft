@@ -84,7 +84,7 @@ WorldGenerator::WorldGenerator(int seed){
     computeProgram.compile();
     computeProgram.use();
 
-    computeBuffer = std::make_unique<GLPersistentBuffer<uint32_t>>(512 * 512  * (512  / 32) * sizeof(uint32_t), GL_SHADER_STORAGE_BUFFER);
+    computeBuffer = std::make_unique<GLPersistentBuffer<uint32_t>>(64 * 64  * (64 / 32) * sizeof(uint32_t), GL_SHADER_STORAGE_BUFFER);
 
     CHECK_GL_ERROR();
 
@@ -172,16 +172,18 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, 
 
 }   
 
+bool first = true;
 void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, int chunkY, int chunkZ, size_t size){
     auto start = std::chrono::high_resolution_clock::now();
     
-    std::cout << computeBuffer->getID() << std::endl;
     computeProgram.use();
     CHECK_GL_ERROR();
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, computeBuffer->getID());
 
+
     CHECK_GL_ERROR();
+    
     /*
         64 / 32 (division because one uint32_t is 32 bits) by 64 by 64
     */
@@ -189,28 +191,41 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, i
 
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
+    GLsync fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+
+    // Wait until the GPU has finished processing (with a timeout to avoid blocking indefinitely)
+    GLenum waitReturn;
+    do {
+        waitReturn = glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000); // 1ms timeout
+    } while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED);
+
+    glDeleteSync(fence);
+
     CHECK_GL_ERROR();
 
     std::unique_ptr<DynamicChunkContents> outputDataGroup = std::make_unique<DynamicChunkContents>(size);
     /*
         MAKE SURE THAT ALL THE MASKS EXIST, CRASHES OTHERWISE!
     */
-    outputDataGroup->createMask(BlockTypes::Grass, size);
-
-    for(int x = 0;x < size;x++) for(int y = 0;y < size;y++) for(int z = 0;z < size;z++){
-        int half = x / 32;
-        uint32_t value = computeBuffer->data()[y * 2 + (z * 2 * 64) + half];
-        
-        if(value & (1UL << (x - half * 32))){
-            set(outputDataGroup.get(), x, y, z, BlockTypes::Grass, true);
-            //chunk.setBlock(x,y,z, {top ? BlockTypes::Grass : BlockTypes::Stone});
-
-            //if(top && rand() % 30 == 0) generateOakTree(chunk,x,y+1,z);
+    if(first){
+        for(int i = 0;i < 10;i++){
+            std::cout << std::bitset<32>(computeBuffer->data()[i]) << std::endl;
         }
+        first = false;
     }
+    auto mask = DynamicChunkMask(
+        64,
+        DynamicBitArray3D(reinterpret_cast<uint64_t*>(computeBuffer->data()))
+    );
+    mask.setBlock({BlockTypes::Grass});
+
+    outputDataGroup->setMask(BlockTypes::Grass, mask);
+    outputDataGroup->setSolidMask(mask);
+
+    chunk->setMainGroup(std::move(outputDataGroup));
 
     auto end = std::chrono::high_resolution_clock::now();
 
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
+    //std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
 }
