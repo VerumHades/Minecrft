@@ -1,138 +1,38 @@
 #version 450
 
-// Hash function to get pseudo-random gradients
-vec3 randomGradient(int seed) {
-    // Simple hash to get a random gradient
-    return normalize(vec3(
-        fract(sin(float(seed) * 123.45) * 678.9),
-        fract(sin(float(seed) * 987.65) * 543.21),
-        fract(sin(float(seed) * 456.78) * 123.45)
-    )) * 2.0 - 1.0; // Normalize to range [-1, 1]
-}
-
-// Linear interpolation
-float lerp(float a, float b, float t) {
-    return a + t * (b - a);
-}
-
-// Fade function for smooth interpolation
-float fade(float t) {
-    return t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
-}
-
-// 3D Perlin noise function
-float perlinNoise3D(vec3 pos) {
-    // Floor position to find cell corners
-    ivec3 cell = ivec3(floor(pos));
-    vec3 localPos = pos - vec3(cell); // Local position within cell
-
-    // Fade curves for interpolation
-    vec3 fadeXYZ = vec3(fade(localPos.x), fade(localPos.y), fade(localPos.z));
-
-    // Hash the corner coordinates of the cell to get gradients
-    int hash000 = cell.x + cell.y * 57 + cell.z * 113;
-    int hash100 = (cell.x + 1) + cell.y * 57 + cell.z * 113;
-    int hash010 = cell.x + (cell.y + 1) * 57 + cell.z * 113;
-    int hash110 = (cell.x + 1) + (cell.y + 1) * 57 + cell.z * 113;
-    int hash001 = cell.x + cell.y * 57 + (cell.z + 1) * 113;
-    int hash101 = (cell.x + 1) + cell.y * 57 + (cell.z + 1) * 113;
-    int hash011 = cell.x + (cell.y + 1) * 57 + (cell.z + 1) * 113;
-    int hash111 = (cell.x + 1) + (cell.y + 1) * 57 + (cell.z + 1) * 113;
-
-    // Compute dot products of the distance vectors with the gradient vectors
-    vec3 g000 = randomGradient(hash000);
-    vec3 g100 = randomGradient(hash100);
-    vec3 g010 = randomGradient(hash010);
-    vec3 g110 = randomGradient(hash110);
-    vec3 g001 = randomGradient(hash001);
-    vec3 g101 = randomGradient(hash101);
-    vec3 g011 = randomGradient(hash011);
-    vec3 g111 = randomGradient(hash111);
-
-    // Distance vectors from each corner
-    vec3 d000 = localPos - vec3(0.0, 0.0, 0.0);
-    vec3 d100 = localPos - vec3(1.0, 0.0, 0.0);
-    vec3 d010 = localPos - vec3(0.0, 1.0, 0.0);
-    vec3 d110 = localPos - vec3(1.0, 1.0, 0.0);
-    vec3 d001 = localPos - vec3(0.0, 0.0, 1.0);
-    vec3 d101 = localPos - vec3(1.0, 0.0, 1.0);
-    vec3 d011 = localPos - vec3(0.0, 1.0, 1.0);
-    vec3 d111 = localPos - vec3(1.0, 1.0, 1.0);
-
-    // Dot products for each corner
-    float dot000 = dot(g000, d000);
-    float dot100 = dot(g100, d100);
-    float dot010 = dot(g010, d010);
-    float dot110 = dot(g110, d110);
-    float dot001 = dot(g001, d001);
-    float dot101 = dot(g101, d101);
-    float dot011 = dot(g011, d011);
-    float dot111 = dot(g111, d111);
-
-    // Interpolate along x, y, and z
-    float xInterp0 = lerp(dot000, dot100, fadeXYZ.x);
-    float xInterp1 = lerp(dot010, dot110, fadeXYZ.x);
-    float xInterp2 = lerp(dot001, dot101, fadeXYZ.x);
-    float xInterp3 = lerp(dot011, dot111, fadeXYZ.x);
-
-    float yInterp0 = lerp(xInterp0, xInterp1, fadeXYZ.y);
-    float yInterp1 = lerp(xInterp2, xInterp3, fadeXYZ.y);
-
-    return lerp(yInterp0, yInterp1, fadeXYZ.z); // Final interpolated noise value
-}
-
-float terrainHeight(vec3 position) {
-    float height = 0.0;
-    float amplitude = 1.0;
-    float frequency = 1.0;
-    int octaves = 4;
-
-    for (int i = 0; i < octaves; i++) {
-        height += perlinNoise3D(position * frequency) * amplitude;
-        amplitude *= 0.5; // Reduce amplitude for each octave
-        frequency *= 2.0;  // Increase frequency for each octave
-    }
-
-    return height;
-}
-
 layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 layout(std430, binding = 0) buffer TerrainData {
     uint data[];
 };
 
-// Simple 3D hash function
-float hash(vec3 p) {
-    return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+float random (vec3 st) {
+    return fract(sin(dot(st.xyz,
+                         vec3(12.9898,78.233,154.214)))*43758.5453123);
 }
 
-float noise(vec3 p) {
-    // Get integer coordinates of the cell
-    vec3 i = floor(p);
-    // Get fractional part of p
-    vec3 f = fract(p);
-
-    // Compute fade curves for each coordinate
-    f = f * f * (3.0 - 2.0 * f);
-
-    // Sample the eight corners of the cube
-    float a = hash(i);
-    float b = hash(i + vec3(1.0, 0.0, 0.0));
-    float c = hash(i + vec3(0.0, 1.0, 0.0));
-    float d = hash(i + vec3(1.0, 1.0, 0.0));
-    float e = hash(i + vec3(0.0, 0.0, 1.0));
-    float f1 = hash(i + vec3(1.0, 0.0, 1.0));
-    float g = hash(i + vec3(0.0, 1.0, 1.0));
-    float h = hash(i + vec3(1.0, 1.0, 1.0));
-
-    // Trilinear interpolation of the noise values
-    return mix(
-        mix(mix(a, b, f.x), mix(c, d, f.x), f.y),
-        mix(mix(e, f1, f.x), mix(g, h, f.x), f.y),
-        f.z
-    );
+vec2 random2(vec2 st){
+    st = vec2( dot(st,vec2(127.1,311.7)),
+              dot(st,vec2(269.5,183.3)) );
+    
+    return -1.0 + 2.0*fract(sin(st)*43758.5453123);
 }
+
+// Gradient Noise by Inigo Quilez - iq/2013
+// https://www.shadertoy.com/view/XdXGW8
+float noise(vec2 st) {
+    vec2 i = floor(st);
+    vec2 f = fract(st);
+
+    vec2 u = f*f*(3.0-2.0*f);
+
+    return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
+                     dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
+                mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
+                     dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
+}
+
+uniform vec3 worldPosition;
 
 void main() {
     // Each work group handles 32 blocks
@@ -143,8 +43,9 @@ void main() {
     uint arrayIndex = groupIndex;
     uint bitMask = 1u << bitIndex;
 
+    vec3 position = gl_GlobalInvocationID.xzy + worldPosition;
     // Determine if this block (bit) should be set or cleared
-    bool isActive = noise(gl_GlobalInvocationID + vec3(gl_LocalInvocationID.x,0,0)) > 0.5;
+    bool isActive = position.y < -1;
 
     // Set or clear the bit within the uint
     if (isActive) {

@@ -54,11 +54,11 @@ void Allocator::clear(){
 }
 
 bool Allocator::free(size_t start, std::string fail_prefix){
-    if(takenBlocks.count(start) == 0) {
+    if(!takenBlocks.contains(start)) {
         std::cout << fail_prefix << ": "<< "Free of unalocated block: " << start << std::endl;
         return false;
     }
-    auto& block = takenBlocks[start];
+    auto block = takenBlocks.at(start);
     takenBlocks.erase(start);
     
     if(std::next(block) != blocks.end()){
@@ -85,8 +85,8 @@ bool Allocator::free(size_t start, std::string fail_prefix){
 }
 
 Allocator::MemBlockIterator Allocator::getTakenMemoryBlockAt(size_t location){
-    if(takenBlocks.count(location) == 0) return blocks.end();
-    return takenBlocks[location];
+    if(takenBlocks.contains(location)) return blocks.end();
+    return takenBlocks.at(location);
 }
 
 bool Allocator::insertBlock(Allocator::MemBlockIterator where, size_t start, size_t size, bool free){

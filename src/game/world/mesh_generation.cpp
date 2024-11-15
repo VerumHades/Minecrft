@@ -8,7 +8,7 @@ void ChunkMeshGenerator::addToChunkMeshLoadingQueue(glm::ivec3 position, std::un
 void ChunkMeshGenerator::loadMeshFromQueue(ChunkMeshRegistry&  buffer){
     std::lock_guard<std::mutex> lock(meshLoadingMutex);
     if(meshLoadingQueue.empty()) return;
-    auto [position,mesh] = std::move(meshLoadingQueue.front());
+    auto& [position,mesh] = meshLoadingQueue.front();
 
     bool loaded = false;
     
@@ -16,7 +16,6 @@ void ChunkMeshGenerator::loadMeshFromQueue(ChunkMeshRegistry&  buffer){
     else loaded = buffer.addMesh(mesh.get(), position);
 
     if(loaded){
-        mesh = nullptr;
         meshLoadingQueue.pop();
     }
 }

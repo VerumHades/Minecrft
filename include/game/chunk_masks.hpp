@@ -16,7 +16,7 @@ class DynamicChunkMask{
         DynamicChunkMask(size_t size, CompressedArray segments_compressed): segments(size, segments_compressed), segmentsRotated(size){
             this->segmentsRotated.loadAsRotated(segments);
         }
-        DynamicChunkMask(size_t size, DynamicBitArray3D array): segments(size), segmentsRotated(size){
+        DynamicChunkMask(uint64_t* array): segments(array), segmentsRotated(64){
             segmentsRotated.loadAsRotated(segments);
         }
         

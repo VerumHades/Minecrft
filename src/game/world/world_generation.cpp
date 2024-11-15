@@ -86,6 +86,15 @@ WorldGenerator::WorldGenerator(int seed){
 
     computeBuffer = std::make_unique<GLPersistentBuffer<uint32_t>>(64 * 64  * (64 / 32) * sizeof(uint32_t), GL_SHADER_STORAGE_BUFFER);
 
+    worldPositionUniformID = glGetUniformLocation(computeProgram.getID(),"worldPosition");
+    if(worldPositionUniformID == -1) {
+        std::cerr << "Generation program missing world position uniform";
+    }
+
+    GLuint uniformBlockIndex = glGetUniformBlockIndex(computeProgram.getID(), "UniformBuffer");
+    glUniformBlockBinding(computeProgram.getID(), uniformBlockIndex, 1);
+
+
     CHECK_GL_ERROR();
 
     //noise = std::make_unique<FastNoiseLite>();
@@ -175,8 +184,13 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, 
 bool first = true;
 void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, int chunkY, int chunkZ, size_t size){
     auto start = std::chrono::high_resolution_clock::now();
-    
+
     computeProgram.use();
+
+    glm::vec3 worldPosition = {chunkX * CHUNK_SIZE,chunkY * CHUNK_SIZE,chunkZ * CHUNK_SIZE};
+    glUniform3fv(worldPositionUniformID, 1, glm::value_ptr(worldPosition));
+
+    //computeProgram.updateUniforms();
     CHECK_GL_ERROR();
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, computeBuffer->getID());
@@ -203,29 +217,26 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, i
 
     CHECK_GL_ERROR();
 
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
+
     std::unique_ptr<DynamicChunkContents> outputDataGroup = std::make_unique<DynamicChunkContents>(size);
     /*
         MAKE SURE THAT ALL THE MASKS EXIST, CRASHES OTHERWISE!
     */
     if(first){
         for(int i = 0;i < 10;i++){
-            std::cout << std::bitset<32>(computeBuffer->data()[i]) << std::endl;
+            std::cout << std::bitset<64>(reinterpret_cast<uint64_t*>(computeBuffer->data())[i]) << std::endl;
         }
         first = false;
     }
-    auto mask = DynamicChunkMask(
-        64,
-        DynamicBitArray3D(reinterpret_cast<uint64_t*>(computeBuffer->data()))
-    );
+    auto mask = DynamicChunkMask(reinterpret_cast<uint64_t*>(computeBuffer->data()));
     mask.setBlock({BlockTypes::Grass});
 
     outputDataGroup->setMask(BlockTypes::Grass, mask);
     outputDataGroup->setSolidMask(mask);
 
     chunk->setMainGroup(std::move(outputDataGroup));
-
-    auto end = std::chrono::high_resolution_clock::now();
-
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    //std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
 }

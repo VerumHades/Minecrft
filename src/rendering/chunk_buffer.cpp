@@ -261,6 +261,7 @@ bool MeshRegion::split(){
 
 bool MeshRegion::updateMeshInformation(MeshInformation information){
     if(part_of_parent_mesh){ // Split parent mesh if its merged
+        std::cout << "Splitting parent mesh."  << std::endl;
         MeshRegion* parent_region = getParentRegion();
         if(!parent_region) return false; // There is no parent region but its the part of it?
         if(!parent_region->split()) return false; // Parent region couldn't be split, so this can't either
@@ -305,7 +306,7 @@ void ChunkMeshRegistry::initialize(uint32_t renderDistance){
         actualRegionSizes.push_back(pow(i, 2));
     }
     
-    maxDrawCalls = pow(renderDistance * 2, 3);
+    maxDrawCalls = pow((renderDistance + 1) * 2, 3);
 
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
@@ -420,6 +421,7 @@ bool ChunkMeshRegistry::addMesh(Mesh* mesh, const glm::ivec3& pos){
         mesh->getIndices().size(),
         vertexBufferOffset / vertexFormat.getVertexSize(),
     };
+    region->meshless = false;
     region->setStateInParent(true);
 
     return true;
@@ -458,10 +460,11 @@ bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
         return false;
     }
 
-    region.setStateInParent(true);
-
     vertexAllocator.free(old_vertex_data);
     indexAllocator .free(old_index_data);
+
+    region.setStateInParent(true);
+    region.meshless = false;
 
     return true;
 }   
@@ -495,8 +498,8 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
     int level_size_in_chunks = getRegionSizeForLevel(region->transform.level);
     int level_size_in_blocks = level_size_in_chunks * CHUNK_SIZE; 
 
-    glm::ivec3 min = region->transform.position * level_size_in_blocks;
-    if(!frustum.isAABBWithing(min, min + level_size_in_blocks)) return; // Not visible
+    //glm::ivec3 min = region->transform.position * level_size_in_blocks;
+    //if(!frustum.isAABBWithing(min, min + level_size_in_blocks)) return; // Not visible
 
     if(region->hasContiguousMesh()){ // The region is directly drawable
         persistentDrawCallBuffer->data()[drawCallIndex++] = region->generateDrawCommand();
@@ -545,6 +548,9 @@ void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& fru
     }   
 
     drawCallCount = index;
+    if(drawCallCount > drawCallBufferSize){
+        std::cerr << "Uhm how did this happen? Not enough space for draw calls!" << std::endl;
+    }
     std::cout  << "Drawing with " << drawCallCount << " draw calls." << std::endl;
 }
 
@@ -552,8 +558,11 @@ void ChunkMeshRegistry::draw(){
     glBindVertexArray(vao);
 
     //int drawCalls = maxDrawCalls - freeDrawCallIndices.size();
-    //std::cout << "Active draw calls: " << lastDrawCall << std::endl;
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, drawCallCount, sizeof(DrawElementsIndirectCommand));
+    //std::cout << "Active draw calls: " << drawCallCount << " " <<  sizeof(DrawElementsIndirectCommand) << std::endl;
+
+    CHECK_GL_ERROR();
+
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, std::min(drawCallCount,drawCallBufferSize), sizeof(DrawElementsIndirectCommand));
 
     CHECK_GL_ERROR();
 }

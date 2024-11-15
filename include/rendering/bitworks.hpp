@@ -162,7 +162,7 @@ class DynamicBitArray3D{
         */
         void set64BitValue(uint64_t* data){
             size = 64;
-            storage = std::vector<uint64_t>(size * size); actualSize = BIT64;
+            selectStorage();
             std::memcpy(
                 std::get<std::vector<uint64_t>>(storage).data(),
                 data,

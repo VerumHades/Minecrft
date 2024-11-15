@@ -181,7 +181,7 @@ class MeshRegion{
 
             This will be true for all drawable regions.
         */
-        bool hasContiguousMesh() {return merged || transform.level == 1; }
+        bool hasContiguousMesh() {return (merged || transform.level == 1) && !meshless; }
         
         // Creates a draw command from current mesh information
         DrawElementsIndirectCommand generateDrawCommand();

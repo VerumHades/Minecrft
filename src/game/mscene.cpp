@@ -334,7 +334,7 @@ void MainScene::open(GLFWwindow* window){
     allGenerated = false;
 
     world = std::make_unique<World>(worldPath);
-    world->getEntities().emplace_back(glm::vec3(0,-100,0), glm::vec3(0.6, 1.8, 0.6));
+    world->getEntities().emplace_back(glm::vec3(0,0,0), glm::vec3(0.6, 1.8, 0.6));
     world->getEntities()[0].setGravity(false);
 
     //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
@@ -618,31 +618,15 @@ void MainScene::generateSurroundingChunks(){
 
             //int level = 1;
             //std::cout << "Level:" << level << std::endl;
-            worldp->generateChunk(chunkX, chunkY, chunkZ, level);
+            chunkMeshGenerator.syncGenerateAsyncUploadMesh(worldp->generateChunk(chunkX, chunkY, chunkZ, level));
         }
     }
 
-    while(!threadPool->finished()){ // Wait for everything to generate
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
+    //while(!threadPool->finished()){ // Wait for everything to generate
+    //    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    //}
 
-    auto* mesh_generator_pointer = &chunkMeshGenerator;
-    std::cout << "Generating meshes..." << std::endl;
-    for(int x = -renderDistance; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
-        int chunkX = camWorldX + x;
-        int chunkY = camWorldY + y;
-        int chunkZ = camWorldZ + z;
-        
-        threadPool->deploy([worldp,chunkX,chunkY,chunkZ, mesh_generator_pointer](){
-            Chunk* chunk = worldp->getChunk(chunkX, chunkY, chunkZ);
-            if(!chunk){
-                std::cerr << "Wtf?" << std::endl;
-                return;
-            }
-            mesh_generator_pointer->syncGenerateAsyncUploadMesh(chunk);
-        });
-    }
-    
+   
     allGenerated = true;
 }
 
