@@ -260,7 +260,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
     RaycastResult hit = world->raycast(camPosition.x,camPosition.y,camPosition.z,camDirection.x, camDirection.y, camDirection.z,10);
     
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && hit.hit){
-        world->setBlock(hit.x, hit.y, hit.z, {BlockTypes::Air});
+        world->setBlock(hit.x, hit.y, hit.z, {BlockType::Air});
 
         auto chunk = world->getChunkFromBlockPosition(hit.x, hit.y, hit.z);
         if(!chunk) return;
@@ -269,12 +269,12 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
     else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hit){
         CollisionCheckResult result = world->checkForPointCollision(hit.lastX, hit.lastY, hit.lastZ, 1);
 
-        world->setBlock(result.x,  result.y,  result.z, {static_cast<BlockTypes>(selectedBlock)});
+        world->setBlock(result.x,  result.y,  result.z, {static_cast<BlockType>(selectedBlock)});
         if(
             player.checkForCollision(*world, false).collision ||
             player.checkForCollision(*world, true).collision
         ){
-            world->setBlock(result.x,  result.y,  result.z, {BlockTypes::Air});
+            world->setBlock(result.x,  result.y,  result.z, {BlockType::Air});
             return;
         }
 
@@ -456,7 +456,7 @@ void MainScene::render(){
     glDisable(GL_DEPTH_TEST);
 
     uiManager->getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
-    uiManager->getFontManager().renderText("Selected block: " + getBlockTypeName(static_cast<BlockTypes>(selectedBlock)), 10, 80, 1.0, {0,0,0}, testFont);
+    uiManager->getFontManager().renderText("Selected block: " + getBlockTypeName(static_cast<BlockType>(selectedBlock)), 10, 80, 1.0, {0,0,0}, testFont);
     uiManager->getFontManager().renderText("X: " + std::to_string(playerPosition.x) + " Y: " + std::to_string(playerPosition.y) + "  Z: " + std::to_string(playerPosition.z), 10, 120, 1.0, {0,0,0}, testFont);
 
     glEnable(GL_DEPTH_TEST);

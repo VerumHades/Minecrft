@@ -7,61 +7,8 @@ static inline void fillChunkLevel(Chunk& chunk, uint y, Block value){
 }
 
 Block::Block(){
-    this->type = BlockTypes::Air;
+    this->type = BlockType::Air;
 }
-Block::Block(BlockTypes type): type(type){
+Block::Block(BlockType type): type(type){
     this->type = type;
-}
-
-static Block airBlock = {BlockTypes::Air};
-Block* Chunk::getBlock(uint x, uint y, uint z){
-    if(x >= CHUNK_SIZE) return nullptr;
-    if(y >= CHUNK_SIZE) return nullptr;
-    if(z >= CHUNK_SIZE) return nullptr;
-    if(!isMainGroupOfSize(64)) return nullptr;
-    
-    uint64_t checkMask = (1ULL << (63 - x));
-    
-    for(auto& [key,mask]: currentGroup->getMasks()){
-        uint64_t row = mask.getAt(z,y);
-
-        if(row & checkMask){
-            return &mask.getBlock();
-        }
-    }
-
-    return &airBlock;
-}
-
-bool Chunk::setBlock(uint x, uint y, uint z, Block value){
-    if(x >= CHUNK_SIZE) return false;
-    if(y >= CHUNK_SIZE) return false;
-    if(z >= CHUNK_SIZE) return false;
-    if(!isMainGroupOfSize(64)) return false;
-
-    uint64_t currentMask = (1ULL << (63 - x));
-
-    if(value.type != BlockTypes::Air){
-        if(currentGroup->getMasks().count(value.type) == 0){
-            DynamicChunkMask mask = {64,value};
-            currentGroup->setMask(value.type, mask);
-        }
-
-        currentGroup->getMask(value.type).set(x,y,z);
-    }
-
-    for(auto& [key,mask]: currentGroup->getMasks()){
-        uint64_t row = mask.getAt(z,y);
-
-        if(!(row & currentMask)) continue;
-        if(mask.getBlock().type == value.type) continue;
-
-        mask.reset(x,y,z);
-        break;
-    }
-
-    if(getBlockType(&value).solid) currentGroup->getSolidMask().set(x,y,z);
-    else currentGroup->getSolidMask().reset(x,y,z);
-
-    return true;
 }

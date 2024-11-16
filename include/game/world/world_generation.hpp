@@ -4,7 +4,7 @@
 #include <optional>
 #include <random>
 #include <game/blocks.hpp>
-#include <game/chunk_masks.hpp>
+
 #include <memory>
 #include <rendering/shaders.hpp>
 
@@ -13,16 +13,16 @@
 class Chunk;
 
 struct Biome {
-    BlockTypes topBlock;
-    BlockTypes secondaryTopBlock;
-    BlockTypes undergroundBlock;
+    BlockType topBlock;
+    BlockType secondaryTopBlock;
+    BlockType undergroundBlock;
 
     float temperatureLower;
     float temperatureUpper;
 
     using GenerateTreeFunc = void (*)(Chunk&, int, int, int);
 
-    Biome(BlockTypes top, BlockTypes secondaryTop, BlockTypes underground,
+    Biome(BlockType top, BlockType secondaryTop, BlockType underground,
           float tempLower, float tempUpper,
           GenerateTreeFunc treeGen)
         : topBlock(top), secondaryTopBlock(secondaryTop), undergroundBlock(underground),

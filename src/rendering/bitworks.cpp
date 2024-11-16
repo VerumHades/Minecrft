@@ -44,10 +44,10 @@ void DynamicBitArray3D::loadAsRotated(DynamicBitArray3D& array){
 
     for(int z = 0;z < size;z++){
         for(int y = 0; y < size;y++){
-            uint_t<64> value = array.getRow(z,y);
+            uint64_t value = array.getRow(z,y);
 
             for(int x = 0;x < size;x++){
-                uint_t<64> mask = 1ULL << (size - 1 - x);
+                uint64_t mask = 1ULL << (size - 1 - x);
 
                 if(!(value & mask)) continue;
 

@@ -170,10 +170,10 @@ class DynamicBitArray3D{
             );
         }
         
-        uint_t<64> getRow(uint32_t x, uint32_t y){
+        uint64_t getRow(uint32_t x, uint32_t y){
             if(x >= size || y >= size) return 0ULL;
             
-            uint_t<64> result = 0ULL;
+            uint64_t result = 0ULL;
             auto* resultPointer = &result;
             
             std::visit([this, resultPointer,x,y](auto& array) {
@@ -182,7 +182,7 @@ class DynamicBitArray3D{
 
             return result;
         }
-        void setRow(uint32_t x, uint32_t y, uint_t<64> value){
+        void setRow(uint32_t x, uint32_t y, uint64_t value){
             if(x >= size || y >= size) return;
 
             std::visit([this, value,x,y](auto& array) {
@@ -226,7 +226,7 @@ template <int size>
 using BitPlane = std::array<uint_t<size>, size>;
 
 template <int size>
-using BlockBitPlanes = std::array<BitPlane<size>, (size_t) BlockTypes::BLOCK_TYPES_TOTAL>;
+using BlockBitPlanes = std::array<BitPlane<size>, (size_t) BlockType::BLOCK_TYPES_TOTAL>;
 
 using byte = uint8_t;
 

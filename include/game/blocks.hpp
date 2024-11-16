@@ -12,7 +12,7 @@ struct RectangularCollider {
     float width, height, depth;
 };
 
-enum class BlockTypes {
+enum class BlockType {
     Air,
     Grass,
     Dirt,
@@ -28,13 +28,13 @@ enum class BlockTypes {
 };
 
 typedef struct Block{
-    BlockTypes type;
+    BlockType type;
 
     Block();
-    Block(BlockTypes type);
+    Block(BlockType type);
 } Block;
 
-struct BlockType {
+struct BlockDefinition {
     bool transparent = false;
     bool solid = false;
     bool repeatTexture = false;
@@ -43,24 +43,24 @@ struct BlockType {
     std::vector<RectangularCollider> colliders = {{0, 0, 0, 1.0f, 1.0f, 1.0f}};
 
     // Constructor for convenience
-    BlockType(bool transparent = false, bool solid = false, bool billboard = false, bool repeatTexture = false,
+    BlockDefinition(bool transparent = false, bool solid = false, bool billboard = false, bool repeatTexture = false,
               std::vector<unsigned char> textures = {}, std::vector<RectangularCollider> colliders = {})
         : transparent(transparent), solid(solid), repeatTexture(repeatTexture),
           textures(std::move(textures)), billboard(billboard) {}
 };
 
 
-extern std::unordered_map<BlockTypes, BlockType> predefinedBlocks;
+extern std::unordered_map<BlockType, BlockDefinition> predefinedBlocks;
 
-inline const BlockType& getBlockType(Block* block){
-    if (block->type < BlockTypes::Air || block->type >= BlockTypes::BLOCK_TYPES_TOTAL) {
-        std::cerr << "Error: Invalid BlockTypes value: " << static_cast<int>(block->type) << std::endl;
+inline const BlockDefinition& getBlockDefinition(Block* block){
+    if (block->type < BlockType::Air || block->type >= BlockType::BLOCK_TYPES_TOTAL) {
+        std::cerr << "Error: Invalid BlockType value: " << static_cast<int>(block->type) << std::endl;
         std::terminate(); 
     }
 
     return predefinedBlocks[block->type];
 }
 
-std::string getBlockTypeName(BlockTypes type);
+std::string getBlockTypeName(BlockType type);
 
 #endif

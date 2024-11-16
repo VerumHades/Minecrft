@@ -12,7 +12,7 @@
 #include <rendering/model.hpp>
 #include <rendering/bitworks.hpp>
 #include <game/threadpool.hpp>
-#include <game/chunk_masks.hpp>
+#include <blockarray.hpp>
 
 #include <glm/glm.hpp>
 #include <map>
@@ -29,27 +29,19 @@
 #include <bitset>
 #include <iostream>
 
+#define CHUNK_SIZE 64
 
-class Chunk{
+class Chunk: public SparseBlockArray{
     private:
         glm::ivec3 worldPosition;
-        std::unique_ptr<DynamicChunkContents> currentGroup;
 
     public:
         Chunk(glm::ivec3 worldPosition): worldPosition(worldPosition){ }
 
         const glm::ivec3& getWorldPosition() const { return worldPosition; }
+        
+        friend class ChunkMeshGenerator;
         //std::optional<Mesh> transparentMesh;
-
-        bool isEmpty() {return currentGroup && currentGroup->empty();}
-
-        Block* getBlock(uint x, uint y, uint z);
-        bool setBlock(uint x, uint y, uint z, Block value);
-
-        bool isMainGroupOfSize(int size){return currentGroup && currentGroup->getSize() == size;}
-
-        std::unique_ptr<DynamicChunkContents>& getMainGroup() {return currentGroup;}
-        void setMainGroup(std::unique_ptr<DynamicChunkContents> group) {this->currentGroup = std::move(group);}
 }; 
 
 #endif

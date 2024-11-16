@@ -33,18 +33,18 @@ static inline void generateTree(Chunk& chunk, int x, int y, int z, Block trunkBl
 
 void generateBirchTree(Chunk& chunk, int x, int y, int z){
     Block trunkBlock;
-    trunkBlock.type = BlockTypes::BirchLog;
+    trunkBlock.type = BlockType::BirchLog;
     Block leafBlock;
-    leafBlock.type = BlockTypes::BirchLeafBlock;
+    leafBlock.type = BlockType::BirchLeafBlock;
 
     generateTree(chunk,x,y,z,trunkBlock,leafBlock);
 }
 
 void generateOakTree(Chunk& chunk, int x, int y, int z){
     Block trunkBlock;
-    trunkBlock.type = BlockTypes::OakLog;
+    trunkBlock.type = BlockType::OakLog;
     Block leafBlock;
-    leafBlock.type = BlockTypes::LeafBlock;
+    leafBlock.type = BlockType::LeafBlock;
 
     generateTree(chunk, x,y,z,trunkBlock,leafBlock);
 }
@@ -53,9 +53,9 @@ void generateNoTree(Chunk& /*chunk*/, int /*x*/, int /*y*/, int /*z*/){}
 
 
 std::vector<Biome> biomes = {
-    Biome(BlockTypes::Sand, BlockTypes::Sand, BlockTypes::Stone, 0.8f, 1.0f, generateNoTree),
-    Biome(BlockTypes::Grass, BlockTypes::Dirt, BlockTypes::Stone, 0.4f, 0.8f, generateOakTree),
-    Biome(BlockTypes::Stone, BlockTypes::Stone, BlockTypes::Stone, 0.0f, 0.4f, generateNoTree)
+    Biome(BlockType::Sand, BlockType::Sand, BlockType::Stone, 0.8f, 1.0f, generateNoTree),
+    Biome(BlockType::Grass, BlockType::Dirt, BlockType::Stone, 0.4f, 0.8f, generateOakTree),
+    Biome(BlockType::Stone, BlockType::Stone, BlockType::Stone, 0.0f, 0.4f, generateNoTree)
 };
 
 const Biome& getBiome(float temperature){
@@ -112,9 +112,9 @@ static inline float transcribeNoiseValue(float value, float ry){
     return value;
 }
 
-static inline void set(DynamicChunkContents* group, int x, int y, int z, BlockTypes type, bool solid){
+static inline void set(DynamicChunkContents* group, int x, int y, int z, BlockType type, bool solid){
     group->getMask(type).set(x,y,z);
-    if(solid) group->getSolidMask().set(x,y,z);
+    if(solid) group->getSolidField().set(x,y,z);
 }
 
 void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, int chunkZ, size_t size){
@@ -124,11 +124,11 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, 
     /*
         MAKE SURE THAT ALL THE MASKS EXIST, CRASHES OTHERWISE!
     */
-    outputDataGroup->createMask(BlockTypes::OakLog, size);
-    outputDataGroup->createMask(BlockTypes::Grass, size);
-    outputDataGroup->createMask(BlockTypes::LeafBlock, size);
-    outputDataGroup->createMask(BlockTypes::Dirt, size);
-    outputDataGroup->createMask(BlockTypes::GrassBillboard, size);
+    outputDataGroup->createMask(BlockType::OakLog, size);
+    outputDataGroup->createMask(BlockType::Grass, size);
+    outputDataGroup->createMask(BlockType::LeafBlock, size);
+    outputDataGroup->createMask(BlockType::Dirt, size);
+    outputDataGroup->createMask(BlockType::GrassBillboard, size);
 
     float jump = static_cast<float>(CHUNK_SIZE) / static_cast<float>(size);
 
@@ -142,12 +142,12 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, 
 
         if(value > 0.5){
             if(top){
-                set(outputDataGroup.get(), x, y, z, BlockTypes::Grass, true);
+                set(outputDataGroup.get(), x, y, z, BlockType::Grass, true);
             }
             else{
-                set(outputDataGroup.get(), x, y, z, BlockTypes::Dirt, true);
+                set(outputDataGroup.get(), x, y, z, BlockType::Dirt, true);
             }
-            //chunk.setBlock(x,y,z, {top ? BlockTypes::Grass : BlockTypes::Stone});
+            //chunk.setBlock(x,y,z, {top ? BlockType::Grass : BlockType::Stone});
 
             //if(top && rand() % 30 == 0) generateOakTree(chunk,x,y+1,z);
         }
@@ -164,8 +164,8 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, 
 
         Block* block = chunk.getBlock(x,y,z);
         Block* upperBlock = chunk.getBlock(x,y + 1,z); 
-        if(block->type == BlockTypes::Stone && upperBlock && upperBlock->type == BlockTypes::Air){
-            chunk.setBlock(x,y,z, {BlockTypes::Grass});
+        if(block->type == BlockType::Stone && upperBlock && upperBlock->type == BlockType::Air){
+            chunk.setBlock(x,y,z, {BlockType::Grass});
 
             if(dist6(rng) == 100) generateOakTree(chunk, x,y,z);
         }
@@ -233,9 +233,9 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, i
         first = false;
     }
     auto mask = DynamicChunkMask(reinterpret_cast<uint64_t*>(computeBuffer->data()));
-    mask.setBlock({BlockTypes::Grass});
+    mask.setBlock({BlockType::Grass});
 
-    outputDataGroup->setMask(BlockTypes::Grass, mask);
+    outputDataGroup->setMask(BlockType::Grass, mask);
     outputDataGroup->setSolidMask(mask);
 
     chunk->setMainGroup(std::move(outputDataGroup));
