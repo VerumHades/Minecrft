@@ -16,7 +16,7 @@
 
 class UniformBase{
     public:
-        virtual void update(uint32_t programID) = 0;
+        virtual void update(uint programID) = 0;
         virtual std::string getName() = 0;
 };
 
@@ -83,7 +83,7 @@ class Uniform: public UniformBase{
             return value;
         }
 
-        void update(uint32_t programID){
+        void update(uint programID){
             //std::cout << "Updating uniform: " << name << " at: " << programID << std::endl;
             setUniformValue(value, locations[programID]);
         }

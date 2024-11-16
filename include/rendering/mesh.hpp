@@ -12,19 +12,19 @@
 
 class VertexFormat{
     private:
-        std::vector<uint32_t> sizes = {};
-        uint32_t totalSize = 0;
+        std::vector<uint> sizes = {};
+        uint totalSize = 0;
     public:
         VertexFormat(){};
-        VertexFormat(std::vector<uint32_t> sizes);
+        VertexFormat(std::vector<uint> sizes);
         void apply();
-        uint32_t getVertexSize(){return totalSize;}
+        uint getVertexSize(){return totalSize;}
 };
 
 class Mesh{
     private:
         std::vector<float> vertices;
-        std::vector<uint32_t> indices;
+        std::vector<uint> indices;
         VertexFormat format;
 
         int textureIndex = -1;
@@ -39,7 +39,7 @@ class Mesh{
         void addQuadFace(glm::vec3 vertices[4], glm::vec3 normals[4], int clockwise);
 
         std::vector<float>& getVertices() {return this->vertices;}
-        std::vector<uint32_t>& getIndices() {return this->indices;}
+        std::vector<uint>& getIndices() {return this->indices;}
         VertexFormat& getFormat() {return this->format;}
 
         void setTextureIndex(int index){textureIndex = index;}

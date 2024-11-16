@@ -20,9 +20,9 @@ void checkGLError(const char *file, int line);
 
 class GLBuffer{
     private:
-        uint32_t data;
-        uint32_t index;
-        uint32_t vao;
+        uint data;
+        uint index;
+        uint vao;
 
         size_t vertexCount = 0;
         size_t indiciesCount = 0;
@@ -35,19 +35,19 @@ class GLBuffer{
         void draw();
         void drawInstances(int count);
 
-        uint32_t getID(){ return data; } 
+        uint getID(){ return data; } 
 };
 
 template <typename T>
 class GLPersistentBuffer{
     private:
-        uint32_t buffer_id;
-        uint32_t type;
+        uint buffer_id;
+        uint type;
         size_t size;
         T* _data;
     
     public:
-        GLPersistentBuffer(size_t size, uint32_t type): type(type), size(size){
+        GLPersistentBuffer(size_t size, uint type): type(type), size(size){
             glGenBuffers(1, &buffer_id);
             glBindBuffer(type, buffer_id);
             glBufferStorage(type, size, nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
@@ -63,7 +63,7 @@ class GLPersistentBuffer{
             glDeleteBuffers(1, &buffer_id);
         }
 
-        uint32_t getID() {return buffer_id;}
+        uint getID() {return buffer_id;}
         T* data() {return this->_data;};
 
 };
@@ -71,8 +71,8 @@ class GLPersistentBuffer{
 
 /*class GLStripBuffer{
     private:
-        uint32_t data;
-        uint32_t vao;
+        uint data;
+        uint vao;
 
         size_t buffer_size = 0;
         size_t data_size = 0;

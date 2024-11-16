@@ -1,7 +1,7 @@
 #include <rendering/shaders.hpp>
 
-uint32_t compileShader(const char* source, int type, std::string filename = ""){
-    uint32_t shader = glCreateShader(type);
+uint compileShader(const char* source, int type, std::string filename = ""){
+    uint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
     glCompileShader(shader);
 
@@ -50,12 +50,12 @@ void ShaderProgram::addShader(std::string filename, int type){
 
     file.close();  // Close the file
 
-    uint32_t shader = compileShader(source.c_str(), type, filename);
+    uint shader = compileShader(source.c_str(), type, filename);
     this->shaders.push_back(shader);
 }
 
 void ShaderProgram::addShaderSource(std::string source, int type){
-    uint32_t shader = compileShader(source.c_str(), type);
+    uint shader = compileShader(source.c_str(), type);
     this->shaders.push_back(shader);
 }
 

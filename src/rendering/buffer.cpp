@@ -35,8 +35,8 @@ GLBuffer::~GLBuffer(){
 }
 
 void GLBuffer::loadMesh(Mesh& mesh){
-    uint32_t buffer = this->data;
-    uint32_t index_buffer = this->index;
+    uint buffer = this->data;
+    uint index_buffer = this->index;
     
     glBindVertexArray(vao);
 
@@ -48,7 +48,7 @@ void GLBuffer::loadMesh(Mesh& mesh){
     CHECK_GL_ERROR();;
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.getIndices().size() * sizeof(uint32_t),mesh.getIndices().data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.getIndices().size() * sizeof(uint),mesh.getIndices().data(), GL_DYNAMIC_DRAW);
     
     CHECK_GL_ERROR();;
 
@@ -64,8 +64,8 @@ void GLBuffer::loadMesh(Mesh& mesh){
 }
 
 void GLBuffer::draw(){
-    uint32_t buffer = this->data;
-    uint32_t index_buffer =this->index;
+    uint buffer = this->data;
+    uint index_buffer =this->index;
 
     //printf("%u %u %u\n", buffer, index_buffer, vao);
 
@@ -88,8 +88,8 @@ void GLBuffer::draw(){
 }
 
 void GLBuffer::drawInstances(int count){
-    uint32_t buffer = this->data;
-    uint32_t index_buffer =this->index;
+    uint buffer = this->data;
+    uint index_buffer =this->index;
 
     //printf("%u %u %u\n", buffer, index_buffer, vao);
 
@@ -161,7 +161,7 @@ bool GLStripBuffer::insertData(size_t start, const float* data, size_t size){
 }
 
 void GLStripBuffer::draw(){
-    uint32_t buffer = this->data;
+    uint buffer = this->data;
 
     glBindVertexArray(vao);
     glDrawArrays(

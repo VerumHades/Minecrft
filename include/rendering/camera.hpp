@@ -107,9 +107,9 @@ class DepthCamera: public Camera{
         glm::vec3 modelPosition = glm::vec3(0);
         glm::vec3 modelRotation = glm::vec3(0);
         
-        uint32_t depthMapFBO;
-        const uint32_t SHADOW_WIDTH = 1024 * 4, SHADOW_HEIGHT = 1024 * 4;
-        uint32_t depthMap;
+        uint depthMapFBO;
+        const uint SHADOW_WIDTH = 1024 * 4, SHADOW_HEIGHT = 1024 * 4;
+        uint depthMap;
 
         float size = 256;
 

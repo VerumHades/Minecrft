@@ -1,6 +1,6 @@
 #include <rendering/mesh.hpp>
 
-VertexFormat::VertexFormat(std::vector<uint32_t> sizes){
+VertexFormat::VertexFormat(std::vector<uint> sizes){
     this->sizes = sizes;
     for(auto& size: sizes) totalSize += size;
 }
@@ -46,10 +46,10 @@ void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcc
     //this->vertices.reserve(this->vertices.size() + 4 * this->vertexSize);
     //this->indices.reserve(this->indices.size() + 6);
 
-    uint32_t vecIndices[4];
+    uint vecIndices[4];
 
     float vertex[greedyVertexSize * 4];
-    uint32_t startIndex = (uint32_t) this->vertices.size() / greedyVertexSize;
+    uint startIndex = (uint) this->vertices.size() / greedyVertexSize;
     for(int i = 0; i < 4; i++){
         int offset = i * greedyVertexSize;
 
@@ -78,11 +78,11 @@ void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcc
 }
 
 void Mesh::addQuadFace(glm::vec3 vertices_[4], glm::vec3 normals[4], int clockwise){
-    uint32_t vecIndices[4];
+    uint vecIndices[4];
     
     const int size = 7;
     float vertex[size * 4];
-    uint32_t startIndex = (uint32_t) this->vertices.size() / size;
+    uint startIndex = (uint) this->vertices.size() / size;
     for(int i = 0; i < 4; i++){
         int offset = i * size;
 

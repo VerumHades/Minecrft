@@ -82,8 +82,8 @@ void UIRenderInfo::process(Mesh* output){
 
     //std::cout << borderSize.x << " " << borderSize.y << " " << borderSize.z << " " << borderSize.w << std::endl;
 
-    uint32_t vecIndices[4];
-    uint32_t startIndex = (uint32_t) output->getVertices().size() / vertexSize;
+    uint vecIndices[4];
+    uint startIndex = (uint) output->getVertices().size() / vertexSize;
 
     RawRenderInfo vertex;
     for(int i = 0; i < 4; i++){

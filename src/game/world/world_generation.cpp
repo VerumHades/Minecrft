@@ -84,7 +84,7 @@ WorldGenerator::WorldGenerator(int seed){
     computeProgram.compile();
     computeProgram.use();
 
-    computeBuffer = std::make_unique<GLPersistentBuffer<uint32_t>>(64 * 64  * (64 / 32) * sizeof(uint32_t), GL_SHADER_STORAGE_BUFFER);
+    computeBuffer = std::make_unique<GLPersistentBuffer<uint>>(64 * 64  * (64 / 32) * sizeof(uint), GL_SHADER_STORAGE_BUFFER);
 
     worldPositionUniformID = glGetUniformLocation(computeProgram.getID(),"worldPosition");
     if(worldPositionUniformID == -1) {
@@ -199,7 +199,7 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, i
     CHECK_GL_ERROR();
     
     /*
-        64 / 32 (division because one uint32_t is 32 bits) by 64 by 64
+        64 / 32 (division because one uint is 32 bits) by 64 by 64
     */
     glDispatchCompute(64 / 32, 64, 64);
 

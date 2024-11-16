@@ -2,6 +2,7 @@
 
 #include <rendering/bitworks.hpp>
 #include <unordered_set>
+#include <general.hpp>
 
 #define CHUNK_SIZE 64
 
@@ -20,22 +21,22 @@ class DynamicChunkMask{
             segmentsRotated.loadAsRotated(segments);
         }
         
-        void set(uint32_t x,uint32_t y,uint32_t z) {
+        void set(uint x,uint y,uint z) {
             segments.setBit(z,y,x);
             segmentsRotated.setBit(x,y,z);
         }
-        void reset(uint32_t x,uint32_t y,uint32_t z) {
+        void reset(uint x,uint y,uint z) {
             segments.resetBit(z,y,x);
             segmentsRotated.resetBit(x,y,z);
         }
-        bool get(uint32_t x,uint32_t y,uint32_t z) {
+        bool get(uint x,uint y,uint z) {
             return segments.getBit(x,y,z);
         }
 
-        uint_t<64> getAt(uint32_t z,uint32_t y) { 
+        uint_t<64> getAt(uint z,uint y) { 
             return segments.getRow(z, y);
         };
-        uint_t<64> getRotatedAt(uint32_t x,uint32_t y) {
+        uint_t<64> getRotatedAt(uint x,uint y) {
             return segmentsRotated.getRow(x, y);
         };
 

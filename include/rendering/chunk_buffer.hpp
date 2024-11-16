@@ -35,7 +35,7 @@ class MeshRegion{
                 Smallest is 1.
                 The actuall size of a region based on its level is: 2^level
             */
-            uint32_t level = 1;
+            uint level = 1;
 
         } transform;
 
@@ -120,7 +120,7 @@ class MeshRegion{
         /*
             Returns an index from subregions relative position
         */
-        uint32_t getSubregionIndexFromPosition(uint32_t x, uint32_t y, uint32_t z) {
+        uint getSubregionIndexFromPosition(uint x, uint y, uint z) {
             return x + y * 2 + z * 4;
         }
 
@@ -140,7 +140,7 @@ class MeshRegion{
 
             return nullptr if the region is at level 1 (there are no levels under 1).
         */
-        MeshRegion* getSubregion(uint32_t x, uint32_t y, uint32_t z);
+        MeshRegion* getSubregion(uint x, uint y, uint z);
         /*
             Returns a position relative to the parent
 
@@ -167,7 +167,7 @@ class MeshRegion{
 
             return if the operation was successful.
         */
-        bool setSubregionMeshState(uint32_t x, uint32_t y, uint32_t z, bool state);
+        bool setSubregionMeshState(uint x, uint y, uint z, bool state);
 
         /*
             Sets the regions mesh state in the parent if possible
@@ -208,7 +208,7 @@ class ChunkMeshRegistry{
     private:
         VertexFormat vertexFormat;
 
-        uint32_t vao;
+        uint vao;
 
         Allocator vertexAllocator;
         Allocator indexAllocator;
@@ -226,13 +226,13 @@ class ChunkMeshRegistry{
 
         std::unique_ptr<GLPersistentBuffer<DrawElementsIndirectCommand>> persistentDrawCallBuffer;
         std::unique_ptr<GLPersistentBuffer<float>> persistentVertexBuffer;
-        std::unique_ptr<GLPersistentBuffer<uint32_t>> persistentIndexBuffer;
+        std::unique_ptr<GLPersistentBuffer<uint>> persistentIndexBuffer;
 
         // Highest region level, no regions higher than maxRegionLevel will be registered or created
-        const static uint32_t maxRegionLevel = 5;
+        const static uint maxRegionLevel = 5;
         
         // index 0 is level 1, precalculated sizes
-        std::vector<uint32_t> actualRegionSizes;
+        std::vector<uint> actualRegionSizes;
 
         std::unordered_map<MeshRegion::Transform, MeshRegion, TransformHash, TransformEqual> regions;
 
@@ -257,7 +257,7 @@ class ChunkMeshRegistry{
     public:
         ~ChunkMeshRegistry();
         
-        void initialize(uint32_t renderDistance);
+        void initialize(uint renderDistance);
 
         void clear();
         bool isChunkLoaded(const glm::ivec3& pos){
@@ -298,17 +298,17 @@ class ChunkMeshRegistry{
         /*
             Return the real size of a region based on its level
         */
-        int getRegionSizeForLevel(uint32_t level) {
+        int getRegionSizeForLevel(uint level) {
             if(level < 1 || level > maxRegionLevel) return 0;
             return actualRegionSizes[level - 1];
         }
 
         float* getVertexBuffer(){ return persistentVertexBuffer->data(); }
-        uint32_t* getIndexBuffer() { return persistentIndexBuffer->data(); }
+        uint* getIndexBuffer() { return persistentIndexBuffer->data(); }
 
         // The maximal number of floats the buffer can store
         size_t getVertexBufferSize() { return maxVertexCount; }
-        // The maximal number of uint32_ts the buffer can store
+        // The maximal number of uints the buffer can store
         size_t getIndexBufferSize() { return maxIndexCount; }
 
         void setDrawCallCount(int value){drawCallCount = value;}

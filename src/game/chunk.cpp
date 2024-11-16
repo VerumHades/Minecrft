@@ -1,6 +1,6 @@
 #include <game/chunk.hpp>
 
-static inline void fillChunkLevel(Chunk& chunk, uint32_t y, Block value){
+static inline void fillChunkLevel(Chunk& chunk, uint y, Block value){
     for(int x = 0; x < CHUNK_SIZE;x++) for(int z = 0;z < CHUNK_SIZE;z++){
         chunk.setBlock(x,y,z, value);
     }
@@ -14,7 +14,7 @@ Block::Block(BlockTypes type): type(type){
 }
 
 static Block airBlock = {BlockTypes::Air};
-Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
+Block* Chunk::getBlock(uint x, uint y, uint z){
     if(x >= CHUNK_SIZE) return nullptr;
     if(y >= CHUNK_SIZE) return nullptr;
     if(z >= CHUNK_SIZE) return nullptr;
@@ -33,7 +33,7 @@ Block* Chunk::getBlock(uint32_t x, uint32_t y, uint32_t z){
     return &airBlock;
 }
 
-bool Chunk::setBlock(uint32_t x, uint32_t y, uint32_t z, Block value){
+bool Chunk::setBlock(uint x, uint y, uint z, Block value){
     if(x >= CHUNK_SIZE) return false;
     if(y >= CHUNK_SIZE) return false;
     if(z >= CHUNK_SIZE) return false;

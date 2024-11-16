@@ -150,7 +150,7 @@ void GLSkybox::load(std::array<std::string, 6> filenames){
 
     int width = 0, height = 0, nrChannels = 0;
     unsigned char *data = nullptr;  
-    for(uint32_t i = 0; i < 6; i++)
+    for(uint i = 0; i < 6; i++)
     {
         data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 0);
 
@@ -176,7 +176,7 @@ void GLSkybox::load(std::array<std::string, 6> filenames){
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    uint32_t VBO;
+    uint VBO;
     glGenBuffers(1, &VBO);
     glGenVertexArrays(1, &vao);
 

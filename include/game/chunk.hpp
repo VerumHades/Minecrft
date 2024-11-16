@@ -43,8 +43,8 @@ class Chunk{
 
         bool isEmpty() {return currentGroup && currentGroup->empty();}
 
-        Block* getBlock(uint32_t x, uint32_t y, uint32_t z);
-        bool setBlock(uint32_t x, uint32_t y, uint32_t z, Block value);
+        Block* getBlock(uint x, uint y, uint z);
+        bool setBlock(uint x, uint y, uint z, Block value);
 
         bool isMainGroupOfSize(int size){return currentGroup && currentGroup->getSize() == size;}
 

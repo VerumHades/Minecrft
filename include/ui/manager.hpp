@@ -478,8 +478,8 @@ class UISlider: public UIFrame{
 
     private:
         int* value;
-        uint32_t min;
-        uint32_t max;
+        uint min;
+        uint max;
 
         bool displayValue = true;
         int valueDisplayOffset = 10;
@@ -487,7 +487,7 @@ class UISlider: public UIFrame{
         bool grabbed = false;
         Orientation orientation = HORIZONTAL;
 
-        uint32_t handleWidth = 15;
+        uint handleWidth = 15;
         UIColor handleColor = UIColor(0.361f, 0.443f, 0.741f,1.0f);
 
         UITransform getHandleTransform(UIManager& manager);
@@ -497,10 +497,10 @@ class UISlider: public UIFrame{
         UISlider(UIManager& manager);
         void setOrientation(Orientation value){orientation = value;}
         void setDisplayValue(bool value) {displayValue = value;}
-        void setHandleWidth(uint32_t width) {handleWidth = width;}
+        void setHandleWidth(uint width) {handleWidth = width;}
 
-        void setMax(uint32_t value) {max = value;}
-        void setMin(uint32_t value) {min = value;}
+        void setMax(uint value) {max = value;}
+        void setMin(uint value) {min = value;}
         void setValuePointer(int* value) {this->value = value;}
 
         std::function<void(void)> onMove;
@@ -536,7 +536,7 @@ class UILayer{
         std::unordered_map<std::string, std::shared_ptr<UIFrame>> idRegistry;
         
     public:
-        uint32_t cursorMode =  GLFW_CURSOR_NORMAL;
+        uint cursorMode =  GLFW_CURSOR_NORMAL;
         UIEventLock eventLocks = {};
 
         void clear(){elements.clear();}
@@ -556,7 +556,7 @@ class UILayer{
         std::vector<std::shared_ptr<UIFrame>>& getElements() {return elements;}
 };
 
-using UIWindowIdentifier = uint32_t;
+using UIWindowIdentifier = uint;
 
 class UIWindow{
     private: 

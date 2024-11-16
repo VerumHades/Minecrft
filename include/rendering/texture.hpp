@@ -11,8 +11,8 @@
 
 class BindableTexture{
     protected: 
-        uint32_t texture;
-        uint32_t TYPE;
+        uint texture;
+        uint TYPE;
         BindableTexture(){
             glGenTextures(1, &this->texture);
         }
@@ -24,7 +24,7 @@ class BindableTexture{
             glActiveTexture(GL_TEXTURE0 + unit);
             glBindTexture(TYPE, this->texture);
         }  
-        uint32_t getID() {return texture;}
+        uint getID() {return texture;}
 };
 
 class GLTexture: public BindableTexture{
@@ -56,8 +56,8 @@ class GLTextureArray: public BindableTexture{
 
 class GLSkybox: public BindableTexture{
     private:
-        uint32_t vertexBufferID;
-        uint32_t vao;
+        uint vertexBufferID;
+        uint vao;
     public:
         void load(std::array<std::string, 6> filenames);
         ~GLSkybox();

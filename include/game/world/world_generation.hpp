@@ -36,10 +36,10 @@ class WorldGenerator{
         FastNoiseLite noise;
         int seed;
 
-        uint32_t worldPositionUniformID;
+        uint worldPositionUniformID;
 
         ShaderProgram computeProgram;
-        std::unique_ptr<GLPersistentBuffer<uint32_t>> computeBuffer;
+        std::unique_ptr<GLPersistentBuffer<uint>> computeBuffer;
 
     public:
         WorldGenerator(int seed);

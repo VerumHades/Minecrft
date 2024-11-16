@@ -1,9 +1,9 @@
 #include <rendering/chunk_buffer.hpp>
 
-bool MeshRegion::setSubregionMeshState(uint32_t x, uint32_t y, uint32_t z, bool state){
+bool MeshRegion::setSubregionMeshState(uint x, uint y, uint z, bool state){
     if(x > 1 || y > 1 || z > 1) return false;
 
-    uint32_t index = getSubregionIndexFromPosition(x,y,z);
+    uint index = getSubregionIndexFromPosition(x,y,z);
     if(state) child_states |=  (1 << index); 
     else      child_states &= ~(1 << index);
 
@@ -31,7 +31,7 @@ bool MeshRegion::setStateInParent(bool state){
 
 MeshRegion* MeshRegion::getParentRegion(){
     glm::ivec3 parent_position = getParentPosition();
-    uint32_t parent_level = transform.level + 1;
+    uint parent_level = transform.level + 1;
 
     return registry.getRegion({parent_position, parent_level});
 }
@@ -43,7 +43,7 @@ glm::ivec3 MeshRegion::getParentRelativePosition(){
     return transform.position - parent->transform.position * 2;
 }
 
-MeshRegion* MeshRegion::getSubregion(uint32_t x, uint32_t y, uint32_t z){
+MeshRegion* MeshRegion::getSubregion(uint x, uint y, uint z){
     if(transform.level <= 1) return nullptr;
 
     glm::ivec3 subregion_position = {
@@ -51,7 +51,7 @@ MeshRegion* MeshRegion::getSubregion(uint32_t x, uint32_t y, uint32_t z){
         (transform.position.y * 2) + y, 
         (transform.position.z * 2) + z,
     };
-    uint32_t subregion_level = transform.level - 1;
+    uint subregion_level = transform.level - 1;
 
     return  registry.getRegion({subregion_position, subregion_level});
 }
@@ -64,7 +64,7 @@ bool MeshRegion::moveMesh(size_t new_vertex_position, size_t new_index_position,
     }
 
     float*   vertex_buffer = registry.getVertexBuffer();
-    uint32_t* index_buffer = registry.getIndexBuffer();
+    uint* index_buffer = registry.getIndexBuffer();
     
     if(
         new_vertex_position + mesh_information.vertex_data_size > registry.getVertexBufferSize() ||
@@ -90,12 +90,12 @@ bool MeshRegion::moveMesh(size_t new_vertex_position, size_t new_index_position,
         std::memcpy(
             index_buffer + new_index_position, // The new position
             index_buffer + mesh_information.index_data_start, // The old position
-            mesh_information.index_data_size * sizeof(uint32_t) // The size in bytes
+            mesh_information.index_data_size * sizeof(uint) // The size in bytes
         );
     }
     else{ // Recalculate and copy the indices one by one
         for(int i = 0;i < mesh_information.index_data_size; i++){
-            uint32_t index = *(index_buffer + (mesh_information.index_data_start + i)); // Get the index
+            uint index = *(index_buffer + (mesh_information.index_data_start + i)); // Get the index
 
             *(index_buffer + (new_index_position + i)) = (index - mesh_information.index_offset) + index_offset;
         }
@@ -199,7 +199,7 @@ bool MeshRegion::merge(){
 }
 
 void MeshRegion::recalculateIndicies(){
-    uint32_t* index_buffer = registry.getIndexBuffer();
+    uint* index_buffer = registry.getIndexBuffer();
     
     for(int i = 0;i < mesh_information.index_data_size; i++){
         *(index_buffer + (mesh_information.index_data_start + i)) -= mesh_information.index_offset;
@@ -298,7 +298,7 @@ std::string formatSize(size_t bytes) {
 }
 
 
-void ChunkMeshRegistry::initialize(uint32_t renderDistance){
+void ChunkMeshRegistry::initialize(uint renderDistance){
     vertexFormat = VertexFormat({3,1,2,1,1});
 
     actualRegionSizes.push_back(1);
@@ -339,7 +339,7 @@ void ChunkMeshRegistry::initialize(uint32_t renderDistance){
     indexBufferSize = segment * indexPerFace;
     
     maxVertexCount = vertexBufferSize / sizeof(float);
-    maxIndexCount  = indexBufferSize / sizeof(uint32_t);
+    maxIndexCount  = indexBufferSize / sizeof(uint);
 
     std::cout << "Video RAM allocated for vertices total: " << formatSize(vertexBufferSize) << std::endl;
     std::cout << "Video RAM allocated for indices total : " << formatSize(indexBufferSize)  << std::endl;
@@ -355,8 +355,8 @@ void ChunkMeshRegistry::initialize(uint32_t renderDistance){
 
     CHECK_GL_ERROR();
 
-    persistentIndexBuffer = std::make_unique<GLPersistentBuffer<uint32_t>>(
-        maxIndexCount * sizeof(uint32_t),
+    persistentIndexBuffer = std::make_unique<GLPersistentBuffer<uint>>(
+        maxIndexCount * sizeof(uint),
         GL_ELEMENT_ARRAY_BUFFER
     );
 
@@ -388,7 +388,7 @@ std::tuple<bool,size_t,size_t> ChunkMeshRegistry::allocateAndUploadMesh(Mesh* me
     std::memcpy(
         persistentIndexBuffer->data()  + indexBufferOffset, // Copy to the vertex buffer at the offset
         mesh->getIndices().data(), // Copy the vertex data
-        mesh->getIndices().size() *  sizeof(uint32_t) // Copy the size of the data in bytes
+        mesh->getIndices().size() *  sizeof(uint) // Copy the size of the data in bytes
     );
 
     return {true, vertexBufferOffset, indexBufferOffset};
