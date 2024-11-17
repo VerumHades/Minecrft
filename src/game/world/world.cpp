@@ -48,7 +48,7 @@ void World::loadChunk(int x, int y, int z){
 
     std::unique_lock lock(chunkGenLock);
     chunks[position] = std::make_unique<Chunk>(position);
-    stream->load(chunks[position].get());
+    //stream->load(chunks[position].get());
 }
 
 CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bool includeRectangularColliderLess){
@@ -66,7 +66,7 @@ CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bo
 
                 Block* blocki = this->getBlock(cx, cy, cz);
                 if(blocki){
-                    BlockType block = getBlockType(blocki);
+                    BlockDefinition block = getBlockDefinition(blocki);
                     if((block.colliders.size() == 0 || blocki->type == BlockType::Air) && !includeRectangularColliderLess) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
@@ -111,7 +111,7 @@ CollisionCheckResult World::checkForRectangularCollision(float x, float y, float
 
                 Block* blocki = this->getBlock(cx, cy, cz);
                 if(blocki){
-                    BlockType block = getBlockType(blocki);
+                    BlockDefinition block = getBlockDefinition(blocki);
                     if(block.colliders.size() == 0 || blocki->type == BlockType::Air) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);

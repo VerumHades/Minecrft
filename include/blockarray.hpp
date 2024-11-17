@@ -21,10 +21,10 @@ class SparseBlockArray{
         /*
             Creates a layer, if layer already exists doesnt create another
         */
-        bool createLayer(BlockType type){
+        bool createLayer(BlockType type, const BitField3D& field){
             if(hasLayerOfType(type)) return false;
             type_indexes[static_cast<size_t>(type)] = layers.size();
-            layers.push_back({type,{type}});
+            layers.push_back({type,{type},field});
             present_types.push_back(type);
             return true;
         }
@@ -32,18 +32,18 @@ class SparseBlockArray{
         /*
             Returns a layer of type if its present, otherwise crashes.
         */
-        const Layer& getLayer(BlockType type){
+        Layer& getLayer(BlockType type){
             if(!hasLayerOfType(type)) throw std::runtime_error("Layer has no layer of that type. Use 'hasLayerOfType' to check for layers.");
 
             return layers[type_indexes[static_cast<size_t>(type)]];
         }
 
-        const BitField3D& getSolidField(){
+        BitField3D& getSolidField(){
             return solid_field;
         }
 
-        const std::vector<BlockType>& getPresentTypes() { return present_types; }
-        const std::vector<Layer>& getLayers() { return layers; }
+        std::vector<BlockType>& getPresentTypes() { return present_types; }
+        std::vector<Layer>& getLayers() { return layers; }
     private:
         Block airBlock = {BlockType::Air};
         BitField3D solid_field; // Registers solid blocks
@@ -61,7 +61,7 @@ class SparseBlockArray{
 
         void setBlock(uint x, uint y, uint z, Block block){
             if(!hasLayerOfType(block.type)){
-                createLayer(block.type);
+                createLayer(block.type, {});
             }
 
             auto layer = getLayer(block.type);

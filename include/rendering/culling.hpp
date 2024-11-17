@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 #include <functional>
+#include <iostream>
+#include <game/blocks.hpp>
 
 struct Plane
 {

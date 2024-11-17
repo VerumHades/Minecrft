@@ -29,8 +29,6 @@
 #include <bitset>
 #include <iostream>
 
-#define CHUNK_SIZE 64
-
 class Chunk: public SparseBlockArray{
     private:
         glm::ivec3 worldPosition;
@@ -41,6 +39,7 @@ class Chunk: public SparseBlockArray{
         const glm::ivec3& getWorldPosition() const { return worldPosition; }
         
         friend class ChunkMeshGenerator;
+        friend class WorldGenerator;
         //std::optional<Mesh> transparentMesh;
 }; 
 

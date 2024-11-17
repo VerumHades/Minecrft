@@ -7,18 +7,23 @@
 #include <cstdint>
 #include <unordered_map>
 #include <cstdlib>
+#include <cstring>
+#include <iostream>
 
 class BitFieldCache;
 /*
   A tree dimensional array of bits (64 * 64 * 64), stored as and array of unsigned 64 bit integers
 */
-
-static size_t last_cache_id = 0;
+static int last_id = 0;
 class BitField3D{
     private:
-        size_t cache_id = 0;
+        size_t id = 0; // Unique identifier
+        union {
+            size_t creator_id;
+            size_t cache_id = -1ULL; // Index in the cache
+        };
 
-        std::array<uint64_t, 64> _internal_data;
+        std::array<uint64_t, 64 * 64> _internal_data = {0};
 
         bool inBounds(uint x, uint y, uint z = 0) const {
             return x >= 0 && y >= 0 && z >= 0 && x < 64 && y < 64 && z < 64;
@@ -29,7 +34,11 @@ class BitField3D{
 
     public:
         BitField3D(){
-            cache_id = last_cache_id++;
+            id = last_id++;
+        }
+
+        void setData(uint64_t* data){
+            std::memcpy(_internal_data.data(), data, 64 * 64 * sizeof(uint64_t));
         }
         /* 
           Sets a bit at x,y,z.
@@ -87,31 +96,33 @@ class BitField3D{
         }
 
         /*
-            Returnes a transposed version of the bitfield (rotated)
-        
-            If supplied with a cache will pull from it or save to it.
+            Returnes a pointer to a transposed version of the bitfield (rotated) in the cache
         */
-        const BitField3D& getTransposed(BitFieldCache* cache = nullptr) const;
+        BitField3D* getTransposed(BitFieldCache* cache);
+
+        friend class BitFieldCache;
 };
 
+/*
+    A cache that gives out the last unused bitfield. Doesn't care about taken or not
+*/
 class BitFieldCache{
     private:
-        using BitFieldArray = std::vector<BitField3D>;
+        const static int max_cached = 2 * 1024; // 2 * 32MB cache (32KB per field * 1024)
+        BitField3D cached_fields[max_cached];
 
-        BitFieldArray cached_fields;
-        std::unordered_map<size_t,BitFieldArray::iterator> cached_registry; // Id -> Bitfield
-        std::queue<std::tuple<BitFieldArray::iterator,size_t>> drop_queue; // Dropping the oldest
-        
-        const int max_cached = 1024; // 32MB cache (32KB per field * 1024)
-
-        void dropOldestField();
+        size_t next_spot = 0;
 
     public:
-        void add(BitField3D& field, size_t id);
-        
-        bool has(size_t id) {return cached_registry.contains(id);};
-        /*
-            Get a bitfield by cache id. If it doesnt exist return nullptr.
-        */
-        BitFieldArray::iterator get(size_t id);
+        std::tuple<BitField3D*, size_t> getNext(size_t id){
+            BitField3D* out = &cached_fields[(next_spot + 1) % (max_cached - 1)];
+            *out = {}; // zero out
+            out->creator_id = id;
+            return {out, next_spot++};
+        }
+
+        BitField3D* getByID(size_t cache_id){
+            if(cache_id < 0 || cache_id >= max_cached) return nullptr;
+            return &cached_fields[cache_id];
+        }
 };

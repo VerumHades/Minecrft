@@ -210,7 +210,7 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
         Mesh chunk faces
     */
 
-    const auto& solidRotated = group->getSolidField().getTransposed(&cache);
+    auto* solidRotated = group->getSolidField().getTransposed(&cache);
 
     for(int z = 0; z < size - 1;z++){
         BlockBitPlanes<64> planesXforward = {0};
@@ -224,18 +224,18 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
         
         for(int y = 0;y < size;y++){
             for(auto& [type,block,field]: group->getLayers()){
-                const auto& rotatedField = field.getTransposed(&cache);
+                auto* rotatedField = field.getTransposed(&cache);
 
-                uint64_t allFacesX = (rotatedField.getRow(z,y) | rotatedField.getRow(z + 1,y)) & (solidRotated.getRow(z,y) ^ solidRotated.getRow(z + 1,y));
-                planesXforward[ (size_t) type][y] = solidRotated.getRow(z,y) & allFacesX;
-                planesXbackward[(size_t) type][y] = solidRotated.getRow(z + 1,y) & allFacesX;
+                uint64_t allFacesX = (rotatedField->getRow(z,y) | rotatedField->getRow(z + 1,y)) & (solidRotated->getRow(z,y) ^ solidRotated->getRow(z + 1,y));
+                planesXforward[ (size_t) type][y] = solidRotated->getRow(z,y)     & allFacesX;
+                planesXbackward[(size_t) type][y] = solidRotated->getRow(z + 1,y) & allFacesX;
 
                 uint64_t allFacesY = (field.getRow(y,z) | field.getRow(y,z + 1)) & (group->getSolidField().getRow(y,z) ^ group->getSolidField().getRow(y,z + 1));
-                planesYforward[ (size_t) type][y] = group->getSolidField().getRow(y,z) & allFacesY;
+                planesYforward[ (size_t) type][y] = group->getSolidField().getRow(y,z)     & allFacesY;
                 planesYbackward[(size_t) type][y] = group->getSolidField().getRow(y,z + 1) & allFacesY;
 
                 uint64_t allFacesZ = (field.getRow(z,y) | field.getRow(z + 1,y)) & (group->getSolidField().getRow(z,y) ^ group->getSolidField().getRow(z + 1,y));
-                planesZforward[ (size_t) type][y] = group->getSolidField().getRow(z,y) & allFacesZ;
+                planesZforward[ (size_t) type][y] = group->getSolidField().getRow(z,y)     & allFacesZ;
                 planesZbackward[(size_t) type][y] = group->getSolidField().getRow(z + 1,y) & allFacesZ;
             }
         }
@@ -374,9 +374,9 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
             const uint64_t localMaskRow = group->hasMask(key)     ? group->getMask(key).getRotatedAt(0,y) : 0ULL;
             const uint64_t otherMaskRow = nextXGroup->hasMask(key) ? nextXGroup->getMask(key).getRotatedAt(size - 1,y)   : 0ULL;
             
-            uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (solidRotated.getRow(0,y) ^ nextXSolid.getRotatedAt(size - 1,y));
+            uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (solidRotated->getRow(0,y) ^ nextXSolid.getRotatedAt(size - 1,y));
 
-            planesXforward[ (size_t)key][y] =  solidRotated.getRow(0,y) & allFacesX;
+            planesXforward[ (size_t)key][y] =  solidRotated->getRow(0,y) & allFacesX;
             planesXbackward[(size_t)key][y] =  nextXSolid.getRotatedAt(size - 1,y) & allFacesX;
         }
 

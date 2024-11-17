@@ -1,41 +1,33 @@
 #include <bitarray.hpp>
 
-const BitField3D& BitField3D::getTransposed(BitFieldCache* cache) const {
-    if(cache && cache->has(cache_id)){
-        return *cache->get(cache_id);
+BitField3D* BitField3D::getTransposed(BitFieldCache* cache){
+    
+    auto* knownCache = cache->getByID(cache_id);
+    if(knownCache && knownCache->creator_id == id){
+        return knownCache;
     }
 
     /*
         TODO: implement transposing
     */
 
-    BitField3D transposed = *this;
+    auto [transposed,new_cache_id] = cache->getNext(id);
+    cache_id = new_cache_id;
 
-    if(cache) cache->add(transposed, cache_id);
+    for(int z = 0;z < 64;z++){
+        for(int y = 0; y < 64;y++){
+            uint64_t value = getRow(z,y);
 
-    return transposed; 
-}
+            for(int x = 0;x < 64;x++){
+                uint64_t mask = 1ULL << (63 - x);
 
-void BitFieldCache::dropOldestField(){
-    if(drop_queue.empty()) return;
+                if(!(value & mask)) continue;
 
-    auto [iterator,id] = drop_queue.front();
-    drop_queue.pop();
-    cached_registry.erase(id);
-    cached_fields.erase(iterator);
-}
-
-void BitFieldCache::add(BitField3D& field,size_t id){
-    auto iterator = cached_fields.insert(cached_fields.end(), field);
-    cached_registry[id] = iterator;
-    drop_queue.push({iterator,id});
-
-    while(drop_queue.size() > max_cached){
-        dropOldestField();
+                transposed->setRow(x,y, transposed->getRow(x,y) | (1ULL << (63 - z)));
+            }
+        }
     }
-}
 
-BitFieldCache::BitFieldArray::iterator BitFieldCache::get(size_t id){
-    if(!cached_registry.contains(id)) return cached_fields.end();
-    return cached_registry[id];
+    //cache->add(transposed, cache_id);
+    return transposed;//cache->get(cache_id); 
 }

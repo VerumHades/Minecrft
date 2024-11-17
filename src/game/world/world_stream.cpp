@@ -141,7 +141,7 @@ size_t WorldStream::moveChunk(size_t from, size_t to){
     int type
     size_t compressed_24bit_count, data...
     size_t compressed_24bit_count_rotated, data...
-*/
+
 static inline void saveMask(ByteArray& out, DynamicChunkMask& mask, int type){
     out.append<int>(type);
     out.append(mask.getSegments().compress().data);
@@ -152,7 +152,7 @@ static inline void saveMask(ByteArray& out, DynamicChunkMask& mask, int type){
     float x,y,z
     size_t layerCount
     saved masks using the above function..
-*/
+
 bool WorldStream::save(Chunk& chunk){
     if(hasChunkAt(chunk.getWorldPosition())) return false;
     ByteArray out;
@@ -228,7 +228,7 @@ void WorldStream::load(Chunk* chunk){
     
     //std::cout << "Loaded: " << position.x << " " << position.y << " " << position.z << std::endl;
 }
-
+*/
 bool WorldStream::hasChunkAt(glm::vec3 position){
     return chunkTable.count(position) != 0;
 }

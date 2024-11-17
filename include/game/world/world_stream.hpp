@@ -38,8 +38,8 @@ class WorldStream{
     public:
         WorldStream(std::string filepath);
         ~WorldStream();
-        bool save(Chunk& chunk);
-        void load(Chunk* chunk);
+        //bool save(Chunk& chunk);
+        //void load(Chunk* chunk);
         bool hasChunkAt(glm::vec3 position);
 
         int getSeed() const {return header.seed;};

@@ -7,6 +7,8 @@
 #include <mutex>
 #include <iostream>
 
+#define CHUNK_SIZE 64
+
 struct RectangularCollider {
     float x, y, z;
     float width, height, depth;
