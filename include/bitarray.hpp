@@ -22,6 +22,7 @@ class BitField3D{
             size_t creator_id;
             size_t cache_id = -1ULL; // Index in the cache
         };
+        BitField3D* cached_version_pointer = nullptr;
 
         std::array<uint64_t, 64 * 64> _internal_data = {0};
 
@@ -48,6 +49,13 @@ class BitField3D{
         bool set(uint x, uint y, uint z){
             if(!inBounds(x,y,z)) return false;
 
+            if(cached_version_pointer){ // Do we have a cached rotated version?
+                if(cached_version_pointer->creator_id == id) { // Is it still ours?
+                    cached_version_pointer->set(z,y,x);
+                }
+                else cached_version_pointer = nullptr; // Its not
+            }
+
             _internal_data[calculateIndex(x,y)] |= (1ULL << (63 - z));
         }
 
@@ -58,6 +66,13 @@ class BitField3D{
         */
         bool reset(uint x, uint y, uint z){
             if(!inBounds(x,y,z)) return false;
+
+            if(cached_version_pointer){ // Do we have a cached rotated version?
+                if(cached_version_pointer->creator_id == id) { // Is it still ours?
+                    cached_version_pointer->reset(z,y,x);
+                }
+                else cached_version_pointer = nullptr; // Its not
+            }
 
             _internal_data[calculateIndex(x,y)] &= ~(1ULL << (63 - z));
         }
