@@ -48,7 +48,7 @@ class BitField3D{
         bool set(uint x, uint y, uint z){
             if(!inBounds(x,y,z)) return false;
 
-            _internal_data[calculateIndex(x,y)] |= (1ULL << z);
+            _internal_data[calculateIndex(x,y)] |= (1ULL << (63 - z));
         }
 
         /* 
@@ -59,7 +59,7 @@ class BitField3D{
         bool reset(uint x, uint y, uint z){
             if(!inBounds(x,y,z)) return false;
 
-            _internal_data[calculateIndex(x,y)] &= ~(1ULL << z);
+            _internal_data[calculateIndex(x,y)] &= ~(1ULL << (63 - z));
         }
 
         /*
@@ -70,7 +70,7 @@ class BitField3D{
         bool get(uint x, uint y, uint z) const {
             if(!inBounds(x,y,z)) return false;
 
-            return _internal_data[calculateIndex(x,y)] & (1ULL << z);
+            return _internal_data[calculateIndex(x,y)] & (1ULL << (63 - z));
         }
 
         /*

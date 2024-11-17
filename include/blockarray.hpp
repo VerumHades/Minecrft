@@ -64,6 +64,11 @@ class SparseBlockArray{
                 createLayer(block.type, {});
             }
 
+            auto* block_here = getBlock(x,y,z);
+            if(block_here){
+                getLayer(block_here->type).field.reset(x,y,z);
+            }
+
             auto layer = getLayer(block.type);
             auto block_definition = getBlockDefinition(&block);
             
