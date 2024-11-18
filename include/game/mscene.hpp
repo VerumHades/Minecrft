@@ -45,7 +45,7 @@ class MainScene: public Scene{
         ChunkMeshGenerator chunkMeshGenerator;
 
         std::string worldPath = "saves/worldsave.bin";
-        int renderDistance = 2;
+        int renderDistance = 4;
         int selectedBlock = 2;
 
         bool allGenerated = false;

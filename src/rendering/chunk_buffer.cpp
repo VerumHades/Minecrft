@@ -463,8 +463,8 @@ bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
     vertexAllocator.free(old_vertex_data);
     indexAllocator .free(old_index_data);
 
-    region.setStateInParent(true);
     region.meshless = false;
+    region.setStateInParent(true);
 
     return true;
 }   
