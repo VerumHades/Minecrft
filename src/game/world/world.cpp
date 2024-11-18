@@ -53,7 +53,7 @@ void World::loadChunk(int x, int y, int z){
 
 CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bool includeRectangularColliderLess){
     CollisionCheckResult result = {nullptr, false, 0,0,0};
-    int range = 3;
+    int range = 1;
 
     float blockWidth = 1;
 
@@ -100,7 +100,7 @@ CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bo
 
 CollisionCheckResult World::checkForRectangularCollision(float x, float y, float z, RectangularCollider* collider){
     CollisionCheckResult result = {nullptr, false, 0,0,0};
-    int range = 3;
+    int range = 1;
 
     for(int i = -range;i <= range;i++){
         for(int j = -range;j <= range;j++){

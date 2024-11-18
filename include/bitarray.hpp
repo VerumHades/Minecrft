@@ -50,13 +50,12 @@ class BitField3D{
             if(!inBounds(x,y,z)) return false;
 
             if(cached_version_pointer){ // Do we have a cached rotated version?
-                if(cached_version_pointer->creator_id == id) { // Is it still ours?
-                    cached_version_pointer->set(z,y,x);
-                }
+                if(cached_version_pointer->creator_id == id) cached_version_pointer->set(z,y,x); // Is it still ours?
                 else cached_version_pointer = nullptr; // Its not
             }
 
             _internal_data[calculateIndex(x,y)] |= (1ULL << (63 - z));
+            return true;
         }
 
         /* 
@@ -68,13 +67,12 @@ class BitField3D{
             if(!inBounds(x,y,z)) return false;
 
             if(cached_version_pointer){ // Do we have a cached rotated version?
-                if(cached_version_pointer->creator_id == id) { // Is it still ours?
-                    cached_version_pointer->reset(z,y,x);
-                }
+                if(cached_version_pointer->creator_id == id) cached_version_pointer->reset(z,y,x); // Is it still ours?
                 else cached_version_pointer = nullptr; // Its not
             }
 
             _internal_data[calculateIndex(x,y)] &= ~(1ULL << (63 - z));
+            return true;
         }
 
         /*
@@ -97,6 +95,7 @@ class BitField3D{
             if(!inBounds(x,y)) return false;
 
             _internal_data[calculateIndex(x,y)] = value;
+            return true;
         }
 
         /*

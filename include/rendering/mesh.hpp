@@ -9,6 +9,7 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <general.hpp>
 
 class VertexFormat{
     private:

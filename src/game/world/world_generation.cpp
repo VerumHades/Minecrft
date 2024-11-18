@@ -210,10 +210,10 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, i
         }
         first = false;
     }
-    if(!chunk->hasLayerOfType(BlockType::Grass)) chunk->createLayer(BlockType::Grass, {});
+    if(!chunk->hasLayerOfType(BlockType::Stone)) chunk->createLayer(BlockType::Stone, {});
 
     uint64_t* data = reinterpret_cast<uint64_t*>(computeBuffer->data());
-    chunk->getLayer(BlockType::Grass).field.setData(data);
+    chunk->getLayer(BlockType::Stone).field.setData(data);
     chunk->getSolidField().setData(data);
     
     auto end = std::chrono::high_resolution_clock::now();

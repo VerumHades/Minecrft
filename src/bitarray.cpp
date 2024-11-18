@@ -1,9 +1,8 @@
 #include <bitarray.hpp>
 
 BitField3D* BitField3D::getTransposed(BitFieldCache* cache){
-    auto* knownCache = cache->getByID(cache_id);
-    if(knownCache && knownCache->creator_id == id){
-        return knownCache;
+    if(cached_version_pointer && cached_version_pointer->creator_id == id){
+        return cached_version_pointer;
     }
 
     /*

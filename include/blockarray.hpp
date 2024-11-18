@@ -60,22 +60,28 @@ class SparseBlockArray{
         bool isEmpty(){return layers.size() == 0;}
 
         void setBlock(uint x, uint y, uint z, Block block){
+            auto* block_here = getBlock(x,y,z);
+            if(block_here != &airBlock){
+                getLayer(block_here->type).field.reset(x,y,z);
+            }
+
+            if(block.type == BlockType::Air){
+                solid_field.reset(x,y,z);
+                std::cout << "Air!" << std::endl;
+                return;
+            }
+
             if(!hasLayerOfType(block.type)){
                 createLayer(block.type, {});
             }
 
-            auto* block_here = getBlock(x,y,z);
-            if(block_here){
-                getLayer(block_here->type).field.reset(x,y,z);
-            }
+            auto& layer = getLayer(block.type);
+            layer.field.set(x,y,z);
 
-            auto layer = getLayer(block.type);
-            auto block_definition = getBlockDefinition(&block);
+            auto& block_definition = getBlockDefinition(&block);
             
             if(block_definition.solid) solid_field.set(x,y,z);
             else solid_field.reset(x,y,z);
-
-            layer.field.set(x,y,z);
         }
 
         /*

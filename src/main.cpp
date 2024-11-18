@@ -301,6 +301,8 @@ int main() {
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
+
+        sceneManager.setScene("menu"); // Wait for game threads to stop if running
     }
 
     glfwDestroyWindow(window);

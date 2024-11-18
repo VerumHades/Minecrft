@@ -27,6 +27,8 @@ class ChunkMeshGenerator{
 
         std::queue<MeshLoadingMember> meshLoadingQueue;
 
+        World* world = nullptr; // Points to the world relative to which you generate meshes, doesnt need to be set
+
         void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<Mesh> mesh);
 
     public:
@@ -50,4 +52,6 @@ class ChunkMeshGenerator{
             Generates and uploads the newly generated chunk mesh right away
         */
         void syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegistry& buffer);
+
+        void setWorld(World* world){this->world = world;}
 };

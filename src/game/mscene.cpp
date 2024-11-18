@@ -278,7 +278,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
             return;
         }
 
-        auto chunk = world->getChunkFromBlockPosition(result.x, result.y,result.z);
+        auto* chunk = world->getChunkFromBlockPosition(result.x, result.y,result.z);
         if(!chunk) return;
         regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(result.x, result.y,result.z));
     }
@@ -337,6 +337,8 @@ void MainScene::open(GLFWwindow* window){
     world->getEntities().emplace_back(glm::vec3(0,0,0), glm::vec3(0.6, 1.8, 0.6));
     world->getEntities()[0].setGravity(false);
 
+    chunkMeshGenerator.setWorld(world.get());
+
     //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
     //generationThread.detach();
 
@@ -353,6 +355,8 @@ void MainScene::open(GLFWwindow* window){
 void MainScene::close(GLFWwindow* window){
     threadsStopped = 0;
     running = false;
+
+    chunkMeshGenerator.setWorld(nullptr);
 
     while(threadsStopped < 1){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -577,14 +581,12 @@ void MainScene::generateSurroundingChunks(){
     int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
     int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
 
-    std::vector<std::thread> openThreads = {};
-
     int pregenDistance = renderDistance + 1; 
     
     int generatedTotal = 0;
     int* gptr = &generatedTotal;
 
-    for(int x = -pregenDistance ; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
+    /*for(int x = -pregenDistance ; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
         int chunkX = camWorldX + x;
         int chunkY = camWorldY + y;
         int chunkZ = camWorldZ + z;
@@ -595,11 +597,8 @@ void MainScene::generateSurroundingChunks(){
             world->loadChunk(chunkX,chunkY,chunkZ);
             generatedTotal++;
         }
-    }
+    }*/
 
-
-    World* worldp = world.get();
-    auto* bp = &chunkMeshRegistry;
         
     for(int x = -pregenDistance ; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
         int chunkX = camWorldX + x;
@@ -608,20 +607,21 @@ void MainScene::generateSurroundingChunks(){
 
         //if(chunkY > 4) return;
 
-        Chunk* meshlessChunk = world->getChunk(chunkX, chunkY, chunkZ);
-        if(!meshlessChunk){
-            //meshlessChunk = world->generateAndGetChunk(chunkX, chunkY, chunkZ);
-            //std::cout << "Generating chunk" << std::endl;
-
-            //int distance = glm::length(glm::vec3(x,y,z)) / 4;
-            int level = 64;
-
-            //int level = 1;
-            //std::cout << "Level:" << level << std::endl;
-            chunkMeshGenerator.syncGenerateAsyncUploadMesh(worldp->generateChunk(chunkX, chunkY, chunkZ, level));
-        }
+        world->generateChunk(chunkX, chunkY, chunkZ, 64);
     }
 
+    for(int x = -renderDistance ; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
+        int chunkX = camWorldX + x;
+        int chunkY = camWorldY + y;
+        int chunkZ = camWorldZ + z;
+        
+        Chunk* meshlessChunk = world->getChunk(chunkX, chunkY, chunkZ);
+        if(!meshlessChunk){
+            std::cerr << "Chunk not generated when generating meshes?" << std::endl;
+            continue;
+        }
+        chunkMeshGenerator.syncGenerateSyncUploadMesh(meshlessChunk, chunkMeshRegistry);
+    }
     //while(!threadPool->finished()){ // Wait for everything to generate
     //    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     //}
