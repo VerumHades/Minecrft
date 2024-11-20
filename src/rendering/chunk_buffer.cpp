@@ -1,31 +1,39 @@
 #include <rendering/chunk_buffer.hpp>
 
-bool MeshRegion::setSubregionMeshState(uint x, uint y, uint z, bool state){
-    if(x > 1 || y > 1 || z > 1) return false;
+void MeshRegion::setMeshless(bool value){
+    if(value == meshless && !meshless_first) return; // Already set
+    meshless_first = false;
 
-    uint index = getSubregionIndexFromPosition(x,y,z);
-    if(state) child_states |=  (1 << index); 
-    else      child_states &= ~(1 << index);
+    meshless = value;
 
-    //std::cout << std::bitset<8>(child_states) << " at " << x << " " << y << " " << z <<std::endl;
-    if(child_states == 0xFF){
-        setStateInParent(true); // If all children are meshed
-        //if(!merge()) std::cout << "Merge failed!" << std::endl;
+    if(value){ // Being set to meshless
+        //updateMeshInformation({0});
     }
-    else if(merged){
-        // Split apart the meshes because they are no longer valid
+    else{ // Being set to having a mesh
+        propagateDrawCall();
+        updatePropagatedDrawCalls();
     }
-
-    return true;
 }
 
-bool MeshRegion::setStateInParent(bool state){
-    auto* parent = getParentRegion();
-    if(!parent) return false;
+bool MeshRegion::propagateDrawCall(){
+    if(transform.level != 1 || propagated) return false; // Non level 1 regions cannot propagate, cannot propagate twice
     
-    auto relative_position = getParentRelativePosition();
-    parent->setSubregionMeshState(relative_position.x, relative_position.y, relative_position.z, state);
-    
+    MeshRegion* current_region = this;
+    DrawElementsIndirectCommand command = generateDrawCommand();
+
+    propagated = true;
+
+    for(;;){
+        current_region = current_region->getParentRegion();
+        if(!current_region) return false;
+        
+        in_parent_draw_call_references.push_back( 
+            {current_region->transform, current_region->draw_commands.size()}
+        );
+
+        current_region->draw_commands.push_back(command);
+    }
+
     return true;
 }
 
@@ -56,218 +64,35 @@ MeshRegion* MeshRegion::getSubregion(uint x, uint y, uint z){
     return  registry.getRegion({subregion_position, subregion_level});
 }
 
-bool MeshRegion::moveMesh(size_t new_vertex_position, size_t new_index_position, size_t index_offset){
-    if(!merged && (transform.level != 1)) return false; // Moving is not possible for non level 1 or non merged regions
-    if(meshless){
-        std::cerr << "Alright but moving a meshless mesh makes no sense." << std::endl;
-        return true;
-    }
 
-    float*   vertex_buffer = registry.getVertexBuffer();
-    uint* index_buffer = registry.getIndexBuffer();
-    
-    if(
-        new_vertex_position + mesh_information.vertex_data_size > registry.getVertexBufferSize() ||
-        new_vertex_position < 0
-    
-    ) return false; // Do not overflow the vertex buffer
-    
-
-    if(
-        new_index_position  + mesh_information.index_data_size  > registry.getIndexBufferSize() ||
-        new_index_position < 0
-    ) return false; // Do not overflow the index buffer 
-    
-
-    // Cpoy the vertex data
-    std::memcpy(
-        vertex_buffer + new_vertex_position, // The new position
-        vertex_buffer + mesh_information.vertex_data_start, // The old position
-        mesh_information.vertex_data_size * sizeof(float) // The size in bytes
-    );
-
-    if(index_offset == 0){ // If there are no recalculations in indices we can just copy them
-        std::memcpy(
-            index_buffer + new_index_position, // The new position
-            index_buffer + mesh_information.index_data_start, // The old position
-            mesh_information.index_data_size * sizeof(uint) // The size in bytes
-        );
-    }
-    else{ // Recalculate and copy the indices one by one
-        for(int i = 0;i < mesh_information.index_data_size; i++){
-            uint index = *(index_buffer + (mesh_information.index_data_start + i)); // Get the index
-
-            *(index_buffer + (new_index_position + i)) = (index - mesh_information.index_offset) + index_offset;
-        }
-    }
-
-    //std::cout << "Moved to: " << new_vertex_position << "of size: " << mesh_information.vertex_data_size << std::endl;
-
-    // Register the changes
-    mesh_information.vertex_data_start = new_vertex_position;
-    mesh_information.index_data_start = new_index_position;
-
-    mesh_information.first_index = new_index_position;
-    mesh_information.base_vertex = new_vertex_position / registry.getVertexFormat().getVertexSize(); // Calculate the base vertex in a single vertex sizes
-
-    mesh_information.index_offset = index_offset;
-    
-    return true;
-}
-
-bool MeshRegion::merge(){
-    if(transform.level <= 1) return false; // Cannot merge level 1 mesh
-    if(child_states != 0xFF) return false; // Not all children are meshed
-    if(merged) return false; // Cant merge a mesh twice
-
-    size_t vertex_size_total = 0;
-    size_t index_size_total = 0;
-    size_t count_total = 0;
-
-    for(int x = 0; x < 2; x++)
-    for(int y = 0; y < 2; y++) 
-    for(int z = 0; z < 2; z++)
-    { // Go trough all subregions and merge them if possible
-        MeshRegion* subregion = getSubregion(x,y,z);
-        if(!subregion) return false; // Region doesn't exist
-        if(subregion->meshless) continue;
-        
-        if(subregion->hasContiguousMesh() || subregion->merge()){
-            vertex_size_total += subregion->mesh_information.vertex_data_size;
-            index_size_total  += subregion->mesh_information.index_data_size;
-            count_total += subregion->mesh_information.count;
-        } // A mergable mesh
-        else return false; // Fail if isn't and cannot be made contiguous
-    }
-
-    if(vertex_size_total == 0 || index_size_total == 0){
-        meshless = true;
-        return true;
-    }
-    
-    auto [vertex_success, new_vertex_position] = registry.getVertexAllocator().allocate(vertex_size_total);
-    auto [index_success , new_index_position]  = registry.getIndexAllocator().allocate(index_size_total);
-
-    if(!vertex_success || !index_success) return false; // Failed to allocate space for the new mesh
-
-    size_t vertex_offset = 0;
-    size_t index_offset  = 0;
-
-    //std::cout << "Merge result: " << vertex_size_total << " " << index_size_total << std::endl;
-
-    // All meshes should be mergable at this point
-    for(int x = 0; x < 2; x++)
-    for(int y = 0; y < 2; y++) 
-    for(int z = 0; z < 2; z++)
-    { // Go trough all subregions and merge them if possible
-        MeshRegion* subregion = getSubregion(x,y,z);
-        if(!subregion) return false; // Region doesn't exist, but this would have already failed in the previous loop
-        if(subregion->meshless) continue;
-
-        registry.getVertexAllocator().free(subregion->mesh_information.vertex_data_start);
-        registry.getIndexAllocator() .free(subregion->mesh_information.index_data_start);
-
-        bool moved = subregion->moveMesh(
-            new_vertex_position + vertex_offset,
-            new_index_position  + index_offset,
-            vertex_offset / registry.getVertexFormat().getVertexSize() // Offset is in individual floats, this division makes it in vertices 
-        ); 
-
-        if(!moved) throw std::runtime_error("Mesh move failed when merging, something is very wrong."); // Shouldnt ever happen, there is no way to revert moved meshes so just crash
-
-        vertex_offset += subregion->mesh_information.vertex_data_size;
-        index_offset  += subregion->mesh_information.index_data_size;
-
-        subregion->part_of_parent_mesh = true;
-    }
-
-    mesh_information.vertex_data_start = new_vertex_position;
-    mesh_information.index_data_start = new_index_position;
-
-    mesh_information.first_index = new_index_position;
-    mesh_information.count = count_total;
-    mesh_information.base_vertex = new_vertex_position / registry.getVertexFormat().getVertexSize(); // Calculate the base vertex in a single vertex sizes
-
-    mesh_information.vertex_data_size = vertex_size_total;
-    mesh_information.index_data_size = index_size_total;
-
-    mesh_information.index_offset = 0;
-
-    merged = true;
-
-    return true;
-}
-
-void MeshRegion::recalculateIndicies(){
-    uint* index_buffer = registry.getIndexBuffer();
-    
-    for(int i = 0;i < mesh_information.index_data_size; i++){
-        *(index_buffer + (mesh_information.index_data_start + i)) -= mesh_information.index_offset;
-    }
-
-    mesh_information.index_offset = 0;
-}
-
-bool MeshRegion::split(){
-    if(!merged) return false; // Cannot split non-merged chunk
-
-    if(part_of_parent_mesh){ // Split parent mesh if its merged
-        MeshRegion* parent_region = getParentRegion();
-        if(!parent_region) return false; // There is no parent region but its the part of it?
-        if(!parent_region->split()) return false; // Parent region couldn't be split, so this can't either
-    }
-
-    auto& vertex_allocator = registry.getVertexAllocator();
-    auto& index_allocator  = registry.getIndexAllocator();
-
-    auto vertex_iterator = std::prev(vertex_allocator.getTakenMemoryBlockAt(mesh_information.vertex_data_start));
-    auto index_iterator  = std::prev(index_allocator.getTakenMemoryBlockAt(mesh_information.index_data_start));
-    
-    /*
-        Free your own mesh
-    */
-    registry.getVertexAllocator().free(mesh_information.vertex_data_start);
-    registry.getIndexAllocator() .free(mesh_information.index_data_start);
-
-    for(int x = 0; x < 2; x++)
-    for(int y = 0; y < 2; y++) 
-    for(int z = 0; z < 2; z++)
-    { // Go trough all subregions and merge them if possible
-        MeshRegion* subregion = getSubregion(x,y,z);
-        if(!subregion) return false; // Region doesn't exist
-        if(subregion->meshless) continue;
-        
-        subregion->recalculateIndicies();
-        subregion->part_of_parent_mesh = false;
-
-        vertex_allocator.insertBlock(
-            std::next(vertex_iterator),
-            subregion->mesh_information.vertex_data_start,
-            subregion->mesh_information.vertex_data_size,
-            false
-        );
-
-        index_allocator.insertBlock(
-            std::next(index_iterator),
-            subregion->mesh_information.index_data_start,
-            subregion->mesh_information.index_data_size,
-            false
-        );
-    }
-
-    merged = false;
-    return true;
-}
 
 bool MeshRegion::updateMeshInformation(MeshInformation information){
-    if(part_of_parent_mesh){ // Split parent mesh if its merged
-        std::cout << "Splitting parent mesh."  << std::endl;
-        MeshRegion* parent_region = getParentRegion();
-        if(!parent_region) return false; // There is no parent region but its the part of it?
-        if(!parent_region->split()) return false; // Parent region couldn't be split, so this can't either
-    }
+    if(transform.level != 1 || !propagated) return false;
 
     mesh_information = information;
+    updatePropagatedDrawCalls();
+
+    return true;
+}
+
+bool MeshRegion::updatePropagatedDrawCalls(){
+    DrawElementsIndirectCommand command = generateDrawCommand();
+    
+    for(auto& [transform, index]: in_parent_draw_call_references){
+        MeshRegion* region = registry.getRegion(transform);
+        if(!region){
+            std::cerr << "Draw call reference is invalid for the region doesnt exist?" <<  std::endl;
+            continue;
+        }
+
+        if(index >= region->draw_commands.size()){
+            std::cerr << "Invalid draw call index stored: " << index << std::endl;
+            continue;
+        }
+
+        region->draw_commands[index] = command;
+    }
+
     return true;
 }
 
@@ -276,7 +101,7 @@ DrawElementsIndirectCommand MeshRegion::generateDrawCommand(){
         static_cast<GLuint>(mesh_information.count),
         1,
         static_cast<GLuint>(mesh_information.first_index),
-        static_cast<GLuint>(mesh_information.base_vertex - mesh_information.index_offset) ,
+        static_cast<GLuint>(mesh_information.base_vertex) ,
         0
     };
 }
@@ -315,12 +140,9 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
         Create and map buffer for draw calls
     */
 
-    persistentDrawCallBuffer = std::make_unique<GLPersistentBuffer<DrawElementsIndirectCommand>>(
-        sizeof(DrawElementsIndirectCommand) * maxDrawCalls,
-        GL_DRAW_INDIRECT_BUFFER
-    );
+    drawCallBuffer = GLConstantDoubleBuffer<DrawElementsIndirectCommand, GL_DRAW_INDIRECT_BUFFER>(maxDrawCalls);
 
-    drawCallBufferSize = maxDrawCalls;
+    //syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
     CHECK_GL_ERROR();
 
@@ -401,8 +223,7 @@ bool ChunkMeshRegistry::addMesh(Mesh* mesh, const glm::ivec3& pos){
 
     if(mesh->getVertices().size() == 0){
         MeshRegion* region = createRegion(transform);
-        region->meshless = true;
-        region->setStateInParent(true);
+        region->setMeshless(true);
         return true;
     }
 
@@ -421,8 +242,7 @@ bool ChunkMeshRegistry::addMesh(Mesh* mesh, const glm::ivec3& pos){
         mesh->getIndices().size(),
         vertexBufferOffset / vertexFormat.getVertexSize(),
     };
-    region->meshless = false;
-    region->setStateInParent(true);
+    region->setMeshless(false);
 
     return true;
 }
@@ -431,7 +251,10 @@ bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
 
     if(!getRegion(transform)) return false; // Mesh region doesn't exist
-    if(mesh->getVertices().size() == 0) return false; // Don't register empty meshes
+    if(mesh->getVertices().size() == 0){
+        getRegion(transform)->setMeshless(true);
+        return false; // Don't register empty meshes
+    }
 
     auto [success, vertexBufferOffset, indexBufferOffset] = allocateAndUploadMesh(mesh);
     if(!success) return false;
@@ -463,8 +286,7 @@ bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
     vertexAllocator.free(old_vertex_data);
     indexAllocator .free(old_index_data);
 
-    region.meshless = false;
-    region.setStateInParent(true);
+    region.setMeshless(false);
 
     return true;
 }   
@@ -492,20 +314,30 @@ MeshRegion* ChunkMeshRegistry::createRegion(MeshRegion::Transform transform){
 
 
 const int halfChunkSize = (CHUNK_SIZE / 2);
-void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* region, int& drawCallIndex){
-    if(region->meshless) return; // Meshless chunks are not drawn, regardless of level
-
+void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* region, size_t& draw_call_counter){
+    if(region->draw_commands.size() == 0 && region->transform.level != 1) return; // No meshes are present, no point in searching
+    
     int level_size_in_chunks = getRegionSizeForLevel(region->transform.level);
     int level_size_in_blocks = level_size_in_chunks * CHUNK_SIZE; 
 
     //glm::ivec3 min = region->transform.position * level_size_in_blocks;
     //if(!frustum.isAABBWithing(min, min + level_size_in_blocks)) return; // Not visible
 
-    if(region->hasContiguousMesh()){ // The region is directly drawable
-        persistentDrawCallBuffer->data()[drawCallIndex++] = region->generateDrawCommand();
+    if(region->transform.level == 1){ // The region is directly drawable
+        DrawElementsIndirectCommand command = region->generateDrawCommand();
+        drawCallBuffer.appendData(&command, 1);
+        draw_call_counter++;
         return;
     }
-    if(region->transform.level <= 1) return; // Level one meshes have no further children
+    else{
+        size_t draw_calls_size = region->draw_commands.size();
+        drawCallBuffer.appendData(region->draw_commands.data(), draw_calls_size);
+
+        draw_call_counter += draw_calls_size;
+
+        return;
+    }
+
 
     for(int x = 0; x < 2; x++)
     for(int y = 0; y < 2; y++) 
@@ -515,13 +347,13 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
         if(!subregion) continue; // Region doesn't exist
         if(subregion->meshless) continue; // Dont bother calling the function for meshless chunks
         
-        processRegionForDrawing(frustum, subregion, drawCallIndex);
+        processRegionForDrawing(frustum, subregion, draw_call_counter);
     }
     
 }
 
 void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum){
-    int index = 0;
+    drawCallCount = 0;
 
     int max_level_size_in_chunks = getRegionSizeForLevel(maxRegionLevel);
 
@@ -544,14 +376,10 @@ void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& fru
             continue;
         }
 
-        processRegionForDrawing(frustum, region, index);
+        processRegionForDrawing(frustum, region, drawCallCount);
     }   
 
-    drawCallCount = index;
-    if(drawCallCount > drawCallBufferSize){
-        std::cerr << "Uhm how did this happen? Not enough space for draw calls!" << std::endl;
-    }
-    std::cout  << "Drawing with " << drawCallCount << " draw calls." << std::endl;
+    drawCallBuffer.flush();
 }
 
 void ChunkMeshRegistry::draw(){
@@ -562,7 +390,7 @@ void ChunkMeshRegistry::draw(){
 
     CHECK_GL_ERROR();
 
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, std::min(drawCallCount,drawCallBufferSize), sizeof(DrawElementsIndirectCommand));
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)(drawCallBufferOffset * sizeof(DrawElementsIndirectCommand)), drawCallCount, sizeof(DrawElementsIndirectCommand));
 
     CHECK_GL_ERROR();
 }

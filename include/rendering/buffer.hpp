@@ -38,6 +38,41 @@ class GLBuffer{
         uint getID(){ return data; } 
 };
 
+/*
+    A buffer of constant size but not persitently mapped
+*/
+template <typename T, int type>
+class GLConstantDoubleBuffer{
+    private:
+        int buffer_type = type;
+        size_t size_total = 0;
+        size_t current_offset = 0;
+
+        uint buffer_id;
+
+        std::vector<T> cache;
+        size_t cache_size = 0;
+
+    public:
+        GLConstantDoubleBuffer(): GLConstantDoubleBuffer(0) {}
+        
+        /*
+            Initialize with the size of a single portion, total size is double (double buffering)
+        */
+        GLConstantDoubleBuffer(size_t size);
+        ~GLConstantDoubleBuffer();
+
+        /*
+            Copies data into the temporary cache, size is in the number of elements T
+        */
+        bool appendData(T* data, size_t size);
+
+        /*
+            Uploads cached data to the GPU and swaps
+        */
+        void flush();
+};
+
 template <typename T>
 class GLPersistentBuffer{
     private:

@@ -84,20 +84,56 @@ bool Allocator::free(size_t start, std::string fail_prefix){
     return true;
 }
 
-Allocator::MemBlockIterator Allocator::getTakenMemoryBlockAt(size_t location){
-    if(takenBlocks.contains(location)) return blocks.end();
-    return takenBlocks.at(location);
+
+bool Allocator::splitTakenBlock(size_t at, const std::vector<size_t>& sizes){
+    // Make sure the block exists
+    if(!takenBlocks.contains(at)) {
+        std::cerr << "Cannot split non-existing block: " << at << std::endl;
+        return false;
+    }
+    auto block = takenBlocks.at(at);
+    
+    // Make sure the sizes are valid
+    size_t counted_size_total = 0;
+    for(auto& size: sizes) counted_size_total += size;
+
+    if(counted_size_total != block->size){
+        std::cerr << "Split sizes dont align with the total size of the block." << at << std::endl;
+        return false;
+    }
+
+    size_t current_position = at;
+    
+    std::cout << "New subblock at: " << current_position << " of size: " << sizes[0] << std::endl;
+
+    block->size = sizes[0]; // Resize the current block
+    current_position += block->size;
+
+    auto current_block = block;
+    for(int i = 1;i < sizes.size();i++){
+        size_t size = sizes[i];
+        size_t position = current_position;
+
+        std::cout << "New subblock at: " << position << " of size: " << size << std::endl;
+
+        current_block = blocks.insert(std::next(current_block), {position, size, true});
+        takenBlocks[position] = current_block;
+
+        current_position += size;
+    }
+
+    return true;
 }
 
-bool Allocator::insertBlock(Allocator::MemBlockIterator where, size_t start, size_t size, bool free){
-    if(free){
-        markFree(
-            blocks.insert( where, {start,size} )
-        );
+void Allocator::printTaken(){
+    bool last = blocks.front().used;
+
+    for(auto& block: blocks){
+        if(block.used != last){
+            std::cout << "| " << (block.used ? "\x1B[41m" : "\x1B[42m");
+            last = block.used;
+        }
+        std::cout << "(" << block.start << ":" << block.start + block.size << ") ";
     }
-    else{
-        takenBlocks[start] = blocks.insert(
-            where, {start,size,true}
-        );
-    }
+    std::cout << "\x1B[0m" << std::endl;
 }

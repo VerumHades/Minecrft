@@ -48,17 +48,11 @@ class Allocator{
         bool free(size_t location, std::string fail_prefix = "");
         void clear();
 
+        void printTaken();
         /*
-            Returns the iterator to a taken memory block, if it doesnt fint it returns the end of the blocks list.
+            Splits a block into subblocks
         */
-        MemBlockIterator getTakenMemoryBlockAt(size_t location);
-
-        /*
-            Forcefully inserts an block, completely trusts the caller to know this to be right and not intersect with other existing blocks.
-
-            Be carefuly when using it.
-        */
-        bool insertBlock(MemBlockIterator where, size_t start, size_t size, bool free);
+        bool splitTakenBlock(size_t at, const std::vector<size_t>& sizes);
 
         const std::list<MemBlock>& getBlocks() {return blocks;};
         const size_t& getMemorySize(){return memsize;}

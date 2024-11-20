@@ -22,6 +22,15 @@ struct DrawElementsIndirectCommand {
     GLuint  firstIndex; // Offset into the element array buffer.
     GLuint  baseVertex; // Base vertex for index calculations.
     GLuint  baseInstance; // Base instance for instanced rendering.
+
+    void print() const {
+        std::cout << "DrawElementsIndirectCommand:" << std::endl;
+        std::cout << "  count: " << count << std::endl;
+        std::cout << "  instanceCount: " << instanceCount << std::endl;
+        std::cout << "  firstIndex: " << firstIndex << std::endl;
+        std::cout << "  baseVertex: " << baseVertex << std::endl;
+        std::cout << "  baseInstance: " << baseInstance << std::endl;
+    }
 };
 
 class MeshRegion{
@@ -36,66 +45,29 @@ class MeshRegion{
                 The actuall size of a region based on its level is: 2^level
             */
             uint level = 1;
-
         } transform;
+
+        using DrawCommandList = std::vector<DrawElementsIndirectCommand>;
+        // Commands to draw the region and all its subregions
+        DrawCommandList draw_commands;
 
         ChunkMeshRegistry& registry;
         MeshRegion(Transform& transform, ChunkMeshRegistry& registry): transform(transform), registry(registry) {}
-        /*
-            If the region has a single joined mesh
-        */
-        bool merged = false;
-        /*
-            If region is a part of a higher merged mesh
-        */
-        bool part_of_parent_mesh = false;
+        
         /*
             Has no mesh
         */
-        bool meshless = false;
+        bool meshless = true;
+        bool meshless_first = true;
 
+        bool propagated = false; // If it has reported its existence to all parents already
+        std::vector<std::tuple<Transform,size_t>> in_parent_draw_call_references; // References to all parent meshes
 
-        /*
-            If possible reorganizes all subregion meshes into one large mesh that can be drawn with a single draw call
-
-            Fails if:
-                - The region is already meshed
-                - The region is a level 1 region (cannot be merged, because it has no subregions)
-                - Not all subregions are meshed
-                - Not all subregions meshes are (one mesh for subregion) or can be made contiquous (by merging)
-                - Not all subregions exist
-                - There is not enough space to allocate for the new mesh
-
-            Will try to merge subregions
-        */
-        bool merge();
-
-        /*
-            If merged breaks up the mesh back into subregions
-        */
-        bool split();
-
-
-        /*
-            Moves the mesh information in memory to a new position, only possible on level 1 regions or merged regions.
-            
-            Does no checks for intersection with existing meshes.
-            Does not respect allocators.
-            Does not clean the old data.
-
-            Will fail if the new position is outside of the buffer.
-
-            index_offset = an offset to apply to all indices
-        */
-        bool moveMesh(size_t new_vertex_position, size_t new_index_position, size_t index_offset = 0);
-        /*
-            Recalculates mesh indices to have no offset
-        */
-        void recalculateIndicies();
-
-        /*
-            Information drawable only if everything is merged, marks the respective positions and sizes of space allocated for the mesh
-            Information will remain valid even for regions merged within parent regions but it will not be drawable
+                
+        // Creates a draw command from current mesh information
+        DrawElementsIndirectCommand generateDrawCommand();
+        /* 
+            Information relevent for only level 1 meshes
         */
         struct MeshInformation{ 
             size_t vertex_data_start = 0;
@@ -108,8 +80,6 @@ class MeshRegion{
             size_t first_index = 0;
             size_t count = 0;
             size_t base_vertex  = 0;
-
-            size_t index_offset = 0; // The last offset applied to the mesh when moved
         } mesh_information;
 
         /*
@@ -117,19 +87,22 @@ class MeshRegion{
         */
         bool updateMeshInformation(MeshInformation information);
 
+        bool updatePropagatedDrawCalls();
+        /*
+            Establishes its own draw call in all the parent regions.
+
+            Only for level 1 regions.
+        */
+        bool propagateDrawCall();
+
+        void setMeshless(bool value);
+
         /*
             Returns an index from subregions relative position
         */
         uint getSubregionIndexFromPosition(uint x, uint y, uint z) {
             return x + y * 2 + z * 4;
         }
-
-        /*
-            An 8 bit value to represent if subregions of this region have complete meshes
-
-            Level 1 regions are complete when they have their corresponding mesh
-        */
-        uint8_t child_states = 0x00;
         
         /*
             Returns a pointer to the regions parent, if the region has no parents return nullptr
@@ -162,29 +135,7 @@ class MeshRegion{
         friend struct TransformHash;
         friend struct TransformEqual;
         friend class ChunkMeshRegistry;
-        /*
-            Sets the state for a subregion in the 'child_states', coordinates are relative coordinates in the subregions level.
 
-            return if the operation was successful.
-        */
-        bool setSubregionMeshState(uint x, uint y, uint z, bool state);
-
-        /*
-            Sets the regions mesh state in the parent if possible
-        */
-        bool setStateInParent(bool value);
-    public:
-        
-        
-        /*
-            If the regions mesh is contiguous, that means if its merged or that its level 1.
-
-            This will be true for all drawable regions.
-        */
-        bool hasContiguousMesh() {return (merged || transform.level == 1) && !meshless; }
-        
-        // Creates a draw command from current mesh information
-        DrawElementsIndirectCommand generateDrawCommand();
 };
 
 struct TransformHash{
@@ -213,8 +164,9 @@ class ChunkMeshRegistry{
         Allocator vertexAllocator;
         Allocator indexAllocator;
         
-        size_t drawCallBufferSize = 0;
         size_t drawCallCount = 0;
+
+        size_t drawCallBufferOffset = 0;
 
         size_t vertexBufferSize = 0;
         size_t indexBufferSize = 0;
@@ -224,7 +176,8 @@ class ChunkMeshRegistry{
 
         size_t maxDrawCalls = 0;
 
-        std::unique_ptr<GLPersistentBuffer<DrawElementsIndirectCommand>> persistentDrawCallBuffer;
+        GLConstantDoubleBuffer<DrawElementsIndirectCommand, GL_DRAW_INDIRECT_BUFFER> drawCallBuffer;
+
         std::unique_ptr<GLPersistentBuffer<float>> persistentVertexBuffer;
         std::unique_ptr<GLPersistentBuffer<uint>> persistentIndexBuffer;
 
@@ -252,7 +205,7 @@ class ChunkMeshRegistry{
             Ignores region that arent drawn.
             Writes their calls directly into the draw call buffer begining at the draw call index.
         */
-        void processRegionForDrawing(Frustum& frustum, MeshRegion* region, int& drawCallIndex);
+        void processRegionForDrawing(Frustum& frustum, MeshRegion* region, size_t& draw_call_counter);
 
     public:
         ~ChunkMeshRegistry();

@@ -352,7 +352,7 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
     Chunk* nextY = world->getChunk(worldPosition.x,worldPosition.y - 1,worldPosition.z);
     Chunk* nextZ = world->getChunk(worldPosition.x,worldPosition.y,worldPosition.z - 1);
 
-    std::cout << nextX << " " << nextY << " " << nextZ << std::endl;
+    //std::cout << nextX << " " << nextY << " " << nextZ << std::endl;
 
     if(!nextX || !nextY || !nextZ){
         std::cerr << "Mesh generating when chunks are missing?" << std::endl;
@@ -426,7 +426,7 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
     auto end = std::chrono::high_resolution_clock::now();
 
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Generated chunk mesh (" <<  worldPosition.x << "," << worldPosition.y << "," << worldPosition.z << ") in: " << duration << " microseconds" << std::endl;
+    //std::cout << "Generated chunk mesh (" <<  worldPosition.x << "," << worldPosition.y << "," << worldPosition.z << ") in: " << duration << " microseconds" << std::endl;
 
     return solidMesh;
 }

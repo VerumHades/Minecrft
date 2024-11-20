@@ -494,12 +494,6 @@ void MainScene::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
 const double sqrtof3 = sqrt(3);
 
 void MainScene::generateMeshes(){
-    glm::ivec3 camWorldPosition = {
-        camera.getPosition().x / CHUNK_SIZE,
-        camera.getPosition().y / CHUNK_SIZE,
-        camera.getPosition().z / CHUNK_SIZE
-    };
-
 
     if(updateVisibility > 0){
         auto istart = std::chrono::high_resolution_clock::now();
@@ -514,7 +508,7 @@ void MainScene::generateMeshes(){
         auto iend = std::chrono::high_resolution_clock::now();
         std::cout << "Iterated over all chunks in: " << std::chrono::duration_cast<std::chrono::microseconds>(iend - istart).count() << " microseconds" << std::endl;
 
-        //auto start = std::chrono::high_resolution_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
         updateVisibility = 0;
     }
 

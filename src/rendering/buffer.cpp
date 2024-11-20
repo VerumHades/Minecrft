@@ -116,64 +116,6 @@ void GLBuffer::drawInstances(int count){
     glBindVertexArray(0);
 }
 
-/*GLStripBuffer::GLStripBuffer(VertexFormat format) {
-    setFormat(format);
-
-    glGenVertexArrays(1, &this->vao);
-    glGenBuffers(1, &this->data);
-}
-GLStripBuffer::~GLStripBuffer(){
-    glDeleteBuffers(1 , &this->data);
-    glDeleteVertexArrays(1, &this->vao);
-}
-
-void GLStripBuffer::setFormat(VertexFormat format){
-    this->format = format;
-    applyFormat();
-}
-
-void GLStripBuffer::applyFormat(){
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, this->data);
-
-    this->format.apply();
-}
-// Appends data and returns its starting point
-size_t GLStripBuffer::appendData(const float* data, size_t size){
-    size_t where = data_size;
-    insertData(data_size, data, size);
-    return data_size;
-}
-
-// Inserts data at a given location
-bool GLStripBuffer::insertData(size_t start, const float* data, size_t size){
-    if(!data) return false;
-    if(start + size >= buffer_size){
-        if(!resize(start + size)) return false;
-
-        data_size = buffer_size;
-    }
-
-    glBindBuffer(GL_ARRAY_BUFFER, this->data);
-    glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), size * sizeof(float), data);
-    
-    return true;
-}
-
-void GLStripBuffer::draw(){
-    uint buffer = this->data;
-
-    glBindVertexArray(vao);
-    glDrawArrays(
-        GL_TRIANGLE_STRIP,
-        0,
-        data_size          
-    );
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-}
-*/
-
 void GLDoubleBuffer::swap(){
     this->current = !this->current;
 }
@@ -182,4 +124,41 @@ GLBuffer& GLDoubleBuffer::getBuffer(){
 }
 GLBuffer& GLDoubleBuffer::getBackBuffer(){
     return this->buffers[!this->current];
+}
+
+template <typename T, int type>
+GLConstantDoubleBuffer<T,type>::GLConstantDoubleBuffer(size_t size): size_total(size * 2){
+    glGenBuffers(1, &this->buffer_id);
+
+    cache.resize(size);
+
+    glBindBuffer(type, buffer_id);
+    glBufferData(type, size_total * sizeof(T), nullptr, GL_DYNAMIC_DRAW);
+    //std::cerr << "GLBuffer constructor called for object at " << this << std::endl;
+}
+template <typename T, int type>
+GLConstantDoubleBuffer<T,type>::~GLConstantDoubleBuffer(){
+    glDeleteBuffers(1 , &this->buffer_id);
+
+    //std::cerr << "GLBuffer destructor called for object at " << this << std::endl;
+}
+template <typename T, int type>
+void GLConstantDoubleBuffer<T,type>::flush(){
+    glBindBuffer(type, buffer_id);
+    glBufferSubData(type, current_offset * sizeof(T), cache_size * sizeof(T), cache.data());
+
+    current_offset = (current_offset + size_total / 2) % size_total;
+}
+
+template <typename T, int type>
+bool GLConstantDoubleBuffer<T,type>::appendData(T* data, size_t size){
+    if(cache_size + size > size_total / 2) return false; // Down overflow
+    
+    std::memcpy(
+        cache.data() + cache_size,
+        data,
+        size * sizeof(T)
+    );
+
+    cache_size += size;
 }

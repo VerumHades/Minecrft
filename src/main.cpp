@@ -290,7 +290,10 @@ int main() {
             current = glfwGetTime();
             deltatime = (float)(current - last);
 
-            if(sceneManager.isFPSLocked() && deltatime < sceneManager.getTickTime()) continue;
+            if(sceneManager.isFPSLocked() && deltatime < sceneManager.getTickTime()){
+                std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<size_t>((sceneManager.getTickTime() - deltatime) * 1000)));
+                continue;
+            }
             last = current;
 
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
