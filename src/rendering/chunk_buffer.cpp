@@ -140,7 +140,7 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
         Create and map buffer for draw calls
     */
 
-    drawCallBuffer = GLConstantDoubleBuffer<DrawElementsIndirectCommand, GL_DRAW_INDIRECT_BUFFER>(maxDrawCalls);
+    drawCallBuffer = std::make_unique<GLConstantDoubleBuffer<DrawElementsIndirectCommand, GL_DRAW_INDIRECT_BUFFER>>(maxDrawCalls);
 
     //syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
@@ -325,13 +325,13 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
 
     if(region->transform.level == 1){ // The region is directly drawable
         DrawElementsIndirectCommand command = region->generateDrawCommand();
-        drawCallBuffer.appendData(&command, 1);
+        drawCallBuffer->appendData(&command, 1);
         draw_call_counter++;
         return;
     }
     else{
         size_t draw_calls_size = region->draw_commands.size();
-        drawCallBuffer.appendData(region->draw_commands.data(), draw_calls_size);
+        drawCallBuffer->appendData(region->draw_commands.data(), draw_calls_size);
 
         draw_call_counter += draw_calls_size;
 
@@ -379,18 +379,17 @@ void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& fru
         processRegionForDrawing(frustum, region, drawCallCount);
     }   
 
-    drawCallBuffer.flush();
+    drawCallBuffer->flush();
 }
 
 void ChunkMeshRegistry::draw(){
     glBindVertexArray(vao);
 
     //int drawCalls = maxDrawCalls - freeDrawCallIndices.size();
-    //std::cout << "Active draw calls: " << drawCallCount << " " <<  sizeof(DrawElementsIndirectCommand) << std::endl;
-
     CHECK_GL_ERROR();
 
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)(drawCallBufferOffset * sizeof(DrawElementsIndirectCommand)), drawCallCount, sizeof(DrawElementsIndirectCommand));
+    drawCallBuffer->bind();
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)(drawCallBuffer->getCurrentOffset() * sizeof(DrawElementsIndirectCommand)), drawCallCount, sizeof(DrawElementsIndirectCommand));
 
     CHECK_GL_ERROR();
 }

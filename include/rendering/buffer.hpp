@@ -50,27 +50,65 @@ class GLConstantDoubleBuffer{
 
         uint buffer_id;
 
-        std::vector<T> cache;
+        T* cache;
         size_t cache_size = 0;
 
+        size_t last_cache_size = 0;
+
     public:
-        GLConstantDoubleBuffer(): GLConstantDoubleBuffer(0) {}
-        
+        size_t getCurrentOffset(){return current_offset;}
+
         /*
             Initialize with the size of a single portion, total size is double (double buffering)
         */
-        GLConstantDoubleBuffer(size_t size);
-        ~GLConstantDoubleBuffer();
+        GLConstantDoubleBuffer(size_t size): size_total(size * 2){
+            glGenBuffers(1, &this->buffer_id);
 
-        /*
-            Copies data into the temporary cache, size is in the number of elements T
-        */
-        bool appendData(T* data, size_t size);
+            cache = new T[size];
+
+            glBindBuffer(type, buffer_id);
+            glBufferData(type, size_total * sizeof(T), nullptr, GL_DYNAMIC_DRAW);
+
+            CHECK_GL_ERROR();
+            //std::cerr << "GLBuffer constructor called for object at " << this << std::endl;
+        }
+        ~GLConstantDoubleBuffer(){
+            glDeleteBuffers(1 , &this->buffer_id);
+            delete cache;
+            //std::cerr << "GLBuffer destructor called for object at " << this << std::endl;
+        }
 
         /*
             Uploads cached data to the GPU and swaps
         */
-        void flush();
+        void flush(){
+            current_offset = (current_offset + size_total / 2) % size_total;
+
+            glBindBuffer(type, buffer_id);
+            glBufferSubData(type, current_offset * sizeof(T), cache_size * sizeof(T), cache);
+
+            cache_size = 0;
+        }
+
+        void bind(){
+            glBindBuffer(type, buffer_id);
+        }
+
+        /*
+            Copies data into the temporary cache, size is in the number of elements T
+        */
+        bool appendData(T* data, size_t size){
+            if(cache_size + size > size_total / 2) return false; // Down overflow
+            
+            std::memcpy(
+                cache + cache_size,
+                data,
+                size * sizeof(T)
+            );
+
+            cache_size += size;
+            return true;
+        }
 };
 
 template <typename T>
