@@ -47,14 +47,8 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     this->getUILayer("chat").eventLocks = {true, true, true, true};
     this->getUILayer("menu").eventLocks = {true, true, true, true};
     this->getUILayer("settings").eventLocks = {true, true, true, true};
-    
-    auto vertex_allocator_visualizer = uiManager->createElement<UIAllocatorVisualizer>();
-    vertex_allocator_visualizer->setWatched(&chunkMeshRegistry.getVertexAllocator());
-    vertex_allocator_visualizer->setPosition(10,10);
-    vertex_allocator_visualizer->setSize(1000,100);
 
     this->setUILayer("default");
-    addElement(vertex_allocator_visualizer);
 
     Model& bob = modelManager.createModel("bob");
     bob.loadFromFile("models/test.gltf", "");

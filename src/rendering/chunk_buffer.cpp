@@ -167,20 +167,8 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
     std::cout << "Video RAM allocated for indices total : " << formatSize(indexBufferSize)  << std::endl;
     std::cout << "Total Video RAM allocated: " << formatSize(vertexBufferSize + indexBufferSize) << std::endl;
 
-    vertexAllocator = Allocator(maxVertexCount, [this](size_t requested_amount) {return false;});
-    indexAllocator = Allocator(maxIndexCount, [this](size_t requested_amount) {return false;});
-
-    persistentVertexBuffer = std::make_unique<GLPersistentBuffer<float>>(
-        maxVertexCount * sizeof(float),
-        GL_ARRAY_BUFFER
-    );
-
-    //CHECK_GL_ERROR();
-
-    persistentIndexBuffer = std::make_unique<GLPersistentBuffer<uint>>(
-        maxIndexCount * sizeof(uint),
-        GL_ELEMENT_ARRAY_BUFFER
-    );
+    vertexBuffer.initialize(maxVertexCount);
+    indexBuffer.initialize(maxIndexCount);
 
     //CHECK_GL_ERROR();
 
@@ -191,27 +179,14 @@ ChunkMeshRegistry::~ChunkMeshRegistry(){
     glDeleteVertexArrays(1, &vao);
 }
 
-std::tuple<bool,size_t,size_t> ChunkMeshRegistry::allocateAndUploadMesh(Mesh* mesh){
-    auto [vertexSuccess, vertexBufferOffset] = vertexAllocator.allocate(mesh->getVertices().size());
-    auto [indexSuccess, indexBufferOffset] = indexAllocator.allocate(mesh->getIndices().size());
-
-    if(!vertexSuccess || !indexSuccess) return {false,0,0};
-
-    /*
-        Allocate space for vertex data and save it
-    */
-    std::memcpy(
-        persistentVertexBuffer->data() + vertexBufferOffset, // Copy to the vertex buffer at the offset
-        mesh->getVertices().data(), // Copy the vertex data
-        mesh->getVertices().size() *  sizeof(float) // Copy the size of the data in bytes
-    );
-    //mappedVertexBuffer + vertexBufferOffset, mesh->getVertices().data(), mesh->getVertices().size() *  sizeof(GLfloat)
+std::tuple<bool,size_t,size_t> ChunkMeshRegistry::allocateOrUpdateMesh(Mesh* mesh, size_t vertexPosition, size_t indexPosition){
+    auto [vertexSuccess, vertexBufferOffset] = 
+        vertexBuffer.insertOrUpdate(mesh->getVertices().data(), mesh->getVertices().size(), vertexPosition);
+        
+    auto [indexSuccess, indexBufferOffset] = 
+        indexBuffer.insertOrUpdate(mesh->getIndices().data(), mesh->getIndices().size(), indexPosition);
     
-    std::memcpy(
-        persistentIndexBuffer->data()  + indexBufferOffset, // Copy to the vertex buffer at the offset
-        mesh->getIndices().data(), // Copy the vertex data
-        mesh->getIndices().size() *  sizeof(uint) // Copy the size of the data in bytes
-    );
+    if(!vertexSuccess || !indexSuccess) return {false,0,0};
 
     return {true, vertexBufferOffset, indexBufferOffset};
 }
@@ -227,7 +202,7 @@ bool ChunkMeshRegistry::addMesh(Mesh* mesh, const glm::ivec3& pos){
         return true;
     }
 
-    auto [success, vertexBufferOffset, indexBufferOffset] = allocateAndUploadMesh(mesh);
+    auto [success, vertexBufferOffset, indexBufferOffset] = allocateOrUpdateMesh(mesh);
     if(!success) return false;
     
     MeshRegion* region = createRegion(transform);
@@ -256,13 +231,10 @@ bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
         return false; // Don't register empty meshes
     }
 
-    auto [success, vertexBufferOffset, indexBufferOffset] = allocateAndUploadMesh(mesh);
-    if(!success) return false;
-
     auto& region = regions.at(transform);
 
-    size_t old_vertex_data = region.mesh_information.vertex_data_start;
-    size_t old_index_data  = region.mesh_information.index_data_start;
+    auto [success, vertexBufferOffset, indexBufferOffset] = allocateOrUpdateMesh(mesh, region.mesh_information.vertex_data_start, region.mesh_information.index_data_start);
+    if(!success) return false;
 
     region.setMeshless(false);
 
@@ -273,20 +245,11 @@ bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
 
             mesh->getVertices().size(),
             mesh->getIndices().size(),
-
             indexBufferOffset,
             mesh->getIndices().size(),
             vertexBufferOffset / vertexFormat.getVertexSize(),
         }
     );
-    if(!update_success){ // If updating the information fails clean up the allocations
-        vertexAllocator.free(vertexBufferOffset);
-        indexAllocator .free(indexBufferOffset);
-        return false;
-    }
-
-    vertexAllocator.free(old_vertex_data);
-    indexAllocator .free(old_index_data);
 
     return true;
 }   
@@ -395,7 +358,5 @@ void ChunkMeshRegistry::draw(){
 }
 
 void ChunkMeshRegistry::clear(){
-    vertexAllocator.clear();
-    indexAllocator.clear();
     regions.clear();
 }

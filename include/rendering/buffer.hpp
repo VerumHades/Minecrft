@@ -65,7 +65,7 @@ class GLBuffer{
             glBufferData(type, size * sizeof(T), nullptr, GL_DYNAMIC_DRAW);
             buffer_size = size;
 
-            initialize = true;
+            initialized = true;
         }
 
         /*
@@ -103,7 +103,6 @@ class GLAllocatedBuffer{
             buffer.initialize(size);
             allocator.initialize(size);
         }
-
         /*
             Allocates space in the buffer and returns the position if possible
 
@@ -114,7 +113,7 @@ class GLAllocatedBuffer{
         std::tuple<bool, size_t> insert(T* data, size_t size){
             auto [success, position] = allocator.allocate(size);
 
-            if(!success) return {false};
+            if(!success) return {false, 0};
 
             buffer.insert(position, size, data);
 
@@ -130,7 +129,7 @@ class GLAllocatedBuffer{
         */
         std::tuple<bool, size_t> update(size_t at, size_t size, T* data){
             size_t block_size = allocator.getTakenBlockSize(at);
-            if(block_size == 0) return {false}; // Invalid at
+            if(block_size == 0) return {false, 0}; // Invalid at
 
             if(block_size >= size){ // Space is sufficient
                 buffer.insert(at, size, data);
@@ -138,7 +137,15 @@ class GLAllocatedBuffer{
             }
 
             allocator.free(at); //  Free the old allocated space
-            return insert(at, size, data); // Allocate new space
+            return insert(data, size); // Allocate new space
+        }
+
+        /*
+            If at is not set inserts the mesh otherwise updates it
+        */
+        std::tuple<bool, size_t> insertOrUpdate(T* data, size_t size, size_t at = -1ULL){
+            return insert(data,size);
+            //else return update(at, size, data);
         }
 
         /*

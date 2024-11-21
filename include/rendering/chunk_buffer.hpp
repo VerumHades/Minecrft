@@ -160,9 +160,6 @@ class ChunkMeshRegistry{
         VertexFormat vertexFormat;
 
         uint vao;
-
-        Allocator vertexAllocator;
-        Allocator indexAllocator;
         
         size_t drawCallCount = 0;
 
@@ -176,8 +173,8 @@ class ChunkMeshRegistry{
 
         std::unique_ptr<GLCachedDoubleBuffer<DrawElementsIndirectCommand, GL_DRAW_INDIRECT_BUFFER>> drawCallBuffer;
 
-        std::unique_ptr<GLPersistentBuffer<float>> persistentVertexBuffer;
-        std::unique_ptr<GLPersistentBuffer<uint>> persistentIndexBuffer;
+        GLAllocatedBuffer<float, GL_ARRAY_BUFFER        > vertexBuffer;
+        GLAllocatedBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> indexBuffer;
 
         // Highest region level, no regions higher than maxRegionLevel will be registered or created
         const static uint maxRegionLevel = 5;
@@ -196,7 +193,7 @@ class ChunkMeshRegistry{
                 - size_t => index data offset in the index buffer 
             
         */
-        std::tuple<bool,size_t,size_t> allocateAndUploadMesh(Mesh* mesh);
+        std::tuple<bool,size_t,size_t> allocateOrUpdateMesh(Mesh* mesh, size_t vertexPosition = -1ULL, size_t indexPosition = -1ULL);
 
         /*
             Checks the region againist the frustum. Does an octree search among its children.
@@ -254,9 +251,6 @@ class ChunkMeshRegistry{
             return actualRegionSizes[level - 1];
         }
 
-        float* getVertexBuffer(){ return persistentVertexBuffer->data(); }
-        uint* getIndexBuffer() { return persistentIndexBuffer->data(); }
-
         // The maximal number of floats the buffer can store
         size_t getVertexBufferSize() { return maxVertexCount; }
         // The maximal number of uints the buffer can store
@@ -267,8 +261,6 @@ class ChunkMeshRegistry{
         DrawElementsIndirectCommand getCommandFor(const glm::ivec3& pos);
         void draw();
 
-        Allocator& getVertexAllocator() {return vertexAllocator;};
-        Allocator& getIndexAllocator() {return indexAllocator;};
         VertexFormat& getVertexFormat() {return vertexFormat;}
 };
 
