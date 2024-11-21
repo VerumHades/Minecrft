@@ -214,6 +214,15 @@ void MainScene::resize(GLFWwindow* window, int width, int height){
 }
 
 void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
+    this->mouseX = mouseX;
+    this->mouseY = mouseY;
+    mouseMoved = true;
+}
+
+void MainScene::processMouseMovement(){
+    if(!mouseMoved) return;
+    else mouseMoved = false;
+
     float xoffset = (float)mouseX - lastMouseX;
     float yoffset = lastMouseY - (float)mouseY; // Reversed since y-coordinates go from bottom to top
     lastMouseX = (int)mouseX;
@@ -251,7 +260,6 @@ void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
     terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
 }
-
 void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     glm::vec3& camDirection = camera.getDirection();
     glm::vec3 camPosition = camera.getPosition();
@@ -381,6 +389,8 @@ void MainScene::render(){
         return;
     }
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 
@@ -397,7 +407,26 @@ void MainScene::render(){
 
     chunkMeshGenerator.loadMeshFromQueue(chunkMeshRegistry);
 
-    generateMeshes();
+    processMouseMovement();
+
+    bool updatedVisibility = false;
+    if(updateVisibility > 0){
+        auto istart = std::chrono::high_resolution_clock::now();
+
+        //int consideredTotal = 0;
+        //int *tr = &consideredTotal;
+
+        chunkMeshRegistry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
+
+        //std::cout << (consideredTotal / pow(renderDistance*2,3)) * 100 << "%" << std::endl;
+        //End time point
+        auto iend = std::chrono::high_resolution_clock::now();
+        std::cout << "Iterated over all chunks in: " << std::chrono::duration_cast<std::chrono::microseconds>(iend - istart).count() << " microseconds" << std::endl;
+
+        auto start = std::chrono::high_resolution_clock::now();
+        updateVisibility = 0;
+        updatedVisibility = true;
+    }
 
     //printf("x:%f y:%f z:%f ax:%f ay:%f az:%f\ n",camX,camY,camZ,accelX,accelY,accelZ);
 
@@ -465,6 +494,9 @@ void MainScene::render(){
 
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
+
+    auto end = std::chrono::high_resolution_clock::now();
+    if(updatedVisibility) std::cout << "Fully rendered scene in: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
 }
 
 void MainScene::regenerateChunkMesh(Chunk* chunk){
@@ -492,34 +524,6 @@ void MainScene::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
 #undef regenMesh
 
 const double sqrtof3 = sqrt(3);
-
-void MainScene::generateMeshes(){
-
-    if(updateVisibility > 0){
-        auto istart = std::chrono::high_resolution_clock::now();
-
-        //int consideredTotal = 0;
-        //int *tr = &consideredTotal;
-
-        chunkMeshRegistry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
-
-        //std::cout << (consideredTotal / pow(renderDistance*2,3)) * 100 << "%" << std::endl;
-        //End time point
-        auto iend = std::chrono::high_resolution_clock::now();
-        std::cout << "Iterated over all chunks in: " << std::chrono::duration_cast<std::chrono::microseconds>(iend - istart).count() << " microseconds" << std::endl;
-
-        auto start = std::chrono::high_resolution_clock::now();
-        updateVisibility = 0;
-    }
-
-    //End time point
-    //auto end = std::chrono::high_resolution_clock::now();
-
-    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    //std::cout << "Updated draw calls in: " << duration << " microseconds" << std::endl;
-
-    //float radius = glm::distance(glm::vec3(0,0,0), glm::vec3(static_cast<float>(renderDistance)));
-}
 
 void MainScene::physicsUpdate(){
     double last = glfwGetTime();
@@ -616,9 +620,9 @@ void MainScene::generateSurroundingChunks(){
         }
         chunkMeshGenerator.syncGenerateSyncUploadMesh(meshlessChunk, chunkMeshRegistry);
     }
-    //while(!threadPool->finished()){ // Wait for everything to generate
-    //    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    //}
+    while(!threadPool->finished()){ // Wait for everything to generate
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
    
     allGenerated = true;

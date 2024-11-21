@@ -95,7 +95,7 @@ WorldGenerator::WorldGenerator(int seed){
     glUniformBlockBinding(computeProgram.getID(), uniformBlockIndex, 1);
 
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     //noise = std::make_unique<FastNoiseLite>();
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
@@ -178,12 +178,12 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, i
     glUniform3fv(worldPositionUniformID, 1, glm::value_ptr(worldPosition));
 
     //computeProgram.updateUniforms();
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, computeBuffer->getID());
 
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
     
     /*
         64 / 32 (division because one uint is 32 bits) by 64 by 64
@@ -202,7 +202,7 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, i
 
     glDeleteSync(fence);
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     if(first){
         for(int i = 0;i < 10;i++){

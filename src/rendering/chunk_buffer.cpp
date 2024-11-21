@@ -144,7 +144,7 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
 
     //syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     /*
         Create and map vertex and index buffers
@@ -175,14 +175,14 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
         GL_ARRAY_BUFFER
     );
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     persistentIndexBuffer = std::make_unique<GLPersistentBuffer<uint>>(
         maxIndexCount * sizeof(uint),
         GL_ELEMENT_ARRAY_BUFFER
     );
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     vertexFormat.apply();
 }
@@ -386,12 +386,12 @@ void ChunkMeshRegistry::draw(){
     glBindVertexArray(vao);
 
     //int drawCalls = maxDrawCalls - freeDrawCallIndices.size();
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     drawCallBuffer->bind();
     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)(drawCallBuffer->getCurrentOffset() * sizeof(DrawElementsIndirectCommand)), drawCallCount, sizeof(DrawElementsIndirectCommand));
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 }
 
 void ChunkMeshRegistry::clear(){

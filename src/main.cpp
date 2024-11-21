@@ -201,7 +201,7 @@ int main() {
 
         mainSceneTemp->initialize(menuScene, l);
 
-        sceneManager.setScene("menu");
+        sceneManager.setScene("game");
         menuScene->setUILayer("default");
 
         auto startButton = menuScene->getUILayer("default").getElementById("new_world");

@@ -45,7 +45,7 @@ class MainScene: public Scene{
         ChunkMeshGenerator chunkMeshGenerator;
 
         std::string worldPath = "saves/worldsave.bin";
-        int renderDistance = 4;
+        int renderDistance = 8;
         int selectedBlock = 2;
 
         bool allGenerated = false;
@@ -69,6 +69,11 @@ class MainScene: public Scene{
 
         int lastMouseX = 0;
         int lastMouseY = 0;
+        int mouseX = 0;
+        int mouseY = 0;
+
+        bool mouseMoved = false;
+
         int sensitivity = 10;
 
         int lastCamPitch = 0;
@@ -93,7 +98,7 @@ class MainScene: public Scene{
 
         void physicsUpdate();
         void generateSurroundingChunks();
-        void generateMeshes();
+        void processMouseMovement();
 
         double last = glfwGetTime();
         double current = glfwGetTime();

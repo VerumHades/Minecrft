@@ -48,7 +48,7 @@ void Font::createAtlas(){
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlasWidth, atlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     // Texture options
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -56,7 +56,7 @@ void Font::createAtlas(){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     int xOffset = 0;
     int yOffset = 0;
@@ -84,7 +84,7 @@ void Font::createAtlas(){
                         face->glyph->bitmap.width, face->glyph->bitmap.rows,
                         GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
 
-        CHECK_GL_ERROR();
+        //CHECK_GL_ERROR();
         // Store texture coordinates and other metrics for later rendering
         Character ch = {
             atlas->getID(),
@@ -116,23 +116,23 @@ void FontManager::initialize(){
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 }
 
 FontManager::~FontManager(){
@@ -144,15 +144,15 @@ void FontManager::renderText(std::string text, GLfloat x, GLfloat y, GLfloat sca
     textColor = color;
     // Activate corresponding render state
     program->updateUniforms();
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     font.getAtlas()->bind(0);
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
 
     glBindVertexArray(VAO);
 
-    CHECK_GL_ERROR();
+    //CHECK_GL_ERROR();
     // Iterate through each character in the text
     for (auto c = text.begin(); c != text.end(); c++) {
         Character ch = font.getCharacters()[*c];

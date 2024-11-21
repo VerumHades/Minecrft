@@ -69,7 +69,7 @@ class GLConstantDoubleBuffer{
             glBindBuffer(type, buffer_id);
             glBufferData(type, size_total * sizeof(T), nullptr, GL_DYNAMIC_DRAW);
 
-            CHECK_GL_ERROR();
+            //CHECK_GL_ERROR();
             //std::cerr << "GLBuffer constructor called for object at " << this << std::endl;
         }
         ~GLConstantDoubleBuffer(){

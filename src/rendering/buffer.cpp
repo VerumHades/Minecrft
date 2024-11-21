@@ -40,17 +40,17 @@ void GLBuffer::loadMesh(Mesh& mesh){
     
     glBindVertexArray(vao);
 
-    CHECK_GL_ERROR();;
+    //CHECK_GL_ERROR();;
 
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, mesh.getVertices().size() * sizeof(float), mesh.getVertices().data(), GL_DYNAMIC_DRAW);
     
-    CHECK_GL_ERROR();;
+    //CHECK_GL_ERROR();;
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.getIndices().size() * sizeof(uint),mesh.getIndices().data(), GL_DYNAMIC_DRAW);
     
-    CHECK_GL_ERROR();;
+    //CHECK_GL_ERROR();;
 
     mesh.getFormat().apply();
 
@@ -81,7 +81,7 @@ void GLBuffer::draw(){
         (void*)0           // element array buffer offset
     );
 
-    CHECK_GL_ERROR();;
+    //CHECK_GL_ERROR();;
 
     //glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -98,7 +98,7 @@ void GLBuffer::drawInstances(int count){
    // glBindBuffer(GL_ARRAY_BUFFER, buffer);
     //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
 
-    CHECK_GL_ERROR();;
+    //CHECK_GL_ERROR();;
 
     //std::cout << this->indiciesCount << "Instances:" << count << std::endl;
 
@@ -110,7 +110,7 @@ void GLBuffer::drawInstances(int count){
         count
     );
 
-    CHECK_GL_ERROR();;
+    //CHECK_GL_ERROR();;
 
     //glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
