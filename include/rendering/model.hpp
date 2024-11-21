@@ -56,7 +56,7 @@ class Model{
         std::string rootPath;
         
         std::vector<Mesh> meshes;
-        std::vector<std::unique_ptr<GLBuffer>> buffers;
+        std::vector<std::unique_ptr<GLBufferLegacy>> buffers;
         std::vector<int> textureIndices;
 
         void processNode(aiNode *node, const aiScene *scene);

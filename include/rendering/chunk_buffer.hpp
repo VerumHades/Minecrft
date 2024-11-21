@@ -174,7 +174,7 @@ class ChunkMeshRegistry{
 
         size_t maxDrawCalls = 0;
 
-        std::unique_ptr<GLConstantDoubleBuffer<DrawElementsIndirectCommand, GL_DRAW_INDIRECT_BUFFER>> drawCallBuffer;
+        std::unique_ptr<GLCachedDoubleBuffer<DrawElementsIndirectCommand, GL_DRAW_INDIRECT_BUFFER>> drawCallBuffer;
 
         std::unique_ptr<GLPersistentBuffer<float>> persistentVertexBuffer;
         std::unique_ptr<GLPersistentBuffer<uint>> persistentIndexBuffer;

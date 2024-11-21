@@ -19,22 +19,22 @@ void checkGLError(const char *file, int line){
     }
 }
 
-GLBuffer::GLBuffer() {
+GLBufferLegacy::GLBufferLegacy() {
     glGenVertexArrays(1, &this->vao);
     glGenBuffers(1, &this->data);
     glGenBuffers(1, &this->index);
 
-    //std::cerr << "GLBuffer constructor called for object at " << this << std::endl;
+    //std::cerr << "GLBufferLegacy constructor called for object at " << this << std::endl;
 }
-GLBuffer::~GLBuffer(){
+GLBufferLegacy::~GLBufferLegacy(){
     glDeleteBuffers(1 , &this->data);
     glDeleteBuffers(1 , &this->index);
     glDeleteVertexArrays(1, &this->vao);
 
-    //std::cerr << "GLBuffer destructor called for object at " << this << std::endl;
+    //std::cerr << "GLBufferLegacy destructor called for object at " << this << std::endl;
 }
 
-void GLBuffer::loadMesh(Mesh& mesh){
+void GLBufferLegacy::loadMesh(Mesh& mesh){
     uint buffer = this->data;
     uint index_buffer = this->index;
     
@@ -63,7 +63,7 @@ void GLBuffer::loadMesh(Mesh& mesh){
     this->dataLoaded = true;
 }
 
-void GLBuffer::draw(){
+void GLBufferLegacy::draw(){
     uint buffer = this->data;
     uint index_buffer =this->index;
 
@@ -87,7 +87,7 @@ void GLBuffer::draw(){
     glBindVertexArray(0);
 }
 
-void GLBuffer::drawInstances(int count){
+void GLBufferLegacy::drawInstances(int count){
     uint buffer = this->data;
     uint index_buffer =this->index;
 
@@ -119,9 +119,9 @@ void GLBuffer::drawInstances(int count){
 void GLDoubleBuffer::swap(){
     this->current = !this->current;
 }
-GLBuffer& GLDoubleBuffer::getBuffer(){
+GLBufferLegacy& GLDoubleBuffer::getBuffer(){
     return this->buffers[this->current];
 }
-GLBuffer& GLDoubleBuffer::getBackBuffer(){
+GLBufferLegacy& GLDoubleBuffer::getBackBuffer(){
     return this->buffers[!this->current];
 }

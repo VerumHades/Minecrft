@@ -125,15 +125,7 @@ bool Allocator::splitTakenBlock(size_t at, const std::vector<size_t>& sizes){
     return true;
 }
 
-void Allocator::printTaken(){
-    bool last = blocks.front().used;
-
-    for(auto& block: blocks){
-        if(block.used != last){
-            std::cout << "| " << (block.used ? "\x1B[41m" : "\x1B[42m");
-            last = block.used;
-        }
-        std::cout << "(" << block.start << ":" << block.start + block.size << ") ";
-    }
-    std::cout << "\x1B[0m" << std::endl;
+size_t Allocator::getTakenBlockSize(size_t at){
+    if(!takenBlocks.contains(at)) return 0;
+    return takenBlocks.at(at)->size;
 }

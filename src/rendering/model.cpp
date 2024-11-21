@@ -241,12 +241,12 @@ bool Model::loadFromFile( const std::string& pFile, const std::string& rootPath)
     }
 
     for(int i = 0;i < meshes.size();i++){
-        buffers.push_back(std::make_unique<GLBuffer>());
+        buffers.push_back(std::make_unique<GLBufferLegacy>());
         buffers[buffers.size() - 1]->loadMesh(meshes[i]);
         textureIndices.push_back(meshes[i].getTextureIndex());
     }
     /*for(int i = 0;i < meshes.size();i++){
-        GLBuffer& buffer = buffers.emplace_back();
+        GLBufferLegacy& buffer = buffers.emplace_back();
         buffer.loadMesh(meshes[i]);
     }*/
 

@@ -38,21 +38,29 @@ class Allocator{
 
     public:
         Allocator(size_t memsize, std::function<bool(size_t)> requestMemory):  memsize(memsize), requestMemory(requestMemory) {
-            markFree(blocks.insert(blocks.end(),{0, memsize, false}));
+            initialize(memsize);
         };
         Allocator(){
             memsize = 0;
+        }
+
+        void initialize(size_t memsize){
+            markFree(blocks.insert(blocks.end(),{0, memsize, false}));
         }
 
         std::tuple<bool,size_t> allocate(size_t size);
         bool free(size_t location, std::string fail_prefix = "");
         void clear();
 
-        void printTaken();
         /*
             Splits a block into subblocks
         */
         bool splitTakenBlock(size_t at, const std::vector<size_t>& sizes);
+
+        /*
+            Returns the size of a taken block, if the position is invalid returns 0
+        */
+        size_t getTakenBlockSize(size_t at);
 
         const std::list<MemBlock>& getBlocks() {return blocks;};
         const size_t& getMemorySize(){return memsize;}

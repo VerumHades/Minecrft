@@ -10,7 +10,7 @@ void UIManager::initialize(){
     fontManager.initialize();
 
     vertexFormat = VertexFormat({3,2,4,2,1,1,1,4,4,4,4,4,4});
-    drawBuffer = std::make_unique<GLBuffer>();
+    drawBuffer = std::make_unique<GLBufferLegacy>();
     mainFont = std::make_unique<Font>("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
     textures = std::make_unique<DynamicTextureArray>();
 

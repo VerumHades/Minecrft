@@ -578,7 +578,7 @@ class UIManager{
         ShaderProgram uiProgram;
         VertexFormat vertexFormat;
 
-        std::unique_ptr<GLBuffer> drawBuffer;
+        std::unique_ptr<GLBufferLegacy> drawBuffer;
 
         Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("projectionMatrix");
         

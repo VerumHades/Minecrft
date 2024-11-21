@@ -140,7 +140,7 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
         Create and map buffer for draw calls
     */
 
-    drawCallBuffer = std::make_unique<GLConstantDoubleBuffer<DrawElementsIndirectCommand, GL_DRAW_INDIRECT_BUFFER>>(maxDrawCalls);
+    drawCallBuffer = std::make_unique<GLCachedDoubleBuffer<DrawElementsIndirectCommand, GL_DRAW_INDIRECT_BUFFER>>(maxDrawCalls);
 
     //syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
