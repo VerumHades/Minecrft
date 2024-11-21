@@ -264,6 +264,8 @@ bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
     size_t old_vertex_data = region.mesh_information.vertex_data_start;
     size_t old_index_data  = region.mesh_information.index_data_start;
 
+    region.setMeshless(false);
+
     bool update_success = region.updateMeshInformation(
         {
             vertexBufferOffset,
@@ -285,8 +287,6 @@ bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
 
     vertexAllocator.free(old_vertex_data);
     indexAllocator .free(old_index_data);
-
-    region.setMeshless(false);
 
     return true;
 }   
