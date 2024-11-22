@@ -10,6 +10,7 @@
 #include <rendering/shaders.hpp>
 #include <rendering/texture.hpp>
 #include <rendering/camera.hpp>
+#include <rendering/wireframes.hpp>
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
 #include <ui/loader.hpp>
@@ -40,6 +41,8 @@ class MainScene: public Scene{
         GLTextureArray tilemap;
         GLSkybox skybox;
         std::unique_ptr<World> world;
+
+        WireframeCubeRenderer wireframeRenderer;
 
         ChunkMeshRegistry chunkMeshRegistry;
         ChunkMeshGenerator chunkMeshGenerator;
@@ -105,6 +108,8 @@ class MainScene: public Scene{
         double deltatime;
 
         std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> loadedPositions;
+
+        void updateCursor(glm::vec3 position);
         
     public:
         void initialize(Scene* mainScene, UILoader* uiLoader);

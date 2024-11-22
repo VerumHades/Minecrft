@@ -19,6 +19,24 @@
 void checkGLError(const char *file, int line);
 #define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
 
+class GLVertexArray{
+    private:
+        uint vao_id;
+    public:
+        GLVertexArray(){
+            glGenVertexArrays(1,  &vao_id);
+        }
+        ~GLVertexArray(){
+            glDeleteVertexArrays(1,  &vao_id);
+        }
+        void bind(){
+            glBindVertexArray(vao_id);
+        }
+        void unbind(){
+            glBindVertexArray(0);
+        }
+};
+
 class GLBufferLegacy{
     private:
         uint data;
@@ -74,7 +92,7 @@ class GLBuffer{
         bool insert(size_t at, size_t size, T* data){
             if(!initialized) throw std::runtime_error("Inserting data into an uninitialized buffer.");
 
-            if(at + size >= buffer_size) return false; // Dont overflow
+            if(at + size > buffer_size) return false; // Dont overflow
 
             bind();
             glBufferSubData(type, at * sizeof(T), size * sizeof(T), data);
@@ -83,6 +101,10 @@ class GLBuffer{
         }
         void bind(){
             glBindBuffer(type, opengl_buffer_id);
+        }
+
+        size_t size(){
+            return buffer_size;
         }
 };
 
@@ -129,10 +151,11 @@ class GLAllocatedBuffer{
         */
         std::tuple<bool, size_t> update(size_t at, size_t size, T* data){
             size_t block_size = allocator.getTakenBlockSize(at);
-            if(block_size == 0) return {false, 0}; // Invalid at
+            if(block_size == 0) return insert(data, size); // Invalid at
 
             if(block_size >= size){ // Space is sufficient
                 buffer.insert(at, size, data);
+                std::cout << "Updated" << std::endl;
                 return {true, at};
             }
 
@@ -144,7 +167,7 @@ class GLAllocatedBuffer{
             If at is not set inserts the mesh otherwise updates it
         */
         std::tuple<bool, size_t> insertOrUpdate(T* data, size_t size, size_t at = -1ULL){
-            return insert(data,size);
+            return update(at,size,data);
             //else return update(at, size, data);
         }
 
@@ -156,6 +179,64 @@ class GLAllocatedBuffer{
         }
 };
 
+/*
+    All added data is cached up to a set size and then flushed right before drawing
+*/
+template <typename T, int  type>
+class GLLazyBuffer{
+    private:
+        GLBuffer<T, type> internal_buffer;
+        size_t buffer_write_position = 0;
+
+        T* cache;
+        size_t cache_max_size = 4096;
+        size_t cache_write_position = 0;
+
+    public:
+        GLLazyBuffer(size_t size){
+            cache = new T[size];
+
+            internal_buffer.initialize(size);
+        }
+        ~GLLazyBuffer(){
+            delete cache;
+        }
+        /*
+            Copies data into the temporary cache
+        */
+        bool append(T* data, size_t size){
+            if(cache_write_position + size > cache_max_size){
+                if(!flush()) return false; // Try to flush the cache, fail if the buffer is full
+            }; // Down overflow
+            
+            std::memcpy(
+                cache + cache_write_position,
+                data,
+                size * sizeof(T)
+            );
+
+            cache_write_position += size;
+            return true;
+        }
+
+        /*
+            Uploads cached data to the buffer
+        */
+        bool flush(){
+            if(cache_write_position == 0) return true; // Nothing to flush
+
+            bool output = internal_buffer.insert(buffer_write_position, cache_write_position, cache);
+
+            buffer_write_position += cache_write_position;
+            cache_write_position = 0;
+
+            return output;
+        }
+
+        void bind(){
+            internal_buffer.bind();
+        }
+};
 /*
     A buffer of constant size but not persitently mapped
 */

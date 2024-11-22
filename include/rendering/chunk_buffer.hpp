@@ -6,6 +6,7 @@
 #include <rendering/allocator.hpp>
 #include <rendering/buffer.hpp>
 #include <rendering/culling.hpp>
+#include <rendering/wireframes.hpp>
 
 #include <sstream>    
 #include <iomanip>    
@@ -159,7 +160,7 @@ class ChunkMeshRegistry{
     private:
         VertexFormat vertexFormat;
 
-        uint vao;
+        GLVertexArray vao;
         
         size_t drawCallCount = 0;
 
@@ -203,8 +204,6 @@ class ChunkMeshRegistry{
         void processRegionForDrawing(Frustum& frustum, MeshRegion* region, size_t& draw_call_counter);
 
     public:
-        ~ChunkMeshRegistry();
-        
         void initialize(uint renderDistance);
 
         void clear();
@@ -260,7 +259,6 @@ class ChunkMeshRegistry{
 
         DrawElementsIndirectCommand getCommandFor(const glm::ivec3& pos);
         void draw();
-
         VertexFormat& getVertexFormat() {return vertexFormat;}
 };
 

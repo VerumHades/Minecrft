@@ -2,8 +2,12 @@
 
 void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     modelManager.initialize();
-    camera.getProjectionUniform().attach(modelManager.getModelProgram());
-    camera.getViewUniform().attach(modelManager.getModelProgram());
+
+    auto& cam_projection_uniform  = camera.getProjectionUniform();
+    auto& cam_view_uniform  = camera.getViewUniform();
+
+    cam_projection_uniform.attach(modelManager.getModelProgram());
+    cam_view_uniform.attach(modelManager.getModelProgram());
 
     fpsLock = false;
     
@@ -123,6 +127,10 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     skyboxProgram.updateUniforms();
 
     chunkMeshRegistry.initialize(renderDistance);
+
+    cam_projection_uniform.attach(wireframeRenderer.getProgram());
+    cam_view_uniform.attach(wireframeRenderer.getProgram());
+    
 
     camera.setModelPosition({0,0,0});
     terrainProgram.updateUniform("modelMatrix");
@@ -253,6 +261,16 @@ void MainScene::processMouseMovement(){
 
     terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
+
+    glm::vec3& camDirection = camera.getDirection();
+    glm::vec3 camPosition = camera.getPosition();
+
+    RaycastResult hit = world->raycast(camPosition.x,camPosition.y,camPosition.z,camDirection.x, camDirection.y, camDirection.z,10);
+    updateCursor({hit.x,hit.y,hit.z});
+}
+
+void MainScene::updateCursor(glm::vec3 position){
+    wireframeRenderer.setCube(0,{position.x - 0.005f, position.y - 0.005f, position.z - 0.005f}, {1.01,01.01,1.01},{0,0,0});
 }
 void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     glm::vec3& camDirection = camera.getDirection();
@@ -279,6 +297,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
             world->setBlock(result.x,  result.y,  result.z, {BlockType::Air});
             return;
         }
+        else updateCursor({result.x,result.y,result.z});
 
         auto* chunk = world->getChunkFromBlockPosition(result.x, result.y,result.z);
         if(!chunk) return;
@@ -476,6 +495,10 @@ void MainScene::render(){
     world->drawEntities(modelManager, camera);
     //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
     /* Swap front and back buffers */
+
+    glDisable( GL_CULL_FACE );
+
+    wireframeRenderer.draw();
 
     glClear(GL_DEPTH_BUFFER_BIT);
 

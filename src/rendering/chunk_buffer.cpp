@@ -133,8 +133,7 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
     
     maxDrawCalls = pow((renderDistance + 1) * 2, 3);
 
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    vao.bind();
 
     /*
         Create and map buffer for draw calls
@@ -173,10 +172,6 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
     //CHECK_GL_ERROR();
 
     vertexFormat.apply();
-}
-
-ChunkMeshRegistry::~ChunkMeshRegistry(){
-    glDeleteVertexArrays(1, &vao);
 }
 
 std::tuple<bool,size_t,size_t> ChunkMeshRegistry::allocateOrUpdateMesh(Mesh* mesh, size_t vertexPosition, size_t indexPosition){
@@ -346,7 +341,7 @@ void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& fru
 }
 
 void ChunkMeshRegistry::draw(){
-    glBindVertexArray(vao);
+    vao.bind();
 
     //int drawCalls = maxDrawCalls - freeDrawCallIndices.size();
     //CHECK_GL_ERROR();
