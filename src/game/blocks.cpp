@@ -31,3 +31,10 @@ std::string getBlockTypeName(BlockType type){
     }
 }
 #undef BLT
+
+Block::Block(){
+    this->type = BlockType::Air;
+}
+Block::Block(BlockType type): type(type){
+    this->type = type;
+}

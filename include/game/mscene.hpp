@@ -1,5 +1,4 @@
-#ifndef MAINSCENE_H
-#define MAINSCENE_H
+#pragma once
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -144,4 +143,11 @@ class UIAllocatorVisualizer: public UIFrame{
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 };
 
-#endif
+class UICrosshair: public UIFrame{
+    private:
+        int part_margin = 5;
+        int thickness = 5;
+    public:
+        UICrosshair(UIManager& manager): UIFrame(manager){}
+        virtual void getRenderingInformation(RenderYeetFunction& yeet);
+};

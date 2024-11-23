@@ -54,6 +54,16 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
 
     this->setUILayer("default");
 
+    auto crosshair = uiManager->createElement<UICrosshair>();
+    crosshair->setSize(60,60);
+    crosshair->setPosition(
+        {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT, 50}},
+        {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT, 50}}
+    );
+    crosshair->setAttribute(&UIFrame::Style::textColor, {255,255,255});
+
+    getUILayer("default").addElement(crosshair);
+
     Model& bob = modelManager.createModel("bob");
     bob.loadFromFile("models/test.gltf", "");
     //bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
@@ -385,6 +395,8 @@ void MainScene::open(GLFWwindow* window){
 
     std::cout << "Threads started" << std::endl;
     physicsThread.detach();
+
+    this->setUILayer("default");
     //pregenThread.detach();
 }
 
@@ -666,4 +678,44 @@ void UIAllocatorVisualizer::getRenderingInformation(RenderYeetFunction& yeet){
     }
 
     manager.buildTextRenderingInformation(yeet,clipRegion, "Blocks total: " + std::to_string(watched->getBlocks().size()),transform.x + transform.width, transform.y,1,{1,1,1,1});
+}
+
+
+void UICrosshair::getRenderingInformation(RenderYeetFunction& yeet){
+    auto color = getAttribute(&UIFrame::Style::textColor);
+
+    // Left
+    yeet(UIRenderInfo::Rectangle(
+        transform.x,
+        transform.y + transform.height / 2 - thickness / 2,
+        transform.width / 2 - part_margin,
+        thickness,
+        color
+    ),clipRegion);
+    // Right
+    yeet(UIRenderInfo::Rectangle(
+        transform.x + transform.width / 2 + part_margin,
+        transform.y + transform.height / 2 - thickness / 2,
+        transform.width / 2 - part_margin,
+        thickness,
+        color
+    ),clipRegion);
+
+    // Top
+    yeet(UIRenderInfo::Rectangle(
+        transform.x + transform.width / 2 - thickness / 2,
+        transform.y,
+        thickness,
+        transform.height / 2 - part_margin,
+        color
+    ),clipRegion);
+    
+    //Bottom
+    yeet(UIRenderInfo::Rectangle(
+        transform.x + transform.width  / 2 - thickness / 2,
+        transform.y + transform.height / 2 + part_margin,
+        thickness,
+        transform.height / 2 - part_margin,
+        color
+    ),clipRegion);
 }
