@@ -23,12 +23,9 @@ struct Biome {
     using GenerateTreeFunc = void (*)(Chunk&, int, int, int);
 
     Biome(BlockType top, BlockType secondaryTop, BlockType underground,
-          float tempLower, float tempUpper,
-          GenerateTreeFunc treeGen)
+          float tempLower, float tempUpper)
         : topBlock(top), secondaryTopBlock(secondaryTop), undergroundBlock(underground),
-          temperatureLower(tempLower), temperatureUpper(tempUpper), generateTree(treeGen) {}
-
-    GenerateTreeFunc generateTree;
+          temperatureLower(tempLower), temperatureUpper(tempUpper){}
 };
 
 class WorldGenerator{
@@ -50,7 +47,7 @@ class WorldGenerator{
         /*
             A gpu accelerated generation function
         */
-        void generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, int chunkY, int chunkZ, size_t size);
+        void generateTerrainChunkAccelerated(Chunk* chunk, glm::ivec3 chunkPosition);
 };
 
 #include <game/chunk.hpp>

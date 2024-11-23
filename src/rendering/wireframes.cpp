@@ -62,6 +62,11 @@ void WireframeCubeRenderer::setCube(size_t index, glm::vec3 position, glm::vec3 
     cubes = std::max(cubes, index + 1);
 }
 
+void WireframeCubeRenderer::removeCube(size_t index){
+    float data[9] = {0,0,0,0,0,0,0,0,0};
+    instanceBuffer.insert(index * 9, 9, data);
+}
+
 void WireframeCubeRenderer::draw(){
     vao.bind();
     wireframeProgram.updateUniforms();

@@ -262,47 +262,62 @@ void MainScene::processMouseMovement(){
     terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
 
+
+    updateCursor();
+}
+
+void MainScene::updateCursor(){
     glm::vec3& camDirection = camera.getDirection();
     glm::vec3 camPosition = camera.getPosition();
 
-    RaycastResult hit = world->raycast(camPosition.x,camPosition.y,camPosition.z,camDirection.x, camDirection.y, camDirection.z,10);
-    updateCursor({hit.x,hit.y,hit.z});
+    RaycastResult hit = world->raycast(camPosition,camDirection,10);
+
+    blockUnderCursor = hit.hitBlock;
+    blockUnderCursorPosition = hit.position;
+    blockUnderCursorEmpty = hit.lastPosition;
+
+    if(!blockUnderCursor || blockUnderCursor->type == BlockType::Air) wireframeRenderer.removeCube(0);
+    else wireframeRenderer.setCube(0,glm::vec3(hit.position) - 0.005f, {1.01,01.01,1.01},{0,0,0});
+    
+    //wireframeRenderer.setCube(1,glm::vec3(hit.lastPosition) - 0.005f, {1.01,01.01,1.01},{1.0,0,0});
 }
 
-void MainScene::updateCursor(glm::vec3 position){
-    wireframeRenderer.setCube(0,{position.x - 0.005f, position.y - 0.005f, position.z - 0.005f}, {1.01,01.01,1.01},{0,0,0});
-}
 void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods){
+    if(!blockUnderCursor || blockUnderCursor->type == BlockType::Air) return;
+
     glm::vec3& camDirection = camera.getDirection();
     glm::vec3 camPosition = camera.getPosition();
     Entity& player = world->getEntities()[0];
 
-    RaycastResult hit = world->raycast(camPosition.x,camPosition.y,camPosition.z,camDirection.x, camDirection.y, camDirection.z,10);
-    
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && hit.hit){
-        world->setBlock(hit.x, hit.y, hit.z, {BlockType::Air});
+    if (
+        button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS 
+    ){
+        world->setBlock(blockUnderCursorPosition, {BlockType::Air});
 
-        auto chunk = world->getChunkFromBlockPosition(hit.x, hit.y, hit.z);
+        auto chunk = world->getChunkFromBlockPosition(blockUnderCursorPosition);
         if(!chunk) return;
-        regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(hit.x, hit.y, hit.z));
+        regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(blockUnderCursorPosition));
     }
-    else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && hit.hit){
-        CollisionCheckResult result = world->checkForPointCollision(hit.lastX, hit.lastY, hit.lastZ, 1);
+    else if(
+        button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS
+    ){
+        glm::ivec3 blockPosition = glm::floor(blockUnderCursorEmpty);
 
-        world->setBlock(result.x,  result.y,  result.z, {static_cast<BlockType>(selectedBlock)});
+        world->setBlock(blockPosition, {static_cast<BlockType>(selectedBlock)});
         if(
             player.checkForCollision(*world, false).collision ||
             player.checkForCollision(*world, true).collision
         ){
-            world->setBlock(result.x,  result.y,  result.z, {BlockType::Air});
+            world->setBlock(blockPosition, {BlockType::Air});
             return;
         }
-        else updateCursor({result.x,result.y,result.z});
 
-        auto* chunk = world->getChunkFromBlockPosition(result.x, result.y,result.z);
+        auto* chunk = world->getChunkFromBlockPosition(blockPosition);
         if(!chunk) return;
-        regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(result.x, result.y,result.z));
+        regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(blockPosition));
     }
+
+    updateCursor();
 }
 
 void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
@@ -523,20 +538,20 @@ void MainScene::regenerateChunkMesh(Chunk* chunk){
 }
 
 
-#define regenMesh(x,y,z) { \
-    Chunk* temp = this->world->getChunk(x, y, z);\
+#define regenMesh(position) { \
+    Chunk* temp = this->world->getChunk(position);\
     if(temp) regenerateChunkMesh(temp);\
 }
 void MainScene::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
     regenerateChunkMesh(chunk);
-    if(blockCoords.x == 0)              regenMesh((int) chunk->getWorldPosition().x - 1, (int) chunk->getWorldPosition().y, (int) chunk->getWorldPosition().z);
-    if(blockCoords.x == CHUNK_SIZE - 1) regenMesh((int) chunk->getWorldPosition().x + 1, (int) chunk->getWorldPosition().y, (int) chunk->getWorldPosition().z);
+    if(blockCoords.x == 0)              regenMesh(chunk->getWorldPosition() - glm::ivec3(1,0,0));
+    if(blockCoords.x == CHUNK_SIZE - 1) regenMesh(chunk->getWorldPosition() + glm::ivec3(1,0,0));
 
-    if(blockCoords.y == 0)              regenMesh((int) chunk->getWorldPosition().x, (int) chunk->getWorldPosition().y - 1, (int) chunk->getWorldPosition().z);
-    if(blockCoords.y == CHUNK_SIZE - 1) regenMesh((int) chunk->getWorldPosition().x, (int) chunk->getWorldPosition().y + 1, (int) chunk->getWorldPosition().z);
+    if(blockCoords.y == 0)              regenMesh(chunk->getWorldPosition() - glm::ivec3(0,1,0));
+    if(blockCoords.y == CHUNK_SIZE - 1) regenMesh(chunk->getWorldPosition() + glm::ivec3(0,1,0));
 
-    if(blockCoords.z == 0)              regenMesh((int) chunk->getWorldPosition().x, (int) chunk->getWorldPosition().y, (int) chunk->getWorldPosition().z - 1);
-    if(blockCoords.z == CHUNK_SIZE - 1) regenMesh((int) chunk->getWorldPosition().x, (int) chunk->getWorldPosition().y, (int) chunk->getWorldPosition().z + 1);
+    if(blockCoords.z == 0)              regenMesh(chunk->getWorldPosition() - glm::ivec3(0,0,1));
+    if(blockCoords.z == CHUNK_SIZE - 1) regenMesh(chunk->getWorldPosition() + glm::ivec3(0,0,1));
 }
 #undef regenMesh
 
@@ -559,12 +574,9 @@ void MainScene::physicsUpdate(){
         if(deltatime < tickTime) continue;
         last = current;
 
-        int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
-        int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
-        int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
 
-        if(!world->getChunk(camWorldX, camWorldY,camWorldZ)) continue;
-
+        glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
+        
         Entity& player = world->getEntities()[0];
 
         glm::vec3 camDir = glm::normalize(camera.getDirection());
@@ -585,6 +597,8 @@ void MainScene::physicsUpdate(){
             && player.getVelocity().y == 0
         ) player.accelerate(camera.getUp() * 0.2f);*/
 
+        if(!world->getChunk(camWorldPosition)) continue;
+
         world->updateEntities();
     }
 
@@ -592,10 +606,7 @@ void MainScene::physicsUpdate(){
 }
 
 void MainScene::generateSurroundingChunks(){
-    int camWorldX = (int) camera.getPosition().x / CHUNK_SIZE;
-    int camWorldY = (int) camera.getPosition().y / CHUNK_SIZE;
-    int camWorldZ = (int) camera.getPosition().z / CHUNK_SIZE;
-
+    glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
     int pregenDistance = renderDistance + 1; 
     
     int generatedTotal = 0;
@@ -616,21 +627,17 @@ void MainScene::generateSurroundingChunks(){
 
         
     for(int x = -pregenDistance ; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
-        int chunkX = camWorldX + x;
-        int chunkY = camWorldY + y;
-        int chunkZ = camWorldZ + z;
+        glm::ivec3 chunkPosition = camWorldPosition + glm::ivec3(x,y,z);
 
         //if(chunkY > 4) return;
 
-        world->generateChunk(chunkX, chunkY, chunkZ, 64);
+        world->generateChunk(chunkPosition);
     }
 
     for(int x = -renderDistance ; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
-        int chunkX = camWorldX + x;
-        int chunkY = camWorldY + y;
-        int chunkZ = camWorldZ + z;
+        glm::ivec3 chunkPosition = camWorldPosition + glm::ivec3(x,y,z);
         
-        Chunk* meshlessChunk = world->getChunk(chunkX, chunkY, chunkZ);
+        Chunk* meshlessChunk = world->getChunk(chunkPosition);
         if(!meshlessChunk){
             std::cerr << "Chunk not generated when generating meshes?" << std::endl;
             continue;

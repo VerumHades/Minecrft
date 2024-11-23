@@ -109,7 +109,11 @@ class MainScene: public Scene{
 
         std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> loadedPositions;
 
-        void updateCursor(glm::vec3 position);
+        void updateCursor();
+
+        glm::ivec3 blockUnderCursorPosition = {0,0,0};
+        glm::vec3 blockUnderCursorEmpty = {0,0,0}; // Block before the selected block, air where a block will be placed
+        Block* blockUnderCursor = nullptr;
         
     public:
         void initialize(Scene* mainScene, UILoader* uiLoader);

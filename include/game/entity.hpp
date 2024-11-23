@@ -16,7 +16,7 @@ typedef struct CollisionCheckResult{
 
 class Collidable{
     public:
-        virtual CollisionCheckResult checkForRectangularCollision(float x, float y, float z, RectangularCollider* collider) = 0;
+        virtual CollisionCheckResult checkForRectangularCollision(glm::vec3 position, RectangularCollider* collider) = 0;
 };
 
 class Entity{

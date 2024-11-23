@@ -23,7 +23,7 @@ CollisionCheckResult Entity::checkForCollision(Collidable& collidable, bool with
 
     size_t size = colliders.size();
     for(size_t i = 0;i < size;i++){
-        auto temp = collidable.checkForRectangularCollision(pos.x,pos.y,pos.z, &colliders[i]);
+        auto temp = collidable.checkForRectangularCollision(pos, &colliders[i]);
         if(temp.collision){
             result = temp;
             break;

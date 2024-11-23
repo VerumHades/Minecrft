@@ -3,59 +3,11 @@
 #define FNL_IMPL
 #include <FastNoiseLite.h>
 
-static inline void generateTree(Chunk& chunk, int x, int y, int z, Block trunkBlock, Block leafBlock){
-    int trunkHeight = rand() % 5 + 5;
-
-    for(int g = 0;g < 2;g++){
-        for(int i = -2; i <= 2;i++){
-            for(int j = -2;j <= 2;j++){
-                if(j == 0 && i == 0 && g == 0) continue;
-                chunk.setBlock(x+i,y+trunkHeight-1+g,z+j,leafBlock);       
-            }
-        }
-    }
-
-    for(int i = -1; i <= 1;i++){
-        for(int j = -1;j <= 1;j++){
-            chunk.setBlock(x+i,y+trunkHeight+1,z+j,leafBlock);       
-        }
-    }
-
-    for(int i = -1; i <= 1;i++){
-        for(int j = -1;j <= 1;j++){
-            if(i != 0 && j != 0) continue;
-            chunk.setBlock(x+i,y+trunkHeight+2,z+j,leafBlock);       
-        }
-    }
-
-    for(int i = 0; i < trunkHeight;i++) chunk.setBlock(x,y+i,z, trunkBlock);
-}
-
-void generateBirchTree(Chunk& chunk, int x, int y, int z){
-    Block trunkBlock;
-    trunkBlock.type = BlockType::BirchLog;
-    Block leafBlock;
-    leafBlock.type = BlockType::BirchLeafBlock;
-
-    generateTree(chunk,x,y,z,trunkBlock,leafBlock);
-}
-
-void generateOakTree(Chunk& chunk, int x, int y, int z){
-    Block trunkBlock;
-    trunkBlock.type = BlockType::OakLog;
-    Block leafBlock;
-    leafBlock.type = BlockType::LeafBlock;
-
-    generateTree(chunk, x,y,z,trunkBlock,leafBlock);
-}
-
-void generateNoTree(Chunk& /*chunk*/, int /*x*/, int /*y*/, int /*z*/){}
-
 
 std::vector<Biome> biomes = {
-    Biome(BlockType::Sand, BlockType::Sand, BlockType::Stone, 0.8f, 1.0f, generateNoTree),
-    Biome(BlockType::Grass, BlockType::Dirt, BlockType::Stone, 0.4f, 0.8f, generateOakTree),
-    Biome(BlockType::Stone, BlockType::Stone, BlockType::Stone, 0.0f, 0.4f, generateNoTree)
+    Biome(BlockType::Sand, BlockType::Sand, BlockType::Stone, 0.8f, 1.0f),
+    Biome(BlockType::Grass, BlockType::Dirt, BlockType::Stone, 0.4f, 0.8f),
+    Biome(BlockType::Stone, BlockType::Stone, BlockType::Stone, 0.0f, 0.4f)
 };
 
 const Biome& getBiome(float temperature){
@@ -131,10 +83,10 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, 
 
         if(value > 0.5){
             if(top){
-                chunk->setBlock(x, y, z, {BlockType::Grass});
+                chunk->setBlock({x,y,z}, {BlockType::Grass});
             }
             else{
-                chunk->setBlock(x, y, z, {BlockType::Dirt});
+                chunk->setBlock({x,y,z}, {BlockType::Dirt});
             }
             //chunk.setBlock(x,y,z, {top ? BlockType::Grass : BlockType::Stone});
 
@@ -169,12 +121,12 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, 
 }   
 
 bool first = true;
-void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, int chunkY, int chunkZ, size_t size){
+void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, glm::ivec3 chunkPosition){
     auto start = std::chrono::high_resolution_clock::now();
 
     computeProgram.use();
 
-    glm::vec3 worldPosition = {chunkX * CHUNK_SIZE,chunkY * CHUNK_SIZE,chunkZ * CHUNK_SIZE};
+    glm::vec3 worldPosition = chunkPosition * CHUNK_SIZE;
     glUniform3fv(worldPositionUniformID, 1, glm::value_ptr(worldPosition));
 
     //computeProgram.updateUniforms();
@@ -219,5 +171,5 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, int chunkX, i
     auto end = std::chrono::high_resolution_clock::now();
 
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
+    std::cout << "Generated chunk (" << chunkPosition.x << "," << chunkPosition.y << "," << chunkPosition.z << ") in: " << duration << " microseconds" << std::endl;
 }

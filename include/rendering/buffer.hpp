@@ -155,7 +155,6 @@ class GLAllocatedBuffer{
 
             if(block_size >= size){ // Space is sufficient
                 buffer.insert(at, size, data);
-                std::cout << "Updated" << std::endl;
                 return {true, at};
             }
 

@@ -348,9 +348,9 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
         return solidMesh;
     }
 
-    Chunk* nextX = world->getChunk(worldPosition.x - 1,worldPosition.y,worldPosition.z);
-    Chunk* nextY = world->getChunk(worldPosition.x,worldPosition.y - 1,worldPosition.z);
-    Chunk* nextZ = world->getChunk(worldPosition.x,worldPosition.y,worldPosition.z - 1);
+    Chunk* nextX = world->getChunk(worldPosition - glm::ivec3{1,0,0});
+    Chunk* nextY = world->getChunk(worldPosition - glm::ivec3{0,1,0});
+    Chunk* nextZ = world->getChunk(worldPosition - glm::ivec3{0,0,1});
 
     //std::cout << nextX << " " << nextY << " " << nextZ << std::endl;
 

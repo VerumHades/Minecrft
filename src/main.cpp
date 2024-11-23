@@ -178,7 +178,7 @@ int main() {
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
     
 
-    glLineWidth(5.0f);
+    glLineWidth(2.0f);
     
     {
         SceneManager sceneManager;

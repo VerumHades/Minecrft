@@ -59,15 +59,14 @@ class SparseBlockArray{
 
         bool isEmpty(){return layers.size() == 0;}
 
-        void setBlock(uint x, uint y, uint z, Block block){
-            auto* block_here = getBlock(x,y,z);
+        void setBlock(glm::ivec3 position, Block block){
+            auto* block_here = getBlock(position);
             if(block_here != &airBlock){
-                getLayer(block_here->type).field.reset(x,y,z);
+                getLayer(block_here->type).field.reset(position.x,position.y,position.z);
             }
 
             if(block.type == BlockType::Air){
-                solid_field.reset(x,y,z);
-                std::cout << "Air!" << std::endl;
+                solid_field.reset(position.x,position.y,position.z);
                 return;
             }
 
@@ -76,20 +75,20 @@ class SparseBlockArray{
             }
 
             auto& layer = getLayer(block.type);
-            layer.field.set(x,y,z);
+            layer.field.set(position.x,position.y,position.z);
 
             auto& block_definition = getBlockDefinition(&block);
             
-            if(block_definition.solid) solid_field.set(x,y,z);
-            else solid_field.reset(x,y,z);
+            if(block_definition.solid) solid_field.set(position.x,position.y,position.z);
+            else solid_field.reset(position.x,position.y,position.z);
         }
 
         /*
             Returns a pointer to a block, if there is no block present returns an air block
         */
-        Block* getBlock(uint x, uint y, uint z){
+        Block* getBlock(glm::ivec3 position){
             for(auto& layer: layers){
-                if(!layer.field.get(x,y,z)) continue;
+                if(!layer.field.get(position.x,position.y,position.z)) continue;
 
                 return &layer.internal_block;
             }

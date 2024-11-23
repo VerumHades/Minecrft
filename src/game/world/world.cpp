@@ -7,32 +7,28 @@ World::World(std::string filepath){
 
 std::shared_mutex chunkGenLock;
 
-Chunk* World::generateChunk(int x, int y, int z, int lod){
-    const glm::vec3 key = glm::vec3(x,y,z);
-
+Chunk* World::generateChunk(glm::ivec3 position){
     {
         std::shared_lock lock(chunkGenLock);
-        auto it = this->chunks.find(key);
+        auto it = this->chunks.find(position);
         if (it != this->chunks.end()) return it->second.get(); 
     }
 
-    std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(key);
+    std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(position);
     
-    generator.generateTerrainChunkAccelerated(chunk.get(),x,y,z, lod);
+    generator.generateTerrainChunkAccelerated(chunk.get(),position);
 
     std::unique_lock lock(chunkGenLock);
-    this->chunks.emplace(key, std::move(chunk));
+    this->chunks.emplace(position, std::move(chunk));
     //this->stream->save(*chunks[key]);
 
-    return this->chunks[key].get();
+    return this->chunks[position].get();
 }
 
-Chunk* World::getChunk(int x, int y, int z){
-    const glm::vec3 key = glm::vec3(x,y,z);
-    
+Chunk* World::getChunk(glm::ivec3 position){
     std::shared_lock lock(chunkGenLock);
 
-    auto it = this->chunks.find(key);
+    auto it = this->chunks.find(position);
     if (it != this->chunks.end()) {
         return it->second.get();
     }
@@ -40,18 +36,16 @@ Chunk* World::getChunk(int x, int y, int z){
     return nullptr;
 }
 
-bool World::isChunkLoadable(int x, int y, int z){
-    return stream->hasChunkAt({x,y,z});
+bool World::isChunkLoadable(glm::ivec3 position){
+    return stream->hasChunkAt(position);
 }
-void World::loadChunk(int x, int y, int z){
-    const glm::vec3 position = glm::vec3(x,y,z);
-
+void World::loadChunk(glm::ivec3 position){
     std::unique_lock lock(chunkGenLock);
     chunks[position] = std::make_unique<Chunk>(position);
     //stream->load(chunks[position].get());
 }
 
-CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bool includeRectangularColliderLess){
+CollisionCheckResult World::checkForPointCollision(glm::vec3 position, bool includeRectangularColliderLess){
     CollisionCheckResult result = {nullptr, false, 0,0,0};
     int range = 1;
 
@@ -60,11 +54,11 @@ CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bo
     for(int i = -range;i <= range;i++){
         for(int j = -range;j <= range;j++){
             for(int g = -range;g <= range;g++){
-                int cx = (int) x + i;
-                int cy = (int) y + j;
-                int cz = (int) z + g;
+                int cx = (int) position.x + i;
+                int cy = (int) position.y + j;
+                int cz = (int) position.z + g;
 
-                Block* blocki = this->getBlock(cx, cy, cz);
+                Block* blocki = this->getBlock({cx, cy, cz});
                 if(blocki){
                     BlockDefinition block = getBlockDefinition(blocki);
                     if((block.colliders.size() == 0 || blocki->type == BlockType::Air) && !includeRectangularColliderLess) continue;
@@ -72,9 +66,9 @@ CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bo
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
 
                     if(
-                        x >= cx && x <= cx + blockWidth &&
-                        y >= cy && y <= cy + blockWidth &&
-                        z >= cz && z <= cz + blockWidth 
+                        position.x >= cx && position.x <= cx + blockWidth &&
+                        position.y >= cy && position.y <= cy + blockWidth &&
+                        position.z >= cz && position.z <= cz + blockWidth 
                     ){
                         result.collidedBlock = blocki;
                         result.collision = 1;
@@ -98,18 +92,18 @@ CollisionCheckResult World::checkForPointCollision(float x, float y, float z, bo
     return result;
 }
 
-CollisionCheckResult World::checkForRectangularCollision(float x, float y, float z, RectangularCollider* collider){
+CollisionCheckResult World::checkForRectangularCollision(glm::vec3 position, RectangularCollider* collider){
     CollisionCheckResult result = {nullptr, false, 0,0,0};
     int range = 1;
 
     for(int i = -range;i <= range;i++){
         for(int j = -range;j <= range;j++){
             for(int g = -range;g <= range;g++){
-                int cx = (int)floor(x + i);
-                int cy = (int)floor(y + j);
-                int cz = (int)floor(z + g);
+                int cx = (int)floor(position.x + i);
+                int cy = (int)floor(position.y + j);
+                int cz = (int)floor(position.z + g);
 
-                Block* blocki = this->getBlock(cx, cy, cz);
+                Block* blocki = this->getBlock({cx, cy, cz});
                 if(blocki){
                     BlockDefinition block = getBlockDefinition(blocki);
                     if(block.colliders.size() == 0 || blocki->type == BlockType::Air) continue;
@@ -125,9 +119,9 @@ CollisionCheckResult World::checkForRectangularCollision(float x, float y, float
                         //printf("%f %f %f %f %f %f\n", colliderX, colliderY, colliderZ, blockCollider->width, blockCollider->height, blockCollider->depth);
             
                         if(
-                            x + collider->x + collider->width  >= colliderX && x + collider->x <= colliderX + blockCollider->width &&
-                            y + collider->y + collider->height >= colliderY && y + collider->y <= colliderY + blockCollider->height &&
-                            z + collider->z + collider->depth  >= colliderZ && z + collider->z <= colliderZ + blockCollider->depth 
+                            position.x + collider->x + collider->width  >= colliderX && position.x + collider->x <= colliderX + blockCollider->width &&
+                            position.y + collider->y + collider->height >= colliderY && position.y + collider->y <= colliderY + blockCollider->height &&
+                            position.z + collider->z + collider->depth  >= colliderZ && position.z + collider->z <= colliderZ + blockCollider->depth 
                         ){
                             result.collidedBlock = blocki;
                             result.collision = 1;
@@ -152,33 +146,27 @@ CollisionCheckResult World::checkForRectangularCollision(float x, float y, float
     return result;
 }
 
-RaycastResult World::raycast(float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance){
-    RaycastResult result = {{},false,0,0,0,0,0,0};
+RaycastResult World::raycast(glm::vec3 from, glm::vec3 direction, float maxDistance){
+    RaycastResult result = {{},false,{0,0,0},{0,0,0}};
     
+    direction = glm::normalize(direction);
+
     float step = 0.5;
     float distance = 0;
 
-    float x = fromX;
-    float y = fromY;
-    float z = fromZ;
+    glm::vec3 current_position = from;
 
     while(distance < maxDistance){
-        result.lastX = x;
-        result.lastY = y;
-        result.lastZ = z;
+        result.lastPosition = current_position;
 
-        x += dirX * step;
-        y += dirY * step;
-        z += dirZ * step;
+        current_position += direction * step;
 
-        CollisionCheckResult check = this->checkForPointCollision(x,y,z, 0);
-        if( check.collision){
-            result.hit = 1;
+        CollisionCheckResult check = this->checkForPointCollision(current_position, 0);
+        if(check.collision){
+            result.hit = true;
             result.hitBlock = check.collidedBlock;
             
-            result.x = check.x;
-            result.y = check.y;
-            result.z = check.z;
+            result.position = glm::floor(current_position);
 
             return result;
         }
@@ -189,57 +177,39 @@ RaycastResult World::raycast(float fromX, float fromY, float fromZ, float dirX, 
     return result;
 }
 
-Block* World::getBlock(int x, int y, int z){
-    int chunkX = (int) floor((double)x / (double)CHUNK_SIZE);
-    int chunkY = (int) floor((double)y / (double)CHUNK_SIZE);
-    int chunkZ = (int) floor((double)z / (double)CHUNK_SIZE);
+glm::ivec3 World::blockToChunkPosition(glm::ivec3 blockPosition){
+    return glm::floor(glm::vec3(blockPosition) / static_cast<float>(CHUNK_SIZE));
+}
 
-    int ix = abs(x - chunkX * CHUNK_SIZE);
-    int iy = abs(y - chunkY * CHUNK_SIZE);
-    int iz = abs(z - chunkZ * CHUNK_SIZE);
+glm::ivec3 World::getGetChunkRelativeBlockPosition(glm::ivec3 position){
+    return glm::abs(position - blockToChunkPosition(position) * CHUNK_SIZE);
+}
+
+Block* World::getBlock(glm::ivec3 position){
+    auto chunkPosition = blockToChunkPosition(position);
+    auto blockPosition = glm::abs(position - chunkPosition * CHUNK_SIZE);
     //printf("Chunk coords: %ix%i Block coords: %i(%i)x%ix%i(%i)\n", chunkX, chunkZ, ix,iy,iz);
 
-    Chunk* chunk = this->getChunk(chunkX, chunkY, chunkZ);
+    Chunk* chunk = this->getChunk(chunkPosition);
     if(!chunk) return nullptr;//this->generateAndGetChunk(chunkX, chunkZ)->getBlock(ix,y,iz);
 
-    return chunk->getBlock(ix, iy, iz);
+    return chunk->getBlock(blockPosition);
 }
 
-Chunk* World::getChunkFromBlockPosition(int x, int y, int z){
-    int chunkX = (int) floor((double)x / (double)CHUNK_SIZE);
-    int chunkY = (int) floor((double)y / (double)CHUNK_SIZE);
-    int chunkZ = (int) floor((double)z / (double)CHUNK_SIZE);
-
-    return this->getChunk(chunkX, chunkY, chunkZ);
+Chunk* World::getChunkFromBlockPosition(glm::ivec3 position){
+    return this->getChunk(blockToChunkPosition(position));
 }
 
-glm::vec3 World::getGetChunkRelativeBlockPosition(int x, int y, int z){
-    int chunkX = (int) floor((double)x / (double)CHUNK_SIZE);
-    int chunkY = (int) floor((double)y / (double)CHUNK_SIZE);
-    int chunkZ = (int) floor((double)z / (double)CHUNK_SIZE);
-
-    int ix = abs(x - chunkX * CHUNK_SIZE);
-    int iy = abs(y - chunkY * CHUNK_SIZE);
-    int iz = abs(z - chunkZ * CHUNK_SIZE);
-
-    return glm::vec3((float) ix,(float) iy,(float) iz);
-}
-
-bool World::setBlock(int x, int y, int z, Block index){
-    int chunkX = (int) floor((double)x / (double)CHUNK_SIZE);
-    int chunkY = (int) floor((double)y / (double)CHUNK_SIZE);
-    int chunkZ = (int) floor((double)z / (double)CHUNK_SIZE);
-
-    int ix = abs(x - chunkX * CHUNK_SIZE);
-    int iy = abs(y - chunkY * CHUNK_SIZE);
-    int iz = abs(z - chunkZ * CHUNK_SIZE);
+bool World::setBlock(glm::ivec3 position, Block block){
+    auto chunkPosition = blockToChunkPosition(position);
+    auto blockPosition = glm::abs(position - chunkPosition * CHUNK_SIZE);
     //printf("Chunk coords: %ix%i Block coords: %ix%ix%i\n", chunkX, chunkZ, ix,y,iz);
 
     //Block* i = getWorldBlock(world, ix, y, iz);
 
-    Chunk* chunk = this->getChunk(chunkX, chunkY ,chunkZ);
+    Chunk* chunk = this->getChunk(chunkPosition);
     if(!chunk) return false;//this->generateAndGetChunk(chunkX, chunkZ)->setBlock(ix,y,iz,index);
-    chunk->setBlock(ix, iy, iz, index);
+    chunk->setBlock(blockPosition, block);
 
     return true;
 }

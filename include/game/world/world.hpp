@@ -28,13 +28,8 @@
 struct RaycastResult{
     Block* hitBlock;
     bool hit;
-    int x;
-    int y;
-    int z;
-
-    float lastX;
-    float lastY;
-    float lastZ;
+    glm::ivec3 position; // Position of the hit block
+    glm::vec3 lastPosition; // Position before the hit
 };
 
 class ModelManager;
@@ -46,25 +41,27 @@ class World: public Collidable{
 
         std::unique_ptr<WorldStream> stream;
         WorldGenerator generator;
+
+        glm::ivec3 blockToChunkPosition(glm::ivec3 blockPosition);
         
     public:
         World(std::string filepath);
-        Block* getBlock(int x, int y, int z);
-        bool setBlock(int x, int y, int z, Block index);
+        Block* getBlock(glm::ivec3 position);
+        bool setBlock(glm::ivec3 position, Block index);
 
-        Chunk* generateChunk(int x, int y, int z, int lod);
+        Chunk* generateChunk(glm::ivec3 position);
         
-        bool isChunkLoadable(int x, int y, int z);
-        void loadChunk(int x, int y, int z);
+        bool isChunkLoadable(glm::ivec3 position);
+        void loadChunk(glm::ivec3 position);
 
-        Chunk* getChunk(int x, int y, int z);
-        Chunk* getChunkFromBlockPosition(int x, int y, int z);
-        glm::vec3 getGetChunkRelativeBlockPosition(int x, int y, int z);
+        Chunk* getChunk(glm::ivec3 position);
+        Chunk* getChunkFromBlockPosition(glm::ivec3 position);
+        glm::ivec3 getGetChunkRelativeBlockPosition(glm::ivec3 position);
 
-        CollisionCheckResult checkForPointCollision(float x, float y, float z, bool includeRectangularColliderLess);
-        CollisionCheckResult checkForRectangularCollision(float x, float y, float z, RectangularCollider* collider);
+        CollisionCheckResult checkForPointCollision(glm::vec3 position, bool includeRectangularColliderLess);
+        CollisionCheckResult checkForRectangularCollision(glm::vec3 position, RectangularCollider* collider) override;
 
-        RaycastResult raycast(float fromX, float fromY, float fromZ, float dirX, float dirY, float dirZ, float maxDistance);
+        RaycastResult raycast(glm::vec3 from, glm::vec3 direction, float maxDistance);
 
         void drawEntities(ModelManager& manager, Camera& camera, bool depthMode  = false);
         void updateEntities();
