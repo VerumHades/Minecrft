@@ -1,8 +1,8 @@
 #include <game/world/world.hpp>
 
-World::World(std::string filepath){
+World::World(std::string filepath, BlockRegistry& blockRegistry): blockRegistry(blockRegistry), generator(blockRegistry){  
     stream = std::make_unique<WorldStream>(filepath);
-    generator = WorldGenerator(stream->getSeed());
+    generator.setSeed(stream->getSeed());
 }
 
 std::shared_mutex chunkGenLock;
@@ -14,7 +14,7 @@ Chunk* World::generateChunk(glm::ivec3 position){
         if (it != this->chunks.end()) return it->second.get(); 
     }
 
-    std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(position);
+    std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(position, blockRegistry);
     
     generator.generateTerrainChunkAccelerated(chunk.get(),position);
 
@@ -41,7 +41,7 @@ bool World::isChunkLoadable(glm::ivec3 position){
 }
 void World::loadChunk(glm::ivec3 position){
     std::unique_lock lock(chunkGenLock);
-    chunks[position] = std::make_unique<Chunk>(position);
+    chunks[position] = std::make_unique<Chunk>(position,  blockRegistry);
     //stream->load(chunks[position].get());
 }
 
@@ -60,8 +60,9 @@ CollisionCheckResult World::checkForPointCollision(glm::vec3 position, bool incl
 
                 Block* blocki = this->getBlock({cx, cy, cz});
                 if(blocki){
-                    BlockDefinition block = getBlockDefinition(blocki);
-                    if((block.colliders.size() == 0 || blocki->type == BlockType::Air) && !includeRectangularColliderLess) continue;
+                    auto* definition = blockRegistry.getRegisteredBlockByIndex(blocki->id);
+                    if(!definition) continue;
+                    if((definition->colliders.size() == 0 || blocki->id == BLOCK_AIR_INDEX) && !includeRectangularColliderLess) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
 
@@ -105,13 +106,14 @@ CollisionCheckResult World::checkForRectangularCollision(glm::vec3 position, Rec
 
                 Block* blocki = this->getBlock({cx, cy, cz});
                 if(blocki){
-                    BlockDefinition block = getBlockDefinition(blocki);
-                    if(block.colliders.size() == 0 || blocki->type == BlockType::Air) continue;
+                    auto* definition = blockRegistry.getRegisteredBlockByIndex(blocki->id);
+                    if(!definition) continue;
+                    if(definition->colliders.size() == 0 || blocki->id == BLOCK_AIR_INDEX) continue;
 
                     //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
 
-                    for(int colliderIndex = 0;colliderIndex < block.colliders.size(); colliderIndex++){
-                        RectangularCollider* blockCollider = &block.colliders[colliderIndex];
+                    for(int colliderIndex = 0;colliderIndex < definition->colliders.size(); colliderIndex++){
+                        RectangularCollider* blockCollider = &definition->colliders[colliderIndex];
                         float colliderX = blockCollider->x + cx;
                         float colliderY = blockCollider->y + cy;
                         float colliderZ = blockCollider->z + cz;

@@ -10,6 +10,8 @@
 #include <rendering/texture.hpp>
 #include <rendering/camera.hpp>
 #include <rendering/wireframes.hpp>
+#include <rendering/texture_registry.hpp>
+
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
 #include <ui/loader.hpp>
@@ -37,18 +39,20 @@ class MainScene: public Scene{
         ShaderProgram skyboxProgram;
         CommandProcessor commandProcessor;
 
-        GLTextureArray tilemap;
         GLSkybox skybox;
         std::unique_ptr<World> world;
 
         WireframeCubeRenderer wireframeRenderer;
 
         ChunkMeshRegistry chunkMeshRegistry;
-        ChunkMeshGenerator chunkMeshGenerator;
+
+        TextureRegistry blockTextureRegistry;
+        BlockRegistry blockRegistry = BlockRegistry(blockTextureRegistry);
+        ChunkMeshGenerator chunkMeshGenerator = ChunkMeshGenerator(blockRegistry);
 
         std::string worldPath = "saves/worldsave.bin";
         int renderDistance = 4;
-        int selectedBlock = 2;
+        int selectedBlock = 4;
 
         bool allGenerated = false;
         bool running = false;

@@ -34,7 +34,7 @@ class Chunk: public SparseBlockArray{
         glm::ivec3 worldPosition;
 
     public:
-        Chunk(glm::ivec3 worldPosition): worldPosition(worldPosition){ }
+        Chunk(glm::ivec3 worldPosition, BlockRegistry& blockRegistry): SparseBlockArray(blockRegistry), worldPosition(worldPosition) { }
 
         const glm::ivec3& getWorldPosition() const { return worldPosition; }
         

@@ -12,22 +12,6 @@
 
 class Chunk;
 
-struct Biome {
-    BlockType topBlock;
-    BlockType secondaryTopBlock;
-    BlockType undergroundBlock;
-
-    float temperatureLower;
-    float temperatureUpper;
-
-    using GenerateTreeFunc = void (*)(Chunk&, int, int, int);
-
-    Biome(BlockType top, BlockType secondaryTop, BlockType underground,
-          float tempLower, float tempUpper)
-        : topBlock(top), secondaryTopBlock(secondaryTop), undergroundBlock(underground),
-          temperatureLower(tempLower), temperatureUpper(tempUpper){}
-};
-
 class WorldGenerator{
     private:
         FastNoiseLite noise;
@@ -37,10 +21,10 @@ class WorldGenerator{
 
         ShaderProgram computeProgram;
         std::unique_ptr<GLPersistentBuffer<uint>> computeBuffer;
+        BlockRegistry& blockRegistry;
 
     public:
-        WorldGenerator(int seed);
-        WorldGenerator(){seed = 1948;}
+        WorldGenerator(BlockRegistry&  blockRegistry);
 
         void generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, int chunkZ, size_t size);
         
@@ -48,6 +32,11 @@ class WorldGenerator{
             A gpu accelerated generation function
         */
         void generateTerrainChunkAccelerated(Chunk* chunk, glm::ivec3 chunkPosition);
+
+        void setSeed(int seed) {
+            noise.SetSeed(seed);
+            this->seed = seed;
+        }
 };
 
 #include <game/chunk.hpp>

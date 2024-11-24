@@ -1,40 +1,67 @@
 #include <game/blocks.hpp>
 
-std::unordered_map<BlockType, BlockDefinition> predefinedBlocks = {
-    {BlockType::Air            , BlockDefinition(true , false)}, // Air
-    {BlockType::Grass          , BlockDefinition(false, true , false ,false, {0, 2, 1, 1, 1, 1})}, // Grass
-    {BlockType::Dirt           , BlockDefinition(false, true , false ,true, {2})}, // Dirt
-    {BlockType::Stone          , BlockDefinition(false, true , false ,true, {3})}, // Stone
-    {BlockType::LeafBlock      , BlockDefinition(false, true , false ,true, {6})}, // Leaf Block
-    {BlockType::OakLog         , BlockDefinition(false, true , false ,false, {4, 4, 5, 5, 5, 5})}, // Oak Log
-    {BlockType::BirchLeafBlock , BlockDefinition(false, true , false ,true, {7})}, // Birch Leaf Block
-    {BlockType::BirchLog       , BlockDefinition(false, true , false ,false, {9, 9, 8, 8, 8, 8})}, // Birch Log
-    {BlockType::BlueWool       , BlockDefinition(false, true , false ,true, {10})}, // Blue Wool
-    {BlockType::Sand           , BlockDefinition(false, true , false ,true, {11})}, // Sand
-    {BlockType::GrassBillboard , BlockDefinition(false, false, true  ,false,{12})}
-}; 
+/*
+    Adds a full block, where texture path is the texture name for all sides
+*/
+void BlockRegistry::addFullBlock(std::string name, std::string texture_name, bool transparent){
+    blocks.push_back({
+        name,
+        {{0, 0, 0, 1.0f, 1.0f, 1.0f}},
+        true,
+        transparent,
+        {texture_registry.getTextureIndex(texture_name)},
+        FULL_BLOCK
+    });
+}
 
-#define BLT(name) case BlockType::name: return #name;
-std::string getBlockTypeName(BlockType type){
-    switch(type){
-        BLT(Air)
-        BLT(Grass) 
-        BLT(Dirt)
-        BLT(Stone)
-        BLT(LeafBlock)
-        BLT(OakLog)
-        BLT(BirchLeafBlock)
-        BLT(BirchLog)
-        BLT(BlueWool)
-        BLT(Sand)
-        default: return "Unknown?";
+/*
+    Adds a full block, with the defined texture paths
+*/
+void BlockRegistry::addFullBlock(std::string name, std::array<std::string,6> texture_names, bool transparent){
+    std::array<size_t, 6> textures;
+
+    int i = 0;
+    for(auto& name: texture_names){
+        textures[i++] = texture_registry.getTextureIndex(name);
     }
-}
-#undef BLT
 
-Block::Block(){
-    this->type = BlockType::Air;
+    blocks.push_back({
+        name,
+        {{0, 0, 0, 1.0f, 1.0f, 1.0f}},
+        false,
+        transparent,
+        textures,
+        FULL_BLOCK
+    });
 }
-Block::Block(BlockType type): type(type){
-    this->type = type;
+
+/*
+    Adds a billboard block with the defined texture
+*/
+void BlockRegistry::addBillboardBlock(std::string name, std::string texture_name){
+    blocks.push_back({
+        name,
+        {},
+        true,
+        false,
+        {texture_registry.getTextureIndex(texture_name)},
+        BILLBOARD
+    });
+}
+
+size_t BlockRegistry::getIndexByName(std::string name){
+    int i = -1;
+    for(auto& registered_block: blocks){
+        i++;
+        if(registered_block.name != name) continue;
+
+        return i;
+    }
+
+    return 0;
+}
+
+BlockRegistry::RegisteredBlock* BlockRegistry::getRegisteredBlockByIndex(size_t id){
+    if(id >= blocks.size()) return nullptr;
+    return &blocks[id];
 }

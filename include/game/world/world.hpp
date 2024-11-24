@@ -41,11 +41,13 @@ class World: public Collidable{
 
         std::unique_ptr<WorldStream> stream;
         WorldGenerator generator;
+        BlockRegistry&  blockRegistry;
 
         glm::ivec3 blockToChunkPosition(glm::ivec3 blockPosition);
         
     public:
-        World(std::string filepath);
+        World(std::string filepath, BlockRegistry& blockRegistry);
+
         Block* getBlock(glm::ivec3 position);
         bool setBlock(glm::ivec3 position, Block index);
 

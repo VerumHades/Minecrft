@@ -6,7 +6,7 @@
 class SparseBlockArray{
     protected:
         struct Layer{
-            BlockType  type;
+            BlockID  type;
             Block internal_block;
             BitField3D field;
         };
@@ -14,16 +14,16 @@ class SparseBlockArray{
         /*
             Returns whether a layer is present
         */
-        bool hasLayerOfType(BlockType type){
-            return type_indexes[static_cast<size_t>(type)] != -1ULL;
+        bool hasLayerOfType(BlockID type){
+            return type_indexes.contains(type);
         }
 
         /*
             Creates a layer, if layer already exists doesnt create another
         */
-        bool createLayer(BlockType type, const BitField3D& field){
+        bool createLayer(BlockID type, const BitField3D& field){
             if(hasLayerOfType(type)) return false;
-            type_indexes[static_cast<size_t>(type)] = layers.size();
+            type_indexes[type] = layers.size();
             layers.push_back({type,{type},field});
             present_types.push_back(type);
             return true;
@@ -32,54 +32,54 @@ class SparseBlockArray{
         /*
             Returns a layer of type if its present, otherwise crashes.
         */
-        Layer& getLayer(BlockType type){
+        Layer& getLayer(BlockID type){
             if(!hasLayerOfType(type)) throw std::runtime_error("Layer has no layer of that type. Use 'hasLayerOfType' to check for layers.");
 
-            return layers[type_indexes[static_cast<size_t>(type)]];
+            return layers[type_indexes[type]];
         }
 
         BitField3D& getSolidField(){
             return solid_field;
         }
 
-        std::vector<BlockType>& getPresentTypes() { return present_types; }
+        std::vector<BlockID>& getPresentTypes() { return present_types; }
         std::vector<Layer>& getLayers() { return layers; }
     private:
-        Block airBlock = {BlockType::Air};
+        BlockRegistry& blockRegistry;
+        Block airBlock = {BLOCK_AIR_INDEX};
         BitField3D solid_field; // Registers solid blocks
 
         std::vector<Layer> layers;
-        std::vector<BlockType> present_types;
-        std::array<size_t, static_cast<size_t>(BlockType::BLOCK_TYPES_TOTAL)> type_indexes;
+        std::vector<BlockID> present_types;
+        std::unordered_map<BlockID, size_t> type_indexes;
     
     public:
-        SparseBlockArray(){
-            type_indexes.fill(-1ULL); // Initialize every block type as not present
-        }
+        SparseBlockArray(BlockRegistry& blockRegistry): blockRegistry(blockRegistry){}
 
         bool isEmpty(){return layers.size() == 0;}
 
         void setBlock(glm::ivec3 position, Block block){
             auto* block_here = getBlock(position);
             if(block_here != &airBlock){
-                getLayer(block_here->type).field.reset(position.x,position.y,position.z);
+                getLayer(block_here->id).field.reset(position.x,position.y,position.z);
             }
 
-            if(block.type == BlockType::Air){
+            if(block.id == BLOCK_AIR_INDEX){
                 solid_field.reset(position.x,position.y,position.z);
                 return;
             }
 
-            if(!hasLayerOfType(block.type)){
-                createLayer(block.type, {});
+            if(!hasLayerOfType(block.id)){
+                createLayer(block.id, {});
             }
 
-            auto& layer = getLayer(block.type);
+            auto& layer = getLayer(block.id);
             layer.field.set(position.x,position.y,position.z);
 
-            auto& block_definition = getBlockDefinition(&block);
-            
-            if(block_definition.solid) solid_field.set(position.x,position.y,position.z);
+            auto* block_definition = blockRegistry.getRegisteredBlockByIndex(block.id);
+            if(!block_definition) return;
+
+            if(!block_definition->transparent) solid_field.set(position.x,position.y,position.z);
             else solid_field.reset(position.x,position.y,position.z);
         }
 

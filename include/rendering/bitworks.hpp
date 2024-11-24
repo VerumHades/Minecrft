@@ -225,8 +225,8 @@ class DynamicBitArray3D{
 template <int size>
 using BitPlane = std::array<uint_t<size>, size>;
 
-template <int size>
-using BlockBitPlanes = std::array<BitPlane<size>, (size_t) BlockType::BLOCK_TYPES_TOTAL>;
+template <size_t blocks_total>
+using BlockBitPlanes = std::array<BitPlane<64>, blocks_total>;
 
 using byte = uint8_t;
 

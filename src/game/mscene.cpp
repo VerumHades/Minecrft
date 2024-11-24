@@ -85,29 +85,35 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
 
     skybox.load(skyboxPaths);
     
-    std::vector<std::string> texturePaths = {
-        "textures/grass_top.png",
-        "textures/grass_side.png",
-        "textures/dirt.png",
-        "textures/stone.png",
-        "textures/oak_log_top.png",
-        "textures/oak_log.png",
-        "textures/oak_leaves.png",
-        "textures/birch_leaves.png",
-        "textures/birch_log.png",
-        "textures/birch_log_top.png",
-        "textures/blue_wool.png",
-        "textures/sand.png",
-        "textures/grass_bilboard.png"
-    };
-    
     terrainProgram.initialize();
     terrainProgram.addShader("shaders/graphical/terrain.vs", GL_VERTEX_SHADER);
     terrainProgram.addShader("shaders/graphical/terrain.fs", GL_FRAGMENT_SHADER);
     terrainProgram.compile();
     terrainProgram.use();
+    
+    blockTextureRegistry.addTexture("grass_top"     ,"textures/grass_top.png");
+    blockTextureRegistry.addTexture("grass_side"    ,"textures/grass_side.png");
+    blockTextureRegistry.addTexture("dirt"          ,"textures/dirt.png");
+    blockTextureRegistry.addTexture("stone"         ,"textures/stone.png");
+    blockTextureRegistry.addTexture("oak_log_top"   ,"textures/oak_log_top.png");
+    blockTextureRegistry.addTexture("oak_log    "   ,"textures/oak_log.png");
+    blockTextureRegistry.addTexture("oak_leaves"    ,"textures/oak_leaves.png");
+    blockTextureRegistry.addTexture("birch_leaves"  ,"textures/birch_leaves.png");
+    blockTextureRegistry.addTexture("birch_log"     ,"textures/birch_log.png");
+    blockTextureRegistry.addTexture("birch_log_top" ,"textures/birch_log_top.png");
+    blockTextureRegistry.addTexture("blue_wool"     ,"textures/blue_wool.png");
+    blockTextureRegistry.addTexture("sand"          ,"textures/sand.png");
+    blockTextureRegistry.addTexture("grass_bilboard","textures/grass_bilboard.png");
+    
+    blockTextureRegistry.setTextureSize(160,160);
+    blockTextureRegistry.load();
 
-    tilemap.loadFromFiles(texturePaths,160,160);
+
+    blockRegistry.addFullBlock("dirt", "dirt");
+    blockRegistry.addFullBlock("stone", "stone");
+    blockRegistry.addFullBlock("grass", {"grass_top","dirt","grass_side","grass_side","grass_side","grass_side"});
+    blockRegistry.addFullBlock("oak_leaves", "oak_leaves", true);
+
 
     suncam.initialize();
     suncam.getLightSpaceMatrixUniform().attach(terrainProgram);
@@ -286,14 +292,14 @@ void MainScene::updateCursor(){
     blockUnderCursorPosition = hit.position;
     blockUnderCursorEmpty = hit.lastPosition;
 
-    if(!blockUnderCursor || blockUnderCursor->type == BlockType::Air) wireframeRenderer.removeCube(0);
+    if(!blockUnderCursor || blockUnderCursor->id == BLOCK_AIR_INDEX) wireframeRenderer.removeCube(0);
     else wireframeRenderer.setCube(0,glm::vec3(hit.position) - 0.005f, {1.01,01.01,1.01},{0,0,0});
     
     //wireframeRenderer.setCube(1,glm::vec3(hit.lastPosition) - 0.005f, {1.01,01.01,1.01},{1.0,0,0});
 }
 
 void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods){
-    if(!blockUnderCursor || blockUnderCursor->type == BlockType::Air) return;
+    if(!blockUnderCursor || blockUnderCursor->id == BLOCK_AIR_INDEX) return;
 
     glm::vec3& camDirection = camera.getDirection();
     glm::vec3 camPosition = camera.getPosition();
@@ -302,7 +308,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
     if (
         button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS 
     ){
-        world->setBlock(blockUnderCursorPosition, {BlockType::Air});
+        world->setBlock(blockUnderCursorPosition, {BLOCK_AIR_INDEX});
 
         auto chunk = world->getChunkFromBlockPosition(blockUnderCursorPosition);
         if(!chunk) return;
@@ -313,12 +319,12 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
     ){
         glm::ivec3 blockPosition = glm::floor(blockUnderCursorEmpty);
 
-        world->setBlock(blockPosition, {static_cast<BlockType>(selectedBlock)});
+        world->setBlock(blockPosition, {static_cast<BlockID>(selectedBlock)});
         if(
             player.checkForCollision(*world, false).collision ||
             player.checkForCollision(*world, true).collision
         ){
-            world->setBlock(blockPosition, {BlockType::Air});
+            world->setBlock(blockPosition, {BLOCK_AIR_INDEX});
             return;
         }
 
@@ -339,9 +345,9 @@ void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
 
         camera.adjustFOV(camFOV);
     }
-    else{
-        selectedBlock = (selectedBlock + 1) % predefinedBlocks.size();
-    }
+    //else{
+    //    selectedBlock = (selectedBlock + 1) % predefinedBlocks.size();
+    //}
 }
 
 void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
@@ -379,7 +385,7 @@ void MainScene::open(GLFWwindow* window){
     running = true;
     allGenerated = false;
 
-    world = std::make_unique<World>(worldPath);
+    world = std::make_unique<World>(worldPath, blockRegistry);
     world->getEntities().emplace_back(glm::vec3(0,0,0), glm::vec3(0.6, 1.8, 0.6));
     world->getEntities()[0].setGravity(false);
 
@@ -513,7 +519,7 @@ void MainScene::render(){
 
     terrainProgram.updateUniforms();
     terrainProgram.use();
-    tilemap.bind(0);
+    blockTextureRegistry.getLoadedTextureArray().bind(0);
 
     camera.setModelPosition({0,0,0});
     terrainProgram.updateUniform("modelMatrix");
@@ -530,10 +536,12 @@ void MainScene::render(){
     glClear(GL_DEPTH_BUFFER_BIT);
 
     glDisable( GL_CULL_FACE );
-    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);   
+
+    auto* selectedBlockDefinition = blockRegistry.getRegisteredBlockByIndex(selectedBlock);
 
     uiManager->getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
-    uiManager->getFontManager().renderText("Selected block: " + getBlockTypeName(static_cast<BlockType>(selectedBlock)), 10, 80, 1.0, {0,0,0}, testFont);
+    if(selectedBlockDefinition) uiManager->getFontManager().renderText("Selected block: " + selectedBlockDefinition->name, 10, 80, 1.0, {0,0,0}, testFont);
     uiManager->getFontManager().renderText("X: " + std::to_string(playerPosition.x) + " Y: " + std::to_string(playerPosition.y) + "  Z: " + std::to_string(playerPosition.z), 10, 120, 1.0, {0,0,0}, testFont);
 
     glEnable(GL_DEPTH_TEST);

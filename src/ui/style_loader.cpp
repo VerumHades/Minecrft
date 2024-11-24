@@ -275,7 +275,7 @@ void UIStyle::applyTo(
 
         if(failed) continue;
 
-        for(auto& attr: attribute_registry[query.registry_index]){
+        for(auto& attr: attribute_registry[query.id]){
             attributeApplyFunctions[attr.name](element, attr.value, query.selector[0].state);
         }   
     }

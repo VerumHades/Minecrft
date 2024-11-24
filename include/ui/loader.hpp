@@ -40,7 +40,7 @@ class UIStyle{
 
         struct UIStyleQuery{
             std::vector<UIStyleSelector> selector;
-            int registry_index; // Index of attributes in the attributes registry
+            int id; // Index of attributes in the attributes registry
         };
 
         /*

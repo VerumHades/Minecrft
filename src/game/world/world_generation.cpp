@@ -3,24 +3,6 @@
 #define FNL_IMPL
 #include <FastNoiseLite.h>
 
-
-std::vector<Biome> biomes = {
-    Biome(BlockType::Sand, BlockType::Sand, BlockType::Stone, 0.8f, 1.0f),
-    Biome(BlockType::Grass, BlockType::Dirt, BlockType::Stone, 0.4f, 0.8f),
-    Biome(BlockType::Stone, BlockType::Stone, BlockType::Stone, 0.0f, 0.4f)
-};
-
-const Biome& getBiome(float temperature){
-    for(int i = 0;i < biomes.size();i++){
-        Biome& biome = biomes[i];
-        if(temperature < biome.temperatureLower || temperature > biome.temperatureUpper) continue;
-
-        return biome;
-    }
-
-    return biomes[0];
-}
-
 /*float lerp(float a, float b, float f)
 {
     return a * (1.0f - f) + (b * f);
@@ -30,7 +12,7 @@ std::random_device dev;
 std::mt19937 rng(dev());
 std::uniform_int_distribution<std::mt19937::result_type> dist6(1,10); // distribution in range [1, 6]
 
-WorldGenerator::WorldGenerator(int seed){
+WorldGenerator::WorldGenerator(BlockRegistry&  blockRegistry):  blockRegistry(blockRegistry){
     computeProgram.initialize();
     computeProgram.addShader("shaders/compute/terrain_generation.glsl", GL_COMPUTE_SHADER);
     computeProgram.compile();
@@ -54,7 +36,7 @@ WorldGenerator::WorldGenerator(int seed){
     noise.SetFrequency(0.001f);
     noise.SetFractalOctaves(3);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetSeed(seed);
+    noise.SetSeed(1984);
 }
 
 static inline float transcribeNoiseValue(float value, float ry){
@@ -71,6 +53,9 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, 
         MAKE SURE THAT ALL THE MASKS EXIST, CRASHES OTHERWISE!
     */
 
+    BlockID grass_id = blockRegistry.getIndexByName("grass");
+    BlockID dirt_id  = blockRegistry.getIndexByName("dirt");
+
     float jump = static_cast<float>(CHUNK_SIZE) / static_cast<float>(size);
 
     for(int x = 0;x < size;x++) for(int y = 0;y < size;y++) for(int z = 0;z < size;z++){
@@ -83,12 +68,12 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, 
 
         if(value > 0.5){
             if(top){
-                chunk->setBlock({x,y,z}, {BlockType::Grass});
+                chunk->setBlock({x,y,z}, {grass_id});
             }
             else{
-                chunk->setBlock({x,y,z}, {BlockType::Dirt});
+                chunk->setBlock({x,y,z}, {dirt_id});
             }
-            //chunk.setBlock(x,y,z, {top ? BlockType::Grass : BlockType::Stone});
+            //chunk.setBlock(x,y,z, {top ? BlockID::Grass : BlockID::Stone});
 
             //if(top && rand() % 30 == 0) generateOakTree(chunk,x,y+1,z);
         }
@@ -103,8 +88,8 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, 
 
         Block* block = chunk.getBlock(x,y,z);
         Block* upperBlock = chunk.getBlock(x,y + 1,z); 
-        if(block->type == BlockType::Stone && upperBlock && upperBlock->type == BlockType::Air){
-            chunk.setBlock(x,y,z, {BlockType::Grass});
+        if(block->type == BlockID::Stone && upperBlock && upperBlock->type == BLOCK_AIR_INDEX){
+            chunk.setBlock(x,y,z, {BlockID::Grass});
 
             if(dist6(rng) == 100) generateOakTree(chunk, x,y,z);
         }
@@ -162,10 +147,13 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, glm::ivec3 ch
         }
         first = false;
     }
-    if(!chunk->hasLayerOfType(BlockType::Grass)) chunk->createLayer(BlockType::Grass, {});
+
+    BlockID grass_id = blockRegistry.getIndexByName("grass");
+
+    if(!chunk->hasLayerOfType(grass_id)) chunk->createLayer(grass_id, {});
 
     uint64_t* data = reinterpret_cast<uint64_t*>(computeBuffer->data());
-    chunk->getLayer(BlockType::Grass).field.setData(data);
+    chunk->getLayer(grass_id).field.setData(data);
     chunk->getSolidField().setData(data);
     
     auto end = std::chrono::high_resolution_clock::now();

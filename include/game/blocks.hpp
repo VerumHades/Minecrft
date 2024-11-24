@@ -1,11 +1,13 @@
-#ifndef BLOCKS_H
-#define BLOCKS_H
+#pragma once
 
 #include <vector>
 #include <string>
 #include <unordered_map>
 #include <mutex>
 #include <iostream>
+#include <array>
+
+#include <rendering/texture_registry.hpp>
 
 #define CHUNK_SIZE 64
 
@@ -14,55 +16,65 @@ struct RectangularCollider {
     float width, height, depth;
 };
 
-enum class BlockType {
-    Air,
-    Grass,
-    Dirt,
-    Stone,
-    LeafBlock,
-    OakLog,
-    BirchLeafBlock,
-    BirchLog,
-    BlueWool,
-    Sand,
-    GrassBillboard,
-    BLOCK_TYPES_TOTAL
+using BlockID = size_t;
+#define BLOCK_AIR_INDEX 0
+
+class BlockRegistry{
+    public:
+        enum BlockRenderType{
+            FULL_BLOCK,
+            BILLBOARD
+        } type;
+
+        struct RegisteredBlock{
+            std::string name;
+            std::vector<RectangularCollider> colliders;
+            
+            bool single_texture = false; // If the block is same from all directions
+            bool transparent = false; // If faces around it should get culled
+            std::array<size_t,6> textures; // Top, bottom, left, rigth, front, back                     
+            BlockRenderType render_type;
+        };
+
+    private:
+        TextureRegistry& texture_registry;
+        std::vector<RegisteredBlock> blocks;
+    public:
+        BlockRegistry(TextureRegistry& texture_registry): texture_registry(texture_registry) {
+            blocks.push_back({
+                "air",
+                {},
+                true,
+                true,
+                {},
+                FULL_BLOCK
+            });
+        }
+
+        /*
+            Adds a full block with a collider, where texture path is the texture name for all sides
+        */
+        void addFullBlock(std::string name, std::string texture_name, bool transparent = false);
+
+        /*
+            Adds a full block with a collider, with the defined texture paths
+        */
+        void addFullBlock(std::string name, std::array<std::string,6> texture_names, bool transparent = false);
+
+        /*
+            Adds a billboard block without a collider with the defined texture
+        */
+        void addBillboardBlock(std::string name, std::string texture_name);
+
+        BlockID getIndexByName(std::string name);
+        RegisteredBlock* getRegisteredBlockByIndex(BlockID id);
+
+        size_t registeredBlocksTotal(){return blocks.size();}
 };
 
-typedef struct Block{
-    BlockType type;
+struct Block{
+    BlockID id = 0;
 
-    Block();
-    Block(BlockType type);
-} Block;
-
-struct BlockDefinition {
-    bool transparent = false;
-    bool solid = false;
-    bool repeatTexture = false;
-    bool billboard = false;
-    std::vector<unsigned char> textures = {};
-    std::vector<RectangularCollider> colliders = {{0, 0, 0, 1.0f, 1.0f, 1.0f}};
-
-    // Constructor for convenience
-    BlockDefinition(bool transparent = false, bool solid = false, bool billboard = false, bool repeatTexture = false,
-              std::vector<unsigned char> textures = {}, std::vector<RectangularCollider> colliders = {})
-        : transparent(transparent), solid(solid), repeatTexture(repeatTexture),
-          textures(std::move(textures)), billboard(billboard) {}
+    Block() {}
+    Block(BlockID id): id(id) {}
 };
-
-
-extern std::unordered_map<BlockType, BlockDefinition> predefinedBlocks;
-
-inline const BlockDefinition& getBlockDefinition(Block* block){
-    if (block->type < BlockType::Air || block->type >= BlockType::BLOCK_TYPES_TOTAL) {
-        std::cerr << "Error: Invalid BlockType value: " << static_cast<int>(block->type) << std::endl;
-        std::terminate(); 
-    }
-
-    return predefinedBlocks[block->type];
-}
-
-std::string getBlockTypeName(BlockType type);
-
-#endif

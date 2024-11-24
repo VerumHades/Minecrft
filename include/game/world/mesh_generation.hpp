@@ -17,6 +17,7 @@ class ChunkMeshGenerator{
         std::unique_ptr<Mesh> generateChunkMesh(glm::ivec3 position, Chunk* group);
 
         BitFieldCache cache;
+        BlockRegistry& blockRegistry;
 
         std::mutex meshLoadingMutex;
         
@@ -32,6 +33,8 @@ class ChunkMeshGenerator{
         void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<Mesh> mesh);
 
     public:
+        ChunkMeshGenerator(BlockRegistry& blockRegistry): blockRegistry(blockRegistry) {}
+
         void loadMeshFromQueue(ChunkMeshRegistry&  buffer);
 
         /*
