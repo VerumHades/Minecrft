@@ -232,19 +232,37 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
         
         for(int row = 0;row < size;row++){
             for(auto& [type,block,field]: group->getLayers()){
+                auto* definition = blockRegistry.getRegisteredBlockByIndex(type);
+                if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
+
                 auto* rotatedField = field.getTransposed(&cache);
 
-                uint64_t allFacesX = (field.getRow(layer,row) | field.getRow(layer + 1,row)) & (group->getSolidField().getRow(layer,row) ^ group->getSolidField().getRow(layer + 1,row));
-                planesXforward[ (size_t) type][row] = group->getSolidField().getRow(layer,row)     & allFacesX;
-                planesXbackward[(size_t) type][row] = group->getSolidField().getRow(layer + 1,row) & allFacesX;
+                if(!definition->transparent){
+                    uint64_t allFacesX = (field.getRow(layer,row) | field.getRow(layer + 1,row)) & (group->getSolidField().getRow(layer,row) ^ group->getSolidField().getRow(layer + 1,row));
+                    planesXforward[ (size_t) type][row] = group->getSolidField().getRow(layer,row)     & allFacesX;
+                    planesXbackward[(size_t) type][row] = group->getSolidField().getRow(layer + 1,row) & allFacesX;
 
-                uint64_t allFacesY = (field.getRow(row,layer) | field.getRow(row,layer + 1)) & (group->getSolidField().getRow(row,layer) ^ group->getSolidField().getRow(row,layer + 1));
-                planesYforward[ (size_t) type][row] = group->getSolidField().getRow(row,layer)     & allFacesY;
-                planesYbackward[(size_t) type][row] = group->getSolidField().getRow(row,layer + 1) & allFacesY;
+                    uint64_t allFacesY = (field.getRow(row,layer) | field.getRow(row,layer + 1)) & (group->getSolidField().getRow(row,layer) ^ group->getSolidField().getRow(row,layer + 1));
+                    planesYforward[ (size_t) type][row] = group->getSolidField().getRow(row,layer)     & allFacesY;
+                    planesYbackward[(size_t) type][row] = group->getSolidField().getRow(row,layer + 1) & allFacesY;
 
-                uint64_t allFacesZ = (rotatedField->getRow(layer,row) | rotatedField->getRow(layer + 1,row)) & (solidRotated->getRow(layer,row) ^ solidRotated->getRow(layer + 1,row));
-                planesZforward[ (size_t) type][row] = solidRotated->getRow(layer,row)     & allFacesZ;
-                planesZbackward[(size_t) type][row] = solidRotated->getRow(layer + 1,row) & allFacesZ;
+                    uint64_t allFacesZ = (rotatedField->getRow(layer,row) | rotatedField->getRow(layer + 1,row)) & (solidRotated->getRow(layer,row) ^ solidRotated->getRow(layer + 1,row));
+                    planesZforward[ (size_t) type][row] = solidRotated->getRow(layer,row)     & allFacesZ;
+                    planesZbackward[(size_t) type][row] = solidRotated->getRow(layer + 1,row) & allFacesZ;
+                }
+                else{
+                    uint64_t allFacesX = (field.getRow(layer,row) ^ field.getRow(layer + 1,row)) & ~(group->getSolidField().getRow(layer,row) | group->getSolidField().getRow(layer + 1,row));
+                    planesXforward[ (size_t) type][row] = field.getRow(layer,row) & allFacesX;
+                    planesXbackward[(size_t) type][row] = field.getRow(layer + 1,row) & allFacesX;
+
+                    uint64_t allFacesY = (field.getRow(row,layer) ^ field.getRow(row,layer + 1)) & ~(group->getSolidField().getRow(row,layer) | group->getSolidField().getRow(row,layer + 1));
+                    planesYforward[ (size_t) type][row] = field.getRow(row,layer)     & allFacesY;
+                    planesYbackward[(size_t) type][row] = field.getRow(row,layer + 1) & allFacesY;
+
+                    uint64_t allFacesZ = (rotatedField->getRow(layer,row) ^ rotatedField->getRow(layer + 1,row)) & ~(solidRotated->getRow(layer,row) | solidRotated->getRow(layer + 1,row));
+                    planesZforward[ (size_t) type][row] = rotatedField->getRow(layer,row)     & allFacesZ;
+                    planesZbackward[(size_t) type][row] = rotatedField->getRow(layer + 1,row) & allFacesZ;
+                }
             }
         }
 
@@ -374,37 +392,69 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
 
     for(int row = 0;row < size;row++){
         for(auto& type: agregateTypesX){
+            auto* definition = blockRegistry.getRegisteredBlockByIndex(type);
+            if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
+
             const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field.getRow(0,row) : 0ULL;
             const uint64_t otherMaskRow = nextX->hasLayerOfType(type) ? nextX->getLayer(type).field.getRow(size - 1,row)   : 0ULL;
             
-            uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (group->getSolidField().getRow(0,row) ^ nextXSolid.getRow(size - 1,row));
-                
-            planesXforward[ (size_t) type][row] =  group->getSolidField().getRow(0,row) & allFacesX;
-            planesXbackward[(size_t) type][row] =  nextXSolid.getRow(size - 1,row) & allFacesX;
+            if(!definition->transparent){
+                uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (group->getSolidField().getRow(0,row) ^ nextXSolid.getRow(size - 1,row));
+                    
+                planesXforward[ (size_t) type][row] =  group->getSolidField().getRow(0,row) & allFacesX;
+                planesXbackward[(size_t) type][row] =  nextXSolid.getRow(size - 1,row) & allFacesX;
+            }
+            else{
+                uint64_t allFacesX =  (localMaskRow ^ otherMaskRow) & ~(group->getSolidField().getRow(0,row) | nextXSolid.getRow(size - 1,row));
+                    
+                planesXforward[ (size_t) type][row] =  localMaskRow & allFacesX;
+                planesXbackward[(size_t) type][row] =  otherMaskRow & allFacesX;
+            }
         }
         
         for(auto& type: agregateTypesY){
+            auto* definition = blockRegistry.getRegisteredBlockByIndex(type);
+            if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
+
             const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field.getRow(row,0) : 0ULL;
             const uint64_t otherMaskRow = nextY->hasLayerOfType(type) ? nextY->getLayer(type).field.getRow(row,size - 1)   : 0ULL;
             
-            uint64_t allFacesY =  (localMaskRow | otherMaskRow) & (group->getSolidField().getRow(row,0) ^ nextYSolid.getRow(row,size - 1));
+            if(!definition->transparent){
+                uint64_t allFacesY =  (localMaskRow | otherMaskRow) & (group->getSolidField().getRow(row,0) ^ nextYSolid.getRow(row,size - 1));
 
-            planesYforward[ (size_t) type][row] = group->getSolidField().getRow(row,0) & allFacesY;
-            planesYbackward[(size_t) type][row] = nextYSolid.getRow(row,size - 1) & allFacesY;
+                planesYforward[ (size_t) type][row] = group->getSolidField().getRow(row,0) & allFacesY;
+                planesYbackward[(size_t) type][row] = nextYSolid.getRow(row,size - 1) & allFacesY;
+            }
+            else{
+                uint64_t allFacesY =  (localMaskRow ^ otherMaskRow) & ~(group->getSolidField().getRow(row,0) | nextYSolid.getRow(row,size - 1));
+
+                planesYforward[ (size_t) type][row] = localMaskRow & allFacesY;
+                planesYbackward[(size_t) type][row] = otherMaskRow & allFacesY;
+            }
         }
 
         for(auto& type: agregateTypesZ){
+            auto* definition = blockRegistry.getRegisteredBlockByIndex(type);
+            if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
+
             uint64_t localMaskRow = 0ULL;
             if(group->hasLayerOfType(type)) localMaskRow = group->getLayer(type).field.getTransposed(&cache)->getRow(0,row);
             
             uint64_t otherMaskRow = 0ULL;
             if(nextZ->hasLayerOfType(type)) otherMaskRow = nextZ->getLayer(type).field.getTransposed(&cache)->getRow(size - 1,row); 
             
-            
-            uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (solidRotated->getRow(0,row) ^ nextZSolidRotated->getRow(size - 1,row));
+            if(!definition->transparent){
+                uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (solidRotated->getRow(0,row) ^ nextZSolidRotated->getRow(size - 1,row));
 
-            planesZforward[ (size_t)type][row] =  solidRotated->getRow(0,row) & allFacesX;
-            planesZbackward[(size_t)type][row] =  nextZSolidRotated->getRow(size - 1,row) & allFacesX;
+                planesZforward[ (size_t)type][row] =  solidRotated->getRow(0,row) & allFacesX;
+                planesZbackward[(size_t)type][row] =  nextZSolidRotated->getRow(size - 1,row) & allFacesX;
+            }
+            else{
+                uint64_t allFacesX =  (localMaskRow ^ otherMaskRow) & ~(solidRotated->getRow(0,row) | nextZSolidRotated->getRow(size - 1,row));
+
+                planesZforward[ (size_t)type][row] =  localMaskRow & allFacesX;
+                planesZbackward[(size_t)type][row] =  otherMaskRow & allFacesX;
+            }
         }
     }
 
