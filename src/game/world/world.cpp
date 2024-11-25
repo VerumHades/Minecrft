@@ -216,7 +216,7 @@ bool World::setBlock(glm::ivec3 position, Block block){
     return true;
 }
 
-void World::drawEntities(ModelManager& manager, Camera& camera, bool depthMode){
+void World::drawEntities(ExternalModelManager& manager, Camera& camera, bool depthMode){
     for (auto& entity: this->entities) { 
         if(entity.getModelName() == "default") continue;
         

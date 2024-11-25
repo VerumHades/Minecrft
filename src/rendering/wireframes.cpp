@@ -1,8 +1,6 @@
 #include <rendering/wireframes.hpp>
 
 WireframeCubeRenderer::WireframeCubeRenderer(){
-    vao.bind();
-
     wireframeProgram.initialize();
     wireframeProgram.addShader("shaders/graphical/wireframe/cube_wireframe.vs", GL_VERTEX_SHADER);
     wireframeProgram.addShader("shaders/graphical/wireframe/cube_wireframe.fs", GL_FRAGMENT_SHADER);
@@ -23,8 +21,6 @@ WireframeCubeRenderer::WireframeCubeRenderer(){
     vertexBuffer.insert(0, vertices.size(), vertices.data());
     vertexBuffer.bind();
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
 
     std::array<uint, 8 * 3> indices = {
         0,1, 1,2, 2,3, 3,0, // front
@@ -37,19 +33,9 @@ WireframeCubeRenderer::WireframeCubeRenderer(){
     instanceBuffer.initialize(maxCubes * (3 + 3 + 3));
     instanceBuffer.bind();
 
-    glEnableVertexAttribArray(1); // Position
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
-    glVertexAttribDivisor(1, 1);  // Divisor 1 -> advance per instance
-
-    glEnableVertexAttribArray(2); // Scale
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
-    glVertexAttribDivisor(2, 1);
-
-    glEnableVertexAttribArray(3); // Color
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
-    glVertexAttribDivisor(3, 1);
-
-    vao.unbind();
+    vao.attachBuffer(&vertexBuffer, {VEC3});
+    vao.attachBuffer(&instanceBuffer, {VEC3, VEC3, VEC3}, true);
+    vao.attachIndexBuffer(&indexBuffer);
 }
 
 void WireframeCubeRenderer::setCube(size_t index, glm::vec3 position, glm::vec3 scale, glm::vec3 color){

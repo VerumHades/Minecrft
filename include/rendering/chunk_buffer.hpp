@@ -158,8 +158,6 @@ struct TransformEqual {
 
 class ChunkMeshRegistry{
     private:
-        VertexFormat vertexFormat;
-
         GLVertexArray vao;
         
         size_t drawCallCount = 0;
@@ -171,6 +169,8 @@ class ChunkMeshRegistry{
         size_t maxIndexCount = 0;
 
         size_t maxDrawCalls = 0;
+
+        size_t vertexSize = 0;
 
         std::unique_ptr<GLCachedDoubleBuffer<DrawElementsIndirectCommand, GL_DRAW_INDIRECT_BUFFER>> drawCallBuffer;
 
@@ -259,7 +259,6 @@ class ChunkMeshRegistry{
 
         DrawElementsIndirectCommand getCommandFor(const glm::ivec3& pos);
         void draw();
-        VertexFormat& getVertexFormat() {return vertexFormat;}
 };
 
 #include <rendering/mesh.hpp>

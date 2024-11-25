@@ -31,7 +31,7 @@ class MainScene: public Scene{
     private:
         PerspectiveCamera camera;
         DepthCamera suncam;
-        ModelManager modelManager;
+        ExternalModelManager modelManager;
 
         std::unique_ptr<ThreadPool> threadPool;
 

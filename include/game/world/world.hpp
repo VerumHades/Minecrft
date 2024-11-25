@@ -32,7 +32,7 @@ struct RaycastResult{
     glm::vec3 lastPosition; // Position before the hit
 };
 
-class ModelManager;
+class ExternalModelManager;
 
 class World: public Collidable{
     private:
@@ -65,7 +65,7 @@ class World: public Collidable{
 
         RaycastResult raycast(glm::vec3 from, glm::vec3 direction, float maxDistance);
 
-        void drawEntities(ModelManager& manager, Camera& camera, bool depthMode  = false);
+        void drawEntities(ExternalModelManager& manager, Camera& camera, bool depthMode  = false);
         void updateEntities();
 
         int chunksTotal() const {return chunks.size();}

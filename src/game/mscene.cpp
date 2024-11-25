@@ -64,7 +64,7 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
 
     getUILayer("default").addElement(crosshair);
 
-    Model& bob = modelManager.createModel("bob");
+    ExternalModel& bob = modelManager.createModel("bob");
     bob.loadFromFile("models/test.gltf", "");
     //bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
     

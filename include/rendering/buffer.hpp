@@ -1,5 +1,4 @@
-#ifndef BUFFER_H
-#define BUFFER_H
+#pragma once
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -9,6 +8,7 @@
 #include <queue>
 #include <glm/glm.hpp>
 #include <unordered_map>
+#include <map>
 #include <list>
 
 #include <rendering/mesh.hpp>
@@ -18,24 +18,6 @@
 
 void checkGLError(const char *file, int line);
 #define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
-
-class GLVertexArray{
-    private:
-        uint vao_id;
-    public:
-        GLVertexArray(){
-            glGenVertexArrays(1,  &vao_id);
-        }
-        ~GLVertexArray(){
-            glDeleteVertexArrays(1,  &vao_id);
-        }
-        void bind(){
-            glBindVertexArray(vao_id);
-        }
-        void unbind(){
-            glBindVertexArray(0);
-        }
-};
 
 class GLBufferLegacy{
     private:
@@ -76,7 +58,7 @@ class GLBuffer{
         /*
             Creates the actual buffer of some size
         */
-        void initialize(size_t size){
+        virtual void initialize(size_t size){
             if(size == 0) return;
 
             bind();
@@ -89,7 +71,7 @@ class GLBuffer{
         /*
             Inserts data into a buffer, needs to be initialized
         */
-        bool insert(size_t at, size_t size, T* data){
+        virtual bool insert(size_t at, size_t size, T* data){
             if(!initialized) throw std::runtime_error("Inserting data into an uninitialized buffer.");
 
             if(at + size > buffer_size) return false; // Dont overflow
@@ -110,11 +92,9 @@ class GLBuffer{
 
 
 template  <typename T, int type>
-class GLAllocatedBuffer{
+class GLAllocatedBuffer: public GLBuffer<T,type>{
     private:
         Allocator allocator;
-        GLBuffer<T,type> buffer;
-
         bool initialized = false;
 
     public:
@@ -122,7 +102,7 @@ class GLAllocatedBuffer{
             Creates the actual buffer of some size
         */
         void initialize(size_t size){
-            buffer.initialize(size);
+            GLBuffer<T,type>::initialize(size);
             allocator.initialize(size);
         }
         /*
@@ -137,7 +117,7 @@ class GLAllocatedBuffer{
 
             if(!success) return {false, 0};
 
-            buffer.insert(position, size, data);
+            GLBuffer<T,type>::insert(position, size, data);
 
             return {true, position};
         }
@@ -154,7 +134,7 @@ class GLAllocatedBuffer{
             if(block_size == 0) return insert(data, size); // Invalid at
 
             if(block_size >= size){ // Space is sufficient
-                buffer.insert(at, size, data);
+                GLBuffer<T,type>::insert(at, size, data);
                 return {true, at};
             }
 
@@ -182,9 +162,8 @@ class GLAllocatedBuffer{
     All added data is cached up to a set size and then flushed right before drawing
 */
 template <typename T, int  type>
-class GLLazyBuffer{
+class GLLazyBuffer: public GLBuffer<T,type>{
     private:
-        GLBuffer<T, type> internal_buffer;
         size_t buffer_write_position = 0;
 
         T* cache;
@@ -195,7 +174,7 @@ class GLLazyBuffer{
         GLLazyBuffer(size_t size){
             cache = new T[size];
 
-            internal_buffer.initialize(size);
+            GLBuffer<T,type>::initialize(size);
         }
         ~GLLazyBuffer(){
             delete cache;
@@ -224,16 +203,12 @@ class GLLazyBuffer{
         bool flush(){
             if(cache_write_position == 0) return true; // Nothing to flush
 
-            bool output = internal_buffer.insert(buffer_write_position, cache_write_position, cache);
+            bool output = GLBuffer<T,type>::insert(buffer_write_position, cache_write_position, cache);
 
             buffer_write_position += cache_write_position;
             cache_write_position = 0;
 
             return output;
-        }
-
-        void bind(){
-            internal_buffer.bind();
         }
 };
 /*
@@ -330,33 +305,6 @@ class GLPersistentBuffer{
 
 };
 
-
-/*class GLStripBuffer{
-    private:
-        uint data;
-        uint vao;
-
-        size_t buffer_size = 0;
-        size_t data_size = 0;
-
-        VertexFormat format;
-        void applyFormat();
-
-    public:
-        GLStripBuffer(VertexFormat format);
-        ~GLStripBuffer();
-
-        void setFormat(VertexFormat format);
-
-        // Appends data and returns its starting point
-        size_t appendData(const float* data, size_t size);
-        // Inserts data at a given location
-        bool insertData(size_t start, const float* data, size_t size);
-        //bool resize(size_t newSize);
-
-        void draw();
-};*/
-
 class GLDoubleBuffer{
     private:
         GLBufferLegacy buffers[2];
@@ -367,4 +315,136 @@ class GLDoubleBuffer{
         GLBufferLegacy& getBackBuffer();
 };
 
-#endif
+
+/*
+    An opengl buffer object that has the functions of a 
+*/
+template <typename T, int type>
+class GLVector{
+    private:
+        uint buffer_id;
+        size_t buffer_size = 0;
+        size_t pseudo_size = 0; // Last element
+
+        /*
+            Resizes the buffer, retains current data (if new size is smaller the excess data is lost)
+        */
+        void resize(size_t new_size){
+            if(new_size == buffer_size) return; // Already the set size
+
+            uint new_buffer_id;
+            glGenBuffers(1, &new_buffer_id);
+            
+            if(buffer_size > 0){
+                size_t copy_size = std::min(new_size, buffer_size);
+
+                glBindBuffer(GL_COPY_READ_BUFFER, buffer_id);
+                glBindBuffer(GL_COPY_WRITE_BUFFER, new_buffer_id);
+
+                glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, copy_size * sizeof(T));
+
+                glBindBuffer(GL_COPY_READ_BUFFER, 0);
+                glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+            }
+
+            buffer_id = new_buffer_id;
+            buffer_size = new_size;
+        }
+
+    public:
+        GLVector(){
+            glGenBuffers(1, &buffer_id);
+        }
+        ~GLVector(){
+            glDeleteBuffers(1, &buffer_id);
+        }
+
+        void push_back(T element){
+
+        }
+
+        size_t size() { return buffer_size; }
+};
+
+enum GLSlotBinding{
+    FLOAT = 1,
+    VEC2 = 2,
+    VEC3 = 3,
+    VEC4 = 4
+};
+
+/*
+    A class to manage the vertex array object and its format
+*/
+class GLVertexArray{
+    private:
+        uint vao_id;
+
+        struct BoundBuffer{
+            GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer;
+            std::vector<GLSlotBinding> bindings;
+            size_t size;
+            bool per_instance = false;
+        };
+
+        std::vector<BoundBuffer> buffers;
+    public:
+        GLVertexArray(){
+            glGenVertexArrays(1,  &vao_id);
+        }
+        ~GLVertexArray(){
+            glDeleteVertexArrays(1,  &vao_id);
+        }
+
+        size_t attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, std::vector<GLSlotBinding> bindings, bool per_instance = false){
+            size_t vertex_size = 0;
+            for(auto& binding: bindings) vertex_size += binding;
+
+            buffers.push_back({buffer_pointer, bindings, vertex_size, per_instance});
+
+            update();
+            
+            return vertex_size;
+        }
+        void attachIndexBuffer(GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>* buffer){
+            bind();
+            buffer->bind();
+            unbind();
+        }
+
+        /*
+            Updates buffers, bindings locations are based on how the buffers were attached sequentialy
+        */
+        void update(){
+            bind();
+
+            uint slot = 0;
+
+            for(auto& [buffer_pointer, bindings, vertex_size, per_instance]: buffers){
+                buffer_pointer->bind();
+
+                size_t stride =  vertex_size * sizeof(float);
+                size_t size_to_now = 0;
+
+                for(auto& current_size: bindings){
+                    uintptr_t pointer = size_to_now * sizeof(float);
+
+                    glVertexAttribPointer(slot, (int) current_size, GL_FLOAT, GL_FALSE, (int)stride, (void*)pointer);
+                    glEnableVertexAttribArray(slot);
+                    if(per_instance) glVertexAttribDivisor(slot, 1);
+
+                    size_to_now += current_size;
+                    slot++;
+                }
+            }
+
+            unbind();
+        }
+
+        void bind(){
+            glBindVertexArray(vao_id);
+        }
+        void unbind(){
+            glBindVertexArray(0);
+        }
+};

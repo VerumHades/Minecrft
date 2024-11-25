@@ -124,8 +124,6 @@ std::string formatSize(size_t bytes) {
 
 
 void ChunkMeshRegistry::initialize(uint renderDistance){
-    vertexFormat = VertexFormat({3,1,2,1,1});
-
     actualRegionSizes.push_back(1);
     for(int i = 1;i < maxRegionLevel;i++){
         actualRegionSizes.push_back(pow(i, 2));
@@ -150,7 +148,7 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
     */
     size_t totalMemoryToAllocate = (1024ULL * 1024ULL * 1024ULL) / 4ULL; // 1/4GB of video memory
 
-    size_t vertexPerFace = vertexFormat.getVertexSize() * 4; // For vertices per face
+    size_t vertexPerFace = (3 + 1 + 2 + 1 + 1) * 4; // For vertices per face
     size_t indexPerFace  = 6;
 
     size_t total = vertexPerFace + indexPerFace;
@@ -169,9 +167,9 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
     vertexBuffer.initialize(maxVertexCount);
     indexBuffer.initialize(maxIndexCount);
 
+    vertexSize = vao.attachBuffer(reinterpret_cast<GLBuffer<float, GL_ARRAY_BUFFER>*>(&vertexBuffer), {VEC3, FLOAT, VEC2, FLOAT, FLOAT});
+    vao.attachIndexBuffer(reinterpret_cast<GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>*>(&indexBuffer));
     //CHECK_GL_ERROR();
-
-    vertexFormat.apply();
 }
 
 std::tuple<bool,size_t,size_t> ChunkMeshRegistry::allocateOrUpdateMesh(Mesh* mesh, size_t vertexPosition, size_t indexPosition){
@@ -210,7 +208,7 @@ bool ChunkMeshRegistry::addMesh(Mesh* mesh, const glm::ivec3& pos){
 
         indexBufferOffset,
         mesh->getIndices().size(),
-        vertexBufferOffset / vertexFormat.getVertexSize(),
+        vertexBufferOffset / vertexSize,
     };
     region->setMeshless(false);
 
@@ -242,7 +240,7 @@ bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
             mesh->getIndices().size(),
             indexBufferOffset,
             mesh->getIndices().size(),
-            vertexBufferOffset / vertexFormat.getVertexSize(),
+            vertexBufferOffset / vertexSize,
         }
     );
 

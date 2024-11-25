@@ -429,7 +429,7 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
                 uint64_t allFacesY =  (localMaskRow ^ otherMaskRow) & ~(group->getSolidField().getRow(row,0) | nextYSolid.getRow(row,size - 1));
 
                 planesYforward[ (size_t) type][row] = localMaskRow & allFacesY;
-                planesYbackward[(size_t) type][row] = otherMaskRow & allFacesY;
+                planesYbackward[(size_t) type][row] = otherMaskRow & allFacesY; 
             }
         }
 
