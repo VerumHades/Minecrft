@@ -35,8 +35,8 @@ class MainScene: public Scene{
 
         std::unique_ptr<ThreadPool> threadPool;
 
-        ShaderProgram terrainProgram;
-        ShaderProgram skyboxProgram;
+        ShaderProgram terrainProgram = ShaderProgram("shaders/graphical/terrain.vs","shaders/graphical/terrain.fs");
+        ShaderProgram skyboxProgram  = ShaderProgram("shaders/graphical/skybox.vs", "shaders/graphical/skybox.fs");
         CommandProcessor commandProcessor;
 
         GLSkybox skybox;

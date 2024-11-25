@@ -93,7 +93,7 @@ class PerspectiveCamera: public Camera{
 
 class DepthCamera: public Camera{
     private:
-        ShaderProgram program;
+        ShaderProgram program = ShaderProgram("shaders/graphical/depth.vs","shaders/graphical/depth.fs");
         std::unique_ptr<GLDepthTexture> texture;
 
         Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("projectionMatrix");

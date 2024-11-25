@@ -13,11 +13,6 @@ std::mt19937 rng(dev());
 std::uniform_int_distribution<std::mt19937::result_type> dist6(1,10); // distribution in range [1, 6]
 
 WorldGenerator::WorldGenerator(BlockRegistry&  blockRegistry):  blockRegistry(blockRegistry){
-    computeProgram.initialize();
-    computeProgram.addShader("shaders/compute/terrain_generation.glsl", GL_COMPUTE_SHADER);
-    computeProgram.compile();
-    computeProgram.use();
-
     computeBuffer = std::make_unique<GLPersistentBuffer<uint>>(64 * 64  * (64 / 32) * sizeof(uint), GL_SHADER_STORAGE_BUFFER);
 
     worldPositionUniformID = glGetUniformLocation(computeProgram.getID(),"worldPosition");
@@ -125,7 +120,7 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, glm::ivec3 ch
     /*
         64 / 32 (division because one uint is 32 bits) by 64 by 64
     */
-    glDispatchCompute(64 / 32, 64, 64);
+    glDispatchCompute(64, 64, 64 / 32);
 
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 

@@ -1,9 +1,12 @@
 #include <rendering/model.hpp>
 
 Model::Model(){
-    vao.attachBuffer(&vertex_buffer, {VEC3});
     vao.attachBuffer(&instance_buffer, {VEC3}, true);
     vao.attachIndexBuffer(&index_buffer);
+}
+
+void Model::setupBufferFormat(std::vector<GLSlotBinding> bindings){
+    vao.attachBuffer(&vertex_buffer, bindings);
 }
 
 void Model::requestDraw(glm::vec3 position){

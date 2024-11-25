@@ -104,14 +104,9 @@ void Font::createAtlas(){
 }
 
 void FontManager::initialize(){
-    program = std::make_unique<ShaderProgram>();
-    program->initialize();
-    program->addShader("shaders/graphical/ui/text.vs", GL_VERTEX_SHADER);
-    program->addShader("shaders/graphical/ui/text.fs", GL_FRAGMENT_SHADER);
-    program->compile();
-    program->use();
+    program.use();
 
-    textColor.attach(*program);
+    textColor.attach(program);
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -143,7 +138,7 @@ FontManager::~FontManager(){
 void FontManager::renderText(std::string text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color, Font& font) {
     textColor = color;
     // Activate corresponding render state
-    program->updateUniforms();
+    program.updateUniforms();
     //CHECK_GL_ERROR();
 
     font.getAtlas()->bind(0);

@@ -77,18 +77,11 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
         "skybox/stars/back.png"
     };
 
-    skyboxProgram.initialize();
-    skyboxProgram.addShader("shaders/graphical/skybox.vs", GL_VERTEX_SHADER);
-    skyboxProgram.addShader("shaders/graphical/skybox.fs", GL_FRAGMENT_SHADER);
-    skyboxProgram.compile();
+
     skyboxProgram.use();
 
     skybox.load(skyboxPaths);
     
-    terrainProgram.initialize();
-    terrainProgram.addShader("shaders/graphical/terrain.vs", GL_VERTEX_SHADER);
-    terrainProgram.addShader("shaders/graphical/terrain.fs", GL_FRAGMENT_SHADER);
-    terrainProgram.compile();
     terrainProgram.use();
     
     blockTextureRegistry.addTexture("grass_top"     ,"textures/grass_top.png");

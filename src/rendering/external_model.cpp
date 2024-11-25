@@ -238,12 +238,10 @@ void ExternalModelManager::initialize(){
     modelProgram = std::make_unique<ShaderProgram>();
     modelDepthProgram = std::make_unique<ShaderProgram>();
 
-    modelProgram->initialize();
     modelProgram->addShader("shaders/graphical/model/model.vs", GL_VERTEX_SHADER);
     modelProgram->addShader("shaders/graphical/model/model.fs", GL_FRAGMENT_SHADER);
     modelProgram->compile();
     
-    modelDepthProgram->initialize();
     modelDepthProgram->addShader("shaders/graphical/depth.vs", GL_VERTEX_SHADER);
     modelDepthProgram->addShader("shaders/graphical/depth.fs", GL_FRAGMENT_SHADER);
     modelDepthProgram->compile();

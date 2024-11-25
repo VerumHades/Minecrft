@@ -575,7 +575,7 @@ class UIManager{
         FontManager fontManager;
         std::unique_ptr<Font> mainFont;
 
-        ShaderProgram uiProgram;
+        ShaderProgram uiProgram = ShaderProgram("shaders/graphical/ui/ui.vs","shaders/graphical/ui/ui.fs");
         VertexFormat vertexFormat;
 
         std::unique_ptr<GLBufferLegacy> drawBuffer;

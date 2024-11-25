@@ -13,10 +13,14 @@ class Model{
 
         GLVertexArray vao;
 
-        GLBuffer<float, GL_ARRAY_BUFFER> vertex_buffer;
         GLBuffer<float, GL_ARRAY_BUFFER> instance_buffer;
+        
+    protected:
+        GLBuffer<float, GL_ARRAY_BUFFER> vertex_buffer;
         GLBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> index_buffer;
-    
+
+        void setupBufferFormat(std::vector<GLSlotBinding> bindings);
+
     public:
         Model();
         /*

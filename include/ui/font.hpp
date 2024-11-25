@@ -45,7 +45,7 @@ class Font{
 
 class FontManager{
     private:
-        std::unique_ptr<ShaderProgram> program;
+        ShaderProgram program = ShaderProgram("shaders/graphical/ui/text.vs","shaders/graphical/ui/text.fs");
         Uniform<glm::vec3> textColor = Uniform<glm::vec3>("textColor");
 
         unsigned int VAO, VBO;
@@ -56,7 +56,7 @@ class FontManager{
 
         ~FontManager();
 
-        ShaderProgram& getProgram(){return *program;}
+        ShaderProgram& getProgram(){return program;}
 };
 
 #endif

@@ -27,7 +27,16 @@ class ShaderProgram{
         std::vector<int> shaders;
         std::unordered_map<std::string, std::reference_wrapper<UniformBase>> attachedUniforms;
     public:
-        void initialize();
+        ShaderProgram();
+        ShaderProgram(std::string vertex_shader_path, std::string fragment_shader_path): ShaderProgram() {
+            addShader(vertex_shader_path, GL_VERTEX_SHADER);
+            addShader(fragment_shader_path, GL_FRAGMENT_SHADER);
+            compile();
+        }
+        ShaderProgram(std::string compute_shader_path): ShaderProgram() {
+            addShader(compute_shader_path, GL_COMPUTE_SHADER);
+            compile();
+        }
         ~ShaderProgram();
 
         void addShader(std::string filename, int type);

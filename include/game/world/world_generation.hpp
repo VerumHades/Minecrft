@@ -19,7 +19,7 @@ class WorldGenerator{
 
         uint worldPositionUniformID;
 
-        ShaderProgram computeProgram;
+        ShaderProgram computeProgram = ShaderProgram("shaders/compute/terrain_generation.glsl");
         std::unique_ptr<GLPersistentBuffer<uint>> computeBuffer;
         BlockRegistry& blockRegistry;
 

@@ -16,7 +16,7 @@ class WireframeCubeRenderer{
         GLBuffer<float, GL_ARRAY_BUFFER        > vertexBuffer;
         GLBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> indexBuffer;
 
-        ShaderProgram wireframeProgram;
+        ShaderProgram wireframeProgram = ShaderProgram("shaders/graphical/wireframe/cube_wireframe.vs", "shaders/graphical/wireframe/cube_wireframe.fs");
     public:
         WireframeCubeRenderer();
 

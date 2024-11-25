@@ -1,12 +1,6 @@
 #include <rendering/wireframes.hpp>
 
 WireframeCubeRenderer::WireframeCubeRenderer(){
-    wireframeProgram.initialize();
-    wireframeProgram.addShader("shaders/graphical/wireframe/cube_wireframe.vs", GL_VERTEX_SHADER);
-    wireframeProgram.addShader("shaders/graphical/wireframe/cube_wireframe.fs", GL_FRAGMENT_SHADER);
-    wireframeProgram.compile();
-    wireframeProgram.use();
-
     std::array<float,8 * 3> vertices = {
         0.0f,1.0f,0.0f,
         1.0f,1.0f,0.0f,

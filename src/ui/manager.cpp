@@ -1,12 +1,7 @@
 #include <ui/manager.hpp>
 
 void UIManager::initialize(){
-    uiProgram.initialize();
-    uiProgram.addShader("shaders/graphical/ui/ui.vs", GL_VERTEX_SHADER);
-    uiProgram.addShader("shaders/graphical/ui/ui.fs", GL_FRAGMENT_SHADER);
-    uiProgram.compile();
     uiProgram.use();
-
     fontManager.initialize();
 
     vertexFormat = VertexFormat({3,2,4,2,1,1,1,4,4,4,4,4,4});

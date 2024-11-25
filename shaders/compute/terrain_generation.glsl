@@ -1,6 +1,6 @@
 #version 450
 
-layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 32) in;
 
 layout(std430, binding = 0) buffer TerrainData {
     uint data[];
@@ -68,16 +68,16 @@ uniform vec3 worldPosition;
 
 void main() {
     // Each work group handles 32 blocks
-    uint groupIndex = gl_WorkGroupID.x + gl_WorkGroupID.y * 2 + gl_WorkGroupID.z * 64 * 2;
-    uint bitIndex = gl_LocalInvocationID.x; // Thread-specific bit position (0 to 31)
+    uint groupIndex = (1 - gl_WorkGroupID.z) + gl_WorkGroupID.x * 2 + gl_WorkGroupID.y * 64 * 2;
+    uint bitIndex = gl_LocalInvocationID.z; // Thread-specific bit position (0 to 31)
 
     // Calculate the array index and bit mask for this work group's 32-bit uint
     uint arrayIndex = groupIndex;
-    uint bitMask = 1u << bitIndex;
+    uint bitMask = 1u << (31 - bitIndex);
 
-    vec3 position = gl_GlobalInvocationID.xzy + worldPosition;
+    vec3 position = gl_GlobalInvocationID.xyz + worldPosition;
     // Determine if this block (bit) should be set or cleared
-    bool isActive = position.y < 0.0;
+    bool isActive = position.y < (sin(position.x / 64) * 10);//position.y < 0.0;
 
     // Set or clear the bit within the uint
     if (isActive) {

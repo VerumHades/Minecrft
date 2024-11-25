@@ -106,10 +106,6 @@ void DepthCamera::updateProjection(){
 }
 
 void DepthCamera::initialize(){
-    program.initialize();
-    program.addShader("shaders/graphical/depth.vs", GL_VERTEX_SHADER);
-    program.addShader("shaders/graphical/depth.fs", GL_FRAGMENT_SHADER);
-    program.compile();
     program.use();
 
     modelMatrix.attach(program);

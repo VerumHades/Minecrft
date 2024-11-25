@@ -29,7 +29,7 @@ uint compileShader(const char* source, int type, std::string filename = ""){
 }
 
 
-void ShaderProgram::initialize(){
+ShaderProgram::ShaderProgram(){
     this->program = glCreateProgram();
 }
 ShaderProgram::~ShaderProgram(){
