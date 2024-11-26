@@ -21,9 +21,13 @@ void Model::requestDraw(glm::vec3 position){
     last_request += request_size;
 }
 void Model::drawAllRequests(){
+    if(last_request == 0) return;
     if(instance_buffer.size() < last_request) instance_buffer.initialize(last_request);
     
     instance_buffer.insert(0, last_request, draw_request_data.data());
 
+    vao.bind();
     glDrawElementsInstanced(GL_TRIANGLES, index_buffer.size(), GL_UNSIGNED_INT, 0, last_request / request_size);
+
+    last_request = 0;
 }

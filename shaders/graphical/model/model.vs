@@ -1,28 +1,18 @@
 #version 330 core
+layout(location = 0) in vec3 aInstanceOffset;
 
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec3 aNormal;
-layout(location = 2) in vec2 aTexCoords;
+layout(location = 1) in vec3 aPos;
 
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
-uniform mat4 modelMatrix;
-uniform mat4 lightSpaceMatrix;
-
-out vec3 Normal;
-out vec2 TexCoords;
-out vec4 FragPosLightSpace;
+uniform mat4 player_camera_projection_matrix;
+uniform mat4 player_camera_view_matrix;
+uniform mat4 player_camera_model_matrix;
 
 out vec3 FragPos;
 
 void main()
 {
-    FragPos = vec3(modelMatrix * vec4(aPos, 1.0));
-    gl_Position = projectionMatrix * viewMatrix * vec4(FragPos,1.0);
-    
-    Normal = transpose(inverse(mat3(modelMatrix))) * aNormal;
-    TexCoords = aTexCoords;
-    FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
+    FragPos = vec3(player_camera_model_matrix * vec4(aPos + aInstanceOffset, 1.0));
+    gl_Position = player_camera_projection_matrix * player_camera_view_matrix * vec4(FragPos,1.0);
 
     /*FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
     //gl_Position = vec4(aPos, 1.0);

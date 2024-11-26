@@ -45,6 +45,9 @@ class Entity{
         
         void accelerate(glm::vec3 direction);
         void setGravity(bool value){hasGravity = value;}
+        void setModel(std::shared_ptr<Model> model) {this->model = model;}
+
+        std::shared_ptr<Model>& getModel() {return model;}
 
         const glm::vec3& getPosition() {return position;};
         void setPosition(const glm::vec3& position) {this->position = position;}

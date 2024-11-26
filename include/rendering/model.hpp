@@ -8,8 +8,8 @@
 class Model{ 
     private:
         size_t request_size = 3;
-        size_t last_request;
-        std::vector<float> draw_request_data;
+        size_t last_request = 0;
+        std::vector<float> draw_request_data = {};
 
         GLVertexArray vao;
         GLBuffer<float, GL_ARRAY_BUFFER> instance_buffer;

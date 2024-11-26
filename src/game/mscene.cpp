@@ -22,6 +22,9 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
         }
     );
 
+    models.push_back(std::make_shared<CubeModel>());
+
+
     commandProcessor.addCommand({"teleport","tp"},std::move(tpCommand));
     commandProcessor.addCommand({"save_world"}, std::move(saveWorldCommand));
 
@@ -337,6 +340,11 @@ void MainScene::open(GLFWwindow* window){
     world->getEntities().emplace_back(glm::vec3(0,0,0), glm::vec3(0.6, 1.8, 0.6));
     world->getEntities()[0].setGravity(false);
 
+
+    world->getEntities().emplace_back(glm::vec3(0,20,0), glm::vec3(0.6, 1.8, 0.6));
+    world->getEntities()[1].setGravity(true);
+    world->getEntities()[1].setModel(models[0]);
+
     chunkMeshGenerator.setWorld(world.get());
 
     //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
@@ -451,13 +459,22 @@ void MainScene::render(){
     suncam.prepareForRender();
     chunkMeshRegistry.draw();
     
-    //world->drawEntities(modelManager, suncam, true);
     glEnable( GL_CULL_FACE );
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
 
-
+    size_t collider_wireframe_index = 50;
+    for(auto& entity: world->getEntities()){
+        for(auto& collider: entity.getColliders()){
+            wireframeRenderer.setCube(
+                collider_wireframe_index++,
+                glm::vec3{collider.x, collider.y, collider.z} + entity.getPosition(), 
+                glm::vec3{collider.width, collider.height, collider.depth},
+                {1.0,0,0}
+            );
+        }
+    }
     //skyboxProgram.updateUniforms();
     
     glDisable(GL_CULL_FACE);
@@ -474,6 +491,13 @@ void MainScene::render(){
     chunkMeshRegistry.draw();
     //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
     /* Swap front and back buffers */
+
+    world->drawEntities();
+
+    modelProgram.updateUniforms();
+    for(auto& model: models){
+        model->drawAllRequests();
+    }
 
     glDisable( GL_CULL_FACE );
 

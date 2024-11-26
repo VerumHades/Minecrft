@@ -22,6 +22,7 @@
 #include <game/commands.hpp>
 #include <game/threadpool.hpp>
 #include <game/input.hpp>
+#include <game/items/cube_model.hpp>
 
 #include <scene.hpp>
 #include <set>
@@ -32,7 +33,7 @@ class MainScene: public Scene{
         PerspectiveCamera camera = PerspectiveCamera("player");
         DepthCamera suncam = DepthCamera("sun");
         
-        ShaderProgram modelProgram;
+        ShaderProgram modelProgram = ShaderProgram("shaders/graphical/model/model.vs","shaders/graphical/model/model.fs");
         std::vector<std::shared_ptr<Model>> models;
 
 

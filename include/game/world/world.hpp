@@ -65,7 +65,7 @@ class World: public Collidable{
 
         RaycastResult raycast(glm::vec3 from, glm::vec3 direction, float maxDistance);
 
-        void drawEntities(ExternalModelManager& manager, Camera& camera, bool depthMode  = false);
+        void drawEntities();
         void updateEntities();
 
         int chunksTotal() const {return chunks.size();}
