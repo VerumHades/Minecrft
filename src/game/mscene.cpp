@@ -1,14 +1,6 @@
 #include <game/mscene.hpp>
 
 void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
-    modelManager.initialize();
-
-    auto& cam_projection_uniform  = camera.getProjectionUniform();
-    auto& cam_view_uniform  = camera.getViewUniform();
-
-    cam_projection_uniform.attach(modelManager.getModelProgram());
-    cam_view_uniform.attach(modelManager.getModelProgram());
-
     fpsLock = false;
     
     std::unique_ptr<Command> tpCommand = std::make_unique<Command>(
@@ -18,19 +10,6 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
             
             std::cout << arguments[0].intValue << " " <<  arguments[1].intValue  << " " << arguments[3].intValue << std::endl;
             player.setPosition({arguments[0].intValue,arguments[1].intValue,arguments[2].intValue});
-        }
-    );
-
-    std::unique_ptr<Command> summonCommand = std::make_unique<Command>(
-        std::vector<CommandArgument::CommandArgumentType>({CommandArgument::STRING}),
-        [this](std::vector<CommandArgument> arguments){
-            Entity& player = world->getEntities()[0];
-            std::string& name = arguments[0].stringValue;
-
-            if(name == "bob"){
-                world->getEntities().emplace_back(player.getPosition(), glm::vec3(0.6, 1.8, 0.6));
-                world->getEntities()[world->getEntities().size() - 1].setModel("bob");
-            }
         }
     );
 
@@ -44,7 +23,6 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     );
 
     commandProcessor.addCommand({"teleport","tp"},std::move(tpCommand));
-    commandProcessor.addCommand({"summon"},std::move(summonCommand));
     commandProcessor.addCommand({"save_world"}, std::move(saveWorldCommand));
 
     this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
@@ -63,9 +41,6 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     crosshair->setAttribute(&UIFrame::Style::textColor, {255,255,255});
 
     getUILayer("default").addElement(crosshair);
-
-    ExternalModel& bob = modelManager.createModel("bob");
-    bob.loadFromFile("models/test.gltf", "");
     //bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
     
     std::array<std::string,6> skyboxPaths = {
@@ -107,23 +82,9 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     blockRegistry.addFullBlock("grass", {"grass_top","dirt","grass_side","grass_side","grass_side","grass_side"});
     blockRegistry.addFullBlock("oak_leaves", "oak_leaves", true);
 
-
-    suncam.initialize();
-    suncam.getLightSpaceMatrixUniform().attach(terrainProgram);
-    suncam.getLightSpaceMatrixUniform().attach(modelManager.getModelProgram());
-    suncam.getLightSpaceMatrixUniform().attach(modelManager.getModelDepthProgram());
-    suncam.getModelUniform().attach(modelManager.getModelDepthProgram());
-
-    //int sunDirLoc = camera.getProgram("skybox").getUniformLocation("sunDir");
-    sunDirUniform.attach(skyboxProgram);
-    sunDirUniform.attach(terrainProgram);
-    
-    //int TimeLoc = terrainProgram.getUniformLocation("time");
-
     glUniform1i(terrainProgram.getUniformLocation("textureArray"),0);
     glUniform1i(terrainProgram.getUniformLocation("shadowMap"),1);
 
-    camera.initialize({skyboxProgram, terrainProgram, modelManager.getModelProgram()});
     camera.setPosition(0.0f,160.0f,0.0f);
 
     sunDirUniform.setValue({ 
@@ -137,13 +98,7 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
 
     chunkMeshRegistry.initialize(renderDistance);
 
-    cam_projection_uniform.attach(wireframeRenderer.getProgram());
-    cam_view_uniform.attach(wireframeRenderer.getProgram());
-    
-
     camera.setModelPosition({0,0,0});
-    terrainProgram.updateUniform("modelMatrix");
-
     suncam.setCaptureSize(renderDistance * 2 * CHUNK_SIZE);
 
     threadPool = std::make_unique<ThreadPool>(12);
@@ -492,7 +447,7 @@ void MainScene::render(){
     //suncam.updateProjection();
     glDisable( GL_CULL_FACE );
     suncam.setModelPosition({0,0,0});
-    terrainProgram.updateUniform("modelMatrix");
+    terrainProgram.updateUniforms();
     suncam.prepareForRender();
     chunkMeshRegistry.draw();
     
@@ -515,10 +470,8 @@ void MainScene::render(){
     blockTextureRegistry.getLoadedTextureArray().bind(0);
 
     camera.setModelPosition({0,0,0});
-    terrainProgram.updateUniform("modelMatrix");
+    terrainProgram.updateUniforms();
     chunkMeshRegistry.draw();
-
-    world->drawEntities(modelManager, camera);
     //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
     /* Swap front and back buffers */
 

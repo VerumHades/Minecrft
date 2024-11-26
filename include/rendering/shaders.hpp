@@ -11,23 +11,64 @@
 #include <rendering/buffer.hpp>
 #include <fstream>
 #include <sstream>
+#include <unordered_set>
 
 #define MAX_SHADERS 16
 
+class ShaderProgram;
+template <typename T>
+class Uniform;
+
 class UniformBase{
     public:
-        virtual void update(uint programID) = 0;
+        virtual void update(uint location) = 0;
         virtual std::string getName() = 0;
 };
+
+class ShaderUniformLinker{
+    private:
+        std::unordered_set<std::string> ignored_uniforms; // Usually uniforms reserver for texture bindings
+        struct LinkedProgram{
+            // Uniforms and their location in the program
+            std::unordered_map<std::string, size_t> uniforms;
+        };
+
+        std::unordered_map<ShaderProgram*, LinkedProgram> shaderPrograms;
+        std::unordered_map<std::string, UniformBase*> uniforms;
+
+        void updateUniforms(ShaderProgram* program);
+
+        void addUniform(UniformBase* uniform);
+        void addProgram(ShaderProgram* program);
+
+        void removeProgram(ShaderProgram* program);
+        void removeUniform(UniformBase* uniform);
+
+        friend class ShaderProgram;
+        template <typename T>
+        friend class Uniform;
+    public:
+        void ignore(std::string name){
+            ignored_uniforms.emplace(name);
+        }
+};
+
+extern ShaderUniformLinker uniformLinker;
 
 static int programInUse = -1;
 class ShaderProgram{
     private:
         int program;
         std::vector<int> shaders;
-        std::unordered_map<std::string, std::reference_wrapper<UniformBase>> attachedUniforms;
+
     public:
-        ShaderProgram();
+        ShaderProgram(){
+            this->program = glCreateProgram();
+        }
+        ~ShaderProgram(){
+            glDeleteProgram(this->program);
+            uniformLinker.removeProgram(this);
+        }
         ShaderProgram(std::string vertex_shader_path, std::string fragment_shader_path): ShaderProgram() {
             addShader(vertex_shader_path, GL_VERTEX_SHADER);
             addShader(fragment_shader_path, GL_FRAGMENT_SHADER);
@@ -37,8 +78,6 @@ class ShaderProgram{
             addShader(compute_shader_path, GL_COMPUTE_SHADER);
             compile();
         }
-        ~ShaderProgram();
-
         void addShader(std::string filename, int type);
         void addShaderSource(std::string source, int type);
         void compile();
@@ -49,39 +88,30 @@ class ShaderProgram{
             glUseProgram(this->program);
         }
         void updateUniforms();
-        void updateUniform(std::string name);
 
         int getUniformLocation(std::string name);
 
         int getID() {return program;};
-        void attachUniform(UniformBase& uniform) {attachedUniforms.emplace(uniform.getName(), uniform);}
 };
 
 template <typename T>
 class Uniform: public UniformBase{
     private:
         T value;
-        std::unordered_map<int32_t, int32_t> locations;
         std::string name;
 
     public:
-        Uniform(const std::string& uniformName) : name(uniformName) {
-            
+        Uniform(const std::string& uniformName){
+            this->name = uniformName;
+            uniformLinker.addUniform(reinterpret_cast<UniformBase*>(this));
         };
+        ~Uniform(){
+            uniformLinker.removeUniform(reinterpret_cast<UniformBase*>(this));
+        }
 
         T& operator=(T newValue) {
             value = newValue; 
             return value;
-        }
-
-        void attach(ShaderProgram& program){
-            locations[program.getID()] = program.getUniformLocation(name);
-            if(locations[program.getID()] == -1) {
-                std::cout << "Failed to get uniform: " << name << " from program: " << program.getID() << std::endl;
-                locations.erase(program.getID());
-                return;
-            }
-            program.attachUniform(*this);
         }
 
         void setValue(const T& newValue) {
@@ -92,9 +122,9 @@ class Uniform: public UniformBase{
             return value;
         }
 
-        void update(uint programID){
+        void update(uint location){
             //std::cout << "Updating uniform: " << name << " at: " << programID << std::endl;
-            setUniformValue(value, locations[programID]);
+            setUniformValue(value,  location);
         }
 
         std::string getName() {return name; };

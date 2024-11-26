@@ -28,14 +28,6 @@ uint compileShader(const char* source, int type, std::string filename = ""){
     return shader;
 }
 
-
-ShaderProgram::ShaderProgram(){
-    this->program = glCreateProgram();
-}
-ShaderProgram::~ShaderProgram(){
-    glDeleteProgram(this->program);
-}
-
 void ShaderProgram::addShader(std::string filename, int type){
     std::ifstream file(filename);  // Open the file
     if (!file.is_open()) {              // Check if the file is open
@@ -75,16 +67,80 @@ void ShaderProgram::compile(){
     for(int i = 0;i < this->shaders.size();i++){
         glDeleteShader(this->shaders[i]);
     }
+
+    uniformLinker.addProgram(this);
 }
 
 void ShaderProgram::updateUniforms(){
-    this->use();
-    for (auto& [key, value]: attachedUniforms) {
-        value.get().update(this->program);
+    uniformLinker.updateUniforms(this);
+}
+
+ShaderUniformLinker uniformLinker = ShaderUniformLinker();
+
+void ShaderUniformLinker::updateUniforms(ShaderProgram* program){
+    if(!shaderPrograms.contains(program)) return;
+
+    program->use();
+    for(auto& [name,location]: shaderPrograms[program].uniforms){
+        if(!uniforms.contains(name)){
+            if(ignored_uniforms.contains(name)) continue;
+            std::cerr << "Shader program is missing a uniform: " << name << std::endl;
+            continue;
+        }
+
+        uniforms[name]->update(location);
     }
 }
 
-void ShaderProgram::updateUniform(std::string name){
-    this->use();
-    attachedUniforms.at(name).get().update(this->program);
+void ShaderUniformLinker::addProgram(ShaderProgram* program){
+    LinkedProgram linked_program = {};
+    
+    program->use();
+    GLint numUniforms = 0;
+    glGetProgramiv(program->getID(), GL_ACTIVE_UNIFORMS, &numUniforms);
+
+    for (GLint i = 0; i < numUniforms; ++i) {
+        char name[256]; 
+        GLsizei nameLength = 0;
+        GLint size = 0;
+        GLenum type = 0;
+
+        glGetActiveUniform(program->getID(), i, sizeof(name), &nameLength, &size, &type, name);
+
+        int location = glGetUniformLocation(program->getID(), name);
+
+        if(location == -1) {
+            std::cerr << "Reported uniform '" << name << "' not found." << std::endl;
+            continue;
+        }
+
+        linked_program.uniforms[name] = location;
+    }
+
+    shaderPrograms[program] = linked_program;
+}
+
+void ShaderUniformLinker::addUniform(UniformBase* uniform){
+    if(uniforms.contains(uniform->getName())){
+        std::cerr << "Cannot overwrite already existing uniform '" << uniform->getName() << "'." << std::endl;
+        return;
+    }
+    std::cout << "Added uniform '" << uniform->getName() << "' to linker." << std::endl;
+    uniforms[uniform->getName()] = uniform;
+}
+
+void ShaderUniformLinker::removeProgram(ShaderProgram* program){
+    if(!shaderPrograms.contains(program)){ // Can happend for uncompiled programs
+        return;
+    }
+
+    shaderPrograms.erase(program);
+}
+void ShaderUniformLinker::removeUniform(UniformBase* uniform){
+    if(!uniforms.contains(uniform->getName())){
+        std::cerr << "Removing a missing uniform from uniform linker? This shouldnt happen." << std::endl;
+        return;
+    }
+
+    uniforms.erase(uniform->getName());
 }

@@ -30,11 +30,11 @@ out vec4 borderColorRight;
 out vec4 borderColorBottom;
 out vec4 borderColorLeft;
 
-uniform mat4 projectionMatrix;
+uniform mat4 ui_projection_matrix;
 
 void main()
 {
-    gl_Position = projectionMatrix * vec4(aPos.xy, 0.0, 1.0);
+    gl_Position = ui_projection_matrix * vec4(aPos.xy, 0.0, 1.0);
     //gl_Position.z = aPos.z;
     
     screenPos = aPos;

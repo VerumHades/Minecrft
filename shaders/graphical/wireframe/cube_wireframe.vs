@@ -6,10 +6,10 @@ layout (location = 3) in vec3 aColor;
 
 out vec3 instanceColor; 
 
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
+uniform mat4 player_camera_projection_matrix;
+uniform mat4 player_camera_view_matrix;
 
 void main() {
     instanceColor = aColor;  
-    gl_Position = projectionMatrix * viewMatrix * vec4(aPos * aScale + aOffset, 1.0);
+    gl_Position = player_camera_projection_matrix * player_camera_view_matrix * vec4(aPos * aScale + aOffset, 1.0);
 }

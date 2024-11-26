@@ -6,10 +6,10 @@ layout(location = 2) in vec2 aTexCoords;
 layout(location = 3) in float aTexIndex;
 layout(location = 4) in float aOcclusion;
 
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
-uniform mat4 modelMatrix;
-uniform mat4 lightSpaceMatrix;
+uniform mat4 player_camera_projection_matrix;
+uniform mat4 player_camera_view_matrix;
+uniform mat4 player_camera_model_matrix;
+uniform mat4 sun_depth_camera_lightspace_matrix;
 
 out vec3 Normal;
 out vec2 TexCoords;
@@ -31,18 +31,18 @@ const vec3 Normals[6] = vec3[6](
 
 void main()
 {
-    FragPos = vec3(modelMatrix * vec4(aPos, 1.0));
-    gl_Position = projectionMatrix * viewMatrix * vec4(FragPos,1.0);
+    FragPos = vec3(player_camera_model_matrix * vec4(aPos, 1.0));
+    gl_Position = player_camera_projection_matrix * player_camera_view_matrix * vec4(FragPos,1.0);
 
     int index = int(aNormal);
 
-    Normal = /*transpose(inverse(mat3(modelMatrix))) */ Normals[index];
+    Normal = /*transpose(inverse(mat3(player_camera_model_matrix))) */ Normals[index];
     TexCoords = aTexCoords;
     TexIndex = aTexIndex;
     occlusion = aOcclusion;
 
 
-    FragPosLightSpace = lightSpaceMatrix * vec4(FragPos - Normal * 0.01, 1.0);
+    FragPosLightSpace = sun_depth_camera_lightspace_matrix * vec4(FragPos - Normal * 0.01, 1.0);
     //gl_Position = vec4(aPos, 1.0);
     
     /*gl_Position = FragPosLightSpace;

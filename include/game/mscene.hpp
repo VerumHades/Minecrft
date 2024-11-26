@@ -29,9 +29,12 @@
 
 class MainScene: public Scene{
     private:
-        PerspectiveCamera camera;
-        DepthCamera suncam;
-        ExternalModelManager modelManager;
+        PerspectiveCamera camera = PerspectiveCamera("player");
+        DepthCamera suncam = DepthCamera("sun");
+        
+        ShaderProgram modelProgram;
+        std::vector<std::shared_ptr<Model>> models;
+
 
         std::unique_ptr<ThreadPool> threadPool;
 

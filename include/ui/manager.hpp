@@ -580,7 +580,7 @@ class UIManager{
 
         std::unique_ptr<GLBufferLegacy> drawBuffer;
 
-        Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("projectionMatrix");
+        Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("ui_projection_matrix");
         
         int screenWidth = 1920;
         int screenHeight = 1080;
@@ -621,7 +621,6 @@ class UIManager{
 
         void buildTextRenderingInformation(RenderYeetFunction& yeet, UIRegion& clipRegion, std::string text, float x, float y, float scale, UIColor color);
 
-        Uniform<glm::mat4>& getProjectionMatrix(){return projectionMatrix;}
         FontManager& getFontManager() {return fontManager;};
         Font& getMainFont(){return *mainFont;}
 

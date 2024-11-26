@@ -2,9 +2,13 @@
 #define ENTITY_H
 
 #include <glm/glm.hpp>
-#include <vector>
 #include <game/blocks.hpp>
+#include <rendering/model.hpp>
+
+#include <memory>
 #include <string>
+#include <vector>
+
 
 typedef struct CollisionCheckResult{
     Block* collidedBlock;
@@ -31,7 +35,7 @@ class Entity{
 
         std::vector<RectangularCollider> colliders;
         
-        std::string modelName = "default"; // This is going to be bad if models get added on the run
+        std::shared_ptr<Model> model;
 
     public:
         Entity(glm::vec3 position, glm::vec3 colliderDimensions);
@@ -46,8 +50,6 @@ class Entity{
         void setPosition(const glm::vec3& position) {this->position = position;}
         const glm::vec3& getVelocity() {return velocity;};
         const std::vector<RectangularCollider>& getColliders() {return colliders;}
-        std::string getModelName() {return modelName;};
-        void setModel(const std::string& name) {modelName = name;}
 };
 
 

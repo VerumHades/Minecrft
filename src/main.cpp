@@ -172,6 +172,12 @@ int main() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
+
+    uniformLinker.ignore("textureArray");
+    uniformLinker.ignore("text");
+    uniformLinker.ignore("textAtlas");
+    uniformLinker.ignore("tex");
+
     /*
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

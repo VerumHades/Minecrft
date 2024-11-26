@@ -9,9 +9,6 @@ void UIManager::initialize(){
     mainFont = std::make_unique<Font>("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
     textures = std::make_unique<DynamicTextureArray>();
 
-    projectionMatrix.attach(uiProgram);
-    projectionMatrix.attach(fontManager.getProgram());
-
     glUniform1i(uiProgram.getUniformLocation("tex"),0);
     glUniform1i(uiProgram.getUniformLocation("textAtlas"),1);
 

@@ -106,8 +106,6 @@ void Font::createAtlas(){
 void FontManager::initialize(){
     program.use();
 
-    textColor.attach(program);
-
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     

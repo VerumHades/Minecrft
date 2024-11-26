@@ -56,16 +56,13 @@ void PerspectiveCamera::calculateFrustum(){
     frustum.bottomFace = {origin                          ,glm::cross(frontMultFar + CamUp * halfVSide, CamRight) };
 }
 
-PerspectiveCamera::PerspectiveCamera(){
+PerspectiveCamera::PerspectiveCamera(std::string name): 
+    projectionMatrix(name + "_camera_projection_matrix"),
+    viewMatrix(name + "_camera_view_matrix"),
+    modelMatrix(name + "_camera_model_matrix"),
+    position(name + "_camera_position")
+{
     this->resizeScreen(1920,1080,90);
-}
-
-void PerspectiveCamera::initialize(std::vector<std::reference_wrapper<ShaderProgram>> programs){
-    for(int i = 0;i < programs.size();i++){
-        projectionMatrix.attach(programs[i].get());
-        viewMatrix.attach(programs[i].get());
-        modelMatrix.attach(programs[i].get());
-    }
 }
 
 void PerspectiveCamera::setModelPosition(const glm::vec3& position_){
@@ -105,11 +102,13 @@ void DepthCamera::updateProjection(){
     this->lightSpaceMatrix = this->projectionMatrix.getValue() * this->viewMatrix.getValue(); 
 }
 
-void DepthCamera::initialize(){
+DepthCamera::DepthCamera(std::string name): 
+    projectionMatrix(name + "_depth_camera_projection_matrix"),
+    viewMatrix(name + "_depth_camera_view_matrix"),
+    modelMatrix(name + "_depth_camera_model_matrix"),
+    lightSpaceMatrix(name + "_depth_camera_lightspace_matrix")
+{
     program.use();
-
-    modelMatrix.attach(program);
-    lightSpaceMatrix.attach(program);
 
     glGenFramebuffers(1, &depthMapFBO);  
 
