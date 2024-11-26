@@ -19,14 +19,14 @@ class CubeModel: public Model{
             vertex_buffer.insert(0, vertices.size(), vertices.data());
 
             std::array<uint, 6 * 6> indices = {
-                0,3,1, 3,2,1, // Front face
-                4,5,7, 5,6,7, // Back face
+                1,3,0, 1,2,3, // Front face
+                7,5,4, 7,6,5, // Back face
 
-                0,1,4, 1,5,4, // Top face
-                3,7,2, 2,7,6, // Bottom face
+                4,1,0, 4,5,1, // Top face
+                2,7,3, 6,7,2, // Bottom face
 
-                1,2,6, 1,6,5, // Right face,
-                0,7,3, 0,4,7, // Left face
+                6,2,1, 5,6,1, // Right face,
+                3,7,0, 7,4,0 // Left face
             };
             index_buffer.initialize(indices.size());
             index_buffer.insert(0, indices.size(), indices.data());

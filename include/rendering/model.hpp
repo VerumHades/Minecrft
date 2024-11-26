@@ -1,13 +1,17 @@
 #pragma once
 
 #include <unordered_map>
+
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp> 
+#include <glm/gtc/type_ptr.hpp>  
+
 #include <array>
 #include <rendering/buffer.hpp>
 
 class Model{ 
     private:
-        size_t request_size = 3;
+        size_t request_size = 4 * 4;
         size_t last_request = 0;
         std::vector<float> draw_request_data = {};
 
@@ -24,7 +28,9 @@ class Model{
         Model();
         /*
             Adds a position to where an instance of the model will be drawn
+
+            Rotation is in degrees
         */
-        void requestDraw(glm::vec3 position);
+        void requestDraw(glm::vec3 position, glm::vec3 rotation = {50,0,0});
         void drawAllRequests();
 };
