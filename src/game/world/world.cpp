@@ -220,7 +220,7 @@ void World::drawEntities(){
     for (auto& entity: this->entities) { 
         if(!entity.getModel()) continue;
 
-        entity.getModel()->requestDraw(entity.getPosition());
+        entity.getModel()->requestDraw(entity.getPosition(), {0.3,0.3,0.3});
     }
 }
 

@@ -150,7 +150,7 @@ struct UIRenderInfo{
 
         int zIndex = 0;
 
-        void process(Mesh* output);
+        void process(Mesh* output, size_t offset_index = 0);
         bool valid();
 
         static UIRenderInfo Rectangle(int x, int y, int width, int height, UIColor color, UIBorderSizes borderWidth = {0,0,0,0},std::array<UIColor,4> borderColor = {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}}){
@@ -344,6 +344,11 @@ class UIFrame{
         int margin_x = 0;
         int margin_y = 0;
 
+        size_t vertex_data_start = -1ULL;
+        size_t vertex_data_size = 0;
+        size_t index_data_start  = -1ULL;
+        size_t index_data_size = 0;
+
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 
         friend class UIManager;
@@ -354,6 +359,11 @@ class UIFrame{
         UIFrame(UIManager& manager): manager(manager) {
             identifiers.tag = "frame";
             //layout = std::make_unique<UILayout>();
+        }
+
+        ~UIFrame(){
+            stopDrawingChildren();
+            stopDrawing();
         }
         /*
             Event lambdas
@@ -392,6 +402,12 @@ class UIFrame{
         bool isHoverable(){return hoverable;}
         bool isScrollable(){return scrollable;}
         bool isUnderHover(){return state == HOVER;}
+
+        
+        void update();
+        void updateChildren();
+        void stopDrawing();
+        void stopDrawingChildren();
 
         virtual void appendChild(std::shared_ptr<UIFrame> child){
             child->parent = this;
@@ -578,7 +594,10 @@ class UIManager{
         ShaderProgram uiProgram = ShaderProgram("shaders/graphical/ui/ui.vs","shaders/graphical/ui/ui.fs");
         VertexFormat vertexFormat;
 
-        std::unique_ptr<GLBufferLegacy> drawBuffer;
+        GLVertexArray vao;
+        GLAllocatedBuffer<uint,  GL_ELEMENT_ARRAY_BUFFER> indexBuffer;
+        GLAllocatedBuffer<float, GL_ARRAY_BUFFER> vertexBuffer;
+        size_t vertexSize;
 
         Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("ui_projection_matrix");
         
@@ -600,7 +619,6 @@ class UIManager{
     public:
         void initialize();
         void resize(int width, int height);
-        void update();
         void setFocus(std::shared_ptr<UIFrame> ptr){inFocus = ptr;}
 
         void mouseMove(int x, int y);
@@ -610,6 +628,8 @@ class UIManager{
         void scrollEvent(GLFWwindow* window, double xoffset, double yoffset);
 
         void resetStates(); // Resets current elements in focus and hover to be none
+        void updateAll(); // Updates all elements (might be slow)
+        void stopDrawingAll();
 
         void render();
         void setCurrentWindow(UIWindowIdentifier id);
@@ -630,6 +650,9 @@ class UIManager{
         int getScreenHeight() {return screenHeight;}
 
         std::unique_ptr<DynamicTextureArray>& getTextures(){return textures;}
+
+        auto& getIndexBuffer()  { return indexBuffer;  }
+        auto& getVertexBuffer() { return vertexBuffer; }
 
         // Creates an element that belongs to the UIManager
         template <typename T>

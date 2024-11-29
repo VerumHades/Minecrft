@@ -164,11 +164,12 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
     std::cout << "Video RAM allocated for indices total : " << formatSize(indexBufferSize)  << std::endl;
     std::cout << "Total Video RAM allocated: " << formatSize(vertexBufferSize + indexBufferSize) << std::endl;
 
-    vertexBuffer.initialize(maxVertexCount);
-    indexBuffer.initialize(maxIndexCount);
-
+    
     vertexSize = vao.attachBuffer(reinterpret_cast<GLBuffer<float, GL_ARRAY_BUFFER>*>(&vertexBuffer), {VEC3, FLOAT, VEC2, FLOAT, FLOAT});
     vao.attachIndexBuffer(reinterpret_cast<GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>*>(&indexBuffer));
+    
+    vertexBuffer.initialize(maxVertexCount, vertexSize);
+    indexBuffer.initialize(maxIndexCount);
     //CHECK_GL_ERROR();
 }
 

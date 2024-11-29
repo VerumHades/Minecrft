@@ -9,7 +9,7 @@ void Model::setupBufferFormat(std::vector<GLSlotBinding> bindings){
     vao.attachBuffer(&vertex_buffer, bindings);
 }
 
-void Model::requestDraw(glm::vec3 position, glm::vec3 rotation){
+void Model::requestDraw(glm::vec3 position, glm::vec3 scale, glm::vec3 rotation){
     if(last_request >= draw_request_data.size()){
         draw_request_data.resize(draw_request_data.size() + request_size);
     }
@@ -22,6 +22,8 @@ void Model::requestDraw(glm::vec3 position, glm::vec3 rotation){
     glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
     modelMatrix *= rotationZ * rotationY * rotationX;
 
+    modelMatrix = glm::scale(modelMatrix, scale);
+
     std::memcpy(draw_request_data.data() + last_request, glm::value_ptr(modelMatrix), 4 * 4 * sizeof(float));
 
     last_request += request_size;
@@ -31,6 +33,8 @@ void Model::drawAllRequests(){
     if(instance_buffer.size() < last_request) instance_buffer.initialize(last_request);
     
     instance_buffer.insert(0, last_request, draw_request_data.data());
+
+    if(texture) texture->bind(0);
 
     vao.bind();
     glDrawElementsInstanced(GL_TRIANGLES, index_buffer.size(), GL_UNSIGNED_INT, 0, last_request / request_size);

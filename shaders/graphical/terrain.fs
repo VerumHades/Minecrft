@@ -82,25 +82,25 @@ void main()
     if(full_color.a < 0.1) discard;
     vec3 color = full_color.rgb;
 
-    vec3 normal = normalize(-Normal);
-    vec3 lightColor = vec3(1.0);
+    //vec3 normal = normalize(-Normal);
+    //vec3 lightColor = vec3(1.0);
     // ambient
-    vec3 ambient = 0.4 * lightColor;
+    //vec3 ambient = 0.4 * lightColor;
     // diffuse
     //vec3 lightDir = normalize(lightPos - FragPos);
     //lightDir *= -1;
 
-    float diff = max(dot(normalize(sunDir), normal), 0.0);
-    vec3 diffuse = diff * lightColor;
+    //float diff = max(dot(normalize(sunDir), normal), 0.0);
+    //vec3 diffuse = diff * lightColor;
 
     // calculate shadow
     //float shadow = ShadowCalculation(FragPosLightSpace);       
     
-    vec3 lighting = (ambient + (1.0) * (1.0 - occlusion)) * color;
+    //vec3 lighting = (ambient + (1.0) * (1.0 - occlusion)) * color;
     //vec3 lighting = vec3(shadow);
 
     //vec3 lighting = (ambient + (1.0 - shadow) * 1.0) * color;
-    FragColor = vec4(lighting, 1.0);
+    FragColor = vec4(color, 1.0);
     //FragColor = vec4((Normal + 1.0) * 0.5,1.0);
     //float depthValue = texture(shadowMap, TexCoords).r;
     //FragColor = vec4(vec3(depthValue), 1.0); 

@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <glm/glm.hpp>
+#include <array>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -37,7 +38,7 @@ class Mesh{
 
         void setVertexFormat(const VertexFormat& format) {this->format = format;};
         void addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height);
-        void addQuadFace(glm::vec3 vertices[4], glm::vec3 normals[4], int clockwise);
+        void addQuadFace(std::array<glm::vec3, 4> vertices, glm::vec3 normal, bool clockwise, int width = 1, int height = 1);
 
         std::vector<float>& getVertices() {return this->vertices;}
         std::vector<uint>& getIndices() {return this->indices;}

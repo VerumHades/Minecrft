@@ -95,15 +95,28 @@ template  <typename T, int type>
 class GLAllocatedBuffer: public GLBuffer<T,type>{
     private:
         Allocator allocator;
+        size_t alignment = 1;
         bool initialized = false;
+
+        size_t aligned(size_t from){
+            return std::ceil(static_cast<float>(from) / static_cast<float>(alignment));
+        }
+
+        std::tuple<bool, size_t> allocateAligned(size_t size){
+            auto [success, position] = allocator.allocate(aligned(size));
+            position *= alignment; // Aligned position
+
+            return {success, position};
+        }
 
     public:
         /*
             Creates the actual buffer of some size
         */
-        void initialize(size_t size){
+        void initialize(size_t size, size_t alignment = 1){
             GLBuffer<T,type>::initialize(size);
-            allocator.initialize(size);
+            this->alignment = alignment;
+            allocator.reset(size / alignment);
         }
         /*
             Allocates space in the buffer and returns the position if possible
@@ -112,14 +125,22 @@ class GLAllocatedBuffer: public GLBuffer<T,type>{
 
             success -> Whether the size was allocated (can fail because of insuficient size)
         */
-        std::tuple<bool, size_t> insert(T* data, size_t size){
-            auto [success, position] = allocator.allocate(size);
+        std::tuple<bool, size_t> insert(T* data, size_t size){  
+            auto [success, position] = allocateAligned(size);
 
             if(!success) return {false, 0};
 
             GLBuffer<T,type>::insert(position, size, data);
 
             return {true, position};
+        }
+
+        std::tuple<bool, size_t> allocateAhead(size_t size){
+            return allocateAligned(size);
+        }
+
+        void insertDirect(size_t at, size_t size, T* data){
+            GLBuffer<T,type>::insert(at, size, data);
         }
 
         /*
@@ -146,16 +167,18 @@ class GLAllocatedBuffer: public GLBuffer<T,type>{
             If at is not set inserts the mesh otherwise updates it
         */
         std::tuple<bool, size_t> insertOrUpdate(T* data, size_t size, size_t at = -1ULL){
-            return update(at,size,data);
-            //else return update(at, size, data);
+            if(at != -1ULL) allocator.free(at);
+            return insert(data,size);
         }
 
         /*
             Frees an allocated position for usage
         */
         void free(size_t position){
-            allocator.free(position);
+            allocator.free(aligned(position));
         }
+
+        const auto& getTakenBlocks() const {return allocator.getTakenBlocks();}
 };
 
 /*
@@ -315,20 +338,19 @@ class GLDoubleBuffer{
         GLBufferLegacy& getBackBuffer();
 };
 
-
 /*
-    An opengl buffer object that has the functions of a 
-*/
+    A buffer that keeps all elements aligned in one contiguous block
+
 template <typename T, int type>
-class GLVector{
+class GLAlignedBuffer: public GLBuffer<T,type>{
     private:
         uint buffer_id;
         size_t buffer_size = 0;
         size_t pseudo_size = 0; // Last element
 
-        /*
+       
             Resizes the buffer, retains current data (if new size is smaller the excess data is lost)
-        */
+       
         void resize(size_t new_size){
             if(new_size == buffer_size) return; // Already the set size
 
@@ -364,7 +386,7 @@ class GLVector{
         }
 
         size_t size() { return buffer_size; }
-};
+};*/
 
 enum GLSlotBinding{
     FLOAT = 1,
@@ -447,7 +469,6 @@ class GLVertexArray{
 
             unbind();
         }
-
         void bind(){
             glBindVertexArray(vao_id);
         }

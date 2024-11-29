@@ -1,36 +1,41 @@
 #pragma once
 
 #include <rendering/model.hpp>
+#include <rendering/mesh.hpp>
 
 class CubeModel: public Model{
     public:
-        CubeModel(){
-            std::array<float,8 * 3> vertices = {
-                0.0f,1.0f,0.0f,
-                1.0f,1.0f,0.0f,
-                1.0f,0.0f,0.0f,
-                0.0f,0.0f,0.0f,
-                0.0f,1.0f,1.0f,
-                1.0f,1.0f,1.0f,
-                1.0f,0.0f,1.0f,
-                0.0f,0.0f,1.0f
+        CubeModel(std::string texture_path){
+            Mesh mesh;
+
+            std::array<glm::vec3,8> vertices = {
+                glm::vec3(0.0f,1.0f,0.0f),
+                glm::vec3(1.0f,1.0f,0.0f),
+                glm::vec3(1.0f,0.0f,0.0f),
+                glm::vec3(0.0f,0.0f,0.0f),
+                glm::vec3(0.0f,1.0f,1.0f),
+                glm::vec3(1.0f,1.0f,1.0f),
+                glm::vec3(1.0f,0.0f,1.0f),
+                glm::vec3(0.0f,0.0f,1.0f)
             };
-            vertex_buffer.initialize(vertices.size());
-            vertex_buffer.insert(0, vertices.size(), vertices.data());
 
-            std::array<uint, 6 * 6> indices = {
-                1,3,0, 1,2,3, // Front face
-                7,5,4, 7,6,5, // Back face
+            mesh.addQuadFace({vertices[0],vertices[1],vertices[2],vertices[3]}, {0,0,-1}, true ); // Front face
+            mesh.addQuadFace({vertices[4],vertices[5],vertices[6],vertices[7]}, {0,0, 1}, false); // Back face
 
-                4,1,0, 4,5,1, // Top face
-                2,7,3, 6,7,2, // Bottom face
+            mesh.addQuadFace({vertices[0],vertices[4],vertices[7],vertices[3]}, {-1,0,0}, false); // Left face
+            mesh.addQuadFace({vertices[1],vertices[5],vertices[6],vertices[2]}, { 1,0,0}, true ); // Right face
 
-                6,2,1, 5,6,1, // Right face,
-                3,7,0, 7,4,0 // Left face
-            };
-            index_buffer.initialize(indices.size());
-            index_buffer.insert(0, indices.size(), indices.data());
+            mesh.addQuadFace({vertices[0],vertices[4],vertices[5],vertices[1]}, {0,1,0}, true ); // Top face
+            mesh.addQuadFace({vertices[3],vertices[7],vertices[6],vertices[2]}, {0,-1,0}, false); // Bottom face
 
-            setupBufferFormat({VEC3});
+            vertex_buffer.initialize(mesh.getVertices().size());
+            vertex_buffer.insert(0, mesh.getVertices().size(), mesh.getVertices().data());
+
+            index_buffer.initialize(mesh.getIndices().size());
+            index_buffer.insert(0, mesh.getIndices().size(), mesh.getIndices().data());
+
+            setupBufferFormat({VEC3,VEC3,VEC2});
+
+            texture = std::make_shared<GLTexture>(texture_path.c_str());
         }
 };

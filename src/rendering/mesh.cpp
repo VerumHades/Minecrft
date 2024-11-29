@@ -77,10 +77,23 @@ void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcc
     
 }
 
-void Mesh::addQuadFace(glm::vec3 vertices_[4], glm::vec3 normals[4], int clockwise){
+void Mesh::addQuadFace(std::array<glm::vec3, 4> vertices_, glm::vec3 normal, bool clockwise, int width, int height){
     uint vecIndices[4];
     
-    const int size = 7;
+    float textureX = 0.0;
+    float textureY = 0.0;
+    float textureXW = textureX + width;
+    float textureYH = textureY + height;
+    
+    glm::vec2 textureCoordinates[4] = {
+        {textureX , textureY },
+        {textureXW, textureY },
+        {textureXW, textureYH},
+        {textureX , textureYH}
+    };
+    
+    const int size = 8;
+
     float vertex[size * 4];
     uint startIndex = (uint) this->vertices.size() / size;
     for(int i = 0; i < 4; i++){
@@ -90,12 +103,12 @@ void Mesh::addQuadFace(glm::vec3 vertices_[4], glm::vec3 normals[4], int clockwi
         vertex[1 + offset] = vertices_[i].y;
         vertex[2 + offset] = vertices_[i].z;
 
-        // Normals
-        vertex[3 + offset] = normals[i].x;
-        vertex[4 + offset] = normals[i].y;
-        vertex[5 + offset] = normals[i].z;
+        vertex[3 + offset] = normal.x;
+        vertex[4 + offset] = normal.y;
+        vertex[5 + offset] = normal.z;
 
-        vertex[6 + offset] = static_cast<float>(i);
+        vertex[6 + offset] = textureCoordinates[i].x;
+        vertex[7 + offset] = textureCoordinates[i].y;
 
         vecIndices[i] = startIndex + i;
     }

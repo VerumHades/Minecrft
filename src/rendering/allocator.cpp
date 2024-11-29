@@ -9,7 +9,7 @@ std::tuple<bool,size_t> Allocator::allocate(size_t size){
     if(it == freeBlocks.end()){
         std::cout << "Couldnt allocate: " << size << std::endl;
         //std::cout << "Allocated at:" << selectedBlock->start << " of size: " << size << std::endl;
-        if(requestMemory(size)){ // Failed to find block of desired size
+        if(requestMemory && requestMemory(size)){ // Failed to find block of desired size
             return allocate(size);
         }
         else{
@@ -44,14 +44,6 @@ std::tuple<bool,size_t> Allocator::allocate(size_t size){
     //std::cout << std::endl;
     return {true, selectedBlock->start};
 }   
-
-void Allocator::clear(){
-    blocks = {};
-    freeBlocks = {};
-    takenBlocks = {};
-
-    markFree(blocks.insert(blocks.end(),{0, memsize, false}));
-}
 
 bool Allocator::free(size_t start, std::string fail_prefix){
     if(!takenBlocks.contains(start)) {

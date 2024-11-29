@@ -34,7 +34,7 @@ class MainScene: public Scene{
         DepthCamera suncam = DepthCamera("sun");
         
         ShaderProgram modelProgram = ShaderProgram("shaders/graphical/model/model.vs","shaders/graphical/model/model.fs");
-        std::vector<std::shared_ptr<Model>> models;
+        std::unordered_map<std::string,std::shared_ptr<Model>> models;
 
 
         std::unique_ptr<ThreadPool> threadPool;
@@ -55,7 +55,7 @@ class MainScene: public Scene{
         ChunkMeshGenerator chunkMeshGenerator = ChunkMeshGenerator(blockRegistry);
 
         std::string worldPath = "saves/worldsave.bin";
-        int renderDistance = 4;
+        int renderDistance = 8;
         int selectedBlock = 4;
 
         bool allGenerated = false;

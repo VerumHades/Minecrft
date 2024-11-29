@@ -22,8 +22,7 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
         }
     );
 
-    models.push_back(std::make_shared<CubeModel>());
-
+    models.emplace("crazed", std::make_shared<CubeModel>("textures/crazed.jpg"));
 
     commandProcessor.addCommand({"teleport","tp"},std::move(tpCommand));
     commandProcessor.addCommand({"save_world"}, std::move(saveWorldCommand));
@@ -85,8 +84,10 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     blockRegistry.addFullBlock("grass", {"grass_top","dirt","grass_side","grass_side","grass_side","grass_side"});
     blockRegistry.addFullBlock("oak_leaves", "oak_leaves", true);
 
-    glUniform1i(terrainProgram.getUniformLocation("textureArray"),0);
-    glUniform1i(terrainProgram.getUniformLocation("shadowMap"),1);
+    terrainProgram.setSamplerSlot("textureArray", 0);
+    terrainProgram.setSamplerSlot("shadowMap", 1);
+
+    modelProgram.setSamplerSlot("textureIn",0);
 
     camera.setPosition(0.0f,160.0f,0.0f);
 
@@ -341,9 +342,14 @@ void MainScene::open(GLFWwindow* window){
     world->getEntities()[0].setGravity(false);
 
 
-    world->getEntities().emplace_back(glm::vec3(0,20,0), glm::vec3(0.6, 1.8, 0.6));
-    world->getEntities()[1].setGravity(true);
-    world->getEntities()[1].setModel(models[0]);
+    for(int i = 0;i < 20;i++){
+        for(int j = 0;j < 20;j++){
+            Entity entity =  Entity(glm::vec3((float)i / 3.0, 50, (float)j / 3.0), glm::vec3(0.3, 0.3, 0.3));
+            entity.setModel(models["crazed"]);
+
+            world->getEntities().push_back(entity);
+        }
+    }
 
     chunkMeshGenerator.setWorld(world.get());
 
@@ -495,7 +501,7 @@ void MainScene::render(){
     world->drawEntities();
 
     modelProgram.updateUniforms();
-    for(auto& model: models){
+    for(auto& [name, model]: models){
         model->drawAllRequests();
     }
 

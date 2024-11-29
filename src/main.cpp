@@ -177,12 +177,13 @@ int main() {
     uniformLinker.ignore("text");
     uniformLinker.ignore("textAtlas");
     uniformLinker.ignore("tex");
+    uniformLinker.ignore("textureIn");
 
-    /*
+    
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
-    */
+    
 
     glLineWidth(2.0f);
     
@@ -209,7 +210,6 @@ int main() {
 
         mainSceneTemp->initialize(menuScene, l);
 
-        sceneManager.setScene("game");
         menuScene->setUILayer("default");
 
         auto startButton = menuScene->getUILayer("default").getElementById("new_world");
@@ -289,6 +289,8 @@ int main() {
         auto newWorldButton = menuScene->getUILayer("world_menu").getElementById("create_new_world");
         newWorldButton->onClicked = newWorldFunc;
 
+        sceneManager.setScene("menu");
+        menuScene->setUILayer("default");
 
         double last = glfwGetTime();
         double current = glfwGetTime();

@@ -8,6 +8,7 @@
 
 #include <array>
 #include <rendering/buffer.hpp>
+#include <rendering/texture.hpp>
 
 class Model{ 
     private:
@@ -19,6 +20,8 @@ class Model{
         GLBuffer<float, GL_ARRAY_BUFFER> instance_buffer;
         
     protected:
+        std::shared_ptr<GLTexture> texture = nullptr;
+
         GLBuffer<float, GL_ARRAY_BUFFER> vertex_buffer;
         GLBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> index_buffer;
 
@@ -31,6 +34,6 @@ class Model{
 
             Rotation is in degrees
         */
-        void requestDraw(glm::vec3 position, glm::vec3 rotation = {50,0,0});
+        void requestDraw(glm::vec3 position, glm::vec3 scale = {1,1,1}, glm::vec3 rotation = {0,0,0});
         void drawAllRequests();
 };

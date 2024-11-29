@@ -41,4 +41,5 @@ void main()
     FragColor = (isBorder ? borderColor : Color) * (isText > 0.5 ? sampledText : vec4(1));
     FragColor = isTexture > 0.5 ? sampledTexture : FragColor;
 
+    //FragColor = vec4(1.0,0,0,0.2);
 }

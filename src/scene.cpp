@@ -5,24 +5,20 @@
 */
 void Scene::addElement(std::shared_ptr<UIFrame> element){
     this->uiManager->getWindow(windowID).getCurrentLayer().addElement(element);
-    this->uiManager->update();
 }
 /*
     Sets the current selected ui layer
 */
 void Scene::setUILayer(std::string name){
+    this->uiManager->stopDrawingAll();
     this->uiManager->getWindow(windowID).setCurrentLayer(name);
-    this->uiManager->update();
 
     auto& layer = getCurrentUILayer();
     glfwSetInputMode(sceneManager->getGLFWWindow(), GLFW_CURSOR, layer.cursorMode);
     sceneManager->setEventLocks(layer.eventLocks);
-
-    for(auto& element: layer.getElements()){
-        element->calculateTransforms();
-    }
-
     uiManager->resetStates();
+    
+    uiManager->updateAll();
 }
 
 UIWindow& Scene::getWindow(){

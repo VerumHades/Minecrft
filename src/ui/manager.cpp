@@ -4,14 +4,21 @@ void UIManager::initialize(){
     uiProgram.use();
     fontManager.initialize();
 
-    vertexFormat = VertexFormat({3,2,4,2,1,1,1,4,4,4,4,4,4});
-    drawBuffer = std::make_unique<GLBufferLegacy>();
+    vao.bind();
+
+    int maxQuads = 10000;
+
+    vertexSize = vao.attachBuffer(reinterpret_cast<GLBuffer<float, GL_ARRAY_BUFFER>*>(&vertexBuffer), {VEC3,VEC2,VEC4,VEC2,FLOAT,FLOAT,FLOAT,VEC4,VEC4,VEC4,VEC4,VEC4,VEC4});
+    vertexBuffer.initialize(vertexSize * maxQuads, vertexSize);
+    vao.attachIndexBuffer(&indexBuffer);
+    indexBuffer.initialize(6 * maxQuads);
+
     mainFont = std::make_unique<Font>("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
     textures = std::make_unique<DynamicTextureArray>();
 
-    glUniform1i(uiProgram.getUniformLocation("tex"),0);
-    glUniform1i(uiProgram.getUniformLocation("textAtlas"),1);
-
+    uiProgram.setSamplerSlot("tex",0);
+    uiProgram.setSamplerSlot("textAtlas",1);
+    
     resize(1920,1080);
 }
 
@@ -30,13 +37,22 @@ void UIManager::resize(int width, int height){
 
     if(currentWindow == (UIWindowIdentifier)-1) return;
 
-    for(auto& element: getCurrentWindow().getCurrentLayer().getElements()){
-        element->calculateTransforms();
-    }
-
-    update();
+    updateAll();
 }
 
+void UIManager::updateAll(){
+    for(auto& element: getCurrentWindow().getCurrentLayer().getElements()){
+        element->calculateTransforms();
+        element->update();
+        element->updateChildren();
+    }
+}
+void UIManager::stopDrawingAll(){
+    for(auto& element: getCurrentWindow().getCurrentLayer().getElements()){
+        element->stopDrawing();
+        element->stopDrawingChildren();
+    }
+}
 static const glm::vec2 textureCoordinates[4] = {{0, 1},{1, 1},{1, 0},{0, 0}};
 const int vertexSize = UI_VERTEX_SIZE;
 
@@ -44,7 +60,7 @@ bool UIRenderInfo::valid(){
     return clipRegion.min.x < clipRegion.max.x && clipRegion.min.y < clipRegion.max.y;
 }
 
-void UIRenderInfo::process(Mesh* output){
+void UIRenderInfo::process(Mesh* output, size_t offset_index){
     if(!clip){
         clipRegion.min.x = x;
         clipRegion.min.y = y;
@@ -75,7 +91,7 @@ void UIRenderInfo::process(Mesh* output){
     //std::cout << borderSize.x << " " << borderSize.y << " " << borderSize.z << " " << borderSize.w << std::endl;
 
     uint vecIndices[4];
-    uint startIndex = (uint) output->getVertices().size() / vertexSize;
+    uint startIndex = (uint) output->getVertices().size() / vertexSize + offset_index;
 
     RawRenderInfo vertex;
     for(int i = 0; i < 4; i++){
@@ -130,34 +146,83 @@ void UIRenderInfo::process(Mesh* output){
     output->getIndices().insert(output->getIndices().end(), {vecIndices[3], vecIndices[1], vecIndices[0], vecIndices[3], vecIndices[2], vecIndices[1]});
 }
 
-void UIManager::update(){
-    if(currentWindow == (UIWindowIdentifier)-1) return;
 
-    //std::cout << getCurrentWindow().getCurrentLayer().getElements().size() << std::endl;
 
-    uiProgram.use();
-
-    Mesh mesh = Mesh();
-    mesh.setVertexFormat(vertexFormat);
-
-    auto* meshPtr = &mesh;
-
-    RenderYeetFunction yeetCapture = [meshPtr](UIRenderInfo info, UIRegion clipRegion){
+void UIFrame::update(){
+    std::vector<UIRenderInfo> accumulatedRenderInfo;
+    auto* accumulatedRenderInfoPointer = &accumulatedRenderInfo;
+    RenderYeetFunction yeetCapture = [accumulatedRenderInfoPointer](UIRenderInfo info, UIRegion clipRegion){
         info.clip = true;
         info.clipRegion = clipRegion;
-        info.process(meshPtr);
+        
+        accumulatedRenderInfoPointer->push_back(info);
         //std::cout << info.x << " " << info.y << " " << info.width << " " << info.height << std::endl;
     };
 
-    for(auto& element: getCurrentWindow().getCurrentLayer().getElements()){
-        element->getRenderingInformation(yeetCapture);
+    getRenderingInformation(yeetCapture);
+
+    size_t new_vertex_data_size = accumulatedRenderInfo.size() * vertexSize * 4;
+    size_t new_index_data_size = accumulatedRenderInfo.size() * 6;
+
+    if(vertex_data_size < new_vertex_data_size){
+        //std::cout << "New vertex buffer allocation." << std::endl;
+        auto [vertexSuccess, vertexBufferOffset] = manager.getVertexBuffer().allocateAhead(new_vertex_data_size);
+        if(!vertexSuccess){
+            std::cerr << "Failed to update buffer. Not enought space?" << std::endl;
+            return;
+        }
+
+        if(vertex_data_size != 0) manager.getVertexBuffer().free(vertex_data_start);
+
+        vertex_data_size = new_vertex_data_size;
+        vertex_data_start = vertexBufferOffset;
     }
 
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    //std::cout << mesh.getVertices().size() << std::endl;
+    if(index_data_size < new_index_data_size){
+        //std::cout << "New index buffer allocation." << std::endl;
+        auto [indexSuccess, indexBufferOffset] = manager.getIndexBuffer().allocateAhead(new_index_data_size);
+        if(!indexSuccess){
+            std::cerr << "Failed to update buffer. Not enought space?" << std::endl;
+            return;
+        }
 
-    drawBuffer->loadMesh(mesh);
+        if(index_data_size != 0) manager.getIndexBuffer().free(index_data_start);
+
+        index_data_size = new_index_data_size;
+        index_data_start = indexBufferOffset;
+    }
+
+    //std::cout << "Index offset: " << vertex_data_start / vertexSize << " for info count: " << accumulatedRenderInfo.size() << std::endl;
+
+    Mesh mesh = Mesh();
+    for(auto& info: accumulatedRenderInfo) info.process(&mesh, vertex_data_start / vertexSize);
+    
+    manager.getVertexBuffer().insertDirect(vertex_data_start, mesh.getVertices().size(), mesh.getVertices().data());
+    manager.getIndexBuffer().insertDirect(index_data_start, mesh.getIndices().size(), mesh.getIndices().data());
+}
+
+void UIFrame::stopDrawing(){
+    if(vertex_data_size != 0) manager.getVertexBuffer().free(vertex_data_start);
+    if(index_data_size != 0) manager.getIndexBuffer().free(index_data_start);
+
+    vertex_data_start = -1ULL;
+    index_data_start = -1ULL;
+    vertex_data_size = 0;
+    index_data_size = 0;
+}
+
+void UIFrame::updateChildren(){
+    for(auto& child: children){
+        child->update();
+        child->updateChildren();
+    }
+}
+
+void UIFrame::stopDrawingChildren(){
+    for(auto& child: children){
+        child->stopDrawing();
+        child->stopDrawingChildren();
+    }
 }
 
 void UIManager::buildTextRenderingInformation(RenderYeetFunction& yeet, UIRegion& clipRegion, std::string text, float x, float y, float scale, UIColor color){
@@ -238,13 +303,35 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
 }
 
 void UIManager::render(){
-    glDisable( GL_CULL_FACE );
-    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    //glDisable(GL_DEPTH_TEST);
+    //glClear(GL_DEPTH_BUFFER_BIT);
 
     uiProgram.updateUniforms();
+
+    vao.bind();
     textures->bind(0);
     mainFont->getAtlas()->bind(1);
-    drawBuffer->draw();
+
+    size_t current_start = 0;
+
+    size_t current_position = 0;
+    size_t current_size = 0;
+    for(auto& [start, block]: indexBuffer.getTakenBlocks()){
+        if(block->start == current_position){
+            current_size += block->size;
+            current_position += block->size;
+            continue;
+        }
+
+        glDrawElements(GL_TRIANGLES, current_size, GL_UNSIGNED_INT, reinterpret_cast<void*>(current_start * sizeof(uint)));
+
+        current_start = block->start;
+        current_size = block->size;
+        current_position = block->start + block->size;
+    }
+
+    if(current_size != 0) glDrawElements(GL_TRIANGLES, current_size, GL_UNSIGNED_INT, reinterpret_cast<void*>(current_start * sizeof(uint)));
 }
 
 void UIManager::mouseMove(int x, int y){
@@ -262,12 +349,16 @@ void UIManager::mouseMove(int x, int y){
         element->setHover(true);
         if(element->onMouseEnter) element->onMouseEnter(*this);
     }
+
+    if(underHover) underHover->update(); // Update the old element
+
     underHover = element;
 
     if(underHover && underHover->onMouseMove) underHover->onMouseMove(*this,x,y);
     if(inFocus && inFocus != underHover && inFocus->onMouseMove) inFocus->onMouseMove(*this,x,y);
 
-    update();
+    if(underHover) underHover->update(); // update the new element
+    if(inFocus) inFocus->update();
 }
 
 void UIManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
@@ -283,24 +374,31 @@ void UIManager::mouseEvent(GLFWwindow* window, int button, int action, int mods)
     if(underHover && underHover->onMouseEvent) underHover->onMouseEvent(*this,button,action,mods);
     if(inFocus && inFocus != underHover && inFocus->onMouseEvent) inFocus->onMouseEvent(*this,button,action,mods);
 
-    update();
+    if(underHover) underHover->update();
+    if(inFocus) inFocus->update();
 }
 
 void UIManager::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
     if(!underScrollHover) return;
     if(underScrollHover->onScroll) underScrollHover->onScroll(*this,xoffset,yoffset);
-    update();
+    
+    if(underScrollHover){
+        underScrollHover->update();
+        underScrollHover->updateChildren();
+    }
 }
 
 void UIManager::keyTypedEvent(GLFWwindow* window, unsigned int codepoint){
     if(!inFocus) return;
     if(inFocus->onKeyTyped) inFocus->onKeyTyped(window,codepoint);
-    update();
+    
+    if(inFocus) inFocus->update();
 }
 void UIManager::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(!inFocus) return;
     if(inFocus->onKeyEvent) inFocus->onKeyEvent(window,key,scancode,action,mods);
-    update();
+
+    if(inFocus) inFocus->update();
 }
 
 
@@ -318,8 +416,12 @@ void UIManager::resetStates(){
 
 void UIManager::setCurrentWindow(UIWindowIdentifier id){
     resetStates();
+    stopDrawingAll();
     currentWindow = id;
-    update();
+    
+    if(currentWindow == (UIWindowIdentifier)-1) return;
+    
+    updateAll();
 }
 UIWindow& UIManager::getCurrentWindow(){
     return windows[currentWindow];
@@ -746,6 +848,8 @@ UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
         this->scroll = glm::clamp(this->scroll, 0, this->scrollMax);
 
         calculateTransforms();
+        update();
+        updateChildren();
     };
 
     /*slider = std::make_shared<UISlider>(manager);

@@ -78,6 +78,16 @@ class ShaderProgram{
             addShader(compute_shader_path, GL_COMPUTE_SHADER);
             compile();
         }
+
+        void setSamplerSlot(std::string name, int slot){
+            use();
+            int location = getUniformLocation(name);
+            if(location == -1){
+                std::cerr << "No sample under name '" << name << "' found." << std::endl;
+                return;
+            }
+            glUniform1i(location,slot);
+        }
         void addShader(std::string filename, int type);
         void addShaderSource(std::string source, int type);
         void compile();

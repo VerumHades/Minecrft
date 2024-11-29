@@ -38,19 +38,26 @@ class Allocator{
 
     public:
         Allocator(size_t memsize, std::function<bool(size_t)> requestMemory):  memsize(memsize), requestMemory(requestMemory) {
-            initialize(memsize);
+            reset(memsize);
         };
         Allocator(){
             memsize = 0;
         }
 
-        void initialize(size_t memsize){
+        void reset(size_t memsize){
+            blocks = {};
+            freeBlocks = {};
+            takenBlocks = {};
+
+            this->memsize = memsize;
             markFree(blocks.insert(blocks.end(),{0, memsize, false}));
         }
 
         std::tuple<bool,size_t> allocate(size_t size);
         bool free(size_t location, std::string fail_prefix = "");
-        void clear();
+        void clear(){
+            reset(memsize);
+        }
 
         /*
             Splits a block into subblocks
@@ -62,8 +69,9 @@ class Allocator{
         */
         size_t getTakenBlockSize(size_t at);
 
-        const std::list<MemBlock>& getBlocks() {return blocks;};
-        const size_t& getMemorySize(){return memsize;}
+        const std::list<MemBlock>& getBlocks() const {return blocks;};
+        const std::unordered_map<size_t,MemBlockIterator>& getTakenBlocks() const {return takenBlocks;}
+        const size_t& getMemorySize() const {return memsize;}
 };
 
 class PoolAllocator{

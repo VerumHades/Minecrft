@@ -246,8 +246,8 @@ void ExternalModelManager::initialize(){
     modelDepthProgram->addShader("shaders/graphical/depth.fs", GL_FRAGMENT_SHADER);
     modelDepthProgram->compile();
 
-    glUniform1i(modelProgram->getUniformLocation("texture"),0);
-    glUniform1i(modelProgram->getUniformLocation("shadowMap"),1);
+    //glUniform1i(modelProgram->getUniformLocation("texture"),0);
+    //glUniform1i(modelProgram->getUniformLocation("shadowMap"),1);
 }
 
 ExternalModel& ExternalModelManager::createModel(std::string name){
