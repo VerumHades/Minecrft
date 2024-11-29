@@ -403,7 +403,6 @@ class UIFrame{
         bool isScrollable(){return scrollable;}
         bool isUnderHover(){return state == HOVER;}
 
-        
         void update();
         void updateChildren();
         void stopDrawing();

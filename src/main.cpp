@@ -254,6 +254,7 @@ int main() {
             }
             
             scrollable->calculateTransforms();
+            scrollable->updateChildren();
         };
 
         auto toSettings = menuScene->getUILayer("default").getElementById("setttings");
@@ -289,7 +290,7 @@ int main() {
         auto newWorldButton = menuScene->getUILayer("world_menu").getElementById("create_new_world");
         newWorldButton->onClicked = newWorldFunc;
 
-        sceneManager.setScene("menu");
+        sceneManager.setScene("game");
         menuScene->setUILayer("default");
 
         double last = glfwGetTime();

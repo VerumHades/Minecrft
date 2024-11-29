@@ -55,7 +55,7 @@ class MainScene: public Scene{
         ChunkMeshGenerator chunkMeshGenerator = ChunkMeshGenerator(blockRegistry);
 
         std::string worldPath = "saves/worldsave.bin";
-        int renderDistance = 8;
+        int renderDistance = 4;
         int selectedBlock = 4;
 
         bool allGenerated = false;
@@ -156,6 +156,6 @@ class UICrosshair: public UIFrame{
         int part_margin = 5;
         int thickness = 5;
     public:
-        UICrosshair(UIManager& manager): UIFrame(manager){}
+        UICrosshair(UIManager& manager): UIFrame(manager){setFocusable(false);setHoverable(false);}
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 };

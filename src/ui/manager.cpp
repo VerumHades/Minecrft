@@ -192,7 +192,7 @@ void UIFrame::update(){
         index_data_start = indexBufferOffset;
     }
 
-    //std::cout << "Index offset: " << vertex_data_start / vertexSize << " for info count: " << accumulatedRenderInfo.size() << std::endl;
+    std::cout << "Index offset: " << vertex_data_start / vertexSize << " for info count: " << accumulatedRenderInfo.size() << std::endl;
 
     Mesh mesh = Mesh();
     for(auto& info: accumulatedRenderInfo) info.process(&mesh, vertex_data_start / vertexSize);
@@ -202,6 +202,7 @@ void UIFrame::update(){
 }
 
 void UIFrame::stopDrawing(){
+    std::cout << "Stopping drawing of: " << this << " with: " << vertex_data_size << " " << index_data_size << std::endl;
     if(vertex_data_size != 0) manager.getVertexBuffer().free(vertex_data_start);
     if(index_data_size != 0) manager.getIndexBuffer().free(index_data_start);
 
@@ -412,6 +413,7 @@ void UIManager::resetStates(){
     }
     inFocus = nullptr;
     underHover = nullptr;
+    underScrollHover = nullptr;
 }
 
 void UIManager::setCurrentWindow(UIWindowIdentifier id){
@@ -763,12 +765,14 @@ UISlider::UISlider(UIManager& manager): UIFrame(manager) {
         else if(action == GLFW_PRESS){
             moveTo(manager,manager.getMousePosition());
         }
+        update();
     };
     
     onMouseMove = [this](UIManager& manager, int x, int y){
         if(!grabbed) return;
     
         moveTo(manager,{x,y});
+        update();
     };
 
     //onMouseLeave = [this](UIManager& manager){

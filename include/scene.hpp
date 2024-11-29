@@ -17,7 +17,7 @@ class Scene{
         SceneManager* sceneManager;
 
         bool fpsLock = true;
-        int targetFPS = 60;
+        int targetFPS = 120;
 
         void setUILayer(std::string name);
         UILayer& getCurrentUILayer();

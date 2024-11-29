@@ -106,6 +106,8 @@ class GLAllocatedBuffer: public GLBuffer<T,type>{
             auto [success, position] = allocator.allocate(aligned(size));
             position *= alignment; // Aligned position
 
+            std::cout << "Inserting at: " << position << " of actual size: " << aligned(size) * alignment << " for:" << size << std::endl;
+
             return {success, position};
         }
 
@@ -127,7 +129,6 @@ class GLAllocatedBuffer: public GLBuffer<T,type>{
         */
         std::tuple<bool, size_t> insert(T* data, size_t size){  
             auto [success, position] = allocateAligned(size);
-
             if(!success) return {false, 0};
 
             GLBuffer<T,type>::insert(position, size, data);
@@ -159,7 +160,7 @@ class GLAllocatedBuffer: public GLBuffer<T,type>{
                 return {true, at};
             }
 
-            allocator.free(at); //  Free the old allocated space
+            free(at); //  Free the old allocated space
             return insert(data, size); // Allocate new space
         }
 
@@ -167,7 +168,7 @@ class GLAllocatedBuffer: public GLBuffer<T,type>{
             If at is not set inserts the mesh otherwise updates it
         */
         std::tuple<bool, size_t> insertOrUpdate(T* data, size_t size, size_t at = -1ULL){
-            if(at != -1ULL) allocator.free(at);
+            if(at != -1ULL) free(at);
             return insert(data,size);
         }
 
