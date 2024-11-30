@@ -90,8 +90,8 @@ void UIRenderInfo::process(Mesh* output, size_t offset_index){
     if(borderSize.z != 0) borderSize.z /= static_cast<float>(height);
     if(borderSize.w != 0) borderSize.w /= static_cast<float>(width);
 
+    //std::cout << "ZIndex: " << static_cast<float>(zIndex) / 100.0f << std::endl;
     //std::cout << borderSize.x << " " << borderSize.y << " " << borderSize.z << " " << borderSize.w << std::endl;
-
     uint vecIndices[4];
     uint startIndex = (uint) output->getVertices().size() / vertexSize + offset_index;
 
@@ -101,7 +101,7 @@ void UIRenderInfo::process(Mesh* output, size_t offset_index){
 
         vertex[0 + offset] = vertices_[i].x;
         vertex[1 + offset] = vertices_[i].y;
-        vertex[2 + offset] = static_cast<float>(zIndex) / 1000.0f;
+        vertex[2 + offset] = static_cast<float>(zIndex) / 100.0f;
 
         if(hasTexCoords){
             vertex[3 + offset] = texCoords[i].x;
@@ -153,9 +153,13 @@ void UIRenderInfo::process(Mesh* output, size_t offset_index){
 void UIFrame::update(){
     std::vector<UIRenderInfo> accumulatedRenderInfo;
     auto* accumulatedRenderInfoPointer = &accumulatedRenderInfo;
-    RenderYeetFunction yeetCapture = [accumulatedRenderInfoPointer](UIRenderInfo info, UIRegion clipRegion){
+
+    int zIndexOffset = 1;
+    int* zIndexOffsetPtr = &zIndexOffset;
+    RenderYeetFunction yeetCapture = [accumulatedRenderInfoPointer, this, zIndexOffsetPtr](UIRenderInfo info, UIRegion clipRegion){
         info.clip = true;
         info.clipRegion = clipRegion;
+        info.zIndex = this->zIndex + ((*zIndexOffsetPtr)++);
         
         accumulatedRenderInfoPointer->push_back(info);
         //std::cout << info.x << " " << info.y << " " << info.width << " " << info.height << std::endl;
@@ -166,7 +170,7 @@ void UIFrame::update(){
     size_t new_vertex_data_size = accumulatedRenderInfo.size() * vertexSize * 4;
     size_t new_index_data_size = accumulatedRenderInfo.size() * 6;
 
-    if(vertex_data_size < new_vertex_data_size){
+    if(vertex_data_size != new_vertex_data_size){
         //std::cout << "New vertex buffer allocation." << std::endl;
         auto [vertexSuccess, vertexBufferOffset] = manager.getVertexBuffer().allocateAhead(new_vertex_data_size);
         if(!vertexSuccess){
@@ -180,7 +184,7 @@ void UIFrame::update(){
         vertex_data_start = vertexBufferOffset;
     }
 
-    if(index_data_size < new_index_data_size){
+    if(index_data_size != new_index_data_size){
         //std::cout << "New index buffer allocation." << std::endl;
         auto [indexSuccess, indexBufferOffset] = manager.getIndexBuffer().allocateAhead(new_index_data_size);
         if(!indexSuccess){
@@ -204,6 +208,7 @@ void UIFrame::update(){
     std::cout << "Update element hover: " << this->identifiers.tag << " #" << this->identifiers.id << " ";
     for(auto& classname: this->identifiers.classes) std::cout << "." << classname;
     std::cout << " Element has state: " << state << std::endl;
+    std::cout << "Render members in total: " << accumulatedRenderInfo.size() << std::endl;
 }
 
 void UIFrame::stopDrawing(){
@@ -283,7 +288,6 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
 
         case FIT_CONTENT: return horizontal ? contentTransform.width : contentTransform.height;
 
-
         case MY_PERCENT: 
             return static_cast<float>(
                 horizontal ? 
@@ -308,8 +312,9 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
 }
 
 void UIManager::render(){
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glDisable(GL_CULL_FACE);
-    //glDisable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
     glClear(GL_DEPTH_BUFFER_BIT);
 
     uiProgram.updateUniforms();
@@ -360,9 +365,9 @@ void UIManager::mouseMove(int x, int y){
         element->setHover(true);
         element->update();
 
-        std::cout << "Newly under hover: " << element->identifiers.tag << " #" << element->identifiers.id << " ";
-        for(auto& classname: element->identifiers.classes) std::cout << "." << classname;
-        std::cout << " Element has state: " << element->state << std::endl;
+        //std::cout << "Newly under hover: " << element->identifiers.tag << " #" << element->identifiers.id << " ";
+        //for(auto& classname: element->identifiers.classes) std::cout << "." << classname;
+        //std::cout << " Element has state: " << element->state << std::endl;
 
         if(element->onMouseEnter) element->onMouseEnter(*this);
     }
@@ -494,10 +499,6 @@ void UIFrame::getRenderingInformation(RenderYeetFunction& yeet){
         ),
         clipRegion
     );
-
-    for(auto& child: children){
-        child->getRenderingInformation(yeet);
-    }
 };
 
 static inline void reduceRegionTo(UIRegion& target, UIRegion& to){

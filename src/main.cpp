@@ -291,7 +291,7 @@ int main() {
         auto newWorldButton = menuScene->getUILayer("world_menu").getElementById("create_new_world");
         newWorldButton->onClicked = newWorldFunc;
 
-        sceneManager.setScene("game");
+        sceneManager.setScene("menu");
         menuScene->setUILayer("default");
 
         double last = glfwGetTime();

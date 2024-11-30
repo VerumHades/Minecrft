@@ -173,7 +173,6 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     mouse_settings->appendChild(sensitivity_slider);
 
     uiLoader->getCurrentStyle().applyTo(sensitivity_slider);
-
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
@@ -552,8 +551,6 @@ void MainScene::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
     if(blockCoords.z == CHUNK_SIZE - 1) regenMesh(chunk->getWorldPosition() + glm::ivec3(0,0,1));
 }
 #undef regenMesh
-
-const double sqrtof3 = sqrt(3);
 
 void MainScene::physicsUpdate(){
     double last = glfwGetTime();
