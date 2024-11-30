@@ -27,12 +27,12 @@ void saveRedComponentTexture(GLuint textureID, int width, int height, const char
 
 Font::Font(std::string filepath, int size){
     if (FT_Init_FreeType(&ft)) {
-        std::cout << "Could not init FreeType Library" << std::endl;
-        return;
+        std::cerr << "Could not init FreeType Library" << std::endl;
+        throw std::runtime_error("");
     }
     if (FT_New_Face(ft, filepath.c_str(), 0, &face)) {
-        std::cout << "Failed to load font" << std::endl;
-        return;
+        std::cerr << "Failed to load font: " << filepath << std::endl;
+        throw std::runtime_error("");
     }
 
     FT_Set_Pixel_Sizes(face, 0, size); // Set font size to 48 pixels

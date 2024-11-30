@@ -58,8 +58,8 @@ extern ShaderUniformLinker uniformLinker;
 static int programInUse = -1;
 class ShaderProgram{
     private:
-        int program;
-        std::vector<int> shaders;
+        int program = -1;
+        std::vector<int> shaders = {};
 
     public:
         ShaderProgram(){

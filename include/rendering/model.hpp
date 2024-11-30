@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <memory>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp> 
@@ -34,6 +35,6 @@ class Model{
 
             Rotation is in degrees
         */
-        void requestDraw(glm::vec3 position, glm::vec3 scale = {1,1,1}, glm::vec3 rotation = {0,0,0});
+        void requestDraw(glm::vec3 position, glm::vec3 scale = {1,1,1}, glm::vec3 rotation = {0,0,0}, glm::vec3 rotation_center_offset = {0,0,0});
         void drawAllRequests();
 };

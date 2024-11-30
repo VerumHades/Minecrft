@@ -397,8 +397,6 @@ void MainScene::render(){
         return;
     }
 
-    auto start = std::chrono::high_resolution_clock::now();
-
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 
@@ -492,9 +490,16 @@ void MainScene::render(){
     terrainProgram.use();
     blockTextureRegistry.getLoadedTextureArray().bind(0);
 
+    //auto start = std::chrono::high_resolution_clock::now();
+
+
     camera.setModelPosition({0,0,0});
     terrainProgram.updateUniforms();
     chunkMeshRegistry.draw();
+
+    //auto end = std::chrono::high_resolution_clock::now();
+    //std::cout << "Drawn terrain in: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
+
     //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
     /* Swap front and back buffers */
 
@@ -522,9 +527,6 @@ void MainScene::render(){
 
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
-
-    auto end = std::chrono::high_resolution_clock::now();
-    if(updatedVisibility) std::cout << "Fully rendered scene in: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
 }
 
 void MainScene::regenerateChunkMesh(Chunk* chunk){

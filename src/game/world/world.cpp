@@ -216,12 +216,25 @@ bool World::setBlock(glm::ivec3 position, Block block){
     return true;
 }
 
+
+static int rotation = 0;
+static float position = 0;
+static float position_mult = 1;
+
 void World::drawEntities(){
     for (auto& entity: this->entities) { 
         if(!entity.getModel()) continue;
-
-        entity.getModel()->requestDraw(entity.getPosition());
+        
+        entity.getModel()->requestDraw(entity.getPosition() + glm::vec3{0,position,0}, {0.5,0.5,0.5}, {0,rotation,0}, {-0.5,0,0});
     }
+
+    const float position_addition = 0.002;
+
+    position += position_mult;
+    if(position <= 0.1) position_mult = position_addition;
+    if(position >= 0.4) position_mult = -position_addition;
+
+    rotation = (rotation + 1) % 360;
 }
 
 void World::updateEntities(){

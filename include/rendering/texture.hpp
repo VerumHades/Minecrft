@@ -12,8 +12,8 @@
 
 class BindableTexture{
     protected: 
-        uint texture;
-        uint TYPE;
+        uint texture = 0;
+        uint TYPE = GL_TEXTURE_2D;
         BindableTexture(){
             glGenTextures(1, &this->texture);
         }
