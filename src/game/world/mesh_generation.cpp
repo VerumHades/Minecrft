@@ -46,7 +46,7 @@ void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegis
 /*
     Generate greedy meshed faces from a plane of bits
 */
-std::vector<ChunkMeshGenerator::Face> ChunkMeshGenerator::greedyMeshPlane(std::array<uint64_t, 64> rows, int size){
+std::vector<ChunkMeshGenerator::Face> ChunkMeshGenerator::greedyMeshPlane(BitPlane<64> rows, int size){
     std::vector<Face> out = {};
 
     /*
@@ -221,14 +221,14 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
     auto* solidRotated = group->getSolidField().getTransposed(&cache);
 
     for(int layer = 0; layer < size - 1;layer++){
-        BlockBitPlanes<64> planesXforward = {0};
-        BlockBitPlanes<64> planesXbackward = {0};
+        BlockBitPlanes<64> planesXforward = {};
+        BlockBitPlanes<64> planesXbackward = {};
 
-        BlockBitPlanes<64> planesYforward = {0};
-        BlockBitPlanes<64> planesYbackward = {0};
+        BlockBitPlanes<64> planesYforward = {};
+        BlockBitPlanes<64> planesYbackward = {};
 
-        BlockBitPlanes<64> planesZforward = {0};
-        BlockBitPlanes<64> planesZbackward = {0};
+        BlockBitPlanes<64> planesZforward = {};
+        BlockBitPlanes<64> planesZbackward = {};
         
         for(int row = 0;row < size;row++){
             for(auto& [type,block,field]: group->getLayers()){
@@ -352,14 +352,14 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
     /*
         Mesh cross chunk faces
     */
-    BlockBitPlanes<64> planesXforward = {0};
-    BlockBitPlanes<64> planesXbackward = {0};
+    BlockBitPlanes<64> planesXforward = {};
+    BlockBitPlanes<64> planesXbackward = {};
 
-    BlockBitPlanes<64> planesYforward = {0};
-    BlockBitPlanes<64> planesYbackward = {0};
+    BlockBitPlanes<64> planesYforward = {};
+    BlockBitPlanes<64> planesYbackward = {};
 
-    BlockBitPlanes<64> planesZforward = {0};
-    BlockBitPlanes<64> planesZbackward = {0};
+    BlockBitPlanes<64> planesZforward = {};
+    BlockBitPlanes<64> planesZbackward = {};
 
     if(!world){
         std::cout << "Skipping neighbour generation." << std::endl;

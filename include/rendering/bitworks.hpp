@@ -103,127 +103,31 @@ inline uint8_t count_leading_zeros(T x) {
 }
 
 #include <rendering/bitworks.tpp>
-/*
-    A 3D array of bits with a dynamic size.
-    (A 2D array of unsigned integers)
-
-    Max size of 64 (Size is size in all directions, total amount of bits would be 64^3)
-*/
-class DynamicBitArray3D{
-    private:        
-        std::variant<
-            std::vector<uint8_t>,
-            std::vector<uint16_t>,
-            std::vector<uint32_t>,
-            std::vector<uint64_t>
-        > storage;
-
-        size_t size = 0;
-        enum{
-            BIT8,
-            BIT16,
-            BIT32,
-            BIT64
-        } actualSize;
-
-        void selectStorage(){
-            if     (size <= 8)  { storage = std::vector<uint8_t> (size * size); actualSize = BIT8 ; }
-            else if(size <= 16) { storage = std::vector<uint16_t>(size * size); actualSize = BIT16; }
-            else if(size <= 32) { storage = std::vector<uint32_t>(size * size); actualSize = BIT32; }
-            else if(size <= 64) { storage = std::vector<uint64_t>(size * size); actualSize = BIT64; }
-            else std::runtime_error("DynamicBitArray3D has a max size of 64!");
-        }
-
-    public:
-        DynamicBitArray3D(size_t size): size(size){
-           selectStorage();
-        }
-
-        DynamicBitArray3D(size_t size, CompressedArray data): size(size){
-            selectStorage();
-
-            if     (size <= 8)  { bitworks::decompress<8> (data, std::get<std::vector<uint8_t>> (storage)); actualSize = BIT8 ; }
-            else if(size <= 16) { bitworks::decompress<16>(data, std::get<std::vector<uint16_t>>(storage)); actualSize = BIT16; }
-            else if(size <= 32) { bitworks::decompress<32>(data, std::get<std::vector<uint32_t>>(storage)); actualSize = BIT32; }
-            else if(size <= 64) { bitworks::decompress<64>(data, std::get<std::vector<uint64_t>>(storage)); actualSize = BIT64; }
-        }
-
-        /*
-            Calls 'set64bitValue'.
-        */
-        DynamicBitArray3D(uint64_t* data){
-            set64BitValue(data);
-        }
-
-        /*
-            Copies a valid mask data (64 * 64 array of uint64_t).
-
-            Supplying incorrect or undersized data will result in undefined behaviour.
-        */
-        void set64BitValue(uint64_t* data){
-            size = 64;
-            selectStorage();
-            std::memcpy(
-                std::get<std::vector<uint64_t>>(storage).data(),
-                data,
-                64 * 64 * sizeof(uint64_t)
-            );
-        }
-        
-        uint64_t getRow(uint32_t x, uint32_t y){
-            if(x >= size || y >= size) return 0ULL;
-            
-            uint64_t result = 0ULL;
-            auto* resultPointer = &result;
-            
-            std::visit([this, resultPointer,x,y](auto& array) {
-                *resultPointer = array[x + (y * size)];
-            }, storage);
-
-            return result;
-        }
-        void setRow(uint32_t x, uint32_t y, uint64_t value){
-            if(x >= size || y >= size) return;
-
-            std::visit([this, value,x,y](auto& array) {
-                array[x + (y * size)] = value;
-            }, storage);
-        }
-
-        void setBit(uint32_t x, uint32_t y, uint32_t z){
-            if(z >= size) return;
-
-            setRow(x,y, getRow(x,y) | (1ULL << (size - 1 - z)));
-        }
-
-        void resetBit(uint32_t x, uint32_t y, uint32_t z){
-            if(z >= size) return;
-
-            setRow(x,y, getRow(x,y) & ~(1ULL << (size - 1 - z)));
-        }
-
-        bool getBit(uint32_t x, uint32_t y, uint32_t z){
-            if(z >= size) return false;
-
-            return getRow(x,y) & (1ULL << (size - 1 - z)); 
-        }
-
-        CompressedArray compress(){
-            switch(actualSize){
-                case BIT8 : return bitworks::compress<8 >(std::get<std::vector<uint8_t>> (storage).data(), size * size);
-                case BIT16: return bitworks::compress<16>(std::get<std::vector<uint16_t>>(storage).data(), size * size); 
-                case BIT32: return bitworks::compress<32>(std::get<std::vector<uint32_t>>(storage).data(), size * size); 
-                case BIT64: return bitworks::compress<64>(std::get<std::vector<uint64_t>>(storage).data(), size * size); 
-                default: throw std::logic_error("Unknown bit size encountered in compress method.");
-            }
-        }
-
-        void loadAsRotated(DynamicBitArray3D& array);
-        size_t getSize(){return size;}
-};
 
 template <int size>
-using BitPlane = std::array<uint_t<size>, size>;
+class BitPlane{
+    private:
+        std::array<uint_t<size>, size> data = {0};
+
+    public:
+        void set(int x,int y){
+            data[y] |= 1 << (63 - x);
+        }
+        void reset(int x,int y){
+            data[y] &= ~(1 << (63 - x));
+        }
+        bool get(int x, int y){
+            return data[y] & (1 << (63 - x));
+        }
+
+        uint_t<size>& operator[](std::size_t index) {
+            return data[index];
+        }
+
+        const uint_t<size>& operator[](std::size_t index) const {
+            return data[index];
+        }
+};
 
 template <size_t blocks_total>
 using BlockBitPlanes = std::array<BitPlane<64>, blocks_total>;

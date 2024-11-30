@@ -106,7 +106,7 @@ class GLAllocatedBuffer: public GLBuffer<T,type>{
             auto [success, position] = allocator.allocate(aligned(size));
             position *= alignment; // Aligned position
 
-            std::cout << "Inserting at: " << position << " of actual size: " << aligned(size) * alignment << " for:" << size << std::endl;
+            //std::cout << "Inserting at: " << position << " of actual size: " << aligned(size) * alignment << " for:" << size << std::endl;
 
             return {success, position};
         }

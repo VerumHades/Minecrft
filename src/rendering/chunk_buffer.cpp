@@ -170,6 +170,8 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
     
     vertexBuffer.initialize(maxVertexCount, vertexSize);
     indexBuffer.initialize(maxIndexCount);
+
+    vao.unbind();
     //CHECK_GL_ERROR();
 }
 
@@ -349,6 +351,8 @@ void ChunkMeshRegistry::draw(){
     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)(drawCallBuffer->getCurrentOffset() * sizeof(DrawElementsIndirectCommand)), drawCallCount, sizeof(DrawElementsIndirectCommand));
 
     //CHECK_GL_ERROR();
+
+    vao.unbind();
 }
 
 void ChunkMeshRegistry::clear(){

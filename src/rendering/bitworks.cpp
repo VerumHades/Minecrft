@@ -37,25 +37,6 @@ std::string compressed_24bit::to_string(){
         std::bitset<8>(bytes[0]).to_string() + "[" + std::to_string(getValue()) + "]";
 }
 
-
-void DynamicBitArray3D::loadAsRotated(DynamicBitArray3D& array){
-    size = array.size;
-    selectStorage();
-
-    for(int z = 0;z < size;z++){
-        for(int y = 0; y < size;y++){
-            uint64_t value = array.getRow(z,y);
-
-            for(int x = 0;x < size;x++){
-                uint64_t mask = 1ULL << (size - 1 - x);
-
-                if(!(value & mask)) continue;
-
-                setRow(x,y, getRow(x,y) | (1ULL << (size - 1 - z)));
-            }
-        }
-    }
-}
 /*
 
 */

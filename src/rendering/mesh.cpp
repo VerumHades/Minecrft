@@ -77,13 +77,14 @@ void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcc
     
 }
 
-void Mesh::addQuadFace(std::array<glm::vec3, 4> vertices_, glm::vec3 normal, bool clockwise, int width, int height){
+void Mesh::addQuadFace(std::array<glm::vec3, 4> vertices_, glm::vec3 normal, bool clockwise, std::vector<float> metadata){
+    const int size = 8 + metadata.size();
     uint vecIndices[4];
     
     float textureX = 0.0;
     float textureY = 0.0;
-    float textureXW = textureX + width;
-    float textureYH = textureY + height;
+    float textureXW = textureX + 1;
+    float textureYH = textureY + 1;
     
     glm::vec2 textureCoordinates[4] = {
         {textureX , textureY },
@@ -91,10 +92,8 @@ void Mesh::addQuadFace(std::array<glm::vec3, 4> vertices_, glm::vec3 normal, boo
         {textureXW, textureYH},
         {textureX , textureYH}
     };
-    
-    const int size = 8;
 
-    float vertex[size * 4];
+    std::vector<float> vertex = std::vector<float>(size * 4);
     uint startIndex = (uint) this->vertices.size() / size;
     for(int i = 0; i < 4; i++){
         int offset = i * size;
@@ -110,10 +109,12 @@ void Mesh::addQuadFace(std::array<glm::vec3, 4> vertices_, glm::vec3 normal, boo
         vertex[6 + offset] = textureCoordinates[i].x;
         vertex[7 + offset] = textureCoordinates[i].y;
 
+        std::memcpy(vertex.data() + offset + 8, metadata.data(), metadata.size() * sizeof(float));
+
         vecIndices[i] = startIndex + i;
     }
 
-    this->vertices.insert(this->vertices.end(), vertex, vertex + size * 4);
+    this->vertices.insert(this->vertices.end(), vertex.begin(), vertex.end());
 
     if (clockwise) this->indices.insert(this->indices.end(), {vecIndices[0], vecIndices[1], vecIndices[3], vecIndices[1], vecIndices[2], vecIndices[3]});
     else this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[1], vecIndices[0], vecIndices[3], vecIndices[2], vecIndices[1]});

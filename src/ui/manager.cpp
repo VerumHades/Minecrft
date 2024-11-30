@@ -13,6 +13,8 @@ void UIManager::initialize(){
     vao.attachIndexBuffer(&indexBuffer);
     indexBuffer.initialize(6 * maxQuads);
 
+    vao.unbind();
+
     mainFont = std::make_unique<Font>("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
     textures = std::make_unique<DynamicTextureArray>();
 
@@ -192,17 +194,19 @@ void UIFrame::update(){
         index_data_start = indexBufferOffset;
     }
 
-    std::cout << "Index offset: " << vertex_data_start / vertexSize << " for info count: " << accumulatedRenderInfo.size() << std::endl;
-
     Mesh mesh = Mesh();
     for(auto& info: accumulatedRenderInfo) info.process(&mesh, vertex_data_start / vertexSize);
     
     manager.getVertexBuffer().insertDirect(vertex_data_start, mesh.getVertices().size(), mesh.getVertices().data());
     manager.getIndexBuffer().insertDirect(index_data_start, mesh.getIndices().size(), mesh.getIndices().data());
+
+
+    std::cout << "Update element hover: " << this->identifiers.tag << " #" << this->identifiers.id << " ";
+    for(auto& classname: this->identifiers.classes) std::cout << "." << classname;
+    std::cout << " Element has state: " << state << std::endl;
 }
 
 void UIFrame::stopDrawing(){
-    std::cout << "Stopping drawing of: " << this << " with: " << vertex_data_size << " " << index_data_size << std::endl;
     if(vertex_data_size != 0) manager.getVertexBuffer().free(vertex_data_start);
     if(index_data_size != 0) manager.getIndexBuffer().free(index_data_start);
 
@@ -306,7 +310,7 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
 void UIManager::render(){
     glDisable(GL_CULL_FACE);
     //glDisable(GL_DEPTH_TEST);
-    //glClear(GL_DEPTH_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT);
 
     uiProgram.updateUniforms();
 
@@ -333,6 +337,8 @@ void UIManager::render(){
     }
 
     if(current_size != 0) glDrawElements(GL_TRIANGLES, current_size, GL_UNSIGNED_INT, reinterpret_cast<void*>(current_start * sizeof(uint)));
+
+    vao.unbind();
 }
 
 void UIManager::mouseMove(int x, int y){
@@ -342,24 +348,29 @@ void UIManager::mouseMove(int x, int y){
     auto element = getElementUnder(x,y);
     underScrollHover = getElementUnder(x,y,true);
 
+    if(element == underHover) return;
+
     if(element != underHover && underHover != nullptr){
-        underHover->setHover(false);   
+        underHover->setHover(false);
+        underHover->update(); 
         if(underHover->onMouseLeave) underHover->onMouseLeave(*this);
     }
+
     if(element != nullptr){
         element->setHover(true);
+        element->update();
+
+        std::cout << "Newly under hover: " << element->identifiers.tag << " #" << element->identifiers.id << " ";
+        for(auto& classname: element->identifiers.classes) std::cout << "." << classname;
+        std::cout << " Element has state: " << element->state << std::endl;
+
         if(element->onMouseEnter) element->onMouseEnter(*this);
     }
-
-    if(underHover) underHover->update(); // Update the old element
 
     underHover = element;
 
     if(underHover && underHover->onMouseMove) underHover->onMouseMove(*this,x,y);
     if(inFocus && inFocus != underHover && inFocus->onMouseMove) inFocus->onMouseMove(*this,x,y);
-
-    if(underHover) underHover->update(); // update the new element
-    if(inFocus) inFocus->update();
 }
 
 void UIManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){

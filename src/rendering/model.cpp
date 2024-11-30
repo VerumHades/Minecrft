@@ -38,6 +38,9 @@ void Model::drawAllRequests(){
 
     vao.bind();
     glDrawElementsInstanced(GL_TRIANGLES, index_buffer.size(), GL_UNSIGNED_INT, 0, last_request / request_size);
-
+    vao.unbind();
+    
     last_request = 0;
+
+
 }

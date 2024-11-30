@@ -23,6 +23,7 @@
 #include <game/threadpool.hpp>
 #include <game/input.hpp>
 #include <game/items/cube_model.hpp>
+#include <game/items/sprite_model.hpp>
 
 #include <scene.hpp>
 #include <set>
@@ -55,7 +56,7 @@ class MainScene: public Scene{
         ChunkMeshGenerator chunkMeshGenerator = ChunkMeshGenerator(blockRegistry);
 
         std::string worldPath = "saves/worldsave.bin";
-        int renderDistance = 4;
+        int renderDistance = 3;
         int selectedBlock = 4;
 
         bool allGenerated = false;

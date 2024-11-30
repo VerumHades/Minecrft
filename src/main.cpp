@@ -254,6 +254,7 @@ int main() {
             }
             
             scrollable->calculateTransforms();
+            scrollable->update();
             scrollable->updateChildren();
         };
 

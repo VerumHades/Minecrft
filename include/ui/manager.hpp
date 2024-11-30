@@ -298,7 +298,7 @@ class UIFrame{
             return baseStyle;
         }
 
-        State state;
+        State state = BASE;
 
         TValue x = TNONE;
         TValue y = TNONE;

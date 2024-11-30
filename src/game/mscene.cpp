@@ -22,7 +22,7 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
         }
     );
 
-    models.emplace("crazed", std::make_shared<CubeModel>("textures/crazed.jpg"));
+    models.emplace("crazed", std::make_shared<SpriteModel>("textures/diamond32.png"));
 
     commandProcessor.addCommand({"teleport","tp"},std::move(tpCommand));
     commandProcessor.addCommand({"save_world"}, std::move(saveWorldCommand));
@@ -344,7 +344,7 @@ void MainScene::open(GLFWwindow* window){
 
     for(int i = 0;i < 20;i++){
         for(int j = 0;j < 20;j++){
-            Entity entity =  Entity(glm::vec3((float)i / 3.0, 50, (float)j / 3.0), glm::vec3(0.3, 0.3, 0.3));
+            Entity entity =  Entity(glm::vec3((float)i, 50, (float)j), glm::vec3(0.3, 0.3, 0.3));
             entity.setModel(models["crazed"]);
 
             world->getEntities().push_back(entity);
