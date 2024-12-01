@@ -60,7 +60,7 @@ CollisionCheckResult World::checkForPointCollision(glm::vec3 position, bool incl
 
                 Block* blocki = this->getBlock({cx, cy, cz});
                 if(blocki){
-                    auto* definition = blockRegistry.getRegisteredBlockByIndex(blocki->id);
+                    auto* definition = blockRegistry.getBlockPrototypeByIndex(blocki->id);
                     if(!definition) continue;
                     if((definition->colliders.size() == 0 || blocki->id == BLOCK_AIR_INDEX) && !includeRectangularColliderLess) continue;
 
@@ -106,7 +106,7 @@ CollisionCheckResult World::checkForRectangularCollision(glm::vec3 position, Rec
 
                 Block* blocki = this->getBlock({cx, cy, cz});
                 if(blocki){
-                    auto* definition = blockRegistry.getRegisteredBlockByIndex(blocki->id);
+                    auto* definition = blockRegistry.getBlockPrototypeByIndex(blocki->id);
                     if(!definition) continue;
                     if(definition->colliders.size() == 0 || blocki->id == BLOCK_AIR_INDEX) continue;
 

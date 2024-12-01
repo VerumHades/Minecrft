@@ -52,8 +52,29 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
         "skybox/stars/bottom.png",
         "skybox/stars/front.png",
         "skybox/stars/back.png"
-    };
+    };  
 
+    itemPrototypeRegistry.addPrototype(ItemPrototype("diamond","textures/diamond32.png"));
+    itemPrototypeRegistry.addPrototype(ItemPrototype("crazed","textures/crazed32.png"));
+
+    std::shared_ptr<ItemSlot> item_slot = std::make_shared<ItemSlot>(itemTextureAtlas,*uiManager);
+    item_slot->setPosition(10,10);
+    item_slot->setSize(50,50);
+    item_slot->setAttribute(&UIFrame::Style::backgroundColor, {100,100,100});
+
+    std::shared_ptr<ItemSlot> item_slot2 = std::make_shared<ItemSlot>(itemTextureAtlas,*uiManager);
+    item_slot2->setPosition(70,10);
+    item_slot2->setSize(50,50);
+    item_slot2->setAttribute(&UIFrame::Style::backgroundColor, {100,100,100});
+
+    auto item = itemPrototypeRegistry.createItem("diamond");
+    item_slot->setItem(item);
+
+    auto item2 = itemPrototypeRegistry.createItem("crazed");
+    item_slot2->setItem(item2);
+
+    addElement(item_slot);
+    addElement(item_slot2);
 
     skyboxProgram.use();
 
@@ -426,7 +447,7 @@ void MainScene::render(){
         //std::cout << (consideredTotal / pow(renderDistance*2,3)) * 100 << "%" << std::endl;
         //End time point
         auto iend = std::chrono::high_resolution_clock::now();
-        std::cout << "Iterated over all chunks in: " << std::chrono::duration_cast<std::chrono::microseconds>(iend - istart).count() << " microseconds" << std::endl;
+        //std::cout << "Iterated over all chunks in: " << std::chrono::duration_cast<std::chrono::microseconds>(iend - istart).count() << " microseconds" << std::endl;
 
         auto start = std::chrono::high_resolution_clock::now();
         updateVisibility = 0;
@@ -518,7 +539,7 @@ void MainScene::render(){
     glDisable( GL_CULL_FACE );
     glDisable(GL_DEPTH_TEST);   
 
-    auto* selectedBlockDefinition = blockRegistry.getRegisteredBlockByIndex(selectedBlock);
+    auto* selectedBlockDefinition = blockRegistry.getBlockPrototypeByIndex(selectedBlock);
 
     uiManager->getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
     if(selectedBlockDefinition) uiManager->getFontManager().renderText("Selected block: " + selectedBlockDefinition->name, 10, 80, 1.0, {0,0,0}, testFont);

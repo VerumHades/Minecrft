@@ -61,7 +61,7 @@ size_t BlockRegistry::getIndexByName(std::string name){
     return 0;
 }
 
-BlockRegistry::RegisteredBlock* BlockRegistry::getRegisteredBlockByIndex(size_t id){
+BlockRegistry::BlockPrototype* BlockRegistry::getBlockPrototypeByIndex(size_t id){
     if(id >= blocks.size()) return nullptr;
     return &blocks[id];
 }

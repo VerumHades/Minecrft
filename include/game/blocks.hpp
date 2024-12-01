@@ -26,7 +26,7 @@ class BlockRegistry{
             BILLBOARD
         } type;
 
-        struct RegisteredBlock{
+        struct BlockPrototype{
             std::string name;
             std::vector<RectangularCollider> colliders;
             
@@ -38,7 +38,7 @@ class BlockRegistry{
 
     private:
         TextureRegistry& texture_registry;
-        std::vector<RegisteredBlock> blocks;
+        std::vector<BlockPrototype> blocks;
     public:
         BlockRegistry(TextureRegistry& texture_registry): texture_registry(texture_registry) {
             blocks.push_back({
@@ -67,7 +67,7 @@ class BlockRegistry{
         void addBillboardBlock(std::string name, std::string texture_name);
 
         BlockID getIndexByName(std::string name);
-        RegisteredBlock* getRegisteredBlockByIndex(BlockID id);
+        BlockPrototype* getBlockPrototypeByIndex(BlockID id);
 
         size_t registeredBlocksTotal(){return blocks.size();}
 };

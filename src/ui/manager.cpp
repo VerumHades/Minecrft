@@ -311,13 +311,25 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
     }
 }
 
-void UIManager::renderElementAndChildren(std::shared_ptr<UIFrame>& element){
+void UIManager::renderElementAndChildren(std::shared_ptr<UIFrame>& element, uint& boundTexture){
     if(element->vertex_data_size != 0 && element->index_data_size != 0){
+        if(
+            element->dedicated_texture_array &&
+            boundTexture != element->dedicated_texture_array->getID()
+        ){
+            boundTexture = element->dedicated_texture_array->getID();
+            element->dedicated_texture_array->bind(0);
+        }
+        else if(boundTexture != textures->getID() && !element->dedicated_texture_array){
+            boundTexture = textures->getID();
+            textures->bind(0);
+        }
+
         glDrawElements(GL_TRIANGLES, element->index_data_size, GL_UNSIGNED_INT, reinterpret_cast<void*>(element->index_data_start * sizeof(uint)));
     }
     
     for(auto& child: element->children){
-        renderElementAndChildren(child);
+        renderElementAndChildren(child, boundTexture);
     }
 }
 
@@ -333,9 +345,10 @@ void UIManager::render(){
     textures->bind(0);
     mainFont->getAtlas()->bind(1);
     
+    uint boundTexture = textures->getID();
 
     for(auto& element: getCurrentWindow().getCurrentLayer().getElements()){
-        renderElementAndChildren(element);
+        renderElementAndChildren(element, boundTexture);
     }
     /*
     size_t current_start = 0;

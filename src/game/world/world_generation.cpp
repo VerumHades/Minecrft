@@ -96,7 +96,7 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, 
     auto end = std::chrono::high_resolution_clock::now();
 
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
+    //std::cout << "Generated chunk (" << chunkX << "," << chunkY << "," << chunkZ << ") in: " << duration << " microseconds" << std::endl;
 
 }   
 
@@ -154,5 +154,5 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, glm::ivec3 ch
     auto end = std::chrono::high_resolution_clock::now();
 
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Generated chunk (" << chunkPosition.x << "," << chunkPosition.y << "," << chunkPosition.z << ") in: " << duration << " microseconds" << std::endl;
+    //std::cout << "Generated chunk (" << chunkPosition.x << "," << chunkPosition.y << "," << chunkPosition.z << ") in: " << duration << " microseconds" << std::endl;
 }

@@ -56,6 +56,19 @@ GLTexture::GLTexture(unsigned char* data, int width, int height){
     loadData(data, width, height, 4);
 }
 
+GLTextureArray::GLTextureArray(){
+    TYPE = GL_TEXTURE_2D_ARRAY;
+    glBindTexture(GL_TEXTURE_2D_ARRAY, this->texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT);
+}
+
 void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layerWidth, int layerHeight){
     TYPE = GL_TEXTURE_2D_ARRAY;
     glBindTexture(GL_TEXTURE_2D_ARRAY, this->texture);

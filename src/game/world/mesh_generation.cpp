@@ -131,7 +131,7 @@ enum FaceDirection{
     X,Y,Z
 };
 
-static inline void processFaces(std::vector<ChunkMeshGenerator::Face> faces, FaceDirection direction, bool forward, BlockRegistry::RegisteredBlock* type, Mesh* mesh, int worldX, int worldY, int worldZ, int layer, float scale){
+static inline void processFaces(std::vector<ChunkMeshGenerator::Face> faces, FaceDirection direction, bool forward, BlockRegistry::BlockPrototype* type, Mesh* mesh, int worldX, int worldY, int worldZ, int layer, float scale){
     std::array<glm::vec3, 4> vertices;
     int texture = 0;
     int normal;
@@ -232,7 +232,7 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
         
         for(int row = 0;row < size;row++){
             for(auto& [type,block,field]: group->getLayers()){
-                auto* definition = blockRegistry.getRegisteredBlockByIndex(type);
+                auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
                 if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
                 auto* rotatedField = field.getTransposed(&cache);
@@ -267,7 +267,7 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
         }
 
         for(auto& type: group->getPresentTypes()){
-            auto* definition = blockRegistry.getRegisteredBlockByIndex(type);
+            auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
             //std::cout << "Solving plane: " << getBlockTypeName(type) << std::endl;
             //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
@@ -288,7 +288,7 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
     */
 
     for(auto& [type,block,field]: group->getLayers()){
-        auto* definition = blockRegistry.getRegisteredBlockByIndex(type);
+        auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
         if(!definition || definition->render_type != BlockRegistry::BILLBOARD) continue;
 
         for(int x = 0;x < size;x++) for(int y = 0;y < size;y++) for(int z = 0;z < size;z++){
@@ -392,7 +392,7 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
 
     for(int row = 0;row < size;row++){
         for(auto& type: agregateTypesX){
-            auto* definition = blockRegistry.getRegisteredBlockByIndex(type);
+            auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
             const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field.getRow(0,row) : 0ULL;
@@ -413,7 +413,7 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
         }
         
         for(auto& type: agregateTypesY){
-            auto* definition = blockRegistry.getRegisteredBlockByIndex(type);
+            auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
             const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field.getRow(row,0) : 0ULL;
@@ -434,7 +434,7 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
         }
 
         for(auto& type: agregateTypesZ){
-            auto* definition = blockRegistry.getRegisteredBlockByIndex(type);
+            auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
             uint64_t localMaskRow = 0ULL;
@@ -459,7 +459,7 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
     }
 
     for(auto& type: fullAgregate){
-        auto* definition = blockRegistry.getRegisteredBlockByIndex(type);
+        auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
         if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
         processFaces(greedyMeshPlane(planesXforward [static_cast<size_t>(type)], size), X, false, definition, solidMesh.get(), worldX, worldY, worldZ, -1, scale);

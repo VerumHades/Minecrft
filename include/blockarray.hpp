@@ -76,7 +76,7 @@ class SparseBlockArray{
             auto& layer = getLayer(block.id);
             layer.field.set(position.x,position.y,position.z);
 
-            auto* block_definition = blockRegistry.getRegisteredBlockByIndex(block.id);
+            auto* block_definition = blockRegistry.getBlockPrototypeByIndex(block.id);
             if(!block_definition) return;
 
             if(!block_definition->transparent) solid_field.set(position.x,position.y,position.z);

@@ -358,6 +358,8 @@ class UIFrame{
 
         virtual void getRenderingInformation(RenderYeetFunction& yeet);
 
+        std::shared_ptr<GLTextureArray> dedicated_texture_array;
+
         friend class UIManager;
         friend class UILoader;
         friend class UIStyle;
@@ -622,7 +624,7 @@ class UIManager{
 
         std::unique_ptr<DynamicTextureArray> textures;
 
-        void renderElementAndChildren(std::shared_ptr<UIFrame>& element);
+        void renderElementAndChildren(std::shared_ptr<UIFrame>& element, uint& boundTexture);
 
     public:
         void initialize();
