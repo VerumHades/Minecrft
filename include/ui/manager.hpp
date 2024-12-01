@@ -39,6 +39,13 @@ struct UIColor{
             a
         );
     }
+
+    // Overloading the == operator as a member function
+    bool operator==(const UIColor& other) const {
+        return (
+            r == other.r && g == other.g && b == other.b && a == other.a
+        );
+    }
 };
 
 enum Units{
@@ -614,6 +621,8 @@ class UIManager{
         std::unordered_map<UIWindowIdentifier, UIWindow> windows;
 
         std::unique_ptr<DynamicTextureArray> textures;
+
+        void renderElementAndChildren(std::shared_ptr<UIFrame>& element);
 
     public:
         void initialize();

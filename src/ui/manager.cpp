@@ -205,10 +205,10 @@ void UIFrame::update(){
     manager.getIndexBuffer().insertDirect(index_data_start, mesh.getIndices().size(), mesh.getIndices().data());
 
 
-    std::cout << "Update element hover: " << this->identifiers.tag << " #" << this->identifiers.id << " ";
-    for(auto& classname: this->identifiers.classes) std::cout << "." << classname;
-    std::cout << " Element has state: " << state << std::endl;
-    std::cout << "Render members in total: " << accumulatedRenderInfo.size() << std::endl;
+   // std::cout << "Update element hover: " << this->identifiers.tag << " #" << this->identifiers.id << " ";
+    //for(auto& classname: this->identifiers.classes) std::cout << "." << classname;
+    //std::cout << " Element has state: " << state << std::endl;
+    //std::cout << "Render members in total: " << accumulatedRenderInfo.size() << std::endl;
 }
 
 void UIFrame::stopDrawing(){
@@ -311,18 +311,33 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
     }
 }
 
+void UIManager::renderElementAndChildren(std::shared_ptr<UIFrame>& element){
+    if(element->vertex_data_size != 0 && element->index_data_size != 0){
+        glDrawElements(GL_TRIANGLES, element->index_data_size, GL_UNSIGNED_INT, reinterpret_cast<void*>(element->index_data_start * sizeof(uint)));
+    }
+    
+    for(auto& child: element->children){
+        renderElementAndChildren(child);
+    }
+}
+
 void UIManager::render(){
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glDisable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
-    glClear(GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    //glClear(GL_DEPTH_BUFFER_BIT);
 
     uiProgram.updateUniforms();
 
     vao.bind();
     textures->bind(0);
     mainFont->getAtlas()->bind(1);
+    
 
+    for(auto& element: getCurrentWindow().getCurrentLayer().getElements()){
+        renderElementAndChildren(element);
+    }
+    /*
     size_t current_start = 0;
 
     size_t current_position = 0;
@@ -342,6 +357,8 @@ void UIManager::render(){
     }
 
     if(current_size != 0) glDrawElements(GL_TRIANGLES, current_size, GL_UNSIGNED_INT, reinterpret_cast<void*>(current_start * sizeof(uint)));
+    */
+
 
     vao.unbind();
 }
@@ -490,15 +507,18 @@ bool UIFrame::pointWithin(glm::vec2 point, int padding){
 }
 
 void UIFrame::getRenderingInformation(RenderYeetFunction& yeet){
+    auto bg = getAttribute(&Style::backgroundColor);
+    if(bg == UIColor{0,0,0,0}) return;
     yeet(
         UIRenderInfo::Rectangle(
             transform.x,transform.y,transform.width,transform.height,
-            getAttribute(&Style::backgroundColor),
+            bg,
             borderSizes,
             getAttribute(&Style::borderColor)
         ),
         clipRegion
     );
+    //manager.buildTextRenderingInformation(yeet, clipRegion, "" + std::to_string(zIndex), transform.x, transform.y, 1.0, {255,255,255});
 };
 
 static inline void reduceRegionTo(UIRegion& target, UIRegion& to){
@@ -539,6 +559,8 @@ void UIFrame::calculateElementsTransforms(){
         //std::cout << "From parent: " << contentTransform.to_string() << std::endl;
         offset_x = parent->contentTransform.x;
         offset_y = parent->contentTransform.y;
+
+        zIndex = parent->zIndex + 1;
     }
 
     boundingTransform = {
