@@ -25,7 +25,7 @@ void saveRedComponentTexture(GLuint textureID, int width, int height, const char
 }
 
 
-Font::Font(std::string filepath, int size){
+Font::Font(std::string filepath, int size): size(size){
     if (FT_Init_FreeType(&ft)) {
         std::cerr << "Could not init FreeType Library" << std::endl;
         throw std::runtime_error("");
@@ -180,7 +180,8 @@ void FontManager::renderText(std::string text, GLfloat x, GLfloat y, GLfloat sca
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-glm::vec2 Font::getTextDimensions(std::string text){
+glm::vec2 Font::getTextDimensions(std::string text, int size){
+    if(size == -1) size = this->size;
     glm::vec2 out = {0,0};
 
     int x = 0;
@@ -201,5 +202,7 @@ glm::vec2 Font::getTextDimensions(std::string text){
 
     out.x = x;
 
-    return out;
+    float scale = static_cast<float>(size) / static_cast<float>(this->size);
+
+    return out * scale;
 }

@@ -91,7 +91,7 @@ UICommandInput::UICommandInput(UIManager& manager): UIInput(manager) {
 }
 
 void UICommandInput::getRenderingInformation(RenderYeetFunction& yeet){
-    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
+    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text, font_size);
     int sw = manager.getScreenWidth();
     int sh = manager.getScreenHeight();
 
@@ -121,7 +121,7 @@ void UICommandInput::getRenderingInformation(RenderYeetFunction& yeet){
     int suggestions_height = 0;
     int suggestions_width = 0;
     for(auto& s: suggestions){
-        glm::vec2 dm = manager.getMainFont().getTextDimensions(s);
+        glm::vec2 dm = manager.getMainFont().getTextDimensions(s, font_size);
         suggestions_height += dm.y + suggestions_padding;
         suggestions_width = std::max(static_cast<int>(dm.x), suggestions_width);
     }
@@ -139,7 +139,7 @@ void UICommandInput::getRenderingInformation(RenderYeetFunction& yeet){
     int currentY = 0;
     for(auto& s: suggestions){
         manager.buildTextRenderingInformation(yeet,clipRegion,s,transform.x + suggestions_padding,transform.y - suggestions_height + currentY + suggestions_padding,1,{0.5f,1.0f,1.0f,});
-        glm::vec2 dm = manager.getMainFont().getTextDimensions(s);
+        glm::vec2 dm = manager.getMainFont().getTextDimensions(s, font_size);
         currentY += dm.y + suggestions_padding;
     }
 

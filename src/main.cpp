@@ -179,11 +179,11 @@ int main() {
     uniformLinker.ignore("tex");
     uniformLinker.ignore("textureIn");
 
-    
+    /*
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
-    
+    */
 
     glLineWidth(2.0f);
     

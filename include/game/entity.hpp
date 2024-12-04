@@ -9,39 +9,38 @@
 #include <string>
 #include <vector>
 
+class World;
 
-typedef struct CollisionCheckResult{
-    Block* collidedBlock;
-    bool collision;
-    int x;
-    int y;
-    int z;
-} CollisionCheckResult;
+
+class Entity;
 
 class Collidable{
     public:
-        virtual CollisionCheckResult checkForRectangularCollision(glm::vec3 position, RectangularCollider* collider) = 0;
+        virtual bool collidesWith(glm::vec3 position, RectangularCollider* collider) const = 0;
+        virtual std::vector<std::shared_ptr<Entity>>& getRegionEntities(const glm::ivec3 region_position) {}
 };
 
-class Entity{
-    private:
+class Entity: public Collidable{
+    protected:
         glm::vec3 position = glm::vec3(0);
         glm::vec3 velocity = glm::vec3(0);
+        std::optional<glm::ivec3> lastRegionPosition = std::nullopt;
 
         float maxVelocityHorizontal = 0.5f;
         float maxVelocityVertical = 0.5f;
         float friction = 0.005f;
-        bool hasGravity = true;
+        bool hasGravity = false;
 
-        std::vector<RectangularCollider> colliders;
+        RectangularCollider collider;
         
         std::shared_ptr<Model> model;
 
     public:
         Entity(glm::vec3 position, glm::vec3 colliderDimensions);
 
-        void update(Collidable& collidable);
-        CollisionCheckResult checkForCollision(Collidable& collidable, bool withVelocity, glm::vec3 offset = {0,0,0});
+        void update(Collidable* world);
+        bool checkForCollision(Collidable* collidable, bool withVelocity, glm::vec3 offset = {0,0,0});
+        bool collidesWith(glm::vec3 position, RectangularCollider* collider) const override;
         
         void accelerate(glm::vec3 direction);
         void setGravity(bool value){hasGravity = value;}
@@ -52,7 +51,9 @@ class Entity{
         const glm::vec3& getPosition() {return position;};
         void setPosition(const glm::vec3& position) {this->position = position;}
         const glm::vec3& getVelocity() {return velocity;};
-        const std::vector<RectangularCollider>& getColliders() {return colliders;}
+        const RectangularCollider& getCollider(){return collider;}
+
+        std::optional<glm::ivec3>& getLastRegionPosition() {return lastRegionPosition;}
 };
 
 

@@ -25,7 +25,7 @@ Chunk* World::generateChunk(glm::ivec3 position){
     return this->chunks[position].get();
 }
 
-Chunk* World::getChunk(glm::ivec3 position){
+Chunk* World::getChunk(glm::ivec3 position) const {
     std::shared_lock lock(chunkGenLock);
 
     auto it = this->chunks.find(position);
@@ -45,10 +45,8 @@ void World::loadChunk(glm::ivec3 position){
     //stream->load(chunks[position].get());
 }
 
-CollisionCheckResult World::checkForPointCollision(glm::vec3 position, bool includeRectangularColliderLess){
-    CollisionCheckResult result = {nullptr, false, 0,0,0};
+std::tuple<bool, Block*> World::checkForPointCollision(glm::vec3 position, bool includeRectangularColliderLess){
     int range = 1;
-
     float blockWidth = 1;
 
     for(int i = -range;i <= range;i++){
@@ -64,37 +62,21 @@ CollisionCheckResult World::checkForPointCollision(glm::vec3 position, bool incl
                     if(!definition) continue;
                     if((definition->colliders.size() == 0 || blocki->id == BLOCK_AIR_INDEX) && !includeRectangularColliderLess) continue;
 
-                    //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
 
                     if(
                         position.x >= cx && position.x <= cx + blockWidth &&
                         position.y >= cy && position.y <= cy + blockWidth &&
                         position.z >= cz && position.z <= cz + blockWidth 
-                    ){
-                        result.collidedBlock = blocki;
-                        result.collision = 1;
-                        result.x = cx;
-                        result.y = cy;
-                        result.z = cz;
-                        return result;
-                    }
+                    ) return {true, blocki};
                 }
-                /*else{
-                    result.collision = 1;
-                    result.x = cx;
-                    result.y = cy;
-                    result.z = cz;
-                    return result;
-                }*/
             }
         }
     }
 
-    return result;
+    return {false, nullptr};
 }
 
-CollisionCheckResult World::checkForRectangularCollision(glm::vec3 position, RectangularCollider* collider){
-    CollisionCheckResult result = {nullptr, false, 0,0,0};
+bool World::collidesWith(glm::vec3 position, RectangularCollider* collider) const {
     int range = 1;
 
     for(int i = -range;i <= range;i++){
@@ -114,38 +96,21 @@ CollisionCheckResult World::checkForRectangularCollision(glm::vec3 position, Rec
 
                     for(int colliderIndex = 0;colliderIndex < definition->colliders.size(); colliderIndex++){
                         RectangularCollider* blockCollider = &definition->colliders[colliderIndex];
-                        float colliderX = blockCollider->x + cx;
-                        float colliderY = blockCollider->y + cy;
-                        float colliderZ = blockCollider->z + cz;
                         
                         //printf("%f %f %f %f %f %f\n", colliderX, colliderY, colliderZ, blockCollider->width, blockCollider->height, blockCollider->depth);
             
                         if(
-                            position.x + collider->x + collider->width  >= colliderX && position.x + collider->x <= colliderX + blockCollider->width &&
-                            position.y + collider->y + collider->height >= colliderY && position.y + collider->y <= colliderY + blockCollider->height &&
-                            position.z + collider->z + collider->depth  >= colliderZ && position.z + collider->z <= colliderZ + blockCollider->depth 
+                            blockCollider->collidesWith(collider, {cx,cy,cz}, position)
                         ){
-                            result.collidedBlock = blocki;
-                            result.collision = 1;
-                            result.x = cx;
-                            result.y = cy;
-                            result.z = cz;
-                            return result;
+                            return true;
                         }
                     }
                 }
-                /*else{
-                    result.collision = 1;
-                    result.x = cx;
-                    result.y = cy;
-                    result.z = cz;
-                    return result;
-                }*/
             }
         }
     }
 
-    return result;
+    return false;
 }
 
 RaycastResult World::raycast(glm::vec3 from, glm::vec3 direction, float maxDistance){
@@ -163,10 +128,10 @@ RaycastResult World::raycast(glm::vec3 from, glm::vec3 direction, float maxDista
 
         current_position += direction * step;
 
-        CollisionCheckResult check = this->checkForPointCollision(current_position, 0);
-        if(check.collision){
+        auto [collided, block] = this->checkForPointCollision(current_position, 0);
+        if(collided){
             result.hit = true;
-            result.hitBlock = check.collidedBlock;
+            result.hitBlock = block;
             
             result.position = glm::floor(current_position);
 
@@ -179,7 +144,7 @@ RaycastResult World::raycast(glm::vec3 from, glm::vec3 direction, float maxDista
     return result;
 }
 
-glm::ivec3 World::blockToChunkPosition(glm::ivec3 blockPosition){
+glm::ivec3 World::blockToChunkPosition(glm::ivec3 blockPosition) const{
     return glm::floor(glm::vec3(blockPosition) / static_cast<float>(CHUNK_SIZE));
 }
 
@@ -187,7 +152,7 @@ glm::ivec3 World::getGetChunkRelativeBlockPosition(glm::ivec3 position){
     return glm::abs(position - blockToChunkPosition(position) * CHUNK_SIZE);
 }
 
-Block* World::getBlock(glm::ivec3 position){
+Block* World::getBlock(glm::ivec3 position) const {
     auto chunkPosition = blockToChunkPosition(position);
     auto blockPosition = glm::abs(position - chunkPosition * CHUNK_SIZE);
     //printf("Chunk coords: %ix%i Block coords: %i(%i)x%ix%i(%i)\n", chunkX, chunkZ, ix,iy,iz);
@@ -198,7 +163,7 @@ Block* World::getBlock(glm::ivec3 position){
     return chunk->getBlock(blockPosition);
 }
 
-Chunk* World::getChunkFromBlockPosition(glm::ivec3 position){
+Chunk* World::getChunkFromBlockPosition(glm::ivec3 position) const{
     return this->getChunk(blockToChunkPosition(position));
 }
 
@@ -221,11 +186,60 @@ static int rotation = 0;
 static float position = 0;
 static float position_mult = 1;
 
-void World::drawEntities(){
-    for (auto& entity: this->entities) { 
-        if(!entity.getModel()) continue;
+glm::ivec3 World::getEntityRegionPosition(const std::shared_ptr<Entity>& entity){
+    if(!entity) return {0,0,0};
+    return glm::floor(entity->getPosition() / static_cast<float>(entity_region_size));
+}
+
+void World::drawEntity(const std::shared_ptr<Entity>& entity){
+    if(!entity->getModel()) return;
         
-        entity.getModel()->requestDraw(entity.getPosition() + glm::vec3{0,position,0}, {0.5,0.5,0.5}, {0,rotation,0}, {-0.5,0,0});
+    entity->getModel()->requestDraw(entity->getPosition() + glm::vec3{0,position,0}, {0.5,0.5,0.5}, {0,rotation,0}, {-0.5,0,0});
+}
+
+void World::addEntityToRegion(const glm::ivec3 region_position, std::shared_ptr<Entity> entity){
+    if(!entity_regions.contains(region_position)){
+        entity_regions[region_position] = {};
+    }
+
+    entity_regions[region_position].push_back(entity);
+    entity->getLastRegionPosition().emplace(region_position);  
+}
+bool World::removeEntityFromRegion(const glm::ivec3 region_position,  std::shared_ptr<Entity> entity){
+    if(!entity_regions.contains(region_position)) return false;
+
+    auto& last_region = entity_regions[region_position];
+
+    auto iter = std::find(last_region.begin(), last_region.end(), entity);
+    if(iter == last_region.end()) return false;
+    last_region.erase(iter);
+
+    entity->getLastRegionPosition().reset();
+    
+    return true;
+}
+
+void World::updateEntity(std::shared_ptr<Entity> entity){  
+    glm::ivec3 current_region_position = getEntityRegionPosition(entity);
+    auto& last_region_position_opt = entity->getLastRegionPosition();
+    
+    if(!last_region_position_opt.has_value()) addEntityToRegion(current_region_position, entity);
+    else{
+        auto last_region_position = last_region_position_opt.value();
+        if(current_region_position != last_region_position){
+            //removeEntityFromRegion(last_region_position, entity);
+            addEntityToRegion(current_region_position, entity);
+        }
+    }
+
+    entity->update(this);
+}
+
+void World::drawEntities(){
+    for (auto& [region_position, entity_list]: this->entity_regions) { 
+        for(auto& entity: entity_list){
+            drawEntity(entity);
+        }
     }
 
     const float position_addition = 0.002;
@@ -238,7 +252,22 @@ void World::drawEntities(){
 }
 
 void World::updateEntities(){
-    for (auto& entity: this->entities) { 
-        entity.update(*this);
+    for (auto& [region_position, entity_list]: this->entity_regions) { 
+        for(auto& entity: entity_list){
+            updateEntity(entity);
+        }
+    }
+}
+void World::drawEntityColliders(WireframeCubeRenderer& renderer, size_t start_index){
+    for (auto& [region_position, entity_list]: this->entity_regions) { 
+        for(auto& entity: entity_list){
+            auto& collider = entity->getCollider();
+            renderer.setCube(
+                start_index++,
+                glm::vec3{collider.x, collider.y, collider.z} + entity->getPosition(), 
+                glm::vec3{collider.width, collider.height, collider.depth},
+                {1.0,0,0}
+            );
+        }
     }
 }

@@ -90,6 +90,23 @@ class GLBuffer{
         }
 };
 
+template <typename T, int type>
+class  GLDoubleBuffer{
+    private:
+        GLBuffer<T,type> buffers[2];
+        int current = 0;
+    public:
+        void swap(){
+            this->current = !this->current;
+        }
+        GLBuffer<T,type>& getBuffer(){
+            return this->buffers[this->current];
+        }
+        GLBuffer<T,type>& getBackBuffer(){
+            return this->buffers[!this->current];
+        }
+};
+
 
 template  <typename T, int type>
 class GLAllocatedBuffer: public GLBuffer<T,type>{
@@ -327,16 +344,6 @@ class GLPersistentBuffer{
         uint getID() {return buffer_id;}
         T* data() {return this->_data;};
 
-};
-
-class GLDoubleBuffer{
-    private:
-        GLBufferLegacy buffers[2];
-        int current = 0;
-    public:
-        void swap();
-        GLBufferLegacy& getBuffer();
-        GLBufferLegacy& getBackBuffer();
 };
 
 /*

@@ -10,10 +10,6 @@ void Model::setupBufferFormat(std::vector<GLSlotBinding> bindings){
 }
 
 void Model::requestDraw(glm::vec3 position, glm::vec3 scale, glm::vec3 rotation, glm::vec3 rotation_center_offset){
-    if(last_request >= draw_request_data.size()){
-        draw_request_data.resize(draw_request_data.size() + request_size);
-    }
-
     glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotation.x), glm::vec3(1, 0, 0));  // Rotation around X axis
     glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotation.y), glm::vec3(0, 1, 0));  // Rotation around Y axis
     glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), glm::radians(rotation.z), glm::vec3(0, 0, 1));  // Rotation around Z axis
@@ -27,23 +23,33 @@ void Model::requestDraw(glm::vec3 position, glm::vec3 scale, glm::vec3 rotation,
 
     //modelMatrix = glm::scale(modelMatrix, scale);
 
-    std::memcpy(draw_request_data.data() + last_request, glm::value_ptr(modelMatrix), 4 * 4 * sizeof(float));
-
-    last_request += request_size;
+    request_buffer.append(glm::value_ptr(modelMatrix), 4 * 4);
+    pending_update = true;
 }
-void Model::drawAllRequests(){
-    if(last_request == 0) return;
-    if(instance_buffer.size() < last_request) instance_buffer.initialize(last_request);
-    
-    instance_buffer.insert(0, last_request, draw_request_data.data());
+void Model::updateRequestBuffer(){
+    if(!upload_data) return;
+    if(request_buffer.size() == 0) return;
+ 
+    if(instance_buffer.size() < request_buffer.size()) instance_buffer.initialize(request_buffer.size());
+    instance_buffer.insert(0, request_buffer.size(), request_buffer.read());
+}
 
+void Model::drawAllRequests(){
+    if(request_buffer.size() == 0) return;
     if(texture) texture->bind(0);
 
     vao.bind();
-    glDrawElementsInstanced(GL_TRIANGLES, index_buffer.size(), GL_UNSIGNED_INT, 0, last_request / request_size);
+    glDrawElementsInstanced(GL_TRIANGLES, index_buffer.size(), GL_UNSIGNED_INT, 0, request_buffer.size() / request_size);
     vao.unbind();
-    
-    last_request = 0;
+}
 
+void Model::resetRequests(){
+    request_buffer.clear();
+    pending_update = true;
+}
 
+void Model::passRequests(){
+    if(!pending_update) return;
+    request_buffer.pass();
+    upload_data = true;
 }

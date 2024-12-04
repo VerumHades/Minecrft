@@ -29,6 +29,7 @@ class Font{
     private:
         FT_Library ft;
         FT_Face face;
+        int size;
 
         std::unique_ptr<GLTexture> atlas;
         std::unordered_map<char, Character> characters;
@@ -37,10 +38,12 @@ class Font{
     public:
         Font(std::string filepath, int size);
 
-        glm::vec2 getTextDimensions(std::string);
+        glm::vec2 getTextDimensions(std::string, int size);
 
         GLTexture* getAtlas(){return atlas.get();}
         std::unordered_map<char, Character>& getCharacters() {return characters;}
+
+        int getSize(){return size;}
 };
 
 class FontManager{

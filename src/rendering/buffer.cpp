@@ -115,13 +115,3 @@ void GLBufferLegacy::drawInstances(int count){
     //glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
-
-void GLDoubleBuffer::swap(){
-    this->current = !this->current;
-}
-GLBufferLegacy& GLDoubleBuffer::getBuffer(){
-    return this->buffers[this->current];
-}
-GLBufferLegacy& GLDoubleBuffer::getBackBuffer(){
-    return this->buffers[!this->current];
-}

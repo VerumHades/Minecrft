@@ -37,28 +37,27 @@ class MainScene: public Scene{
         DepthCamera suncam = DepthCamera("sun");
         
         ShaderProgram modelProgram = ShaderProgram("shaders/graphical/model/model.vs","shaders/graphical/model/model.fs");
-        std::unordered_map<std::string,std::shared_ptr<Model>> models;
-
-
-        std::unique_ptr<ThreadPool> threadPool;
-
         ShaderProgram terrainProgram = ShaderProgram("shaders/graphical/terrain.vs","shaders/graphical/terrain.fs");
         ShaderProgram skyboxProgram  = ShaderProgram("shaders/graphical/skybox.vs", "shaders/graphical/skybox.fs");
-        CommandProcessor commandProcessor;
+
+        std::unique_ptr<ThreadPool> threadPool;
 
         GLSkybox skybox;
         std::unique_ptr<World> world;
 
         WireframeCubeRenderer wireframeRenderer;
 
-        ChunkMeshRegistry chunkMeshRegistry;
-
         TextureRegistry blockTextureRegistry;
         BlockRegistry blockRegistry = BlockRegistry(blockTextureRegistry);
+        
+        ChunkMeshRegistry chunkMeshRegistry;
         ChunkMeshGenerator chunkMeshGenerator = ChunkMeshGenerator(blockRegistry);
 
         ItemTextureAtlas itemTextureAtlas;
         ItemPrototypeRegistry itemPrototypeRegistry;
+        std::shared_ptr<ItemSlot> held_item_slot;
+
+        std::shared_ptr<Entity> player;
 
         std::string worldPath = "saves/worldsave.bin";
         int renderDistance = 3;
@@ -69,9 +68,7 @@ class MainScene: public Scene{
         int threadsStopped = 0;
         
         bool lineMode = true;
-        bool chatOpen = false;
         bool menuOpen = false;
-        std::shared_ptr<UIInput> chatInput;
         //int sunDistance = ((CHUNK_SIZE * renderDistance) / 2) ;
         int sunDistance = 100;
         float sunAngle = 70.0f;
@@ -120,8 +117,6 @@ class MainScene: public Scene{
         double current = glfwGetTime();
         double deltatime;
 
-        std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> loadedPositions;
-
         void updateCursor();
 
         glm::ivec3 blockUnderCursorPosition = {0,0,0};
@@ -146,15 +141,7 @@ class MainScene: public Scene{
 
         void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) override;
         void unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) override;
-};
-
-class UIAllocatorVisualizer: public UIFrame{
-    private:
-        Allocator* watched;
-    public:
-        UIAllocatorVisualizer(UIManager& manager): UIFrame(manager){};
-        void setWatched(Allocator* allocator) {this->watched = allocator;};
-        virtual void getRenderingInformation(RenderYeetFunction& yeet);
+        void unlockedMouseMove(GLFWwindow* window, int mouseX, int mouseY) override;
 };
 
 class UICrosshair: public UIFrame{

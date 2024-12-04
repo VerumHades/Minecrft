@@ -235,8 +235,10 @@ void UIFrame::stopDrawingChildren(){
     }
 }
 
-void UIManager::buildTextRenderingInformation(RenderYeetFunction& yeet, UIRegion& clipRegion, std::string text, float x, float y, float scale, UIColor color){
-    glm::vec2 textDimensions = mainFont->getTextDimensions(text);
+void UIManager::buildTextRenderingInformation(RenderYeetFunction& yeet, UIRegion& clipRegion, std::string text, float x, float y, int font_size, UIColor color){
+    float scale = static_cast<float>(font_size) / static_cast<float>(mainFont->getSize());
+    //std::cout << scale << std::endl;
+    glm::vec2 textDimensions = mainFont->getTextDimensions(text, font_size);
 
     // Iterate through each character in the text
     for (auto c = text.begin(); c != text.end(); c++) {
@@ -545,6 +547,8 @@ void UIFrame::calculateElementsTransforms(){
     auto margin = getAttribute(&UIFrame::Style::margin);
     auto borderWidth = getAttribute(&Style::borderWidth);
 
+    font_size = getValueInPixels(getAttribute(&UIFrame::Style::fontSize), true);
+
     if(layout) contentTransform = layout->calculateContentTransform(this);
 
     borderSizes = {
@@ -697,7 +701,7 @@ void UIFlexLayout::arrangeChildren(UIFrame* frame) {
 
 void UILabel::getRenderingInformation(RenderYeetFunction& yeet) {
     auto t = getTextPosition(manager);
-    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
+    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text, font_size);
 
     //std::cout << "Label with text: " << text << " has width of unit: " << width.unit << " and height of unit: " << height.unit << 
     //"That is" << width.value << " and " << height.value << std::endl;
@@ -708,11 +712,11 @@ void UILabel::getRenderingInformation(RenderYeetFunction& yeet) {
     if(height.unit == NONE) height = textDimensions.y + textPadding * 2;
 
     UIFrame::getRenderingInformation(yeet);
-    manager.buildTextRenderingInformation(yeet,clipRegion,text,t.x,t.y,1,getAttribute(&Style::textColor));
+    manager.buildTextRenderingInformation(yeet,clipRegion,text,t.x,t.y,font_size,getAttribute(&Style::textColor));
 }
 
 UITransform UILabel::getTextPosition(UIManager& manager){
-    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
+    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text, font_size);
 
     auto textPosition = getAttribute(&Style::textPosition);
 
@@ -773,7 +777,7 @@ UIInput::UIInput(UIManager& manager): UILabel(manager) {
 }
 
 void UIInput::getRenderingInformation(RenderYeetFunction& yeet){
-    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
+    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text, font_size);
 
     auto tpos = getTextPosition(manager);
     auto textColor = getAttribute(&UIFrame::Style::textColor);
@@ -877,7 +881,7 @@ void UISlider::getRenderingInformation(RenderYeetFunction& yeet){
     yeet(UIRenderInfo::Rectangle(getHandleTransform(manager), handleColor, {3,3,3,3},UIRenderInfo::generateBorderColors(handleColor)),clipRegion);
     
     std::string text = std::to_string(*value);
-    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text);
+    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text, font_size);
 
     if(displayValue){
         int tx = transform.x + transform.width + valueDisplayOffset;
@@ -885,7 +889,7 @@ void UISlider::getRenderingInformation(RenderYeetFunction& yeet){
 
         auto extendedClip = clipRegion;
         extendedClip.max.x += textDimensions.x + valueDisplayOffset + 5;
-        manager.buildTextRenderingInformation(yeet,extendedClip, text,tx,ty,1,getAttribute(&Style::textColor));
+        manager.buildTextRenderingInformation(yeet,extendedClip, text,tx,ty,font_size,getAttribute(&Style::textColor));
     }
 }
 

@@ -272,6 +272,7 @@ class UIFrame{
             std::optional<std::array<TValue,4>>  borderWidth;
             std::optional<std::array<UIColor,4>> borderColor;
             std::optional<TValue>                margin;
+            std::optional<TValue>                fontSize;
         };
 
     protected:
@@ -283,7 +284,8 @@ class UIFrame{
             UIColor{0,0,0,0},
             std::array<TValue,4>{0,0,0,0},
             std::array<UIColor,4>{UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
-            TValue(0)
+            TValue(0),
+            16
         };
         Style hoverStyle;
         Style focusStyle;
@@ -350,6 +352,7 @@ class UIFrame{
         UIRegion contentClipRegion    = {{0,0},{0,0}};
         int margin_x = 0;
         int margin_y = 0;
+        int font_size = 0;
 
         size_t vertex_data_start = -1ULL;
         size_t vertex_data_size = 0;
@@ -649,7 +652,7 @@ class UIManager{
 
         std::shared_ptr<UIFrame> getElementUnder(int x, int y, bool onlyScrollable = false);   
 
-        void buildTextRenderingInformation(RenderYeetFunction& yeet, UIRegion& clipRegion, std::string text, float x, float y, float scale, UIColor color);
+        void buildTextRenderingInformation(RenderYeetFunction& yeet, UIRegion& clipRegion, std::string text, float x, float y, int font_size, UIColor color);
 
         FontManager& getFontManager() {return fontManager;};
         Font& getMainFont(){return *mainFont;}

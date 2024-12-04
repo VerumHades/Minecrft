@@ -14,3 +14,26 @@ ItemPrototype* ItemPrototypeRegistry::getPrototype(std::string name){
 Item ItemPrototypeRegistry::createItem(std::string prototype_name){
     return Item(getPrototype(prototype_name));
 }
+
+void ItemPrototypeRegistry::drawItemModels(){
+    for(auto& prototype: prototypes){
+        prototype.getModel()->drawAllRequests();
+    }
+}
+
+void ItemPrototypeRegistry::resetModelsDrawRequests(){
+    for(auto& prototype: prototypes){
+        prototype.getModel()->resetRequests();
+    }
+}
+void ItemPrototypeRegistry::passModelsDrawRequests(){
+    for(auto& prototype: prototypes){
+        prototype.getModel()->passRequests();
+    }
+}
+
+void ItemPrototypeRegistry::updateModelsDrawRequestBuffer(){
+    for(auto& prototype: prototypes){
+        prototype.getModel()->updateRequestBuffer();
+    }
+}

@@ -3,30 +3,6 @@
 void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     fpsLock = false;
     
-    std::unique_ptr<Command> tpCommand = std::make_unique<Command>(
-        std::vector<CommandArgument::CommandArgumentType>({CommandArgument::INT,CommandArgument::INT,CommandArgument::INT}),
-        [this](std::vector<CommandArgument> arguments){
-            Entity& player = world->getEntities()[0];
-            
-            std::cout << arguments[0].intValue << " " <<  arguments[1].intValue  << " " << arguments[3].intValue << std::endl;
-            player.setPosition({arguments[0].intValue,arguments[1].intValue,arguments[2].intValue});
-        }
-    );
-
-    std::unique_ptr<Command> saveWorldCommand = std::make_unique<Command>(
-        std::vector<CommandArgument::CommandArgumentType>({CommandArgument::STRING}),
-        [this](std::vector<CommandArgument> arguments){
-            std::string& name = arguments[0].stringValue;
-
-            //world->save("saves/" + name + ".bin");
-        }
-    );
-
-    models.emplace("crazed", std::make_shared<SpriteModel>("textures/diamond32.png"));
-
-    commandProcessor.addCommand({"teleport","tp"},std::move(tpCommand));
-    commandProcessor.addCommand({"save_world"}, std::move(saveWorldCommand));
-
     this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
     this->getUILayer("chat").eventLocks = {true, true, true, true};
     this->getUILayer("menu").eventLocks = {true, true, true, true};
@@ -57,24 +33,26 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     itemPrototypeRegistry.addPrototype(ItemPrototype("diamond","textures/diamond32.png"));
     itemPrototypeRegistry.addPrototype(ItemPrototype("crazed","textures/crazed32.png"));
 
-    std::shared_ptr<ItemSlot> item_slot = std::make_shared<ItemSlot>(itemTextureAtlas,*uiManager);
-    item_slot->setPosition(10,10);
-    item_slot->setSize(50,50);
-    item_slot->setAttribute(&UIFrame::Style::backgroundColor, {100,100,100});
+    held_item_slot = std::make_shared<ItemSlot>(itemTextureAtlas,*uiManager);
 
-    std::shared_ptr<ItemSlot> item_slot2 = std::make_shared<ItemSlot>(itemTextureAtlas,*uiManager);
-    item_slot2->setPosition(70,10);
-    item_slot2->setSize(50,50);
-    item_slot2->setAttribute(&UIFrame::Style::backgroundColor, {100,100,100});
+    std::shared_ptr<ItemInventory> inventory = std::make_shared<ItemInventory>(itemTextureAtlas,*uiManager, 10,5, held_item_slot);
+    inventory->setPosition(
+        {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}},
+        {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}}
+    );
+    inventory->setAttribute(&UIFrame::Style::backgroundColor, {20,20,20,100});
+    inventory->setAttribute(&UIFrame::Style::borderWidth, {3,3,3,3});
+    inventory->setAttribute(&UIFrame::Style::borderColor, {UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}});
 
     auto item = itemPrototypeRegistry.createItem("diamond");
-    item_slot->setItem(item);
-
     auto item2 = itemPrototypeRegistry.createItem("crazed");
-    item_slot2->setItem(item2);
+    inventory->setItem(1,0,item);
+    inventory->setItem(0,4,item2);
 
-    addElement(item_slot);
-    addElement(item_slot2);
+    setUILayer("menu");
+    addElement(inventory);
+    addElement(held_item_slot);
+    setUILayer("default");
 
     skyboxProgram.use();
 
@@ -209,6 +187,15 @@ void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
     mouseMoved = true;
 }
 
+void MainScene::unlockedMouseMove(GLFWwindow* window, int mouseX, int mouseY){
+    if(menuOpen){
+        if(held_item_slot){
+            held_item_slot->setPosition(mouseX,mouseY);
+            held_item_slot->calculateTransforms();
+            held_item_slot->update();
+        }
+    }
+}
 void MainScene::processMouseMovement(){
     if(!mouseMoved) return;
     else mouseMoved = false;
@@ -275,7 +262,6 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
     glm::vec3& camDirection = camera.getDirection();
     glm::vec3 camPosition = camera.getPosition();
-    Entity& player = world->getEntities()[0];
 
     if (
         button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS 
@@ -293,8 +279,8 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
         world->setBlock(blockPosition, {static_cast<BlockID>(selectedBlock)});
         if(
-            player.checkForCollision(*world, false).collision ||
-            player.checkForCollision(*world, true).collision
+            player->checkForCollision(world.get(), false) ||
+            player->checkForCollision(world.get(), true)
         ){
             world->setBlock(blockPosition, {BLOCK_AIR_INDEX});
             return;
@@ -337,16 +323,7 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
-    if(key == GLFW_KEY_T && action == GLFW_PRESS && !chatOpen){
-        chatOpen = true;
-        this->setUILayer("chat");
-        uiManager->setFocus(this->chatInput);
-    }
-    else if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS && chatOpen){
-        chatOpen = false;
-        this->setUILayer("default");
-    }
-    else if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
         menuOpen = !menuOpen;
         if(menuOpen) this->setUILayer("menu");
         else this->setUILayer("default");
@@ -357,17 +334,16 @@ void MainScene::open(GLFWwindow* window){
     running = true;
     allGenerated = false;
 
+    player = std::make_shared<Entity>(glm::vec3(0,0,0), glm::vec3(0.6, 1.8, 0.6));
+    
     world = std::make_unique<World>(worldPath, blockRegistry);
-    world->getEntities().emplace_back(glm::vec3(0,0,0), glm::vec3(0.6, 1.8, 0.6));
-    world->getEntities()[0].setGravity(false);
+    world->addEntity(player);
 
 
     for(int i = 0;i < 20;i++){
         for(int j = 0;j < 20;j++){
-            Entity entity =  Entity(glm::vec3((float)i, 50, (float)j), glm::vec3(0.3, 0.3, 0.3));
-            entity.setModel(models["crazed"]);
-
-            world->getEntities().push_back(entity);
+            auto entity =  std::make_shared<DroppedItem>(itemPrototypeRegistry.createItem("crazed"), glm::vec3((float)i, 50, (float)j));
+            world->addEntity(entity);
         }
     }
 
@@ -420,8 +396,7 @@ void MainScene::render(){
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 
-    Entity& player = world->getEntities()[0];
-    const glm::vec3& playerPosition = player.getPosition();
+    const glm::vec3& playerPosition = player->getPosition();
     glm::vec3 camPosition = playerPosition + camOffset;
     glm::vec3 camDir = glm::normalize(camera.getDirection());
 
@@ -488,17 +463,7 @@ void MainScene::render(){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
 
-    size_t collider_wireframe_index = 50;
-    for(auto& entity: world->getEntities()){
-        for(auto& collider: entity.getColliders()){
-            wireframeRenderer.setCube(
-                collider_wireframe_index++,
-                glm::vec3{collider.x, collider.y, collider.z} + entity.getPosition(), 
-                glm::vec3{collider.width, collider.height, collider.depth},
-                {1.0,0,0}
-            );
-        }
-    }
+    
     //skyboxProgram.updateUniforms();
     
     glDisable(GL_CULL_FACE);
@@ -512,7 +477,6 @@ void MainScene::render(){
 
     //auto start = std::chrono::high_resolution_clock::now();
 
-
     camera.setModelPosition({0,0,0});
     terrainProgram.updateUniforms();
     chunkMeshRegistry.draw();
@@ -523,13 +487,10 @@ void MainScene::render(){
     //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
     /* Swap front and back buffers */
 
-    world->drawEntities();
-
+    itemPrototypeRegistry.updateModelsDrawRequestBuffer();
     modelProgram.updateUniforms();
-    for(auto& [name, model]: models){
-        model->drawAllRequests();
-    }
-
+    itemPrototypeRegistry.drawItemModels();
+    
     glDisable( GL_CULL_FACE );
 
     wireframeRenderer.draw();
@@ -592,21 +553,19 @@ void MainScene::physicsUpdate(){
 
 
         glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
-        
-        Entity& player = world->getEntities()[0];
 
         glm::vec3 camDir = glm::normalize(camera.getDirection());
         glm::vec3 horizontalDir = glm::normalize(glm::vec3(camDir.x, 0, camDir.z));
         glm::vec3 leftDir = glm::normalize(glm::cross(camera.getUp(), horizontalDir));
 
-        if(inputManager.isActive(STRAFE_RIGHT )) player.accelerate(-leftDir * camSpeed);
-        if(inputManager.isActive(STRAFE_LEFT  )) player.accelerate(leftDir * camSpeed);
-        if(inputManager.isActive(MOVE_BACKWARD)) player.accelerate(-horizontalDir * camSpeed);
-        if(inputManager.isActive(MOVE_FORWARD )) player.accelerate(horizontalDir * camSpeed);
+        if(inputManager.isActive(STRAFE_RIGHT )) player->accelerate(-leftDir * camSpeed);
+        if(inputManager.isActive(STRAFE_LEFT  )) player->accelerate(leftDir * camSpeed);
+        if(inputManager.isActive(MOVE_BACKWARD)) player->accelerate(-horizontalDir * camSpeed);
+        if(inputManager.isActive(MOVE_FORWARD )) player->accelerate(horizontalDir * camSpeed);
 
         //if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * 0.2f);
-        if(inputManager.isActive(MOVE_UP)) player.accelerate(camera.getUp() * 0.2f);
-        if(inputManager.isActive(MOVE_DOWN)) player.accelerate(-camera.getUp() * 0.2f);
+        if(inputManager.isActive(MOVE_UP)) player->accelerate(camera.getUp() * 0.2f);
+        if(inputManager.isActive(MOVE_DOWN)) player->accelerate(-camera.getUp() * 0.2f);
         /*if(
             boundKeys[0].isDown 
             && player.checkForCollision(world, false, {0,-0.1f,0}).collision
@@ -616,6 +575,9 @@ void MainScene::physicsUpdate(){
         if(!world->getChunk(camWorldPosition)) continue;
 
         world->updateEntities();
+        itemPrototypeRegistry.resetModelsDrawRequests();
+        world->drawEntities();
+        itemPrototypeRegistry.passModelsDrawRequests();
     }
 
     threadsStopped++;
@@ -667,23 +629,6 @@ void MainScene::generateSurroundingChunks(){
    
     allGenerated = true;
 }
-
-void UIAllocatorVisualizer::getRenderingInformation(RenderYeetFunction& yeet){
-    auto memsize = watched->getMemorySize();
-    int currentPosition = 0;
-
-    for(auto& block: watched->getBlocks()){
-        size_t bw = round((static_cast<float>(block.size) / static_cast<float>(memsize)) * static_cast<float>(transform.width));
-        
-        UIColor color = block.used ? UIColor(1,0,0,1) : UIColor(0,1,0,1);
-
-        yeet(UIRenderInfo::Rectangle(transform.x + currentPosition, transform.y, bw, transform.height, color),clipRegion);
-        currentPosition += bw;
-    }
-
-    manager.buildTextRenderingInformation(yeet,clipRegion, "Blocks total: " + std::to_string(watched->getBlocks().size()),transform.x + transform.width, transform.y,1,{1,1,1,1});
-}
-
 
 void UICrosshair::getRenderingInformation(RenderYeetFunction& yeet){
     auto color = getAttribute(&UIFrame::Style::textColor);

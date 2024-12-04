@@ -103,6 +103,7 @@ void SceneManager::resize(GLFWwindow* window, int width, int height){
 void SceneManager::mouseMove(GLFWwindow* window, int x, int y){
     manager.mouseMove(x,y);
     if(!eventLocks.mouseMove) getCurrentScene()->mouseMove(window, x,y);
+    getCurrentScene()->unlockedMouseMove(window, x,y);
 }
 
 void SceneManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){

@@ -39,6 +39,7 @@ class Scene{
             This event cannot be locked by the ui manager and will always capture
         */
         virtual void unlockedKeyEvent(GLFWwindow* /*window*/, int /*key*/, int /*scancode*/, int /*action*/, int /*mods*/) {};
+        virtual void unlockedMouseMove(GLFWwindow* /*window*/, int /*x*/, int /*y*/)  {};
 };
 
 class SceneManager{ 

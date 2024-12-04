@@ -136,12 +136,12 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, glm::ivec3 ch
 
     //CHECK_GL_ERROR();
 
-    if(first){
+    /*if(first){
         for(int i = 0;i < 10;i++){
             std::cout << std::bitset<64>(reinterpret_cast<uint64_t*>(computeBuffer->data())[i]) << std::endl;
         }
         first = false;
-    }
+    }*/
 
     BlockID grass_id = blockRegistry.getIndexByName("grass");
 

@@ -8,13 +8,9 @@
 #include <array>
 
 #include <rendering/texture_registry.hpp>
+#include <game/colliders.hpp>
 
 #define CHUNK_SIZE 64
-
-struct RectangularCollider {
-    float x, y, z;
-    float width, height, depth;
-};
 
 using BlockID = size_t;
 #define BLOCK_AIR_INDEX 0

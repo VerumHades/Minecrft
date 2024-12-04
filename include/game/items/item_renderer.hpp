@@ -6,6 +6,7 @@
 #include <stb_image.h>
 #include <ui/manager.hpp>
 #include <game/items/item.hpp>
+#include <vector>
 
 class ItemTextureAtlas{
     private:
@@ -38,14 +39,57 @@ class ItemTextureAtlas{
 
 class ItemSlot: public UIFrame{
     private:
-        std::optional<Item> item;
+        const int slot_size = 64;
+        const int slot_padding = 4;
+        const int quantity_number_font_size = 12;
+
+        std::optional<Item> item_option;
         ItemTextureAtlas& textureAtlas;
 
     public:
         ItemSlot(ItemTextureAtlas& textureAtlas, UIManager& manager): UIFrame(manager), textureAtlas(textureAtlas){
             dedicated_texture_array = textureAtlas.getTextureArray();
+            setSize(slot_size,slot_size);
         }
 
-        void setItem(Item item) {this->item.emplace(item);}
+        void removeItem(){
+            this->item_option= std::nullopt;
+        }
+        void setItem(Item item) {
+            this->item_option.emplace(item);
+        }
+        std::optional<Item> getItem() {return item_option;}
+        void getRenderingInformation(RenderYeetFunction& yeet) override;
+        
+};
+
+class ItemInventory: public UIFrame{
+    private:
+        const int slot_size = 64;
+        const int slot_padding = 4;
+        const int quantity_number_font_size = 12;
+
+        std::vector<std::optional<Item>> items;
+        ItemTextureAtlas& textureAtlas;
+        int slots_horizontaly;
+        int slots_verticaly;
+        std::shared_ptr<ItemSlot> held_item_ptr;
+
+        size_t getIndex(int x, int y){
+            size_t index = x + y * slots_horizontaly;
+            if(index >= items.size()) return 0;
+            return index;
+        }
+
+    public:
+        ItemInventory(ItemTextureAtlas& textureAtlas, UIManager& manager, int slots_horizontaly, int slots_verticaly, std::shared_ptr<ItemSlot> held_item_ptr);
+
+        void setItem(int x, int y, Item item) {
+            items[getIndex(x,y)].emplace(item);
+        }
+        void removeItem(int x, int y){
+            items[getIndex(x,y)] = std::nullopt;
+        }
+        std::optional<Item> getItem(int x, int y) {return items[getIndex(x,y)];}
         void getRenderingInformation(RenderYeetFunction& yeet) override;
 };

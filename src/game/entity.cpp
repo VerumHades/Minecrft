@@ -1,7 +1,7 @@
 #include <game/entity.hpp>
 #include <iostream>
 Entity::Entity(glm::vec3 position, glm::vec3 colliderDimensions): position(position) {
-    colliders.push_back({0,0,0,colliderDimensions.x,colliderDimensions.y,colliderDimensions.z});
+    collider = {0,0,0,colliderDimensions.x,colliderDimensions.y,colliderDimensions.z};
 }
 
 void Entity::accelerate(glm::vec3 direction){
@@ -16,24 +16,16 @@ void Entity::accelerate(glm::vec3 direction){
     velocity = horizontalVelocity + verticalVelocity;
 }
 
-CollisionCheckResult Entity::checkForCollision(Collidable& collidable, bool withVelocity, glm::vec3 offset){
+bool Entity::checkForCollision(Collidable* collidable, bool withVelocity, glm::vec3 offset){
     glm::vec3 pos = this->position + offset;
     if(withVelocity) pos += this->velocity;
-    CollisionCheckResult result = {nullptr, false, 0,0,0};
-
-    size_t size = colliders.size();
-    for(size_t i = 0;i < size;i++){
-        auto temp = collidable.checkForRectangularCollision(pos, &colliders[i]);
-        if(temp.collision){
-            result = temp;
-            break;
-        }
-    }
-
-    return result; 
+    return collidable->collidesWith(pos, &collider);
+}
+bool Entity::collidesWith(glm::vec3 position, RectangularCollider* collider) const{
+    return this->collider.collidesWith(collider, this->position, position);
 }
 
-void Entity::update(Collidable& collidable){
+void Entity::update(Collidable* world){
     if(hasGravity) this->accelerate(glm::vec3(0,-0.01,0));
     
     glm::vec3& vel = this->velocity;
@@ -42,9 +34,9 @@ void Entity::update(Collidable& collidable){
     if(len > friction) vel = glm::normalize(vel) * (len - friction);
     else vel = glm::vec3(0);
 
-    if(checkForCollision(collidable, false, {vel.x, 0, 0}).collision) vel.x = 0;
-    if(checkForCollision(collidable, false, {0, vel.y, 0}).collision) vel.y = 0;
-    if(checkForCollision(collidable, false, {0, 0, vel.z}).collision) vel.z = 0;
+    if(checkForCollision(world, false, {vel.x, 0, 0})) vel.x = 0;
+    if(checkForCollision(world, false, {0, vel.y, 0})) vel.y = 0;
+    if(checkForCollision(world, false, {0, 0, vel.z})) vel.z = 0;
 
     this->position += vel;
 }
