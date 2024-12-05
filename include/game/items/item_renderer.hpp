@@ -37,13 +37,34 @@ class ItemTextureAtlas{
         std::shared_ptr<GLTextureArray>& getTextureArray() {return texture_array;};
 };
 
+class LogicalItemSlot{
+    private:
+        std::optional<Item> item_option;
+
+    public:
+        bool takeItemFrom(LogicalItemSlot& source, int quantity = -1);
+        bool moveItemTo(LogicalItemSlot& destination, int quantity = -1);
+
+        bool addItem(Item item){
+            LogicalItemSlot slot;
+            slot.getItem().emplace(item);
+
+            return takeItemFrom(slot);
+        }
+
+        void clear();
+        bool hasItem() {return item_option.has_value();}
+
+        std::optional<Item>& getItem() {return item_option;}
+};
+
 class ItemSlot: public UIFrame{
     private:
         const int slot_size = 64;
         const int slot_padding = 4;
         const int quantity_number_font_size = 12;
 
-        std::optional<Item> item_option;
+        LogicalItemSlot item_slot;
         ItemTextureAtlas& textureAtlas;
 
     public:
@@ -52,13 +73,7 @@ class ItemSlot: public UIFrame{
             setSize(slot_size,slot_size);
         }
 
-        void removeItem(){
-            this->item_option= std::nullopt;
-        }
-        void setItem(Item item) {
-            this->item_option.emplace(item);
-        }
-        std::optional<Item> getItem() {return item_option;}
+        LogicalItemSlot& getSlot() {return item_slot;}
         void getRenderingInformation(RenderYeetFunction& yeet) override;
         
 };
@@ -69,7 +84,7 @@ class ItemInventory: public UIFrame{
         const int slot_padding = 4;
         const int quantity_number_font_size = 12;
 
-        std::vector<std::optional<Item>> items;
+        std::vector<LogicalItemSlot> items;
         ItemTextureAtlas& textureAtlas;
         int slots_horizontaly;
         int slots_verticaly;
@@ -85,11 +100,13 @@ class ItemInventory: public UIFrame{
         ItemInventory(ItemTextureAtlas& textureAtlas, UIManager& manager, int slots_horizontaly, int slots_verticaly, std::shared_ptr<ItemSlot> held_item_ptr);
 
         void setItem(int x, int y, Item item) {
-            items[getIndex(x,y)].emplace(item);
+            items[getIndex(x,y)].addItem(item);
         }
         void removeItem(int x, int y){
-            items[getIndex(x,y)] = std::nullopt;
+            items[getIndex(x,y)].clear();
         }
-        std::optional<Item> getItem(int x, int y) {return items[getIndex(x,y)];}
+
+        bool addItem(Item item);
+
         void getRenderingInformation(RenderYeetFunction& yeet) override;
 };

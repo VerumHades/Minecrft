@@ -6,7 +6,7 @@ void UIManager::initialize(){
 
     vao.bind();
 
-    int maxQuads = 10000;
+    int maxQuads = 50000;
 
     vertexSize = vao.attachBuffer(reinterpret_cast<GLBuffer<float, GL_ARRAY_BUFFER>*>(&vertexBuffer), {VEC3,VEC2,VEC4,VEC2,FLOAT,FLOAT,FLOAT,VEC4,VEC4,VEC4,VEC4,VEC4,VEC4});
     vertexBuffer.initialize(vertexSize * maxQuads, vertexSize);

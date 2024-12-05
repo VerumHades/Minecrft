@@ -19,10 +19,7 @@ void Entity::accelerate(glm::vec3 direction){
 bool Entity::checkForCollision(Collidable* collidable, bool withVelocity, glm::vec3 offset){
     glm::vec3 pos = this->position + offset;
     if(withVelocity) pos += this->velocity;
-    return collidable->collidesWith(pos, &collider);
-}
-bool Entity::collidesWith(glm::vec3 position, RectangularCollider* collider) const{
-    return this->collider.collidesWith(collider, this->position, position);
+    return collidable->collidesWith(pos, this);
 }
 
 void Entity::update(Collidable* world){

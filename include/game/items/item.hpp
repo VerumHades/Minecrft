@@ -59,17 +59,29 @@ class Item{
     public:
         ItemPrototype* getPrototype() {return prototype;}
         int getQuantity(){ return quantity; }
+        void setQuantity(int number) {quantity = number;}
 };
 
 class DroppedItem: public Entity{
-    private:
-        Item item;
     public:
-        DroppedItem(Item item, glm::vec3 position): Entity(position, {0.3,0.3,0.3}), item(item) {
+        struct Data{
+            Item item;
+        };
+
+    public:
+        DroppedItem(Item item, glm::vec3 position): Entity(position, {0.3,0.3,0.3}) {
             if(!item.getPrototype()){
                 std::cerr << "Dropped item without prototype!" << std::endl;
                 return;
             }
+            VALID_ENTITY_DATA(Data);
+
+            entity_typename = "dropped_item";
+            reinterpret_cast<Data*>(entity_data)->item = item;
+
+            onCollision = [](Entity* self, Entity* entity) {
+                self->destroy = true;
+            };
 
             model = item.getPrototype()->getModel();
         }

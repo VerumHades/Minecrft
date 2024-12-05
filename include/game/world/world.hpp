@@ -56,7 +56,7 @@ class World: public virtual Collidable{
         bool removeEntityFromRegion(const glm::ivec3 region_position, Entity& entity);
 
         void drawEntity(Entity& entity);
-        void updateEntity(Entity& entity);
+        void updateEntity(Entity& entity, int& index);
         
     public:
         World(std::string filepath, BlockRegistry& blockRegistry);
@@ -74,7 +74,7 @@ class World: public virtual Collidable{
         glm::ivec3 getGetChunkRelativeBlockPosition(glm::ivec3 position);
 
         std::tuple<bool, Block*> checkForPointCollision(glm::vec3 position, bool includeRectangularColliderLess);
-        bool collidesWith(glm::vec3 position, RectangularCollider* collider) const override;
+        bool collidesWith(glm::vec3 position, Entity* collider) const override;
 
         RaycastResult raycast(glm::vec3 from, glm::vec3 direction, float maxDistance);
 

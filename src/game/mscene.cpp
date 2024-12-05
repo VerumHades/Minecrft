@@ -35,7 +35,7 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
 
     held_item_slot = std::make_shared<ItemSlot>(itemTextureAtlas,*uiManager);
 
-    std::shared_ptr<ItemInventory> inventory = std::make_shared<ItemInventory>(itemTextureAtlas,*uiManager, 10,5, held_item_slot);
+    inventory = std::make_shared<ItemInventory>(itemTextureAtlas,*uiManager, 10,5, held_item_slot);
     inventory->setPosition(
         {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}},
         {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}}
@@ -344,6 +344,14 @@ void MainScene::open(GLFWwindow* window){
             world->addEntity(entity);
         }
     }
+
+    world->getPlayer().onCollision = [this](Entity* self, Entity* collided_with){
+        if(collided_with->getTypename() != "dropped_item") return;
+
+        const auto* data = reinterpret_cast<const DroppedItem::Data*>(collided_with->getData());
+        
+        this->inventory->addItem(data->item);
+    };
 
     chunkMeshGenerator.setWorld(world.get());
 

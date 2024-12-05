@@ -56,6 +56,7 @@ class MainScene: public Scene{
         ItemTextureAtlas itemTextureAtlas;
         ItemPrototypeRegistry itemPrototypeRegistry;
         std::shared_ptr<ItemSlot> held_item_slot;
+        std::shared_ptr<ItemInventory> inventory;
 
         std::string worldPath = "saves/worldsave.bin";
         int renderDistance = 3;

@@ -56,6 +56,54 @@ ItemTextureAtlas::StoredTexture* ItemTextureAtlas::getPrototypeTexture(ItemProto
     return &stored_textures[prototype];
 }
 
+bool LogicalItemSlot::takeItemFrom(LogicalItemSlot& source, int quantity){
+    bool source_has_item = source.item_option.has_value();
+    bool destination_has_item = item_option.has_value();
+
+    if(!source_has_item) return false;
+    
+    Item& source_item = source.item_option.value();
+    auto* source_item_prototype = source_item.getPrototype();
+    if(!source_item_prototype) return false;
+
+    int source_quantity = source_item.getQuantity();
+    if(quantity == -1) quantity = source_quantity;
+
+    if(destination_has_item){
+        Item& destination_item = item_option.value();
+        auto* destination_item_prototype = destination_item.getPrototype();
+        
+        if(source_item_prototype != destination_item_prototype) return false;
+
+        if(source_quantity <= quantity){
+            source.item_option.reset();
+            quantity = source_quantity;
+        }
+        else source_item.setQuantity(source_quantity - quantity);
+
+        destination_item.setQuantity(destination_item.getQuantity() + quantity);
+        return true;
+    }
+    
+    if(source_quantity <= quantity){
+        source.item_option.reset();
+        quantity = source_quantity;
+    }
+    else source_item.setQuantity(source_quantity - quantity);
+
+    item_option.emplace(source_item);
+    item_option.value().setQuantity(quantity);
+    return true;
+}
+bool LogicalItemSlot::moveItemTo(LogicalItemSlot& destination, int quantity){
+    return destination.takeItemFrom(*this, quantity);
+}
+
+void LogicalItemSlot::clear(){
+    item_option.reset();
+}
+
+
 void ItemSlot::getRenderingInformation(RenderYeetFunction& yeet){
    /*yeet(
         UIRenderInfo::Rectangle(
@@ -65,8 +113,8 @@ void ItemSlot::getRenderingInformation(RenderYeetFunction& yeet){
         clipRegion
     );*/
 
-    if(!item_option.has_value()) return;
-    auto& item = item_option.value();
+    if(!item_slot.hasItem()) return;
+    auto& item = item_slot.getItem().value();
     auto* prototype = item.getPrototype();
     if(!prototype) return;
 
@@ -112,7 +160,6 @@ ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, UIManager& manager,
 
     onMouseEvent = [this](UIManager& manager, int button, int action, int mods){
         if(!this->hover) return;
-        if(button != GLFW_MOUSE_BUTTON_1) return;
         if(!this->held_item_ptr) return;
 
         auto mousePosition = manager.getMousePosition();
@@ -124,30 +171,46 @@ ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, UIManager& manager,
 
         if(slot_x < 0 || slot_x >= this->slots_horizontaly || slot_y < 0 || slot_y >= this->slots_verticaly) return;
 
-        auto& item_option = items[getIndex(slot_x,slot_y)];
+        auto& item_slot = items[getIndex(slot_x,slot_y)];
+        auto& hand_slot = this->held_item_ptr->getSlot();
 
-        if(action == GLFW_PRESS){
-            if(!item_option.has_value()) return;
-            
-            this->held_item_ptr->setItem(item_option.value());
-            item_option.reset();
-
-            this->held_item_ptr->update();
+        if(button == GLFW_MOUSE_BUTTON_LEFT){
+            if(action == GLFW_PRESS && hand_slot.hasItem()){
+                hand_slot.moveItemTo(item_slot);
+            }
+            else if(action == GLFW_PRESS && !hand_slot.hasItem()){
+                hand_slot.takeItemFrom(item_slot);
+            }
         }
-        else if(action == GLFW_RELEASE){
-            if(item_option.has_value()) return;
-            if(!this->held_item_ptr->getItem().has_value()) return;
-            
-            item_option.emplace(this->held_item_ptr->getItem().value());
-            this->held_item_ptr->removeItem();
-
-            this->held_item_ptr->update();
+        else if(button == GLFW_MOUSE_BUTTON_RIGHT){
+            if(action == GLFW_PRESS && hand_slot.hasItem()){
+                hand_slot.moveItemTo(item_slot, 1);
+            }
+            else if(action == GLFW_PRESS && !hand_slot.hasItem()){
+                hand_slot.takeItemFrom(item_slot, 1);
+            }
         }
-
+        
+        this->held_item_ptr->update();
         update();
     };
 }
     
+
+bool ItemInventory::addItem(Item item){
+    auto* prototype = item.getPrototype();
+
+    for(int x = 0;x < slots_horizontaly;x++){
+        for(int y = 0;y < slots_verticaly;y++){
+            auto& item_slot = items[getIndex(x,y)];
+
+        
+            if(item_slot.addItem(item)) return true;
+        }
+    }
+
+    return false;
+}
 void ItemInventory::getRenderingInformation(RenderYeetFunction& yeet){
     UIFrame::getRenderingInformation(yeet);
 
@@ -182,10 +245,10 @@ void ItemInventory::getRenderingInformation(RenderYeetFunction& yeet){
 
     for(int x = 0;x < slots_horizontaly;x++){
         for(int y = 0;y < slots_verticaly;y++){
-            auto& item_option = items[getIndex(x,y)];
+            auto& item_slot = items[getIndex(x,y)];
 
-            if(!item_option.has_value()) continue;
-            auto& item = item_option.value();
+            if(!item_slot.hasItem()) continue;
+            auto& item = item_slot.getItem().value();
             auto* prototype = item.getPrototype();
             if(!prototype) continue;
 
