@@ -34,8 +34,6 @@ class CubeModel: public Model{
             index_buffer.initialize(mesh.getIndices().size());
             index_buffer.insert(0, mesh.getIndices().size(), mesh.getIndices().data());
 
-            setupBufferFormat({VEC3,VEC3,VEC2});
-
             texture = std::make_shared<GLTexture>(texture_path.c_str());
         }
 };

@@ -1,12 +1,16 @@
 #include <rendering/model.hpp>
 
 Model::Model(){
-    vao.attachBuffer(&instance_buffer, {VEC4,VEC4,VEC4,VEC4}, true);
-    vao.attachIndexBuffer(&index_buffer);
-}
+    for(int i = 0;i < vaos.size();i++){
+        auto& vao = vaos[i];
+        auto& instance_buffer = instance_buffers[i];
 
-void Model::setupBufferFormat(std::vector<GLSlotBinding> bindings){
-    vao.attachBuffer(&vertex_buffer, bindings);
+        vao.attachBuffer(&instance_buffer, {VEC4,VEC4,VEC4,VEC4}, true);
+        vao.attachIndexBuffer(&index_buffer);
+        vao.attachBuffer(&vertex_buffer, {VEC3,VEC3,VEC2,FLOAT,VEC3});
+
+        instance_buffer.initialize(1);
+    }
 }
 
 void Model::requestDraw(glm::vec3 position, glm::vec3 scale, glm::vec3 rotation, glm::vec3 rotation_center_offset){
@@ -29,18 +33,24 @@ void Model::requestDraw(glm::vec3 position, glm::vec3 scale, glm::vec3 rotation,
 void Model::updateRequestBuffer(){
     if(!upload_data) return;
     if(request_buffer.size() == 0) return;
- 
-    if(instance_buffer.size() < request_buffer.size()) instance_buffer.initialize(request_buffer.size());
-    instance_buffer.insert(0, request_buffer.size(), request_buffer.read());
+    
+    auto& back_buffer = getBackInstanceBuffer();
+
+    if(back_buffer.size() < request_buffer.size()) back_buffer.initialize(request_buffer.size());
+    request_buffer.upload(back_buffer);
+
+    swapInstanceBuffers();
+
+    upload_data = false;
 }
 
 void Model::drawAllRequests(){
     if(request_buffer.size() == 0) return;
     if(texture) texture->bind(0);
 
-    vao.bind();
+    vaos[selected].bind();
     glDrawElementsInstanced(GL_TRIANGLES, index_buffer.size(), GL_UNSIGNED_INT, 0, request_buffer.size() / request_size);
-    vao.unbind();
+    vaos[selected].unbind();
 }
 
 void Model::resetRequests(){

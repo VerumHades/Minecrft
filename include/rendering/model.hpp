@@ -23,16 +23,22 @@ class Model{
         std::atomic<bool> pending_update = false;
         std::atomic<bool> upload_data = false;
 
-        GLVertexArray vao;
-        GLDoubleBuffer<float, GL_ARRAY_BUFFER> instance_buffer;
+        std::atomic<int> selected = 0;
+        std::array<GLVertexArray,2> vaos = {};
+        std::array<GLBuffer<float, GL_ARRAY_BUFFER>,2> instance_buffers = {};
+
+        GLBuffer<float, GL_ARRAY_BUFFER>& getBackInstanceBuffer()  { return instance_buffers[!selected]; }
+        GLBuffer<float, GL_ARRAY_BUFFER>& getFrontInstanceBuffer() { return instance_buffers[selected]; }
+
+        void swapInstanceBuffers() {
+            selected = !selected;
+        }
         
     protected:
         std::shared_ptr<GLTexture> texture = nullptr;
 
         GLBuffer<float, GL_ARRAY_BUFFER> vertex_buffer;
         GLBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> index_buffer;
-
-        void setupBufferFormat(std::vector<GLSlotBinding> bindings);
 
     public:
         Model();

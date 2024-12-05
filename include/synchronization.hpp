@@ -4,6 +4,8 @@
 #include <atomic>
 #include <vector>
 
+#include <rendering/buffer.hpp>
+
 /*
     A thread safe buffer that enables one side to write and the other side to read the data without interfierence
 */
@@ -26,7 +28,6 @@ class PassTroughBuffer{
             std::lock_guard<std::mutex> write_lock(write_mutex);
 
             write_cursor = 0;
-            _size = 0;
         }
 
         void append(T* data, size_t size){
@@ -55,9 +56,9 @@ class PassTroughBuffer{
             _size = back.size();
         }
 
-        T* read(){
-            std::lock_guard<std::mutex> read_lock(read_mutex);
-            return back.data();
+        void upload(GLBuffer<T, GL_ARRAY_BUFFER>& buffer){
+            std::lock_guard<std::mutex> read_lock(read_mutex);  
+            buffer.insert(0, back.size(), back.data());
         }
 
         size_t size(){

@@ -542,6 +542,11 @@ void MainScene::physicsUpdate(){
     float targetTPS = 60;
     float tickTime = 1.0f / targetTPS;
 
+    world->updateEntities();
+    itemPrototypeRegistry.resetModelsDrawRequests();
+    world->drawEntities();
+    itemPrototypeRegistry.passModelsDrawRequests();
+
     while(running){
         current = glfwGetTime();
         deltatime = (float)(current - last);
@@ -574,10 +579,11 @@ void MainScene::physicsUpdate(){
 
         if(!world->getChunk(camWorldPosition)) continue;
 
-        world->updateEntities();
+            //world->updateEntities();
         itemPrototypeRegistry.resetModelsDrawRequests();
         world->drawEntities();
         itemPrototypeRegistry.passModelsDrawRequests();
+
     }
 
     threadsStopped++;

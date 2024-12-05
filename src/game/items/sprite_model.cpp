@@ -31,8 +31,6 @@ void SpriteModel::setupMesh(){
     index_buffer.initialize(mesh->getIndices().size());
     index_buffer.insert(0, mesh->getIndices().size(), mesh->getIndices().data());
 
-    setupBufferFormat({VEC3,VEC3,VEC2,FLOAT,VEC3});
-
     texture = std::make_shared<GLTexture>(sprite_path.c_str());
 }
 std::unique_ptr<Mesh> SpriteModel::generateFaces(){
