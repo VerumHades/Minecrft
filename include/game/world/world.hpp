@@ -49,7 +49,8 @@ class World: public virtual Collidable{
         BlockRegistry&  blockRegistry;
 
         glm::ivec3 blockToChunkPosition(glm::ivec3 blockPosition) const;
-        glm::ivec3 getEntityRegionPosition(const Entity& entity);
+        glm::ivec3 getEntityRegionPosition(const Entity& entity) const;
+        glm::ivec3 getRegionPosition(glm::vec3 position) const;
 
         void addEntityToRegion(const glm::ivec3 region_position, Entity& entity);
         bool removeEntityFromRegion(const glm::ivec3 region_position, Entity& entity);
@@ -86,6 +87,7 @@ class World: public virtual Collidable{
         void drawEntityColliders(WireframeCubeRenderer& renderer, size_t start_index = 50);
 
         Entity& getPlayer(){return entities[0];}
+        std::vector<Entity>& getEntities() {return entities;}
 
         int chunksTotal() const {return chunks.size();}
 };

@@ -111,6 +111,24 @@ bool World::collidesWith(glm::vec3 position, RectangularCollider* collider) cons
         }
     }
 
+    auto region_position = getRegionPosition(position);
+    if(!entity_regions.contains(region_position)) return false;
+
+    for(auto* entity: entity_regions.at(region_position)){
+        if(collider == &entity->getCollider()) continue;
+        if(entity->getCollider().collidesWith(collider, entity->getPosition(), position)) return true;
+    }
+
+    auto second_region_position = getRegionPosition(position + glm::vec3{collider->x + collider->width,collider->y + collider->height,collider->z + collider->depth});
+    if(second_region_position == region_position) return false;
+    if(!entity_regions.contains(second_region_position)) return false;
+
+    for(auto* entity: entity_regions.at(second_region_position)){
+        if(collider == &entity->getCollider()) continue;
+        if(entity->getCollider().collidesWith(collider, entity->getPosition(), position)) return true;
+    }
+
+
     return false;
 }
 
@@ -187,8 +205,12 @@ static int rotation = 0;
 static float position = 0;
 static float position_mult = 1;
 
-glm::ivec3 World::getEntityRegionPosition(const Entity& entity){
-    return glm::floor(entity.getPosition() / static_cast<float>(entity_region_size));
+glm::ivec3 World::getEntityRegionPosition(const Entity& entity) const{
+    return getRegionPosition(entity.getPosition());
+}
+
+glm::ivec3 World::getRegionPosition(glm::vec3 position) const {
+    return glm::floor(position / static_cast<float>(entity_region_size));
 }
 
 void World::drawEntity(Entity& entity){
@@ -227,7 +249,7 @@ void World::updateEntity(Entity& entity){
     else{
         auto last_region_position = last_region_position_opt.value();
         if(current_region_position != last_region_position){
-            //removeEntityFromRegion(last_region_position, entity);
+            removeEntityFromRegion(last_region_position, entity);
             addEntityToRegion(current_region_position, entity);
         }
     }
