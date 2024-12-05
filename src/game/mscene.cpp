@@ -263,6 +263,8 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
     glm::vec3& camDirection = camera.getDirection();
     glm::vec3 camPosition = camera.getPosition();
 
+    auto& player = world->getPlayer();
+
     if (
         button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS 
     ){
@@ -279,8 +281,8 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
         world->setBlock(blockPosition, {static_cast<BlockID>(selectedBlock)});
         if(
-            player->checkForCollision(world.get(), false) ||
-            player->checkForCollision(world.get(), true)
+            player.checkForCollision(world.get(), false) ||
+            player.checkForCollision(world.get(), true)
         ){
             world->setBlock(blockPosition, {BLOCK_AIR_INDEX});
             return;
@@ -333,16 +335,12 @@ void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int 
 void MainScene::open(GLFWwindow* window){
     running = true;
     allGenerated = false;
-
-    player = std::make_shared<Entity>(glm::vec3(0,0,0), glm::vec3(0.6, 1.8, 0.6));
     
     world = std::make_unique<World>(worldPath, blockRegistry);
-    world->addEntity(player);
-
 
     for(int i = 0;i < 20;i++){
         for(int j = 0;j < 20;j++){
-            auto entity =  std::make_shared<DroppedItem>(itemPrototypeRegistry.createItem("crazed"), glm::vec3((float)i, 50, (float)j));
+            auto entity = DroppedItem(itemPrototypeRegistry.createItem("crazed"), glm::vec3((float)i, 50, (float)j));
             world->addEntity(entity);
         }
     }
@@ -396,7 +394,8 @@ void MainScene::render(){
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 
-    const glm::vec3& playerPosition = player->getPosition();
+    auto& player = world->getPlayer();
+    const glm::vec3& playerPosition = player.getPosition();
     glm::vec3 camPosition = playerPosition + camOffset;
     glm::vec3 camDir = glm::normalize(camera.getDirection());
 
@@ -552,7 +551,6 @@ void MainScene::physicsUpdate(){
         deltatime = (float)(current - last);
 
         if(!allGenerated) continue;
-        //std::cout << deltatime << "/" << tickTime << std::endl;
         if(deltatime < tickTime) continue;
         last = current;
 
@@ -563,14 +561,16 @@ void MainScene::physicsUpdate(){
         glm::vec3 horizontalDir = glm::normalize(glm::vec3(camDir.x, 0, camDir.z));
         glm::vec3 leftDir = glm::normalize(glm::cross(camera.getUp(), horizontalDir));
 
-        if(inputManager.isActive(STRAFE_RIGHT )) player->accelerate(-leftDir * camSpeed);
-        if(inputManager.isActive(STRAFE_LEFT  )) player->accelerate(leftDir * camSpeed);
-        if(inputManager.isActive(MOVE_BACKWARD)) player->accelerate(-horizontalDir * camSpeed);
-        if(inputManager.isActive(MOVE_FORWARD )) player->accelerate(horizontalDir * camSpeed);
+        auto& player = world->getPlayer();
+
+        if(inputManager.isActive(STRAFE_RIGHT )) player.accelerate(-leftDir * camSpeed);
+        if(inputManager.isActive(STRAFE_LEFT  )) player.accelerate(leftDir * camSpeed);
+        if(inputManager.isActive(MOVE_BACKWARD)) player.accelerate(-horizontalDir * camSpeed);
+        if(inputManager.isActive(MOVE_FORWARD )) player.accelerate(horizontalDir * camSpeed);
 
         //if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * 0.2f);
-        if(inputManager.isActive(MOVE_UP)) player->accelerate(camera.getUp() * 0.2f);
-        if(inputManager.isActive(MOVE_DOWN)) player->accelerate(-camera.getUp() * 0.2f);
+        if(inputManager.isActive(MOVE_UP)) player.accelerate(camera.getUp() * 0.2f);
+        if(inputManager.isActive(MOVE_DOWN)) player.accelerate(-camera.getUp() * 0.2f);
         /*if(
             boundKeys[0].isDown 
             && player.checkForCollision(world, false, {0,-0.1f,0}).collision
@@ -579,7 +579,7 @@ void MainScene::physicsUpdate(){
 
         if(!world->getChunk(camWorldPosition)) continue;
 
-            //world->updateEntities();
+        world->updateEntities();
         itemPrototypeRegistry.resetModelsDrawRequests();
         world->drawEntities();
         itemPrototypeRegistry.passModelsDrawRequests();

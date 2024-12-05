@@ -3,6 +3,7 @@
 World::World(std::string filepath, BlockRegistry& blockRegistry): blockRegistry(blockRegistry), generator(blockRegistry){  
     stream = std::make_unique<WorldStream>(filepath);
     generator.setSeed(stream->getSeed());
+    addEntity(Entity(glm::vec3(0,0,0), glm::vec3(0.6, 1.8, 0.6))); // Player
 }
 
 std::shared_mutex chunkGenLock;
@@ -186,42 +187,41 @@ static int rotation = 0;
 static float position = 0;
 static float position_mult = 1;
 
-glm::ivec3 World::getEntityRegionPosition(const std::shared_ptr<Entity>& entity){
-    if(!entity) return {0,0,0};
-    return glm::floor(entity->getPosition() / static_cast<float>(entity_region_size));
+glm::ivec3 World::getEntityRegionPosition(const Entity& entity){
+    return glm::floor(entity.getPosition() / static_cast<float>(entity_region_size));
 }
 
-void World::drawEntity(const std::shared_ptr<Entity>& entity){
-    if(!entity->getModel()) return;
+void World::drawEntity(Entity& entity){
+    if(!entity.getModel()) return;
         
-    entity->getModel()->requestDraw(entity->getPosition() + glm::vec3{0,position,0}, {0.5,0.5,0.5}, {0,rotation,0}, {-0.5,0,0});
+    entity.getModel()->requestDraw(entity.getPosition() + glm::vec3{0,position,0}, {0.5,0.5,0.5}, {0,rotation,0}, {-0.5,0,0});
 }
 
-void World::addEntityToRegion(const glm::ivec3 region_position, std::shared_ptr<Entity> entity){
+void World::addEntityToRegion(const glm::ivec3 region_position, Entity& entity){
     if(!entity_regions.contains(region_position)){
         entity_regions[region_position] = {};
     }
 
-    entity_regions[region_position].push_back(entity);
-    entity->getLastRegionPosition().emplace(region_position);  
+    entity_regions[region_position].push_back(&entity);
+    entity.getLastRegionPosition().emplace(region_position);  
 }
-bool World::removeEntityFromRegion(const glm::ivec3 region_position,  std::shared_ptr<Entity> entity){
+bool World::removeEntityFromRegion(const glm::ivec3 region_position,  Entity& entity){
     if(!entity_regions.contains(region_position)) return false;
 
     auto& last_region = entity_regions[region_position];
 
-    auto iter = std::find(last_region.begin(), last_region.end(), entity);
+    auto iter = std::find(last_region.begin(), last_region.end(), &entity);
     if(iter == last_region.end()) return false;
     last_region.erase(iter);
 
-    entity->getLastRegionPosition().reset();
+    entity.getLastRegionPosition().reset();
     
     return true;
 }
 
-void World::updateEntity(std::shared_ptr<Entity> entity){  
+void World::updateEntity(Entity& entity){  
     glm::ivec3 current_region_position = getEntityRegionPosition(entity);
-    auto& last_region_position_opt = entity->getLastRegionPosition();
+    auto& last_region_position_opt = entity.getLastRegionPosition();
     
     if(!last_region_position_opt.has_value()) addEntityToRegion(current_region_position, entity);
     else{
@@ -232,14 +232,12 @@ void World::updateEntity(std::shared_ptr<Entity> entity){
         }
     }
 
-    entity->update(this);
+    entity.update(this);
 }
 
 void World::drawEntities(){
-    for (auto& [region_position, entity_list]: this->entity_regions) { 
-        for(auto& entity: entity_list){
-            drawEntity(entity);
-        }
+    for(auto& entity: entities){
+        drawEntity(entity);
     }
 
     const float position_addition = 0.002;
@@ -252,22 +250,18 @@ void World::drawEntities(){
 }
 
 void World::updateEntities(){
-    for (auto& [region_position, entity_list]: this->entity_regions) { 
-        for(auto& entity: entity_list){
-            updateEntity(entity);
-        }
+    for(auto& entity: entities){
+        updateEntity(entity);
     }
 }
 void World::drawEntityColliders(WireframeCubeRenderer& renderer, size_t start_index){
-    for (auto& [region_position, entity_list]: this->entity_regions) { 
-        for(auto& entity: entity_list){
-            auto& collider = entity->getCollider();
-            renderer.setCube(
-                start_index++,
-                glm::vec3{collider.x, collider.y, collider.z} + entity->getPosition(), 
-                glm::vec3{collider.width, collider.height, collider.depth},
-                {1.0,0,0}
-            );
-        }
+    for(auto& entity: entities){
+        auto& collider = entity.getCollider();
+        renderer.setCube(
+            start_index++,
+            glm::vec3{collider.x, collider.y, collider.z} + entity.getPosition(), 
+            glm::vec3{collider.width, collider.height, collider.depth},
+            {1.0,0,0}
+        );
     }
 }

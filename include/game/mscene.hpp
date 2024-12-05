@@ -57,8 +57,6 @@ class MainScene: public Scene{
         ItemPrototypeRegistry itemPrototypeRegistry;
         std::shared_ptr<ItemSlot> held_item_slot;
 
-        std::shared_ptr<Entity> player;
-
         std::string worldPath = "saves/worldsave.bin";
         int renderDistance = 3;
         int selectedBlock = 4;

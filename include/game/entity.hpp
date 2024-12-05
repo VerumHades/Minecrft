@@ -17,7 +17,6 @@ class Entity;
 class Collidable{
     public:
         virtual bool collidesWith(glm::vec3 position, RectangularCollider* collider) const = 0;
-        virtual std::vector<std::shared_ptr<Entity>>& getRegionEntities(const glm::ivec3 region_position) {}
 };
 
 class Entity: public Collidable{
@@ -29,7 +28,7 @@ class Entity: public Collidable{
         float maxVelocityHorizontal = 0.5f;
         float maxVelocityVertical = 0.5f;
         float friction = 0.005f;
-        bool hasGravity = false;
+        bool hasGravity = true;
 
         RectangularCollider collider;
         
@@ -48,10 +47,10 @@ class Entity: public Collidable{
 
         std::shared_ptr<Model>& getModel() {return model;}
 
-        const glm::vec3& getPosition() {return position;};
+        const glm::vec3& getPosition() const {return position;};
         void setPosition(const glm::vec3& position) {this->position = position;}
-        const glm::vec3& getVelocity() {return velocity;};
-        const RectangularCollider& getCollider(){return collider;}
+        const glm::vec3& getVelocity() const {return velocity;};
+        const RectangularCollider& getCollider() const {return collider;}
 
         std::optional<glm::ivec3>& getLastRegionPosition() {return lastRegionPosition;}
 };

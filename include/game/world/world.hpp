@@ -39,21 +39,23 @@ class World: public virtual Collidable{
         std::mutex mutex;
         std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>, IVec3Hash, IVec3Equal> chunks;
 
-        const int entity_region_size = 16;
-        std::unordered_map<glm::ivec3, std::vector<std::shared_ptr<Entity>>, IVec3Hash, IVec3Equal> entity_regions;
+        std::vector<Entity> entities;
+
+        const int entity_region_size = 4;
+        std::unordered_map<glm::ivec3, std::vector<Entity*>, IVec3Hash, IVec3Equal> entity_regions;
 
         std::unique_ptr<WorldStream> stream;
         WorldGenerator generator;
         BlockRegistry&  blockRegistry;
 
         glm::ivec3 blockToChunkPosition(glm::ivec3 blockPosition) const;
-        glm::ivec3 getEntityRegionPosition(const std::shared_ptr<Entity>& entity);
+        glm::ivec3 getEntityRegionPosition(const Entity& entity);
 
-        void addEntityToRegion(const glm::ivec3 region_position, std::shared_ptr<Entity> entity);
-        bool removeEntityFromRegion(const glm::ivec3 region_position, std::shared_ptr<Entity> entity);
+        void addEntityToRegion(const glm::ivec3 region_position, Entity& entity);
+        bool removeEntityFromRegion(const glm::ivec3 region_position, Entity& entity);
 
-        void drawEntity(const std::shared_ptr<Entity>& entity);
-        void updateEntity(std::shared_ptr<Entity> entity);
+        void drawEntity(Entity& entity);
+        void updateEntity(Entity& entity);
         
     public:
         World(std::string filepath, BlockRegistry& blockRegistry);
@@ -78,14 +80,12 @@ class World: public virtual Collidable{
         void drawEntities();
         void updateEntities();
 
-        void addEntity(std::shared_ptr<Entity> entity) {
-            if(!entity) throw std::logic_error("Cannot add nullptr entity to a world.");
-            updateEntity(entity); 
+        void addEntity(Entity entity) {
+            entities.push_back(entity);
         }
         void drawEntityColliders(WireframeCubeRenderer& renderer, size_t start_index = 50);
-        std::vector<std::shared_ptr<Entity>>& getRegionEntities(const glm::ivec3 region_position) override {
-            return entity_regions[region_position];
-        }
+
+        Entity& getPlayer(){return entities[0];}
 
         int chunksTotal() const {return chunks.size();}
 };
