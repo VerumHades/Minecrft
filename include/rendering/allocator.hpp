@@ -53,6 +53,13 @@ class Allocator{
             markFree(blocks.insert(blocks.end(),{0, memsize, false}));
         }
 
+        void expand(size_t amount){
+            if(!blocks.back().used) blocks.back().size += amount;
+            else markFree(blocks.insert(blocks.end(),{memsize, amount, false}));
+            
+            memsize += amount;
+        }
+
         std::tuple<bool,size_t> allocate(size_t size);
         bool free(size_t location, std::string fail_prefix = "");
         void clear(){
