@@ -9,14 +9,14 @@ template <typename T>
 class AllocatedList{
     private:
         Allocator allocator;
-        std::vector<T> data;
+        std::vector<T> internal_vector;
     public:
         AllocatedList(size_t initial_size){
-            data.resize(initial_size);
+            internal_vector.resize(initial_size);
 
             allocator = Allocator(initial_size, [this](size_t size){
                 allocator.expand(size);
-                data.resize(data.size() + size);
+                internal_vector.resize(internal_vector.size() + size);
 
                 return true;
             });        
@@ -31,7 +31,7 @@ class AllocatedList{
             if(!success) return -1;
             if(source == nullptr) return start;
 
-            auto destination = data.data() + start;
+            auto destination = internal_vector.internal_vector() + start;
             std::memcpy(destination, source, size * sizeof(T));
 
             return start;
@@ -42,26 +42,26 @@ class AllocatedList{
         }
 
         std::vector<T>::iterator begin(){
-            return data.begin();
+            return internal_vector.begin();
         }
 
         std::vector<T>::iterator end(){
-            return data.end();
+            return internal_vector.end();
         }
 
         T& operator[](std::size_t index) {
-            return data[index];
+            return internal_vector[index];
         }
 
         const T& operator[](std::size_t index) const {
-            return data[index];
+            return internal_vector[index];
         }
 
         T* data(){
-            return data.data();
+            return internal_vector.data();
         }
 
         size_t size(){
-            return data.size();
+            return internal_vector.size();
         }
 };

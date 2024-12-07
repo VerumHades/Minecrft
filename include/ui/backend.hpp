@@ -2,13 +2,22 @@
 
 #include <glm/glm.hpp>
 #include <rendering/texture.hpp>
+#include <ui/color.hpp>
 
 struct UIRenderCommand{
     glm::vec2 position;
-    glm::vec3 uv_or_color;
-    bool is_solid = false;
-
-    const static int vertex_size = 6;
+    glm::vec2 size;
+    
+    UIColor color;
+    UITransform uvs;
+    
+    enum{
+        SOLID,
+        GLYPH,
+        TEXTURE,
+        TEXT
+    } type;
+    std::string text = "";
 };
 
 
@@ -19,17 +28,33 @@ struct UIRenderBatch{
 
     BindableTexture* texture = nullptr;
 
-    size_t vertexCount(){
-        return 4 * UIRenderCommand::vertex_size;
-    }
-    size_t indexCount(){
-        return 6;
-    }
+    void Rectangle(UITransform transform, UIColor fill_color);
+    void BorderedRectangle(UITransform transform, UIColor fill_color, UIBorderSizes border_sizes, UIBorderColors border_colors);
+    void Texture(UITransform transform, UITransform texture_coords);
+    void Text(int x, int y, std::string text, int font_size, UIColor color);
 };
 
 
-class UIBackend{    
+class UIBackend{   
     public:
-        virtual void addRenderBatch(UIRenderBatch& batch) = 0;
-        virtual void render() = 0;
+        struct Batch{
+            glm::vec2 clip_min;
+            glm::vec2 clip_max;
+
+            BindableTexture* texture = nullptr;
+            
+            size_t vertex_start;
+            size_t index_start;
+            size_t vertex_size;
+            size_t index_size;
+        };
+    protected:
+        std::list<Batch> batches;
+    public:
+        virtual std::list<Batch>::iterator addRenderBatch(UIRenderBatch& batch) = 0;
+        virtual void setupRender() = 0;
+        virtual void cleanupRender() = 0;
+        virtual void renderBatch(std::list<Batch>::iterator batch_iter) = 0;
+        virtual void removeBatch(std::list<Batch>::iterator batch_iter) = 0;
+        virtual void resizeVieport(int width, int height) = 0;
 };
