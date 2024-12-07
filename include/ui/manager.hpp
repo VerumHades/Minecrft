@@ -9,66 +9,11 @@
 #include <functional>
 #include <optional>
 #include <unordered_set>
+
 #include <ui/color.hpp>
+#include <ui/tvalue.hpp>
+#include <ui/loader.hpp>
 
-enum Units{
-    NONE, // The default value always 0 pixels
-    PIXELS, 
-
-    WINDOW_WIDTH, // Percentage of the window width
-    WINDOW_HEIGHT, // Percentage of the window height
-    
-    MY_PERCENT, // Percentage of the size of the widget
-    /*
-        The percentage of parent.
-        Subtracts elements own margin and border sizes from the width, 100% is a perfect fit even with a margin and border
-    */
-    PERCENT,
-    FIT_CONTENT, // Size of the content transform
-
-    OPERATION_PLUS    , // TValue + TValue (resolved to pixels)
-    OPERATION_MINUS   , // TValue - TValue (resolved to pixels)
-    OPERATION_MULTIPLY, // TValue * TValue (resolved to pixels)
-    OPERATION_DIVIDE  , // TValue / TValue (resolved to pixels)
-};
-
-struct TValue{
-    Units unit = NONE;
-    int value = 0; 
-
-    std::vector<TValue> operands;
-
-    TValue(Units unit, int value) : unit(unit), value(value){}
-    TValue(int value) : unit(PIXELS), value(value){}
-
-    // Gets automatically resolved if the operands have the same types
-    TValue(Units operation, TValue op1, TValue op2): unit(operation){
-        /*if(op1.unit == op2.unit){
-            unit = op1.unit;
-            switch(operation){
-                case OPERATION_PLUS    : value = op1.value + op2.value; return;
-                case OPERATION_MINUS   : value = op1.value - op2.value; return;
-                case OPERATION_MULTIPLY: value = op1.value * op2.value; return;
-                case OPERATION_DIVIDE  : value = op1.value / op2.value; return;
-                default:
-                    unit = operation;
-                break;
-            }
-        }*/
-        
-        operands.push_back(op1);
-        operands.push_back(op2);
-    }
-
-    bool hasParentReference(){
-        if(unit == OPERATION_PLUS || unit == OPERATION_MINUS){
-            return operands[0].hasParentReference() || operands[1].hasParentReference();
-        }
-        return unit == PERCENT;
-    }
-};
-
-const static TValue TNONE = {NONE, 0};
 
 #define UI_VERTEX_SIZE (3 + 2 + 4 + 2 + 1 + 1 + 1 + 4 + 4 + 4 + 4 + 4 + 4)
 
@@ -195,11 +140,6 @@ class UIFlexLayout: public UILayout{
 */
 class UIFrame{
     public:
-        enum State{
-            BASE,
-            HOVER,
-            FOCUS
-        };
         struct Style{
             enum TextPosition{
                 LEFT,
@@ -239,7 +179,7 @@ class UIFrame{
 
         std::shared_ptr<UILayout> layout;
 
-        Style& getStyleForState(State state){
+        Style& getStyleForState(UIElementState state){
             switch(state){
                 case BASE : return baseStyle;
                 case HOVER: return hoverStyle;
@@ -248,7 +188,7 @@ class UIFrame{
             return baseStyle;
         }
 
-        State state = BASE;
+        UIElementState state = BASE;
 
         TValue x = TNONE;
         TValue y = TNONE;
@@ -361,16 +301,8 @@ class UIFrame{
         void stopDrawing();
         void stopDrawingChildren();
 
-        virtual void appendChild(std::shared_ptr<UIFrame> child){
-            child->parent = this;
-            child->zIndex = this->zIndex + 1;
-            children.push_back(child);
-
-            child->calculateTransforms();
-        }
-        virtual void clearChildren(){
-            children.clear();
-        }
+        virtual void appendChild(std::shared_ptr<UIFrame> child);
+        virtual void clearChildren();
 
         template <typename T>
         T getAttribute(std::optional<T> Style::*attribute){
@@ -382,7 +314,7 @@ class UIFrame{
         }
 
         template <typename T>
-        void setAttribute(std::optional<T> Style::*attribute, T value, State state = BASE){
+        void setAttribute(std::optional<T> Style::*attribute, T value, UIElementState state = BASE){
             auto& style = getStyleForState(state);
             style.*attribute = value;
         }
@@ -524,7 +456,7 @@ class UILayer{
         std::vector<std::shared_ptr<UIFrame>>& getElements() {return elements;}
 };
 
-using UIWindowIdentifier = uint;
+using UIWindowIdentifier = int;
 
 class UIWindow{
     private: 
@@ -537,6 +469,8 @@ class UIWindow{
         UILayer& getCurrentLayer() {return layers[currentLayer];}
         UILayer& getLayer(std::string name) {return layers[name];}
 };
+
+#include <ui/loader.hpp>
 
 class UIManager{
     private:
@@ -563,15 +497,16 @@ class UIManager{
         std::shared_ptr<UIFrame> underScrollHover;
 
         UIWindowIdentifier currentWindow = -1;
-        UIWindowIdentifier lastWindowIndentifier = 0;
-        std::unordered_map<UIWindowIdentifier, UIWindow> windows;
+        std::vector<UIWindow> windows;
 
         std::unique_ptr<DynamicTextureArray> textures;
 
         void renderElementAndChildren(std::shared_ptr<UIFrame>& element, uint& boundTexture);
 
+        UILoader loader;
+
     public:
-        void initialize();
+        UIManager();
         void resize(int width, int height);
         void setFocus(std::shared_ptr<UIFrame> ptr){inFocus = ptr;}
 
@@ -587,9 +522,12 @@ class UIManager{
 
         void render();
         void setCurrentWindow(UIWindowIdentifier id);
-        UIWindow& getCurrentWindow();
-        UIWindow& getWindow(UIWindowIdentifier id);
+        UIWindow* getCurrentWindow();
+        UIWindow* getWindow(UIWindowIdentifier id);
         UIWindowIdentifier createWindow();
+        void loadWindowFromXML(UIWindow& window, std::string load_path);
+
+        UILoader& getLoader() {return loader;}
 
         std::shared_ptr<UIFrame> getElementUnder(int x, int y, bool onlyScrollable = false);   
 

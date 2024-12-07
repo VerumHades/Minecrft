@@ -1,6 +1,6 @@
 #include <ui/manager.hpp>
 
-void UIManager::initialize(){
+UIManager::UIManager(): loader(*this){
     uiProgram.use();
     fontManager.initialize();
 
@@ -20,8 +20,6 @@ void UIManager::initialize(){
 
     uiProgram.setSamplerSlot("tex",0);
     uiProgram.setSamplerSlot("textAtlas",1);
-    
-    resize(1920,1080);
 }
 
 void UIManager::resize(int width, int height){
@@ -37,20 +35,26 @@ void UIManager::resize(int width, int height){
         1.0f    // Far plane
     );
 
-    if(currentWindow == (UIWindowIdentifier)-1) return;
+    if(!getCurrentWindow()) return;
 
     updateAll();
 }
 
 void UIManager::updateAll(){
-    for(auto& element: getCurrentWindow().getCurrentLayer().getElements()){
+    auto* window = getCurrentWindow();
+    if(!window) return;
+
+    for(auto& element: window->getCurrentLayer().getElements()){
         element->calculateTransforms();
         element->update();
         element->updateChildren();
     }
 }
 void UIManager::stopDrawingAll(){
-    for(auto& element: getCurrentWindow().getCurrentLayer().getElements()){
+    auto* window = getCurrentWindow();
+    if(!window) return;
+
+    for(auto& element: window->getCurrentLayer().getElements()){
         element->stopDrawing();
         element->stopDrawingChildren();
     }
@@ -349,7 +353,10 @@ void UIManager::render(){
     
     uint boundTexture = textures->getID();
 
-    for(auto& element: getCurrentWindow().getCurrentLayer().getElements()){
+    auto* window = getCurrentWindow();
+    if(!window) return;
+
+    for(auto& element: window->getCurrentLayer().getElements()){
         renderElementAndChildren(element, boundTexture);
     }
     /*
@@ -469,27 +476,47 @@ void UIManager::setCurrentWindow(UIWindowIdentifier id){
     stopDrawingAll();
     currentWindow = id;
     
-    if(currentWindow == (UIWindowIdentifier)-1) return;
+    if(!getCurrentWindow()) return;
     
     updateAll();
 }
-UIWindow& UIManager::getCurrentWindow(){
-    return windows[currentWindow];
+UIWindow* UIManager::getCurrentWindow(){
+    if(currentWindow < 0 || currentWindow >= windows.size()) return nullptr;
+    return &windows[currentWindow];
 }
-UIWindow& UIManager::getWindow(UIWindowIdentifier id){
-    return windows[id];
+UIWindow* UIManager::getWindow(UIWindowIdentifier id){
+    if(id < 0 || id >= windows.size()) return nullptr;
+    return &windows[id];
 }
 UIWindowIdentifier UIManager::createWindow(){
-    windows[lastWindowIndentifier] = {};
-    return lastWindowIndentifier++;
+    int id = windows.size();
+    windows.push_back({});
+    return id;
 }
 
+void UIManager::loadWindowFromXML(UIWindow& window, std::string load_path){
+    loader.loadWindowFromXML(window, load_path);
+}
+
+void UIFrame::appendChild(std::shared_ptr<UIFrame> child){
+    child->parent = this;
+    child->zIndex = this->zIndex + 1;
+    children.push_back(child);
+
+    manager.getLoader().getCurrentStyle().applyTo(child);
+
+    child->calculateTransforms();
+}
+void UIFrame::clearChildren(){
+    children.clear();
+}
 std::shared_ptr<UIFrame> UIManager::getElementUnder(int x, int y, bool onlyScrollable){
-    if(currentWindow == (UIWindowIdentifier)-1) return nullptr;
+    auto* current_window = getCurrentWindow();
+    if(!current_window) return nullptr;
 
     std::queue<std::tuple<int, std::shared_ptr<UIFrame>, std::shared_ptr<UIFrame>>> elements;
-    
-    for(auto& window: getCurrentWindow().getCurrentLayer().getElements()) elements.push({0,window, nullptr});
+
+    for(auto& window: current_window->getCurrentLayer().getElements()) elements.push({0,window, nullptr});
     
     std::shared_ptr<UIFrame> current = nullptr;
     int cdepth = -1;

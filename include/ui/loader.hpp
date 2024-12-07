@@ -1,9 +1,15 @@
 #pragma once
 
-#include <ui/manager.hpp>
 #include <tinyxml2.h>
 #include <regex>
 #include <filesystem>
+#include <ui/tvalue.hpp>
+#include <ui/color.hpp>
+
+class UIFrame;
+class UIManager;
+class UIWindow;
+class UILayer;
 
 std::vector<std::string> split(std::string s, const std::string& delimiter);
 
@@ -22,7 +28,7 @@ class UIStyle{
                 CLASS,
                 TAG
             } type;
-            UIFrame::State state;
+            UIElementState state;
             std::string value;
 
             bool isSelectorMatch(UIFrame* element);
@@ -84,3 +90,4 @@ class UILoader{
 
 TValue parseTValue(std::string source);
 
+#include <ui/manager.hpp>

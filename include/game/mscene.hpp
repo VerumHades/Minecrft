@@ -123,7 +123,7 @@ class MainScene: public Scene{
         Block* blockUnderCursor = nullptr;
         
     public:
-        void initialize(Scene* mainScene, UILoader* uiLoader);
+        void initialize() override;
         void setWorldPath(std::string path) {worldPath = path;}
 
         void render() override;

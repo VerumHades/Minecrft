@@ -1,0 +1,68 @@
+#pragma once
+
+#include <vector>
+
+enum Units{
+    NONE, // The default value always 0 pixels
+    PIXELS, 
+
+    WINDOW_WIDTH, // Percentage of the window width
+    WINDOW_HEIGHT, // Percentage of the window height
+    
+    MY_PERCENT, // Percentage of the size of the widget
+    /*
+        The percentage of parent.
+        Subtracts elements own margin and border sizes from the width, 100% is a perfect fit even with a margin and border
+    */
+    PERCENT,
+    FIT_CONTENT, // Size of the content transform
+
+    OPERATION_PLUS    , // TValue + TValue (resolved to pixels)
+    OPERATION_MINUS   , // TValue - TValue (resolved to pixels)
+    OPERATION_MULTIPLY, // TValue * TValue (resolved to pixels)
+    OPERATION_DIVIDE  , // TValue / TValue (resolved to pixels)
+};
+
+struct TValue{
+    Units unit = NONE;
+    int value = 0; 
+
+    std::vector<TValue> operands;
+
+    TValue(Units unit, int value) : unit(unit), value(value){}
+    TValue(int value) : unit(PIXELS), value(value){}
+
+    // Gets automatically resolved if the operands have the same types
+    TValue(Units operation, TValue op1, TValue op2): unit(operation){
+        /*if(op1.unit == op2.unit){
+            unit = op1.unit;
+            switch(operation){
+                case OPERATION_PLUS    : value = op1.value + op2.value; return;
+                case OPERATION_MINUS   : value = op1.value - op2.value; return;
+                case OPERATION_MULTIPLY: value = op1.value * op2.value; return;
+                case OPERATION_DIVIDE  : value = op1.value / op2.value; return;
+                default:
+                    unit = operation;
+                break;
+            }
+        }*/
+        
+        operands.push_back(op1);
+        operands.push_back(op2);
+    }
+
+    bool hasParentReference(){
+        if(unit == OPERATION_PLUS || unit == OPERATION_MINUS){
+            return operands[0].hasParentReference() || operands[1].hasParentReference();
+        }
+        return unit == PERCENT;
+    }
+};
+
+const static TValue TNONE = {NONE, 0};
+
+enum UIElementState{
+    BASE,
+    HOVER,
+    FOCUS
+};

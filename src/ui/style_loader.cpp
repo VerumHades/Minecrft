@@ -74,12 +74,12 @@ UIColor parseColor(std::string source) {
 }
 
 #define ATTRIBUTE_LAMBDA(attr, func) \
-    [](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state) { \
+    [](std::shared_ptr<UIFrame> element, std::string value, UIElementState state) { \
         element->setAttribute(&UIFrame::Style::attr, func(value), state); \
     }
 
 #define BORDER_LAMBDA(attr, func, index) \
-    [](std::shared_ptr<UIFrame> element, std::string value, UIFrame::State state) { \
+    [](std::shared_ptr<UIFrame> element, std::string value, UIElementState state) { \
         auto parsed = func(value); \
         auto attrVec = element->getAttribute(&UIFrame::Style::attr); \
         if (index == -1) { \
@@ -90,7 +90,7 @@ UIColor parseColor(std::string source) {
         element->setAttribute(&UIFrame::Style::attr, attrVec, state); \
     }
 
-static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFrame>, std::string, UIFrame::State)>> attributeApplyFunctions = {
+static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFrame>, std::string, UIElementState)>> attributeApplyFunctions = {
     {"background-color", ATTRIBUTE_LAMBDA(backgroundColor, parseColor)},
     {"color",            ATTRIBUTE_LAMBDA(textColor, parseColor)},
     {"margin",           ATTRIBUTE_LAMBDA(margin, parseTValue)},
@@ -155,7 +155,7 @@ std::vector<UIStyle::UIStyleQueryAttribute> UIStyle::parseQueryAttributes(std::s
 UIStyle::UIStyleSelector UIStyle::parseQuerySelector(std::string source){
     source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
 
-    if(source == "*") return {UIStyleSelector::ANY, UIFrame::BASE};
+    if(source == "*") return {UIStyleSelector::ANY, UIElementState::BASE};
 
     std::regex pattern("((\\.|#|)([a-zA-Z0-9_]+)(:([a-zA-Z]+))?)");
 
@@ -173,9 +173,9 @@ UIStyle::UIStyleSelector UIStyle::parseQuerySelector(std::string source){
 
     UIStyleSelector query = {};
 
-    if(state == "hover") query.state = UIFrame::HOVER;
-    else if(state == "focus") query.state = UIFrame::FOCUS;
-    else query.state = UIFrame::BASE;
+    if(state == "hover") query.state = UIElementState::HOVER;
+    else if(state == "focus") query.state = UIElementState::FOCUS;
+    else query.state = UIElementState::BASE;
 
     if     (type == "#") query.type = UIStyleSelector::ID;
     else if(type == ".") query.type = UIStyleSelector::CLASS;

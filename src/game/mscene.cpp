@@ -1,7 +1,9 @@
 #include <game/mscene.hpp>
 
-void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
+void MainScene::initialize(){
     fpsLock = false;
+
+    Scene* menuScene = sceneManager->getScene("menu");
     
     this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
     this->getUILayer("chat").eventLocks = {true, true, true, true};
@@ -149,11 +151,6 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
         frame->appendChild(name);
         frame->appendChild(keyname);
         settingsFrame->appendChild(frame);
-    
-        uiLoader->getCurrentStyle().applyTo(frame);
-        uiLoader->getCurrentStyle().applyTo(name);
-        uiLoader->getCurrentStyle().applyTo(keyname);
-        
     }
 
     menuScene->getUILayer("settings").getElementById("settings_scrollable")->calculateTransforms();
@@ -170,8 +167,6 @@ void MainScene::initialize(Scene* menuScene, UILoader* uiLoader){
     sensitivity_slider->setIdentifiers({"mouse_sensitivity_slider"});
     
     mouse_settings->appendChild(sensitivity_slider);
-
-    uiLoader->getCurrentStyle().applyTo(sensitivity_slider);
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){

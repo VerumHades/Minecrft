@@ -4,14 +4,14 @@
     Adds an element to the current selected ui layer
 */
 void Scene::addElement(std::shared_ptr<UIFrame> element){
-    this->uiManager->getWindow(windowID).getCurrentLayer().addElement(element);
+    this->uiManager->getWindow(windowID)->getCurrentLayer().addElement(element);
 }
 /*
     Sets the current selected ui layer
 */
 void Scene::setUILayer(std::string name){
     this->uiManager->stopDrawingAll();
-    this->uiManager->getWindow(windowID).setCurrentLayer(name);
+    this->uiManager->getWindow(windowID)->setCurrentLayer(name);
 
     auto& layer = getCurrentUILayer();
     glfwSetInputMode(sceneManager->getGLFWWindow(), GLFW_CURSOR, layer.cursorMode);
@@ -21,18 +21,18 @@ void Scene::setUILayer(std::string name){
     uiManager->updateAll();
 }
 
-UIWindow& Scene::getWindow(){
+UIWindow* Scene::getWindow(){
     return this->uiManager->getWindow(windowID);
 }
 
 UILayer& Scene::getCurrentUILayer(){
-    return this->uiManager->getWindow(windowID).getCurrentLayer();
+    return this->uiManager->getWindow(windowID)->getCurrentLayer();
 }
 UILayer& Scene::getUILayer(std::string name){
-    return this->uiManager->getWindow(windowID).getLayer(name);
+    return this->uiManager->getWindow(windowID)->getLayer(name);
 }
 
-SceneManager::SceneManager(){
+SceneManager::SceneManager(GLFWwindow* window): window(window){
     std::unique_ptr<Scene> defaultScene = std::make_unique<Scene>();
     addScene("internal_default", std::move(defaultScene));
     setScene("internal_default");
@@ -49,10 +49,6 @@ SceneManager::SceneManager(){
     label->setText("This is the default scene, if you are seeing this something has gone wrong!");
 
     getCurrentScene()->addElement(std::move(label));
-}
-
-void SceneManager::initialize(){
-    manager.initialize();
 }
 
 Scene* SceneManager::getCurrentScene(){

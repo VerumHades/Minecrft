@@ -188,34 +188,20 @@ int main() {
     glLineWidth(2.0f);
     
     {
-        SceneManager sceneManager;
-
-        sceneManager.setWindow(window);
-        sceneManager.initialize();
+        SceneManager sceneManager{window};
 
         s = &sceneManager;
 
-        std::unique_ptr<Scene> mainMenu = std::make_unique<Scene>();
-        std::unique_ptr<MainScene> mainScene = std::make_unique<MainScene>();
-        MainScene* mainSceneTemp = mainScene.get();
-
-        sceneManager.addScene("game",std::move(mainScene));
-        sceneManager.addScene("menu",std::move(mainMenu));
-
-        Scene* menuScene = sceneManager.getScene("menu");
-
-        UILoader loader = UILoader(sceneManager.getUIManager());
-        loader.loadWindowFromXML(menuScene->getWindow(), "templates/menu.xml");
-        auto* l = &loader;
-
-        mainSceneTemp->initialize(menuScene, l);
-
+        Scene* menuScene = sceneManager.createScene<Scene>("menu");
         menuScene->setUILayer("default");
+        sceneManager.getUIManager().loadWindowFromXML(*menuScene->getWindow(), "templates/menu.xml");
+        
+        MainScene* mainScene = sceneManager.createScene<MainScene>("game");
 
         auto startButton = menuScene->getUILayer("default").getElementById("new_world");
         auto scrollable = std::dynamic_pointer_cast<UIScrollableFrame>(menuScene->getUILayer("world_menu").getElementById("top_frame"));
         
-        startButton->onClicked = [menuScene, mainSceneTemp, scrollable, l] {
+        startButton->onClicked = [menuScene, mainScene, scrollable] {
             menuScene->setUILayer("world_menu");
             scrollable->clearChildren();
 
@@ -239,18 +225,14 @@ int main() {
                 chunkCountLabel->setHoverable(false);
                 chunkCountLabel->setIdentifiers({"world_option_chunk_count_label"});
 
-                frame->onClicked = [menuScene, mainSceneTemp, filepath] {
-                    mainSceneTemp->setWorldPath(filepath);
+                frame->onClicked = [menuScene, mainScene, filepath] {
+                    mainScene->setWorldPath(filepath);
                     s->setScene("game");
                 };
 
                 frame->appendChild(temp);
                 frame->appendChild(chunkCountLabel);
                 scrollable->appendChild(frame);
-
-                l->getCurrentStyle().applyTo(frame);
-                l->getCurrentStyle().applyTo(temp);
-                l->getCurrentStyle().applyTo(chunkCountLabel);
             }
             
             scrollable->calculateTransforms();
@@ -264,12 +246,12 @@ int main() {
         };
 
         auto backButton = menuScene->getUILayer("world_menu").getElementById("back_to_menu");
-        backButton->onClicked = [menuScene, mainSceneTemp] {
+        backButton->onClicked = [menuScene, mainScene] {
             menuScene->setUILayer("default");
         };
 
         auto settingsBackButton = menuScene->getUILayer("settings").getElementById("settings_back_button");
-        settingsBackButton->onClicked = [menuScene, mainSceneTemp] {
+        settingsBackButton->onClicked = [menuScene, mainScene] {
             menuScene->setUILayer("default");
         };
 

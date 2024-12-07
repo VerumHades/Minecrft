@@ -31,7 +31,7 @@ class AllocatedList{
             if(!success) return -1;
             if(source == nullptr) return start;
 
-            auto destination = internal_vector.internal_vector() + start;
+            auto destination = internal_vector.data() + start;
             std::memcpy(destination, source, size * sizeof(T));
 
             return start;

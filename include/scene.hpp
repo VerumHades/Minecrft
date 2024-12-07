@@ -11,7 +11,7 @@
 class SceneManager;
 
 class Scene{
-    public:
+    protected:
         UIWindowIdentifier windowID;
         UIManager* uiManager;
         SceneManager* sceneManager;
@@ -19,12 +19,15 @@ class Scene{
         bool fpsLock = true;
         int targetFPS = 120;
 
+    public:
         void setUILayer(std::string name);
         UILayer& getCurrentUILayer();
         UILayer& getUILayer(std::string name);
         void addElement(std::shared_ptr<UIFrame> element);
-        UIWindow& getWindow();
+        UIWindow* getWindow();
         
+    protected:
+        virtual void initialize() {};
         virtual void render() {};
         virtual void open(GLFWwindow* window)  {};
         virtual void close(GLFWwindow* window)  {};
@@ -40,6 +43,8 @@ class Scene{
         */
         virtual void unlockedKeyEvent(GLFWwindow* /*window*/, int /*key*/, int /*scancode*/, int /*action*/, int /*mods*/) {};
         virtual void unlockedMouseMove(GLFWwindow* /*window*/, int /*x*/, int /*y*/)  {};
+
+        friend class SceneManager;
 };
 
 class SceneManager{ 
@@ -54,8 +59,17 @@ class SceneManager{
         UIEventLock eventLocks;
 
     public:
-        SceneManager();
-        void initialize();
+        SceneManager(GLFWwindow* window);
+
+        template <typename T>
+        T* createScene(std::string name){
+            auto scene = std::make_unique<T>();
+            T* scene_ptr = scene.get();
+            addScene(name, std::move(scene));
+            scene_ptr->initialize();
+            return scene_ptr;
+        }
+        
         void addScene(std::string name, std::unique_ptr<Scene> scene);
         void setScene(std::string name);
         Scene* getScene(std::string name);
