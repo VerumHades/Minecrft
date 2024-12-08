@@ -59,7 +59,7 @@ void UIRenderBatch::BorderedRectangle(UITransform transform, UIColor fill_color,
 
 void UIRenderBatch::Texture(int x, int y, int width, int height, UIRegion texture_coords){
     commands.push_back({
-        {x,x},
+        {x,y},
         {width,height},
         UIColor{0,0,0,0},
         texture_coords,

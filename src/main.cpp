@@ -8,6 +8,7 @@
 #include <scene.hpp>
 #include <game/mscene.hpp>
 #include <rendering/allocator.hpp>
+#include <test_scene.hpp>
 
 
 /*void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
@@ -195,6 +196,8 @@ int main() {
         Scene* menuScene = sceneManager.createScene<Scene>("menu");
         menuScene->setUILayer("default");
         sceneManager.getUIManager().loadWindowFromXML(*menuScene->getWindow(), "templates/menu.xml");
+
+        sceneManager.createScene<TestScene>("test_scene");
         
         MainScene* mainScene = sceneManager.createScene<MainScene>("game");
 
@@ -274,11 +277,13 @@ int main() {
         newWorldButton->onClicked = newWorldFunc;
 
         sceneManager.setScene("menu");
-        menuScene->setUILayer("default");
+        //menuScene->setUILayer("default");
 
         double last = glfwGetTime();
         double current = glfwGetTime();
         float deltatime;
+
+        sceneManager.resize(window, 1920, 1080);
 
         while (!glfwWindowShouldClose(window)) {
             current = glfwGetTime();

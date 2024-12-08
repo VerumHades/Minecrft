@@ -17,3 +17,7 @@ if they arent it breaks stuff badly and is hard to find!
 # Make sure you funtions return what they should
 
 SIGKILL happenes sometimes when they dont
+
+# Not unbinding a VAO can result in some wokny shit
+
+Unbind them pretty please

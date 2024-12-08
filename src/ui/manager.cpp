@@ -42,8 +42,11 @@ void UIFrame::update(){
     
     batch.texture = dedicated_texture_array.get();        
     batch.clipRegion = clipRegion;
-
+    
     stopDrawing();
+    
+    if(batch.commands.size() == 0) return;
+    //std::cout << "Drawing: "  << std::endl;
     draw_batch_iterator = manager.getBackend()->addRenderBatch(batch);
     has_draw_batch = true;
 
@@ -228,7 +231,7 @@ void UIManager::setCurrentWindow(UIWindowIdentifier id){
     currentWindow = id;
     
     if(!getCurrentWindow()) return;
-    
+
     updateAll();
 }
 UIWindow* UIManager::getCurrentWindow(){

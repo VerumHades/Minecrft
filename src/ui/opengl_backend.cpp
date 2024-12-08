@@ -31,7 +31,7 @@ void UIOpenglBackend::setupRender(){
 
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
-    glEnable(GL_SCISSOR_TEST);
+    //glEnable(GL_SCISSOR_TEST);
     //glClear(GL_DEPTH_BUFFER_BIT);
 
     shader_program.updateUniforms();
@@ -42,6 +42,7 @@ void UIOpenglBackend::setupRender(){
 
 void UIOpenglBackend::cleanupRender(){
     glDisable(GL_SCISSOR_TEST);
+    vao.unbind();
 }
 
 std::tuple<size_t, size_t> UIOpenglBackend::calculateBatchSizes(UIRenderBatch& batch){
@@ -65,6 +66,16 @@ std::tuple<size_t, size_t> UIOpenglBackend::calculateBatchSizes(UIRenderBatch& b
 std::list<UIBackend::Batch>::iterator UIOpenglBackend::addRenderBatch(UIRenderBatch& batch){
     auto [vertex_count, index_count] = calculateBatchSizes(batch);
 
+    if(vertex_count == 0)
+        return batches.insert(batches.end(), {
+            batch.clipRegion,
+            batch.texture,
+            0,
+            0,
+            0,
+            0
+        });
+        
     size_t vertex_start = vertices.insert(nullptr, vertex_count);
     size_t index_start = indices.insert(nullptr, index_count);
 
@@ -74,6 +85,13 @@ std::list<UIBackend::Batch>::iterator UIOpenglBackend::addRenderBatch(UIRenderBa
     int index_offset = vertex_start / vertex_size;
     for(auto& command: batch.commands){
         proccessRenderCommand(command, vertex_ptr, index_ptr, index_offset);
+    }
+
+    if(
+        (vertex_ptr - (vertices.data() + vertex_start)) != vertex_count ||
+        (index_ptr - (indices.data() + index_start)) !=  index_count
+    ){
+        throw std::runtime_error("Batch overeach! This is an internal bug.");
     }
 
     needs_update = true;
@@ -96,6 +114,7 @@ void UIOpenglBackend::removeBatch(std::list<UIBackend::Batch>::iterator batch_it
     vertices.free(batch_iter->vertex_start);
     indices.free(batch_iter->index_start);
     batches.erase(batch_iter);
+    needs_update = true;
 }
 
 void UIOpenglBackend::renderBatch(std::list<UIBackend::Batch>::iterator batch_iter){

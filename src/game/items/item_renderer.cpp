@@ -120,16 +120,13 @@ void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
 
     auto* texture_info = textureAtlas.getPrototypeTexture(prototype);
 
-    /*batch.Texture(
-            transform.x,transform.y,transform.width,transform.height,
-            {
-                {texture_info->uv_min.x, texture_info->uv_min.y},
-                {texture_info->uv_max.x, texture_info->uv_min.y},
-                {texture_info->uv_max.x, texture_info->uv_max.y},
-                {texture_info->uv_min.x, texture_info->uv_max.y}
-            },
-            texture_info->index
-        );*/
+    batch.Texture(
+        transform.x,transform.y,transform.width,transform.height,
+        {
+            texture_info->uv_min, 
+            texture_info->uv_max
+        }
+    );
 
     int slot_x = transform.x + slot_padding;
     int slot_y = transform.y + slot_padding;
@@ -250,18 +247,16 @@ void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
             int slot_width  = slot_size - slot_padding * 2;
             int slot_height = slot_width;
 
-            /*batch.Texture(
+            batch.Texture(
                 slot_x,
                 slot_y,
                 slot_width,
                 slot_height,
                 {
-                    {texture_info->uv_min.x, texture_info->uv_min.y},
-                    {texture_info->uv_max.x, texture_info->uv_min.y},
-                    {texture_info->uv_max.x, texture_info->uv_max.y},
-                    {texture_info->uv_min.x, texture_info->uv_max.y}
+                    texture_info->uv_min, 
+                    texture_info->uv_max
                 }
-            );*/
+            );
 
             std::string quantity_number = std::to_string(item.getQuantity());
             UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(quantity_number, quantity_number_font_size);

@@ -43,7 +43,7 @@ struct UIRenderBatch{
 class UIBackend{   
     public:
         struct Batch{
-            UIRegion clipRegion = {};
+            UIRegion clipRegion = {{0,0},{0,0}};
 
             BindableTexture* texture = nullptr;
             
