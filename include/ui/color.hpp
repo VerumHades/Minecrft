@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <string>
 /*
     Structure used for all colors in the ui, always RGBA
 */
@@ -71,6 +72,22 @@ struct UIBorderColors{
     UIColor bottom;
     UIColor left;
 
+    UIColor& operator[](int index)
+    {
+        switch(index){
+            case 0: return top;
+            case 1: return right;
+            case 2: return bottom;
+            case 3: return left;
+            default: return top;
+        }
+    }
+
     UIBorderColors(UIColor top, UIColor right, UIColor bottom, UIColor left): top(top), right(right), bottom(bottom), left(left) {}
     UIBorderColors(UIColor color): top(color), right(color), bottom(color), left(color) {}
+};
+
+struct UITextDimensions{
+    int width;
+    int height;
 };

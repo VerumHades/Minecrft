@@ -12,12 +12,12 @@ uniform sampler2D textAtlas;
 void main()
 {    
     vec4 sampledText = vec4(1.0, 1.0, 1.0, texture(textAtlas, TexCoords).r);
-    vec4 sampledTexture = texture(tex, vec3(TexCoords, textureIndex));
+    vec4 sampledTexture = texture(tex, vec3(TexCoords, 0));
 
     FragColor = 
         Type < 0.5 ? Color : 
         Type < 1.5 ? sampledText * Color :
         Type < 2.5 ? sampledTexture : vec4(1.0,0,0,1.0);
 
-    //FragColor = vec4(1.0,0,0,0.1);
+    //FragColor = vec4(TexCoords,0.0,1.0);
 }

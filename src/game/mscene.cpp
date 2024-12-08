@@ -385,15 +385,7 @@ void MainScene::render(){
     last = current;
 
     threadPool->deployPendingJobs();
-    if(!allGenerated){
-        glDisable(GL_DEPTH_TEST);
-        glDisable( GL_CULL_FACE );
-        uiManager->getFontManager().renderText(
-            "Generating chunks: " + std::to_string(world->chunksTotal()) + "/" + std::to_string(pow((renderDistance + 1)*2+1,3)),
-        10,40, 1.0, {1.0,1.0,1.00}, testFont);
-        return;
-    }
-
+    
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 
@@ -513,12 +505,13 @@ void MainScene::render(){
     glDisable( GL_CULL_FACE );
     glDisable(GL_DEPTH_TEST);   
 
+    /*
     auto* selectedBlockDefinition = blockRegistry.getBlockPrototypeByIndex(selectedBlock);
 
     uiManager->getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
     if(selectedBlockDefinition) uiManager->getFontManager().renderText("Selected block: " + selectedBlockDefinition->name, 10, 80, 1.0, {0,0,0}, testFont);
     uiManager->getFontManager().renderText("X: " + std::to_string(playerPosition.x) + " Y: " + std::to_string(playerPosition.y) + "  Z: " + std::to_string(playerPosition.z), 10, 120, 1.0, {0,0,0}, testFont);
-
+    */
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 }
@@ -650,41 +643,41 @@ void MainScene::generateSurroundingChunks(){
     allGenerated = true;
 }
 
-void UICrosshair::getRenderingInformation(RenderYeetFunction& yeet){
+void UICrosshair::getRenderingInformation(UIRenderBatch& batch){
     auto color = getAttribute(&UIFrame::Style::textColor);
 
     // Left
-    yeet(UIRenderInfo::Rectangle(
+    batch.Rectangle(
         transform.x,
         transform.y + transform.height / 2 - thickness / 2,
         transform.width / 2 - part_margin,
         thickness,
         color
-    ),clipRegion);
+    );
     // Right
-    yeet(UIRenderInfo::Rectangle(
+    batch.Rectangle(
         transform.x + transform.width / 2 + part_margin,
         transform.y + transform.height / 2 - thickness / 2,
         transform.width / 2 - part_margin,
         thickness,
         color
-    ),clipRegion);
+    );
 
     // Top
-    yeet(UIRenderInfo::Rectangle(
+    batch.Rectangle(
         transform.x + transform.width / 2 - thickness / 2,
         transform.y,
         thickness,
         transform.height / 2 - part_margin,
         color
-    ),clipRegion);
+    );
     
     //Bottom
-    yeet(UIRenderInfo::Rectangle(
+    batch.Rectangle(
         transform.x + transform.width  / 2 - thickness / 2,
         transform.y + transform.height / 2 + part_margin,
         thickness,
         transform.height / 2 - part_margin,
         color
-    ),clipRegion);
+    );
 }

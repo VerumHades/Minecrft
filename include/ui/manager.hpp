@@ -13,128 +13,14 @@
 #include <ui/color.hpp>
 #include <ui/tvalue.hpp>
 #include <ui/loader.hpp>
-
-
-#define UI_VERTEX_SIZE (3 + 2 + 4 + 2 + 1 + 1 + 1 + 4 + 4 + 4 + 4 + 4 + 4)
-
-using RawRenderInfo = std::array<float, 4 * UI_VERTEX_SIZE>;
-
-struct UIRenderInfo{
-    public:
-        int x;
-        int y;
-        int width;
-        int height;
-
-        UIBorderSizes borderWidth; // clockwise from the top
-        std::array<UIColor,4> borderColor;
-
-        UIColor color;
-
-        bool isText = false;
-        bool isTexture = false;
-
-        bool hasTexCoords = false;
-        std::vector<glm::vec2> texCoords;
-        int textureIndex;
-
-        UIRegion clipRegion; // minX/Y, maxX/Y
-        bool clip = false;
-
-        int zIndex = 0;
-
-        void process(Mesh* output, size_t offset_index = 0);
-        bool valid();
-
-        static UIRenderInfo Rectangle(int x, int y, int width, int height, UIColor color, UIBorderSizes borderWidth = {0,0,0,0},std::array<UIColor,4> borderColor = {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}}){
-            return {
-                x,y,width,height,borderWidth,borderColor,color
-            };
-        }
-        static UIRenderInfo Rectangle(UITransform t, UIColor color, UIBorderSizes borderWidth = {0,0,0,0},std::array<UIColor,4> borderColor = {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}}){
-            return UIRenderInfo::Rectangle(t.x,t.y,t.width,t.height,color, borderWidth, borderColor);
-        }
-        static UIRenderInfo Text(int x, int y, int width, int height, UIColor color, std::vector<glm::vec2> texCoords){
-            return {
-                x,y,width,height,
-                {0,0,0,0}, // Border thickness
-                {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}}, // Border color
-                color,
-                true, // Is text
-                false, // Isnt a texture
-                true, // Has tex coords
-                texCoords
-            };
-        }
-        static UIRenderInfo Texture(int x, int y, int width, int height, std::vector<glm::vec2> texCoords, int textureIndex){
-            return {
-                x,y,width,height,
-                {0,0,0,0},
-                {UIColor(0,0,0,0),{0,0,0,0},{0,0,0,0},{0,0,0,0}},
-                {0,0,0,1},
-                false, // Isnt text
-                true, // Is a texture
-                true, // Has tex coords
-                texCoords,
-                textureIndex
-            };
-        }
-
-        static std::array<UIColor, 4> generateBorderColors(UIColor base){
-            return {
-                base.shifted(0.1),
-                base.shifted(0.1),
-                base.shifted(-0.1),
-                base.shifted(-0.1)
-            };
-        }
-};
+#include <ui/layouts.hpp>
+#include <ui/backend.hpp>
 
 class UIManager;
 class UIFrame;
 class UILoader;
 class UIStyle;
 
-/*
-    Functionaly very similar to yield in an iterator, but slightly different
-
-    Named for the comedic value
-*/
-using RenderYeetFunction = std::function<void(UIRenderInfo info, UIRegion clipRegion)>;
-
-/*
-    Base class for all layouts
-*/
-class UILayout{
-    public:
-        /*
-            Resizes or changes the element itself
-        */
-        virtual UITransform calculateContentTransform(UIFrame* frame);
-        /*
-            Organizes all of the elements children in some defined way
-        */
-        virtual void arrangeChildren(UIFrame* frame);
-};
-
-class UIFlexLayout: public UILayout{
-    public:
-        enum FlexDirection{
-            HORIZONTAL,
-            VERTICAL
-        };
-
-    private:
-        FlexDirection direction;
-        bool expandToChildren = false;
-
-    public:
-        void setExpand(bool value) {expandToChildren = value;}
-        void setDirection(FlexDirection direction) {this->direction = direction;}
-        
-        UITransform calculateContentTransform(UIFrame* frame) override;
-        void arrangeChildren(UIFrame* frame) override;
-};
 /*
     Core element that every other element inherits from
 */
@@ -151,7 +37,7 @@ class UIFrame{
             std::optional<UIColor>               textColor;
             std::optional<UIColor>               backgroundColor;
             std::optional<std::array<TValue,4>>  borderWidth;
-            std::optional<std::array<UIColor,4>> borderColor;
+            std::optional<UIBorderColors>        borderColor;
             std::optional<TValue>                margin;
             std::optional<TValue>                fontSize;
         };
@@ -164,9 +50,9 @@ class UIFrame{
             UIColor{255,255,255,255},
             UIColor{0,0,0,0},
             std::array<TValue,4>{0,0,0,0},
-            std::array<UIColor,4>{UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
+            UIBorderColors{UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
             TValue(0),
-            16
+            24
         };
         Style hoverStyle;
         Style focusStyle;
@@ -235,18 +121,16 @@ class UIFrame{
         int margin_y = 0;
         int font_size = 0;
 
-        size_t vertex_data_start = -1ULL;
-        size_t vertex_data_size = 0;
-        size_t index_data_start  = -1ULL;
-        size_t index_data_size = 0;
-
-        virtual void getRenderingInformation(RenderYeetFunction& yeet);
+        virtual void getRenderingInformation(UIRenderBatch& batch);
 
         std::shared_ptr<GLTextureArray> dedicated_texture_array;
 
         friend class UIManager;
         friend class UILoader;
         friend class UIStyle;
+
+        bool has_draw_batch = false;
+        std::list<UIBackend::Batch>::iterator draw_batch_iterator;
 
     public:
         UIFrame(UIManager& manager): manager(manager) {
@@ -340,7 +224,7 @@ class UILabel: public UIFrame{
 
     public:
         UILabel(UIManager& manager): UIFrame(manager) {identifiers.tag = "label";}
-        virtual void getRenderingInformation(RenderYeetFunction& yeet);
+        virtual void getRenderingInformation(UIRenderBatch& batch);
 
         void setText(std::string text) {this->text = text;}
         void setTextPadding(int padding) {this->textPadding = padding;}
@@ -355,18 +239,7 @@ class UIInput: public UILabel{
  
         std::function<void(std::string)> onSubmit;
 
-        virtual void getRenderingInformation(RenderYeetFunction& yeet);
-};
-
-class UIImage: public UIFrame{
-    private:
-        std::string path;
-        bool loaded = false;
-
-    public:
-        UIImage(UIManager& manager): UIFrame(manager) {identifiers.tag = "image";}
-        void loadFromFile(std::string path);
-        virtual void getRenderingInformation(RenderYeetFunction& yeet);
+        virtual void getRenderingInformation(UIRenderBatch& batch);
 };
 
 class UISlider: public UIFrame{
@@ -405,7 +278,7 @@ class UISlider: public UIFrame{
 
         std::function<void(void)> onMove;
 
-        virtual void getRenderingInformation(RenderYeetFunction& yeet);
+        virtual void getRenderingInformation(UIRenderBatch& batch);
 };
 
 
@@ -474,19 +347,6 @@ class UIWindow{
 
 class UIManager{
     private:
-        FontManager fontManager;
-        std::unique_ptr<Font> mainFont;
-
-        ShaderProgram uiProgram = ShaderProgram("shaders/graphical/ui/ui.vs","shaders/graphical/ui/ui.fs");
-        VertexFormat vertexFormat;
-
-        GLVertexArray vao;
-        GLAllocatedBuffer<uint,  GL_ELEMENT_ARRAY_BUFFER> indexBuffer;
-        GLAllocatedBuffer<float, GL_ARRAY_BUFFER> vertexBuffer;
-        size_t vertexSize;
-
-        Uniform<glm::mat4> projectionMatrix = Uniform<glm::mat4>("ui_projection_matrix");
-        
         int screenWidth = 1920;
         int screenHeight = 1080;
 
@@ -499,14 +359,13 @@ class UIManager{
         UIWindowIdentifier currentWindow = -1;
         std::vector<UIWindow> windows;
 
-        std::unique_ptr<DynamicTextureArray> textures;
-
-        void renderElementAndChildren(std::shared_ptr<UIFrame>& element, uint& boundTexture);
+        void renderElementAndChildren(std::shared_ptr<UIFrame>& element);
 
         UILoader loader;
+        UIBackend* backend;
 
     public:
-        UIManager();
+        UIManager(UIBackend* backend);
         void resize(int width, int height);
         void setFocus(std::shared_ptr<UIFrame> ptr){inFocus = ptr;}
 
@@ -528,23 +387,14 @@ class UIManager{
         void loadWindowFromXML(UIWindow& window, std::string load_path);
 
         UILoader& getLoader() {return loader;}
+        UIBackend* getBackend() {return backend;}
 
         std::shared_ptr<UIFrame> getElementUnder(int x, int y, bool onlyScrollable = false);   
-
-        void buildTextRenderingInformation(RenderYeetFunction& yeet, UIRegion& clipRegion, std::string text, float x, float y, int font_size, UIColor color);
-
-        FontManager& getFontManager() {return fontManager;};
-        Font& getMainFont(){return *mainFont;}
 
         glm::ivec2 getMousePosition(){return mousePosition;}
 
         int getScreenWidth() {return screenWidth;}
         int getScreenHeight() {return screenHeight;}
-
-        std::unique_ptr<DynamicTextureArray>& getTextures(){return textures;}
-
-        auto& getIndexBuffer()  { return indexBuffer;  }
-        auto& getVertexBuffer() { return vertexBuffer; }
 
         // Creates an element that belongs to the UIManager
         template <typename T>

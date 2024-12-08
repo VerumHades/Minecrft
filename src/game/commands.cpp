@@ -69,7 +69,7 @@ void CommandProcessor::processCommand(std::string raw){
     if(command.execute) command.execute(arguments);
 }
 
-
+/*
 UICommandInput::UICommandInput(UIManager& manager): UIInput(manager) {
     onKeyTyped = [this](GLFWwindow* window, unsigned int codepoint){
         char typedChar = static_cast<char>(codepoint);
@@ -90,8 +90,8 @@ UICommandInput::UICommandInput(UIManager& manager): UIInput(manager) {
     };
 }
 
-void UICommandInput::getRenderingInformation(RenderYeetFunction& yeet){
-    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text, font_size);
+void UICommandInput::getRenderingInformation(UIRenderBatch& batch){
+    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(text, font_size);
     int sw = manager.getScreenWidth();
     int sh = manager.getScreenHeight();
 
@@ -144,4 +144,4 @@ void UICommandInput::getRenderingInformation(RenderYeetFunction& yeet){
     }
 
     manager.buildTextRenderingInformation(yeet,clipRegion,text,tx,ty,1,{1,1,1,1});
-}
+}*/

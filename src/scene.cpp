@@ -32,7 +32,7 @@ UILayer& Scene::getUILayer(std::string name){
     return this->uiManager->getWindow(windowID)->getLayer(name);
 }
 
-SceneManager::SceneManager(GLFWwindow* window): window(window){
+SceneManager::SceneManager(GLFWwindow* window): window(window), manager(&opengl_backend){
     std::unique_ptr<Scene> defaultScene = std::make_unique<Scene>();
     addScene("internal_default", std::move(defaultScene));
     setScene("internal_default");

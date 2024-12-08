@@ -44,12 +44,13 @@ class CommandProcessor{
         const std::unordered_map<std::string, size_t>& getCommandIDs() {return commandsIDS;};
 };
 
+/*
 class UICommandInput: public UIInput{
     private:
         CommandProcessor* commandProcessor;
     public:
         UICommandInput(UIManager& manager);
         void setCommandProcessor(CommandProcessor* commandProcessor) {this->commandProcessor = commandProcessor;}
-        virtual void getRenderingInformation(RenderYeetFunction& yeet);
+        virtual void getRenderingInformation(UIRenderBatch& batch);
 
-};
+};*/

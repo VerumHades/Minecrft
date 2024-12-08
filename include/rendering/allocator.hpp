@@ -54,7 +54,12 @@ class Allocator{
         }
 
         void expand(size_t amount){
-            if(!blocks.back().used) blocks.back().size += amount;
+            if(!blocks.back().used){
+                blocks.back().size += amount;
+                auto nodeHandler = freeBlocks.extract(blocks.back().freeRegistery);
+                nodeHandler.key() = blocks.back().size;
+                freeBlocks.insert(std::move(nodeHandler));
+            }
             else markFree(blocks.insert(blocks.end(),{memsize, amount, false}));
             
             memsize += amount;

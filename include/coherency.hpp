@@ -18,6 +18,7 @@ class AllocatedList{
                 allocator.expand(size);
                 internal_vector.resize(internal_vector.size() + size);
 
+                std::cout << "Expaned: " << internal_vector.size() << " " << size << std::endl;
                 return true;
             });        
         }
@@ -28,7 +29,7 @@ class AllocatedList{
         size_t insert(T* source, size_t size){
             auto [success, start] = allocator.allocate(size);
 
-            if(!success) return -1;
+            if(!success) return -1ULL;
             if(source == nullptr) return start;
 
             auto destination = internal_vector.data() + start;

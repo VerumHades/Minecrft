@@ -7,6 +7,7 @@
 #include <ui/font.hpp>
 #include <ui/manager.hpp>
 #include <queue>
+#include <ui/opengl_backend.hpp>
 
 class SceneManager;
 
@@ -53,7 +54,9 @@ class SceneManager{
         std::unordered_map<std::string, std::unique_ptr<Scene>> scenes;
         Scene* getCurrentScene();
 
+        UIOpenglBackend opengl_backend;
         UIManager manager;
+        
         GLFWwindow* window;
 
         UIEventLock eventLocks;

@@ -74,7 +74,7 @@ class ItemSlot: public UIFrame{
         }
 
         LogicalItemSlot& getSlot() {return item_slot;}
-        void getRenderingInformation(RenderYeetFunction& yeet) override;
+        void getRenderingInformation(UIRenderBatch& batch) override;
         
 };
 
@@ -108,5 +108,5 @@ class ItemInventory: public UIFrame{
 
         bool addItem(Item item);
 
-        void getRenderingInformation(RenderYeetFunction& yeet) override;
+        void getRenderingInformation(UIRenderBatch& batch) override;
 };

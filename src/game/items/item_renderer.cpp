@@ -104,7 +104,7 @@ void LogicalItemSlot::clear(){
 }
 
 
-void ItemSlot::getRenderingInformation(RenderYeetFunction& yeet){
+void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
    /*yeet(
         UIRenderInfo::Rectangle(
             transform,
@@ -120,8 +120,7 @@ void ItemSlot::getRenderingInformation(RenderYeetFunction& yeet){
 
     auto* texture_info = textureAtlas.getPrototypeTexture(prototype);
 
-    yeet(
-        UIRenderInfo::Texture(
+    /*batch.Texture(
             transform.x,transform.y,transform.width,transform.height,
             {
                 {texture_info->uv_min.x, texture_info->uv_min.y},
@@ -130,9 +129,7 @@ void ItemSlot::getRenderingInformation(RenderYeetFunction& yeet){
                 {texture_info->uv_min.x, texture_info->uv_max.y}
             },
             texture_info->index
-        ),
-        clipRegion
-    );
+        );*/
 
     int slot_x = transform.x + slot_padding;
     int slot_y = transform.y + slot_padding;
@@ -140,11 +137,11 @@ void ItemSlot::getRenderingInformation(RenderYeetFunction& yeet){
     int slot_height = slot_width;
 
     std::string quantity_number = std::to_string(item.getQuantity());
-    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(quantity_number, quantity_number_font_size);
-    manager.buildTextRenderingInformation(yeet, clipRegion, 
+    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(quantity_number, quantity_number_font_size);
+    batch.Text(
         quantity_number, 
-        slot_x + slot_width  - textDimensions.x,
-        slot_y + slot_height - textDimensions.y,
+        slot_x + slot_width  - textDimensions.width,
+        slot_y + slot_height - textDimensions.height,
         quantity_number_font_size,
         getAttribute(&UIFrame::Style::textColor)
     );
@@ -211,35 +208,29 @@ bool ItemInventory::addItem(Item item){
 
     return false;
 }
-void ItemInventory::getRenderingInformation(RenderYeetFunction& yeet){
-    UIFrame::getRenderingInformation(yeet);
+void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
+    UIFrame::getRenderingInformation(batch);
 
     int line_width = borderSizes.top;
-    UIColor line_color = getAttribute(&UIFrame::Style::borderColor)[0];
+    UIColor line_color = getAttribute(&UIFrame::Style::borderColor).top;
 
     for(int y = 1;y < slots_verticaly; y++){
-        yeet(
-            UIRenderInfo::Rectangle(
-                transform.x,
-                transform.y + y * slot_size - line_width / 2,
-                transform.width,
-                line_width,
-                line_color
-            ),
-            clipRegion
+        batch.Rectangle(
+            transform.x,
+            transform.y + y * slot_size - line_width / 2,
+            transform.width,
+            line_width,
+            line_color
         );
     }
 
     for(int x = 1;x < slots_horizontaly; x++){
-        yeet(
-            UIRenderInfo::Rectangle(
-                transform.x + x * slot_size - line_width / 2,
-                transform.y,
-                line_width,
-                transform.height,
-                line_color
-            ),
-            clipRegion
+        batch.Rectangle(
+            transform.x + x * slot_size - line_width / 2,
+            transform.y,
+            line_width,
+            transform.height,
+            line_color
         );
     }
 
@@ -259,28 +250,25 @@ void ItemInventory::getRenderingInformation(RenderYeetFunction& yeet){
             int slot_width  = slot_size - slot_padding * 2;
             int slot_height = slot_width;
 
-            yeet(
-                UIRenderInfo::Texture(
-                    slot_x,
-                    slot_y,
-                    slot_width,
-                    slot_height,
-                    {
-                        {texture_info->uv_min.x, texture_info->uv_min.y},
-                        {texture_info->uv_max.x, texture_info->uv_min.y},
-                        {texture_info->uv_max.x, texture_info->uv_max.y},
-                        {texture_info->uv_min.x, texture_info->uv_max.y}
-                    },
-                    texture_info->index
-                ),
-                clipRegion
-            );
+            /*batch.Texture(
+                slot_x,
+                slot_y,
+                slot_width,
+                slot_height,
+                {
+                    {texture_info->uv_min.x, texture_info->uv_min.y},
+                    {texture_info->uv_max.x, texture_info->uv_min.y},
+                    {texture_info->uv_max.x, texture_info->uv_max.y},
+                    {texture_info->uv_min.x, texture_info->uv_max.y}
+                }
+            );*/
+
             std::string quantity_number = std::to_string(item.getQuantity());
-            glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(quantity_number, quantity_number_font_size);
-            manager.buildTextRenderingInformation(yeet, clipRegion, 
+            UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(quantity_number, quantity_number_font_size);
+            batch.Text( 
                 quantity_number, 
-                slot_x + slot_width  - textDimensions.x,
-                slot_y + slot_height - textDimensions.y,
+                slot_x + slot_width  - textDimensions.width,
+                slot_y + slot_height - textDimensions.height,
                 quantity_number_font_size,
                 getAttribute(&UIFrame::Style::textColor)
             );

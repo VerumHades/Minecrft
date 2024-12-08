@@ -58,11 +58,11 @@ class GLBuffer{
         /*
             Creates the actual buffer of some size
         */
-        virtual void initialize(size_t size){
+        virtual void initialize(size_t size, T* data = nullptr){
             if(size == 0) return;
 
             bind();
-            glBufferData(type, size * sizeof(T), nullptr, GL_DYNAMIC_DRAW);
+            glBufferData(type, size * sizeof(T), data, GL_DYNAMIC_DRAW);
             buffer_size = size;
 
             initialized = true;

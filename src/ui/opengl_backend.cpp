@@ -13,10 +13,22 @@ UIOpenglBackend::UIOpenglBackend(){
 
     vao.unbind();
 
+
+    shader_program.setSamplerSlot("tex",0);
     shader_program.setSamplerSlot("textAtlas",1);
 }
 
 void UIOpenglBackend::setupRender(){
+    if(needs_update){
+        if(index_buffer.size() != indices.size()) index_buffer.initialize(indices.size(), indices.data());
+        else index_buffer.insert(0, indices.size(), indices.data());
+
+        if(vertex_buffer.size() != vertices.size()) vertex_buffer.initialize(vertices.size(), vertices.data());
+        else vertex_buffer.insert(0, vertices.size(), vertices.data());
+
+        needs_update = false;
+    }
+
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_SCISSOR_TEST);
@@ -32,9 +44,26 @@ void UIOpenglBackend::cleanupRender(){
     glDisable(GL_SCISSOR_TEST);
 }
 
+std::tuple<size_t, size_t> UIOpenglBackend::calculateBatchSizes(UIRenderBatch& batch){
+    size_t total_commands = 0;
+
+    for(auto& command: batch.commands){
+        if(command.type == UIRenderCommand::TEXT){
+            total_commands += command.text.size();
+            continue;
+        }
+        
+        total_commands++;
+    }
+
+    return {
+        total_commands * 4 * vertex_size,
+        total_commands * 6
+    };
+}
+
 std::list<UIBackend::Batch>::iterator UIOpenglBackend::addRenderBatch(UIRenderBatch& batch){
-    size_t vertex_count = batch.commands.size() * 4 * vertex_size;
-    size_t index_count = batch.commands.size() * 6;
+    auto [vertex_count, index_count] = calculateBatchSizes(batch);
 
     size_t vertex_start = vertices.insert(nullptr, vertex_count);
     size_t index_start = indices.insert(nullptr, index_count);
@@ -50,8 +79,7 @@ std::list<UIBackend::Batch>::iterator UIOpenglBackend::addRenderBatch(UIRenderBa
     needs_update = true;
 
     return batches.insert(batches.end(), {
-        batch.clip_min,
-        batch.clip_max,
+        batch.clipRegion,
         batch.texture,
         vertex_start,
         index_start,
@@ -61,13 +89,23 @@ std::list<UIBackend::Batch>::iterator UIOpenglBackend::addRenderBatch(UIRenderBa
 }
 
 void UIOpenglBackend::removeBatch(std::list<UIBackend::Batch>::iterator batch_iter){
+    if(batch_iter->vertex_size == 0) {
+        batches.erase(batch_iter);
+        return;
+    }
     vertices.free(batch_iter->vertex_start);
     indices.free(batch_iter->index_start);
     batches.erase(batch_iter);
 }
 
 void UIOpenglBackend::renderBatch(std::list<UIBackend::Batch>::iterator batch_iter){
-    glScissor(batch_iter->clip_min.x, batch_iter->clip_min.y, batch_iter->clip_max.x - batch_iter->clip_min.x, batch_iter->clip_max.y - batch_iter->clip_min.y);
+    if(batch_iter->texture) batch_iter->texture->bind(0);
+    /*glScissor(
+        batch_iter->clipRegion.min.x,
+        batch_iter->clipRegion.min.y,
+        batch_iter->clipRegion.max.x - batch_iter->clipRegion.min.x,
+        batch_iter->clipRegion.max.y - batch_iter->clipRegion.min.y
+    );*/
     glDrawElements(GL_TRIANGLES, batch_iter->index_size, GL_UNSIGNED_INT, reinterpret_cast<const void*>(batch_iter->index_start * sizeof(uint)));
 };
 
@@ -101,11 +139,9 @@ void UIOpenglBackend::processTextCommand(UIRenderCommand& command, float*& verti
                 static_cast<int>(h),
             },
             command.color,
-            {
-                {ch.TexCoordsMin.x},
-                {ch.TexCoordsMin.y},
-                {ch.TexCoordsMax.x - ch.TexCoordsMin.x},
-                {ch.TexCoordsMax.y - ch.TexCoordsMin.y}
+            UIRegion{
+                ch.TexCoordsMin,
+                ch.TexCoordsMax
             },
             UIRenderCommand::GLYPH
         };
@@ -135,10 +171,12 @@ void UIOpenglBackend::proccessRenderCommand(UIRenderCommand& command, float*& ve
         {x    , y + height}
     };
 
-    float textureX = command.uvs.x;
-    float textureY = command.uvs.y;
-    float textureXW = textureX + command.uvs.width;
-    float textureYH = textureY + command.uvs.height;
+    float textureX = command.uvs.min.x;
+    float textureY = command.uvs.min.y;
+    float textureXW = command.uvs.max.x;
+    float textureYH = command.uvs.max.y;
+
+    //std::cout << textureX << " " << textureY << " " << textureXW << " " << textureYH << std::endl;
 
     glm::vec2 textureCoordinates[4] = {
         {textureX , textureY },
@@ -190,4 +228,9 @@ void UIOpenglBackend::resizeVieport(int width, int height){
         -1.0f,  // Near plane
         1.0f    // Far plane
     );
+}
+
+UITextDimensions UIOpenglBackend::getTextDimensions(std::string text, int size) {
+    auto dimensions = mainFont.getTextDimensions(text,size);
+    return UITextDimensions{static_cast<int>(dimensions.x), static_cast<int>(dimensions.y)};
 }

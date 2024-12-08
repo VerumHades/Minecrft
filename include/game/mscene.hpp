@@ -149,5 +149,5 @@ class UICrosshair: public UIFrame{
         int thickness = 5;
     public:
         UICrosshair(UIManager& manager): UIFrame(manager){setFocusable(false);setHoverable(false);}
-        virtual void getRenderingInformation(RenderYeetFunction& yeet);
+        virtual void getRenderingInformation(UIRenderBatch& batch);
 };

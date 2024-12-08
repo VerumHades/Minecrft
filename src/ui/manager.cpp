@@ -1,39 +1,14 @@
 #include <ui/manager.hpp>
 
-UIManager::UIManager(): loader(*this){
-    uiProgram.use();
-    fontManager.initialize();
+UIManager::UIManager(UIBackend* backend): loader(*this), backend(backend){
 
-    vao.bind();
-
-    int maxQuads = 50000;
-
-    vertexSize = vao.attachBuffer(reinterpret_cast<GLBuffer<float, GL_ARRAY_BUFFER>*>(&vertexBuffer), {VEC3,VEC2,VEC4,VEC2,FLOAT,FLOAT,FLOAT,VEC4,VEC4,VEC4,VEC4,VEC4,VEC4});
-    vertexBuffer.initialize(vertexSize * maxQuads, vertexSize);
-    vao.attachIndexBuffer(&indexBuffer);
-    indexBuffer.initialize(6 * maxQuads);
-
-    vao.unbind();
-
-    mainFont = std::make_unique<Font>("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
-    textures = std::make_unique<DynamicTextureArray>();
-
-    uiProgram.setSamplerSlot("tex",0);
-    uiProgram.setSamplerSlot("textAtlas",1);
 }
 
 void UIManager::resize(int width, int height){
     screenWidth = width;
     screenHeight = height;
 
-    projectionMatrix = glm::ortho(
-        0.0f,   // Left
-        (float)width, // Right
-        (float)height, // Top
-        0.0f,   // Bottom
-        -1.0f,  // Near plane
-        1.0f    // Far plane
-    );
+    backend->resizeVieport(width,height);
 
     if(!getCurrentWindow()) return;
 
@@ -59,155 +34,18 @@ void UIManager::stopDrawingAll(){
         element->stopDrawingChildren();
     }
 }
-static const glm::vec2 textureCoordinates[4] = {{0, 1},{1, 1},{1, 0},{0, 0}};
-const int vertexSize = UI_VERTEX_SIZE;
-
-bool UIRenderInfo::valid(){
-    return clipRegion.min.x < clipRegion.max.x && clipRegion.min.y < clipRegion.max.y;
-}
-
-void UIRenderInfo::process(Mesh* output, size_t offset_index){
-    if(!clip){
-        clipRegion.min.x = x;
-        clipRegion.min.y = y;
-        clipRegion.max.x = x + width;
-        clipRegion.max.y = y + height;
-    }
-
-    glm::vec2 vertices_[4] = {
-        {x    , y    },
-        {x + width, y    },
-        {x + width, y + height},
-        {x    , y + height}
-    };
-
-    glm::vec4 borderSize = {
-        borderWidth.top,
-        borderWidth.right,
-        borderWidth.bottom,
-        borderWidth.left
-    };
-
-    // Border width recalculated to be relative to the elements dimensions
-    if(borderSize.x != 0) borderSize.x /= static_cast<float>(height);
-    if(borderSize.y != 0) borderSize.y /= static_cast<float>(width);
-    if(borderSize.z != 0) borderSize.z /= static_cast<float>(height);
-    if(borderSize.w != 0) borderSize.w /= static_cast<float>(width);
-
-    //std::cout << "ZIndex: " << static_cast<float>(zIndex) / 100.0f << std::endl;
-    //std::cout << borderSize.x << " " << borderSize.y << " " << borderSize.z << " " << borderSize.w << std::endl;
-    uint vecIndices[4];
-    uint startIndex = (uint) output->getVertices().size() / vertexSize + offset_index;
-
-    RawRenderInfo vertex;
-    for(int i = 0; i < 4; i++){
-        int offset = i * vertexSize;
-
-        vertex[0 + offset] = vertices_[i].x;
-        vertex[1 + offset] = vertices_[i].y;
-        vertex[2 + offset] = static_cast<float>(zIndex) / 100.0f;
-
-        if(hasTexCoords){
-            vertex[3 + offset] = texCoords[i].x;
-            vertex[4 + offset] = texCoords[i].y;
-        }
-        else{
-            vertex[3 + offset] = textureCoordinates[i].x;
-            vertex[4 + offset] = textureCoordinates[i].y;
-        }
-
-        vertex[5 + offset] = color.r;
-        vertex[6 + offset] = color.g;
-        vertex[7 + offset] = color.b;
-        vertex[8 + offset] = color.a;
-
-        vertex[9 + offset] = static_cast<float>(width);
-        vertex[10 + offset] = static_cast<float>(height);
-
-        vertex[11 + offset] = isText ? 1.0 : 0.0;
-        vertex[12 + offset] = isTexture ? 1.0 : 0.0;
-        vertex[13 + offset] = static_cast<float>(textureIndex);
-
-        vertex[14 + offset] = borderSize.x;
-        vertex[15 + offset] = borderSize.y;
-        vertex[16 + offset] = borderSize.z;
-        vertex[17 + offset] = borderSize.w;
-
-        vertex[18 + offset] = clipRegion.min.x;
-        vertex[19 + offset] = clipRegion.min.y;
-        vertex[20 + offset] = clipRegion.max.x;
-        vertex[21 + offset] = clipRegion.max.y;
-
-        for(int j  = 0;j < 4; j++){
-            vertex[22 + offset + j * 4] = borderColor[j].r;
-            vertex[23 + offset + j * 4] = borderColor[j].g;
-            vertex[24 + offset + j * 4] = borderColor[j].b;
-            vertex[25 + offset + j * 4] = borderColor[j].a;
-        }
-
-        vecIndices[i] = startIndex + i;
-    }
-
-    output->getVertices().insert(output->getVertices().end(), vertex.begin(), vertex.end());
-    output->getIndices().insert(output->getIndices().end(), {vecIndices[3], vecIndices[1], vecIndices[0], vecIndices[3], vecIndices[2], vecIndices[1]});
-}
-
-
 
 void UIFrame::update(){
-    std::vector<UIRenderInfo> accumulatedRenderInfo;
-    auto* accumulatedRenderInfoPointer = &accumulatedRenderInfo;
+    UIRenderBatch batch;
 
-    int zIndexOffset = 1;
-    int* zIndexOffsetPtr = &zIndexOffset;
-    RenderYeetFunction yeetCapture = [accumulatedRenderInfoPointer, this, zIndexOffsetPtr](UIRenderInfo info, UIRegion clipRegion){
-        info.clip = true;
-        info.clipRegion = clipRegion;
-        info.zIndex = this->zIndex + ((*zIndexOffsetPtr)++);
-        
-        accumulatedRenderInfoPointer->push_back(info);
-        //std::cout << info.x << " " << info.y << " " << info.width << " " << info.height << std::endl;
-    };
-
-    getRenderingInformation(yeetCapture);
-
-    size_t new_vertex_data_size = accumulatedRenderInfo.size() * vertexSize * 4;
-    size_t new_index_data_size = accumulatedRenderInfo.size() * 6;
-
-    if(vertex_data_size != new_vertex_data_size){
-        //std::cout << "New vertex buffer allocation." << std::endl;
-        auto [vertexSuccess, vertexBufferOffset] = manager.getVertexBuffer().allocateAhead(new_vertex_data_size);
-        if(!vertexSuccess){
-            std::cerr << "Failed to update buffer. Not enought space?" << std::endl;
-            return;
-        }
-
-        if(vertex_data_size != 0) manager.getVertexBuffer().free(vertex_data_start);
-
-        vertex_data_size = new_vertex_data_size;
-        vertex_data_start = vertexBufferOffset;
-    }
-
-    if(index_data_size != new_index_data_size){
-        //std::cout << "New index buffer allocation." << std::endl;
-        auto [indexSuccess, indexBufferOffset] = manager.getIndexBuffer().allocateAhead(new_index_data_size);
-        if(!indexSuccess){
-            std::cerr << "Failed to update buffer. Not enought space?" << std::endl;
-            return;
-        }
-
-        if(index_data_size != 0) manager.getIndexBuffer().free(index_data_start);
-
-        index_data_size = new_index_data_size;
-        index_data_start = indexBufferOffset;
-    }
-
-    Mesh mesh = Mesh();
-    for(auto& info: accumulatedRenderInfo) info.process(&mesh, vertex_data_start / vertexSize);
+    getRenderingInformation(batch);
     
-    manager.getVertexBuffer().insertDirect(vertex_data_start, mesh.getVertices().size(), mesh.getVertices().data());
-    manager.getIndexBuffer().insertDirect(index_data_start, mesh.getIndices().size(), mesh.getIndices().data());
+    batch.texture = dedicated_texture_array.get();        
+    batch.clipRegion = clipRegion;
 
+    stopDrawing();
+    draw_batch_iterator = manager.getBackend()->addRenderBatch(batch);
+    has_draw_batch = true;
 
    // std::cout << "Update element hover: " << this->identifiers.tag << " #" << this->identifiers.id << " ";
     //for(auto& classname: this->identifiers.classes) std::cout << "." << classname;
@@ -216,13 +54,10 @@ void UIFrame::update(){
 }
 
 void UIFrame::stopDrawing(){
-    if(vertex_data_size != 0) manager.getVertexBuffer().free(vertex_data_start);
-    if(index_data_size != 0) manager.getIndexBuffer().free(index_data_start);
+    if(!has_draw_batch) return;
 
-    vertex_data_start = -1ULL;
-    index_data_start = -1ULL;
-    vertex_data_size = 0;
-    index_data_size = 0;
+    manager.getBackend()->removeBatch(draw_batch_iterator);
+    has_draw_batch = false;
 }
 
 void UIFrame::updateChildren(){
@@ -236,45 +71,6 @@ void UIFrame::stopDrawingChildren(){
     for(auto& child: children){
         child->stopDrawing();
         child->stopDrawingChildren();
-    }
-}
-
-void UIManager::buildTextRenderingInformation(RenderYeetFunction& yeet, UIRegion& clipRegion, std::string text, float x, float y, int font_size, UIColor color){
-    float scale = static_cast<float>(font_size) / static_cast<float>(mainFont->getSize());
-    //std::cout << scale << std::endl;
-    glm::vec2 textDimensions = mainFont->getTextDimensions(text, font_size);
-
-    // Iterate through each character in the text
-    for (auto c = text.begin(); c != text.end(); c++) {
-        Character ch = mainFont->getCharacters()[*c];
-
-        GLfloat xpos = x + ch.Bearing.x * scale;
-        GLfloat ypos = y - ch.Bearing.y * scale + textDimensions.y;
-
-        GLfloat w = ch.Size.x * scale;
-        GLfloat h = ch.Size.y * scale;
-
-        //ypos += textDimensions.y - h;
-
-        yeet(
-            UIRenderInfo::Text(
-                static_cast<int>(xpos),
-                static_cast<int>(ypos),
-                static_cast<int>(w),
-                static_cast<int>(h),
-                color,
-                {
-                    {ch.TexCoordsMin.x, ch.TexCoordsMin.y},
-                    {ch.TexCoordsMax.x, ch.TexCoordsMin.y},
-                    {ch.TexCoordsMax.x, ch.TexCoordsMax.y},
-                    {ch.TexCoordsMin.x, ch.TexCoordsMax.y}
-                }
-            ),
-            clipRegion
-        );
-
-        // Advance to next glyph
-        x += (ch.Advance >> 6) * scale;  // Bitshift by 6 to get the value in pixels
     }
 }
 
@@ -317,72 +113,27 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
     }
 }
 
-void UIManager::renderElementAndChildren(std::shared_ptr<UIFrame>& element, uint& boundTexture){
-    if(element->vertex_data_size != 0 && element->index_data_size != 0){
-        if(
-            element->dedicated_texture_array &&
-            boundTexture != element->dedicated_texture_array->getID()
-        ){
-            boundTexture = element->dedicated_texture_array->getID();
-            element->dedicated_texture_array->bind(0);
-        }
-        else if(boundTexture != textures->getID() && !element->dedicated_texture_array){
-            boundTexture = textures->getID();
-            textures->bind(0);
-        }
-
-        glDrawElements(GL_TRIANGLES, element->index_data_size, GL_UNSIGNED_INT, reinterpret_cast<void*>(element->index_data_start * sizeof(uint)));
+void UIManager::renderElementAndChildren(std::shared_ptr<UIFrame>& element){
+    if(element->has_draw_batch){
+        backend->renderBatch(element->draw_batch_iterator);
     }
     
     for(auto& child: element->children){
-        renderElementAndChildren(child, boundTexture);
+        renderElementAndChildren(child);
     }
 }
 
 void UIManager::render(){
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    //glClear(GL_DEPTH_BUFFER_BIT);
-
-    uiProgram.updateUniforms();
-
-    vao.bind();
-    textures->bind(0);
-    mainFont->getAtlas()->bind(1);
-    
-    uint boundTexture = textures->getID();
-
     auto* window = getCurrentWindow();
     if(!window) return;
 
+    backend->setupRender();
+
     for(auto& element: window->getCurrentLayer().getElements()){
-        renderElementAndChildren(element, boundTexture);
-    }
-    /*
-    size_t current_start = 0;
-
-    size_t current_position = 0;
-    size_t current_size = 0;
-    for(auto& [start, block]: indexBuffer.getTakenBlocks()){
-        if(block->start == current_position){
-            current_size += block->size;
-            current_position += block->size;
-            continue;
-        }
-
-        glDrawElements(GL_TRIANGLES, current_size, GL_UNSIGNED_INT, reinterpret_cast<void*>(current_start * sizeof(uint)));
-
-        current_start = block->start;
-        current_size = block->size;
-        current_position = block->start + block->size;
+        renderElementAndChildren(element);
     }
 
-    if(current_size != 0) glDrawElements(GL_TRIANGLES, current_size, GL_UNSIGNED_INT, reinterpret_cast<void*>(current_start * sizeof(uint)));
-    */
-
-
-    vao.unbind();
+    backend->cleanupRender();
 }
 
 void UIManager::mouseMove(int x, int y){
@@ -548,19 +299,16 @@ bool UIFrame::pointWithin(glm::vec2 point, int padding){
     return pointWithinBounds(point, transform, padding);
 }
 
-void UIFrame::getRenderingInformation(RenderYeetFunction& yeet){
+void UIFrame::getRenderingInformation(UIRenderBatch& batch){
     auto bg = getAttribute(&Style::backgroundColor);
     if(bg == UIColor{0,0,0,0}) return;
-    yeet(
-        UIRenderInfo::Rectangle(
-            transform.x,transform.y,transform.width,transform.height,
-            bg,
-            borderSizes,
-            getAttribute(&Style::borderColor)
-        ),
-        clipRegion
+
+    batch.BorderedRectangle(
+        transform.x,transform.y,transform.width,transform.height,
+        bg,
+        borderSizes,
+        getAttribute(&Style::borderColor)
     );
-    //manager.buildTextRenderingInformation(yeet, clipRegion, "" + std::to_string(zIndex), transform.x, transform.y, 1.0, {255,255,255});
 };
 
 static inline void reduceRegionTo(UIRegion& target, UIRegion& to){
@@ -658,125 +406,38 @@ void UIFrame::calculateTransforms(){
     calculateChildrenTransforms();
 }
 
-UITransform UILayout::calculateContentTransform(UIFrame* frame){
-    return frame->getViewportTransform();
-}
-
-void UILayout::arrangeChildren(UIFrame* frame){
-    int offsetX = 0;
-    int offsetY = 0;
-    int greatestY = 0;
-
-    auto& frame_content_transform = frame->getContentTransform();
-    for(auto& child: frame->getChildren()){
-        auto& bounding_transform = child->getBoundingTransform();
-        
-        greatestY = std::max(child->getBoundingTransform().height,greatestY);
-
-        if(offsetX + bounding_transform.width > frame_content_transform.width){
-            offsetX = 0;
-            offsetY += greatestY;
-            greatestY = 0;
-
-            child->setPosition(offsetX,offsetY);
-            continue;
-        }
-
-        child->setPosition(offsetX,offsetY);
-        
-        offsetX += child->getBoundingTransform().width;
-    }
-}
-
-UITransform UIFlexLayout::calculateContentTransform(UIFrame* frame){
-    auto& viewport_transform = frame->getViewportTransform();
-    int size = 0;
-        
-    for(auto& child: frame->getChildren()){
-        child->calculateElementsTransforms();
-        auto ct = child->getBoundingTransform();
-
-        size += direction == HORIZONTAL ? ct.width : ct.height;
-    } 
-
-    return {
-        viewport_transform.x,
-        viewport_transform.y,
-        direction == HORIZONTAL ? size : viewport_transform.width,
-        direction == VERTICAL   ? size : viewport_transform.height
-    };
-}
-void UIFlexLayout::arrangeChildren(UIFrame* frame) {
-    int offset = 0;
-
-    auto& content_transform = frame->getContentTransform();
-    for(auto& child: frame->getChildren()){
-        
-        child->calculateElementsTransforms();
-        auto ct = child->getBoundingTransform();
-
-        child->setPosition(
-            direction == HORIZONTAL ? TValue(PIXELS,offset) : static_cast<float>(content_transform.width ) / 2.0f - static_cast<float>(ct.width ) / 2.0f,
-            direction == VERTICAL   ? TValue(PIXELS,offset) : static_cast<float>(content_transform.height) / 2.0f - static_cast<float>(ct.height) / 2.0f
-        );
-        offset += 
-            direction == HORIZONTAL ?
-            ct.width :
-            ct.height;
-    }
-}
-
-void UILabel::getRenderingInformation(RenderYeetFunction& yeet) {
+void UILabel::getRenderingInformation(UIRenderBatch& batch) {
     auto t = getTextPosition(manager);
-    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text, font_size);
+    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(text, font_size);
 
     //std::cout << "Label with text: " << text << " has width of unit: " << width.unit << " and height of unit: " << height.unit << 
     //"That is" << width.value << " and " << height.value << std::endl;
 
     //std::cout << textDimensions.x << " " << textDimensions.y << std::endl;
 
-    if(width .unit == NONE) width  = textDimensions.x + textPadding * 2;
-    if(height.unit == NONE) height = textDimensions.y + textPadding * 2;
+    if(width .unit == NONE) width  = textDimensions.width + textPadding * 2;
+    if(height.unit == NONE) height = textDimensions.height + textPadding * 2;
 
-    UIFrame::getRenderingInformation(yeet);
-    manager.buildTextRenderingInformation(yeet,clipRegion,text,t.x,t.y,font_size,getAttribute(&Style::textColor));
+    UIFrame::getRenderingInformation(batch);
+    batch.Text(text, t.x, t.y, font_size, getAttribute(&Style::textColor));
 }
 
 UITransform UILabel::getTextPosition(UIManager& manager){
-    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text, font_size);
+    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(text, font_size);
 
     auto textPosition = getAttribute(&Style::textPosition);
 
     int tx = 0;
     if     (textPosition == UIFrame::Style::TextPosition::LEFT  ) tx = contentTransform.x + textPadding;
-    else if(textPosition == UIFrame::Style::TextPosition::CENTER) tx = contentTransform.x + contentTransform.width  / 2 - textDimensions.x / 2;
-    else if(textPosition == UIFrame::Style::TextPosition::RIGHT ) tx = contentTransform.x + contentTransform.width - textDimensions.x - textPadding;
+    else if(textPosition == UIFrame::Style::TextPosition::CENTER) tx = contentTransform.x + contentTransform.width  / 2 - textDimensions.width / 2;
+    else if(textPosition == UIFrame::Style::TextPosition::RIGHT ) tx = contentTransform.x + contentTransform.width - textDimensions.width - textPadding;
 
-    int ty = contentTransform.y + contentTransform.height / 2 - textDimensions.y / 2;
+    int ty = contentTransform.y + contentTransform.height / 2 - textDimensions.height / 2;
 
     return {
         tx,
         ty
     };
-}
-
-void UIImage::loadFromFile(std::string path){
-    if(!loaded){
-        manager.getTextures()->addTexture(path);
-        loaded = true;
-    }
-}
-
-void UIImage::getRenderingInformation(RenderYeetFunction& yeet){
-    if(!loaded) return;
-    yeet(
-        UIRenderInfo::Texture(
-            transform.x,transform.y,transform.width,transform.height,
-            manager.getTextures()->getTextureUVs(path),
-            manager.getTextures()->getTextureIndex(path)
-        ),
-        clipRegion
-    );
 }
 
 UIInput::UIInput(UIManager& manager): UILabel(manager) {
@@ -803,26 +464,23 @@ UIInput::UIInput(UIManager& manager): UILabel(manager) {
     };
 }
 
-void UIInput::getRenderingInformation(RenderYeetFunction& yeet){
-    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text, font_size);
+void UIInput::getRenderingInformation(UIRenderBatch& batch){
+    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(text, font_size);
 
     auto tpos = getTextPosition(manager);
     auto textColor = getAttribute(&UIFrame::Style::textColor);
     
-    UILabel::getRenderingInformation(yeet);
+    UILabel::getRenderingInformation(batch);
 
-    yeet(
-        UIRenderInfo::Rectangle(
-            tpos.x + textDimensions.x,
+    batch.Rectangle(
+        {
+            tpos.x + textDimensions.width,
             transform.y + transform.height / 6,
             3,
-            (transform.height / 3) * 2,
-            textColor
-        ),
-        clipRegion
-    );    
-    
-
+            (transform.height / 3) * 2
+        },
+        textColor
+    );
     //out.insert(out.end(), temp.begin(), temp.end());
 }
 
@@ -891,32 +549,27 @@ void  UISlider::moveTo(UIManager& manager, glm::vec2 pos){
     if(onMove) onMove();
 }
 
-void UISlider::getRenderingInformation(RenderYeetFunction& yeet){
-    yeet(
-        UIRenderInfo::Rectangle(
-            transform,
-            getAttribute(&Style::backgroundColor),
-            borderSizes,
-            getAttribute(&Style::borderColor)
-        ),
-        clipRegion
+void UISlider::getRenderingInformation(UIRenderBatch& batch){
+    batch.BorderedRectangle(
+        transform,
+        getAttribute(&Style::backgroundColor),
+        borderSizes,
+        getAttribute(&Style::borderColor)
     );
 
     //auto ht = getHandleTransform(manager);
     //std::cout << ht.x << " " << ht.y << " " << ht.width << " " << ht.height << std::endl;
 
-    yeet(UIRenderInfo::Rectangle(getHandleTransform(manager), handleColor, {3,3,3,3},UIRenderInfo::generateBorderColors(handleColor)),clipRegion);
+    batch.Rectangle(getHandleTransform(manager), handleColor);
     
     std::string text = std::to_string(*value);
-    glm::vec2 textDimensions = manager.getMainFont().getTextDimensions(text, font_size);
+    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(text, font_size);
 
     if(displayValue){
-        int tx = transform.x + transform.width + valueDisplayOffset;
-        int ty = transform.y + transform.height / 2 - textDimensions.y / 2;
+        int tx = transform.x + valueDisplayOffset;
+        int ty = transform.y + transform.height / 2 - textDimensions.height / 2;
 
-        auto extendedClip = clipRegion;
-        extendedClip.max.x += textDimensions.x + valueDisplayOffset + 5;
-        manager.buildTextRenderingInformation(yeet,extendedClip, text,tx,ty,font_size,getAttribute(&Style::textColor));
+        batch.Text(text,tx,ty,font_size,getAttribute(&Style::textColor));
     }
 }
 
