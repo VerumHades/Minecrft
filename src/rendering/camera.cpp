@@ -29,7 +29,7 @@ void PerspectiveCamera::adjustFOV(float fov){
 }
 
 
-void PerspectiveCamera::calculateFrustum(){
+void PerspectiveCamera::calculateFrustum(){ 
     const float halfVSide = zFar * tanf(FOV * .5f);
     const float halfHSide = halfVSide * aspect;
     const glm::vec3 frontMultFar = zFar * this->direction;

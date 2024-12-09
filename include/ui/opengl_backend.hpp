@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ui/backend.hpp>
-#include <rendering/shaders.hpp>
+#include <rendering/opengl/shaders.hpp>
 #include <general.hpp>
 #include <coherency.hpp>
 #include <list>
@@ -13,7 +13,7 @@ class UIOpenglBackend: public UIBackend{
         const int vertex_size = 9;
 
         FontManager fontManager;
-        Font mainFont = Font("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 64);
+        Font mainFont = Font("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 32);
 
         GLVertexArray vao;
 

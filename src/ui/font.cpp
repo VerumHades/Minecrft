@@ -43,7 +43,7 @@ void Font::createAtlas(){
     int atlasWidth = 512;  // Chosen size for the atlas, adjust based on your needs
     int atlasHeight = 512;
     
-    atlas = std::make_unique<GLTexture>();
+    atlas = std::make_unique<GLTexture2D>();
     atlas->bind(0);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlasWidth, atlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE, 0);

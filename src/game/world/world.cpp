@@ -77,7 +77,7 @@ std::tuple<bool, Block*> World::checkForPointCollision(glm::vec3 position, bool 
     return {false, nullptr};
 }
 
-bool World::collidesWith(glm::vec3 position, Entity* checked_entity) const {
+bool World::collidesWith(glm::vec3 position, Entity* checked_entity) {
     int range = 1;
     const RectangularCollider* collider = &checked_entity->getCollider();
 
@@ -112,31 +112,22 @@ bool World::collidesWith(glm::vec3 position, Entity* checked_entity) const {
         }
     }
 
-    auto region_position = getRegionPosition(position);
-    if(!entity_regions.contains(region_position)) return false;
+    auto [total, regions] = getRegionsForCollider(position, collider);
 
-    for(auto* entity: entity_regions.at(region_position)){
-        if(collider == &entity->getCollider()) continue;
-        if(entity->getCollider().collidesWith(collider, entity->getPosition(), position)){
-            if(checked_entity->onCollision) checked_entity->onCollision(checked_entity, entity);
-            if(entity->onCollision) entity->onCollision(entity, checked_entity);
-            return true;
+    //if(&getPlayer() == checked_entity) std::cout << "Checking regions total: " << total << std::endl;
+
+    for(int i = 0;i < total;i++){
+        auto region_position = regions[i];
+
+        for(auto* entity: entity_regions.at(region_position)){
+            if(collider == &entity->getCollider()) continue;
+            if(entity->getCollider().collidesWith(collider, entity->getPosition(), position)){
+                if(checked_entity->onCollision) checked_entity->onCollision(checked_entity, entity);
+                if(entity->onCollision) entity->onCollision(entity, checked_entity);
+                return true;
+            }
         }
     }
-
-    auto second_region_position = getRegionPosition(position + glm::vec3{collider->x + collider->width,collider->y + collider->height,collider->z + collider->depth});
-    if(second_region_position == region_position) return false;
-    if(!entity_regions.contains(second_region_position)) return false;
-
-    for(auto* entity: entity_regions.at(second_region_position)){
-        if(collider == &entity->getCollider()) continue;
-        if(entity->getCollider().collidesWith(collider, entity->getPosition(), position)){
-            if(checked_entity->onCollision) checked_entity->onCollision(checked_entity, entity);
-            if(entity->onCollision) entity->onCollision(entity, checked_entity);
-            return true;
-        }
-    }
-
 
     return false;
 }
@@ -222,57 +213,87 @@ glm::ivec3 World::getRegionPosition(glm::vec3 position) const {
     return glm::floor(position / static_cast<float>(entity_region_size));
 }
 
+std::tuple<int,std::array<glm::ivec3,8>> World::getRegionsForCollider(const glm::vec3 position, const RectangularCollider* collider) {
+    std::array<glm::ivec3,8> out = {};
+    int total = 0;
+
+    std::array<glm::vec3,8> offsets = {
+        glm::vec3{0              , 0               , 0              },
+        glm::vec3{collider->width, 0               , 0              },
+        glm::vec3{0              , collider->height, 0              },
+        glm::vec3{collider->width, collider->height, 0              },
+        glm::vec3{0              , 0               , collider->depth},
+        glm::vec3{collider->width, 0               , collider->depth},
+        glm::vec3{0              , collider->height, collider->depth},
+        glm::vec3{collider->width, collider->height, collider->depth}
+    };
+    
+    std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> visited = {};
+    for(auto& offset: offsets){
+        auto actual_position = position + offset + glm::vec3(collider->x,collider->y,collider->z);
+
+        auto region_position = getRegionPosition(actual_position);
+        if(visited.contains(region_position)) continue;
+
+        if(!entity_regions.contains(region_position)){
+            entity_regions[region_position] = {};
+        }
+        
+        //if(collider == &getPlayer().getCollider()) std::cout << offset.x << " " << offset.y << " " << offset.z << std::endl;
+        //std::cout << "Actual: " << actual_position.x << " " << actual_position.y << " " << actual_position.z << std::endl;
+        //std::cout << "Region:" <<region_position.x << " " << region_position.y << " " << region_position.z << std::endl;
+
+        out[total++] = region_position;
+        visited.emplace(region_position);
+    }
+
+    //std::cout << total << std::endl;
+
+    return {total, out};
+}
+
 void World::drawEntity(Entity& entity){
     if(!entity.getModel()) return;
         
     entity.getModel()->requestDraw(entity.getPosition() + glm::vec3{0,position,0}, {0.5,0.5,0.5}, {0,rotation,0}, {-0.5,0,0});
 }
 
-void World::addEntityToRegion(const glm::ivec3 region_position, Entity& entity){
-    if(!entity_regions.contains(region_position)){
-        entity_regions[region_position] = {};
+void World::updateEntityRegionCorespondence(Entity& entity){
+    auto [total, regions] = getRegionsForCollider(entity.getPosition(), &entity.getCollider());
+    auto& entityRegionsPositions = entity.getRegionPositions();
+
+    std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> new_positions = {};
+    for(int i = 0;i < total;i++){
+        auto region_position = regions[i];
+        new_positions.emplace(region_position);
+
+        if(entityRegionsPositions.contains(region_position)) continue;
+
+        addEntityToRegion(region_position, entity);
+        entityRegionsPositions.emplace(region_position);
     }
 
+    for(auto& region_position: entityRegionsPositions){
+        if(new_positions.contains(region_position)) continue;
+
+        removeEntityFromRegion(region_position, entity);
+        entityRegionsPositions.erase(region_position);
+    }
+}
+
+void World::addEntityToRegion(const glm::ivec3 region_position, Entity& entity){
     entity_regions[region_position].push_back(&entity);
-    entity.getLastRegionPosition().emplace(region_position);  
 }
 bool World::removeEntityFromRegion(const glm::ivec3 region_position,  Entity& entity){
-    if(!entity_regions.contains(region_position)) return false;
-
     auto& last_region = entity_regions[region_position];
 
     auto iter = std::find(last_region.begin(), last_region.end(), &entity);
     if(iter == last_region.end()) return false;
     last_region.erase(iter);
 
-    entity.getLastRegionPosition().reset();
+    if(last_region.size() == 0) entity_regions.erase(region_position);
     
     return true;
-}
-
-void World::updateEntity(Entity& entity, int& index){  
-    glm::ivec3 current_region_position = getEntityRegionPosition(entity);
-    auto& last_region_position_opt = entity.getLastRegionPosition();
-    
-    if(!last_region_position_opt.has_value()) addEntityToRegion(current_region_position, entity);
-    else{
-        auto last_region_position = last_region_position_opt.value();
-        if(current_region_position != last_region_position){
-            removeEntityFromRegion(last_region_position, entity);
-            addEntityToRegion(current_region_position, entity);
-        }
-    }
-
-    if(entity.shouldGetDestroyed()){
-        auto last_region_position = last_region_position_opt.value();
-        if(current_region_position != last_region_position) removeEntityFromRegion(last_region_position, entity);
-
-        entities.erase(entities.begin() + index);
-        return;
-    }
-
-    entity.update(this);
-    index++;
 }
 
 void World::drawEntities(){
@@ -292,18 +313,49 @@ void World::drawEntities(){
 void World::updateEntities(){
     int index = 0;
 
-    for(auto& entity: entities){
-        updateEntity(entity, index);
+    for(int index = 0;index < entities.size();){
+        Entity& entity = entities[index];
+        updateEntityRegionCorespondence(entity);
+
+        
+        entity.update(this);
+        if(entity.shouldGetDestroyed()){
+            for(auto& region_position: entity.getRegionPositions()){
+                removeEntityFromRegion(region_position, entity);
+            }
+
+            entities.erase(entities.begin() + index);
+            continue;
+        }
+
+        index++;
     }
 }
 void World::drawEntityColliders(WireframeCubeRenderer& renderer, size_t start_index){
-    for(auto& entity: entities){
-        auto& collider = entity.getCollider();
+    /*for(auto& [region_position,entities]: entity_regions){
         renderer.setCube(
             start_index++,
-            glm::vec3{collider.x, collider.y, collider.z} + entity.getPosition(), 
-            glm::vec3{collider.width, collider.height, collider.depth},
-            {1.0,0,0}
+            region_position * entity_region_size, 
+            glm::vec3{entity_region_size},
+            {1.0,0.0,1.0}
         );
-    }
+        for(auto& entity: entities){
+            auto& collider = entity->getCollider();
+            renderer.setCube(
+                start_index++,
+                glm::vec3{collider.x, collider.y, collider.z} + entity->getPosition(), 
+                glm::vec3{collider.width, collider.height, collider.depth},
+                {1.0,1.0,0}
+            );
+        }
+    }*/
+
+    /*for(auto& region_position: getPlayer().getRegionPositions()){
+        renderer.setCube(
+            start_index++,
+            region_position * entity_region_size, 
+            glm::vec3{entity_region_size},
+            {1.0,0.0,1.0}
+        );
+    }*/
 }

@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp> 
 #include <glm/gtc/type_ptr.hpp>  
-#include <rendering/buffer.hpp>
+#include <rendering/opengl/buffer.hpp>
 #include <fstream>
 #include <sstream>
 #include <unordered_set>

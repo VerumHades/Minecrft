@@ -13,8 +13,8 @@
 #include <memory>
 #include <algorithm>
 
-#include <rendering/texture.hpp>
-#include <rendering/shaders.hpp>
+#include <rendering/opengl/texture.hpp>
+#include <rendering/opengl/shaders.hpp>
 
 struct Character {
     unsigned int TextureID;  // This will be the ID of the atlas texture
@@ -31,7 +31,7 @@ class Font{
         FT_Face face;
         int size;
 
-        std::unique_ptr<GLTexture> atlas;
+        std::unique_ptr<GLTexture2D> atlas;
         std::unordered_map<char, Character> characters;
         void createAtlas();
 
@@ -40,7 +40,7 @@ class Font{
 
         glm::vec2 getTextDimensions(std::string, int size);
 
-        GLTexture* getAtlas(){return atlas.get();}
+        GLTexture2D* getAtlas(){return atlas.get();}
         std::unordered_map<char, Character>& getCharacters() {return characters;}
 
         int getSize(){return size;}

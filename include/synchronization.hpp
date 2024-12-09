@@ -4,7 +4,7 @@
 #include <atomic>
 #include <vector>
 
-#include <rendering/buffer.hpp>
+#include <rendering/opengl/buffer.hpp>
 
 /*
     A thread safe buffer that enables one side to write and the other side to read the data without interfierence

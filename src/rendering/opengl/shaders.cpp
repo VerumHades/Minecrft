@@ -1,4 +1,4 @@
-#include <rendering/shaders.hpp>
+#include <rendering/opengl/shaders.hpp>
 
 uint compileShader(const char* source, int type, std::string filename = ""){
     uint shader = glCreateShader(type);

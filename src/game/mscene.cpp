@@ -488,15 +488,8 @@ void MainScene::render(){
     glDisable( GL_CULL_FACE );
 
     int start_index = 20;
-    for(auto& entity: world->getEntities()){
-        auto& collider = entity.getCollider();
-        wireframeRenderer.setCube(
-            start_index++,
-            glm::vec3{collider.x, collider.y, collider.z} + entity.getPosition(), 
-            glm::vec3{collider.width, collider.height, collider.depth},
-            {1.0,0,0}
-        );
-    }
+    wireframeRenderer.setCubes(start_index);
+    world->drawEntityColliders(wireframeRenderer, start_index);
 
     wireframeRenderer.draw();
 

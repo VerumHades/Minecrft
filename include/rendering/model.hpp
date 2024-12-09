@@ -10,8 +10,8 @@
 #include <glm/gtc/type_ptr.hpp>  
 
 #include <array>
-#include <rendering/buffer.hpp>
-#include <rendering/texture.hpp>
+#include <rendering/opengl/buffer.hpp>
+#include <rendering/opengl/texture.hpp>
 
 #include <synchronization.hpp>
 
@@ -35,7 +35,7 @@ class Model{
         }
         
     protected:
-        std::shared_ptr<GLTexture> texture = nullptr;
+        std::shared_ptr<GLTexture2D> texture = nullptr;
 
         GLBuffer<float, GL_ARRAY_BUFFER> vertex_buffer;
         GLBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> index_buffer;

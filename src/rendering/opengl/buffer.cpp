@@ -1,4 +1,4 @@
-#include <rendering/buffer.hpp>
+#include <rendering/opengl/buffer.hpp>
 
 void checkGLError(const char *file, int line){
     GLenum error;

@@ -48,10 +48,8 @@ void WireframeCubeRenderer::removeCube(size_t index){
 }
 
 void WireframeCubeRenderer::draw(){
-    vao.bind();
+    GLBinding vao_binding(vao);
+
     wireframeProgram.updateUniforms();
-
     glDrawElementsInstanced(GL_LINES, indexBuffer.size(), GL_UNSIGNED_INT, 0, cubes);
-
-    vao.unbind();
 }

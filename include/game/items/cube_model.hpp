@@ -34,6 +34,6 @@ class CubeModel: public Model{
             index_buffer.initialize(mesh.getIndices().size());
             index_buffer.insert(0, mesh.getIndices().size(), mesh.getIndices().data());
 
-            texture = std::make_shared<GLTexture>(texture_path.c_str());
+            texture = std::make_shared<GLTexture2D>(texture_path.c_str());
         }
 };

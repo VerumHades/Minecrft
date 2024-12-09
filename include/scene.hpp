@@ -2,7 +2,7 @@
 #define SCENE_H
 
 #include <memory>
-#include <rendering/shaders.hpp>
+#include <rendering/opengl/shaders.hpp>
 #include <rendering/mesh.hpp>
 #include <ui/font.hpp>
 #include <ui/manager.hpp>

@@ -4,7 +4,7 @@
 
 #include <rendering/mesh.hpp>
 #include <rendering/allocator.hpp>
-#include <rendering/buffer.hpp>
+#include <rendering/opengl/buffer.hpp>
 #include <rendering/culling.hpp>
 #include <rendering/wireframes.hpp>
 

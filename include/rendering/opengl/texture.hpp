@@ -25,17 +25,19 @@ class BindableTexture{
             glActiveTexture(GL_TEXTURE0 + unit);
             glBindTexture(TYPE, this->texture);
         }  
+        uint getType() {return TYPE;}
         uint getID() {return texture;}
 };
 
-class GLTexture: public BindableTexture{
+class GLTexture2D: public BindableTexture{
     private:
         void loadData(unsigned char* data, int width, int height, int channels);
 
     public:
-        GLTexture(const char* filename);
-        GLTexture(unsigned char* data, int width, int height);
-        GLTexture(){TYPE = GL_TEXTURE_2D;};
+        GLTexture2D(){TYPE = GL_TEXTURE_2D;};
+        GLTexture2D(const char* filename);
+        GLTexture2D(unsigned char* data, int width, int height);
+        GLTexture2D(int storage_type, int width, int height);
 };
 
 class GLDepthTexture: public BindableTexture{
@@ -94,6 +96,6 @@ class DynamicTextureArray: public BindableTexture{
 
 };
 
-#include <rendering/buffer.hpp>
+#include <rendering/opengl/buffer.hpp>
 
 #endif

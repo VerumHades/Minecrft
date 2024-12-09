@@ -4,8 +4,8 @@
 #include <cmath>
 #include <ctime>
 
-#include <rendering/texture.hpp>
-#include <rendering/buffer.hpp>
+#include <rendering/opengl/texture.hpp>
+#include <rendering/opengl/buffer.hpp>
 #include <rendering/chunk_buffer.hpp>
 #include <rendering/mesh.hpp>
 #include <rendering/camera.hpp>

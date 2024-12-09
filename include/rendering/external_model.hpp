@@ -7,7 +7,7 @@
 #include <functional> // For std::hash
 
 #include <rendering/camera.hpp>
-#include <rendering/buffer.hpp>
+#include <rendering/opengl/buffer.hpp>
 #include <rendering/mesh.hpp>
 
 #include <assimp/Importer.hpp>      // C++ importer interface
@@ -20,7 +20,7 @@ class ExternalModelManager;
 
 class ExternalModel{
     private:
-        std::unordered_map<int, GLTexture> loadedTextures;
+        std::unordered_map<int, GLTexture2D> loadedTextures;
 
         ExternalModelManager& manager;
         std::string rootPath;
@@ -39,7 +39,7 @@ class ExternalModel{
     public:
         ExternalModel(ExternalModelManager& manager) : manager(manager) {}
         bool loadFromFile(const std::string& filename, const std::string& rootPath);
-        GLTexture& getTexture(int index) {return loadedTextures.at(index);};
+        GLTexture2D& getTexture(int index) {return loadedTextures.at(index);};
         void draw();
 };
 

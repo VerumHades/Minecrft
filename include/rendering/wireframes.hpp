@@ -1,10 +1,10 @@
 #pragma once
 
-#include <rendering/buffer.hpp>
+#include <rendering/opengl/buffer.hpp>
 #include <array>
 #include <general.hpp>
 #include <glm/glm.hpp>
-#include <rendering/shaders.hpp>
+#include <rendering/opengl/shaders.hpp>
 
 class WireframeCubeRenderer{
     private:
@@ -23,6 +23,8 @@ class WireframeCubeRenderer{
         void setCube(size_t index, glm::vec3 position, glm::vec3 scale, glm::vec3 color);
         void removeCube(size_t index);
         void draw();
+
+        void setCubes(size_t value) {cubes = value;}
 
         ShaderProgram& getProgram() { return wireframeProgram; };
 };

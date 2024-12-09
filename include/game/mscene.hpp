@@ -5,9 +5,9 @@
 #include <iostream>
 #include <cmath>
 
-#include <rendering/buffer.hpp>
-#include <rendering/shaders.hpp>
-#include <rendering/texture.hpp>
+#include <rendering/opengl/buffer.hpp>
+#include <rendering/opengl/shaders.hpp>
+#include <rendering/opengl/texture.hpp>
 #include <rendering/camera.hpp>
 #include <rendering/wireframes.hpp>
 #include <rendering/texture_registry.hpp>

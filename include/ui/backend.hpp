@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <rendering/texture.hpp>
+#include <rendering/opengl/texture.hpp>
 #include <ui/color.hpp>
 
 struct UIRenderCommand{

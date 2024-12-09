@@ -6,7 +6,7 @@
 #include <game/blocks.hpp>
 
 #include <memory>
-#include <rendering/shaders.hpp>
+#include <rendering/opengl/shaders.hpp>
 
 #include <FastNoiseLite.h> 
 

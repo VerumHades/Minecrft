@@ -1,6 +1,6 @@
 #pragma once
 
-#include <rendering/texture.hpp>
+#include <rendering/opengl/texture.hpp>
 
 #include <unordered_map>
 #include <vector>

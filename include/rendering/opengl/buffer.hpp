@@ -16,6 +16,21 @@
 
 #include <chrono>
 
+template <typename T>
+class GLBinding{
+    private:
+        T& bound_object;
+    
+    public:
+        explicit GLBinding(T& bound_object): bound_object(bound_object) {
+            bound_object.bind();
+        }
+        // Release the resource (unlock the mutex) in the destructor
+        ~GLBinding() {
+            bound_object.unbind();
+        }
+};
+
 void checkGLError(const char *file, int line);
 #define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
 

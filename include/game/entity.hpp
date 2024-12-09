@@ -9,6 +9,9 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <unordered_set>
+
+#include <vec_hash.hpp>
 
 class World;
 
@@ -17,7 +20,7 @@ class Entity;
 
 class Collidable{
     public:
-        virtual bool collidesWith(glm::vec3 position, Entity* collider) const = 0;
+        virtual bool collidesWith(glm::vec3 position, Entity* collider) = 0;
 };
 
 class DroppedItem;
@@ -28,7 +31,8 @@ class Entity{
     private:
         glm::vec3 position = glm::vec3(0);
         glm::vec3 velocity = glm::vec3(0);
-        std::optional<glm::ivec3> lastRegionPosition = std::nullopt;
+        std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> regionPositions = {};
+        glm::vec3 lastPosition = glm::vec3(0);
 
         float maxVelocityHorizontal = 0.5f;
         float maxVelocityVertical = 0.5f;
@@ -64,7 +68,7 @@ class Entity{
 
         const std::string getTypename() const {return entity_typename;}
 
-        std::optional<glm::ivec3>& getLastRegionPosition() {return lastRegionPosition;}
+        std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal>& getRegionPositions() { return regionPositions; }
 
         bool shouldGetDestroyed(){return destroy;}
         const unsigned char* getData() {return entity_data; }

@@ -1,10 +1,10 @@
-#include <rendering/texture.hpp>
+#include <rendering/opengl/texture.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 
-void GLTexture::loadData(unsigned char* data, int width, int height, int channels){
+void GLTexture2D::loadData(unsigned char* data, int width, int height, int channels){
     glBindTexture(GL_TEXTURE_2D, this->texture);
 
     //CHECK_GL_ERROR();;
@@ -35,7 +35,7 @@ void GLTexture::loadData(unsigned char* data, int width, int height, int channel
     //CHECK_GL_ERROR();;
 }
 
-GLTexture::GLTexture(const char* filename){
+GLTexture2D::GLTexture2D(const char* filename){
     TYPE = GL_TEXTURE_2D;
 
     int width = 0, height = 0, nrChannels = 0;
@@ -50,10 +50,16 @@ GLTexture::GLTexture(const char* filename){
     stbi_image_free(data);
 }
 
-GLTexture::GLTexture(unsigned char* data, int width, int height){
+GLTexture2D::GLTexture2D(unsigned char* data, int width, int height){
     TYPE = GL_TEXTURE_2D;
 
     loadData(data, width, height, 4);
+}
+
+GLTexture2D::GLTexture2D(int storage_type, int width, int height): GLTexture2D(){
+    glTexImage2D(GL_TEXTURE_2D, 0, storage_type, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }
 
 GLTextureArray::GLTextureArray(){

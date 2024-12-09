@@ -7,7 +7,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 
-#include <rendering/texture.hpp>
+#include <rendering/opengl/texture.hpp>
 #include <rendering/culling.hpp>
 
 class PerspectiveCamera;
@@ -17,7 +17,7 @@ struct Volume
     virtual bool isOnFrustum(PerspectiveCamera& camera) const = 0;
 };
 
-#include <rendering/shaders.hpp>
+#include <rendering/opengl/shaders.hpp>
 
 class Camera{
     public:

@@ -31,7 +31,7 @@ void SpriteModel::setupMesh(){
     index_buffer.initialize(mesh->getIndices().size());
     index_buffer.insert(0, mesh->getIndices().size(), mesh->getIndices().data());
 
-    texture = std::make_shared<GLTexture>(sprite_path.c_str());
+    texture = std::make_shared<GLTexture2D>(sprite_path.c_str());
 }
 std::unique_ptr<Mesh> SpriteModel::generateFaces(){
     int width, height, original_channels;
