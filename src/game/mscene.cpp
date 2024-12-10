@@ -171,6 +171,7 @@ void MainScene::initialize(){
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
     camera.resizeScreen(width, height, camFOV);
+    gBuffer.resize(width, height);
     
     terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
@@ -394,38 +395,18 @@ void MainScene::render(){
     glm::vec3 camPosition = playerPosition + camOffset;
     glm::vec3 camDir = glm::normalize(camera.getDirection());
 
-    //std::cout << player.getVelocity().x << " " << player.getVelocity().y << " " << player.getVelocity().z << std::endl;
     camera.setPosition(camPosition);
-    // std::cout << std::endl;
-    //if(boundKeys[0].isDown) accelY += 0.0006;
-    //if(boundKeys[1].isDown) accelY -= 0.0006;
-
     chunkMeshGenerator.loadMeshFromQueue(chunkMeshRegistry);
 
     processMouseMovement();
 
-    bool updatedVisibility = false;
     if(updateVisibility > 0){
         auto istart = std::chrono::high_resolution_clock::now();
 
-        //int consideredTotal = 0;
-        //int *tr = &consideredTotal;
-
         chunkMeshRegistry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
 
-        //std::cout << (consideredTotal / pow(renderDistance*2,3)) * 100 << "%" << std::endl;
-        //End time point
-        auto iend = std::chrono::high_resolution_clock::now();
-        //std::cout << "Iterated over all chunks in: " << std::chrono::duration_cast<std::chrono::microseconds>(iend - istart).count() << " microseconds" << std::endl;
-
-        auto start = std::chrono::high_resolution_clock::now();
         updateVisibility = 0;
-        updatedVisibility = true;
     }
-
-    //printf("x:%f y:%f z:%f ax:%f ay:%f az:%f\ n",camX,camY,camZ,accelX,accelY,accelZ);
-
-    //suncam.setPosition(c0,400, camera.getPosition().z);
     
     int offsetX = ((int) camera.getPosition().x / 64) * 64;
     int offsetY = ((int) camera.getPosition().y / 64) * 64;
@@ -445,7 +426,9 @@ void MainScene::render(){
     );
     suncam.updateProjection();
 
-    //suncam.updateProjection();
+    /*
+        Render to shadow map
+    */
     glDisable( GL_CULL_FACE );
     suncam.setModelPosition({0,0,0});
     terrainProgram.updateUniforms();
@@ -453,34 +436,32 @@ void MainScene::render(){
     chunkMeshRegistry.draw();
     
     glEnable( GL_CULL_FACE );
-
+    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
+    // ====
 
-    
-    //skyboxProgram.updateUniforms();
-    
+    // Draw skybox
     glDisable(GL_CULL_FACE);
     skyboxProgram.use();
     skybox.draw();
     glEnable(GL_CULL_FACE);
+    // ====
 
+
+    gBuffer.bind();
+    glClearColor(0.0, 0.0, 0.0, 1.0); // keep it black so it doesn't leak into g-buffer
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    // Draw terrain
     terrainProgram.updateUniforms();
     terrainProgram.use();
-    blockTextureRegistry.getLoadedTextureArray().bind(0);
-
-    //auto start = std::chrono::high_resolution_clock::now();
 
     camera.setModelPosition({0,0,0});
     terrainProgram.updateUniforms();
     chunkMeshRegistry.draw();
 
-    //auto end = std::chrono::high_resolution_clock::now();
-    //std::cout << "Drawn terrain in: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
-
-    //std::cout << "Drawn: " << total << "/" << pow(renderDistance * 2,2) << std::endl;
-    /* Swap front and back buffers */
-
+    // Draw models
     itemPrototypeRegistry.updateModelsDrawRequestBuffer();
     modelProgram.updateUniforms();
     itemPrototypeRegistry.drawItemModels();
@@ -493,20 +474,9 @@ void MainScene::render(){
 
     wireframeRenderer.draw();
 
-    glClear(GL_DEPTH_BUFFER_BIT);
+    gBuffer.unbind();
 
-    glDisable( GL_CULL_FACE );
-    glDisable(GL_DEPTH_TEST);   
-
-    /*
-    auto* selectedBlockDefinition = blockRegistry.getBlockPrototypeByIndex(selectedBlock);
-
-    uiManager->getFontManager().renderText("FPS: " + std::to_string(1.0 / deltatime), 10,40, 1.0, {0,0,0}, testFont);
-    if(selectedBlockDefinition) uiManager->getFontManager().renderText("Selected block: " + selectedBlockDefinition->name, 10, 80, 1.0, {0,0,0}, testFont);
-    uiManager->getFontManager().renderText("X: " + std::to_string(playerPosition.x) + " Y: " + std::to_string(playerPosition.y) + "  Z: " + std::to_string(playerPosition.z), 10, 120, 1.0, {0,0,0}, testFont);
-    */
-    glEnable(GL_DEPTH_TEST);
-    glEnable( GL_CULL_FACE );
+    gBuffer.render();
 }
 
 void MainScene::regenerateChunkMesh(Chunk* chunk){

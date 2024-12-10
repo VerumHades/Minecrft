@@ -14,30 +14,25 @@ class BindableTexture{
     protected: 
         uint texture = 0;
         uint TYPE = GL_TEXTURE_2D;
-        BindableTexture(){
-            glGenTextures(1, &this->texture);
-        }
-        virtual ~BindableTexture(){
-            glDeleteTextures(1, &this->texture);
-        }
+        BindableTexture();
+        virtual ~BindableTexture();
     public:
-        void bind(int unit){
-            glActiveTexture(GL_TEXTURE0 + unit);
-            glBindTexture(TYPE, this->texture);
-        }  
-        uint getType() {return TYPE;}
-        uint getID() {return texture;}
+        void bind(int unit);
+        uint getType();
+        uint getID();
 };
 
 class GLTexture2D: public BindableTexture{
     private:
+        bool configured = false;
         void loadData(unsigned char* data, int width, int height, int channels);
 
     public:
         GLTexture2D(){TYPE = GL_TEXTURE_2D;};
         GLTexture2D(const char* filename);
         GLTexture2D(unsigned char* data, int width, int height);
-        GLTexture2D(int storage_type, int width, int height);
+        void configure(int storage_type, int data_type, int width, int height);
+        void reset();
 };
 
 class GLDepthTexture: public BindableTexture{

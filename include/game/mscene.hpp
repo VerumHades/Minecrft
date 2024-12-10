@@ -11,6 +11,7 @@
 #include <rendering/camera.hpp>
 #include <rendering/wireframes.hpp>
 #include <rendering/texture_registry.hpp>
+#include <rendering/gbuffer.hpp>
 
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
@@ -35,6 +36,8 @@ class MainScene: public Scene{
     private:
         PerspectiveCamera camera = PerspectiveCamera("player");
         DepthCamera suncam = DepthCamera("sun");
+
+        GBuffer gBuffer = GBuffer(1920,1080);
         
         ShaderProgram modelProgram = ShaderProgram("shaders/graphical/model/model.vs","shaders/graphical/model/model.fs");
         ShaderProgram terrainProgram = ShaderProgram("shaders/graphical/terrain.vs","shaders/graphical/terrain.fs");

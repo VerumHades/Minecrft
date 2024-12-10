@@ -4,6 +4,26 @@
 #include <stb_image.h>
 
 
+static std::array<uint, 32> texture_bindings = {};
+
+BindableTexture::BindableTexture(){
+    glGenTextures(1, &this->texture);
+}
+BindableTexture::~BindableTexture(){
+    glDeleteTextures(1, &this->texture);
+}
+void BindableTexture::bind(int unit){
+    if(unit < 0 || unit >= 32) return;
+    if(texture_bindings[unit] == this->texture) return;
+
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(TYPE, this->texture);
+
+    texture_bindings[unit] = this->texture;
+}  
+uint BindableTexture::getType() {return TYPE;}
+uint BindableTexture::getID() {return texture;}
+
 void GLTexture2D::loadData(unsigned char* data, int width, int height, int channels){
     glBindTexture(GL_TEXTURE_2D, this->texture);
 
@@ -56,10 +76,20 @@ GLTexture2D::GLTexture2D(unsigned char* data, int width, int height){
     loadData(data, width, height, 4);
 }
 
-GLTexture2D::GLTexture2D(int storage_type, int width, int height): GLTexture2D(){
-    glTexImage2D(GL_TEXTURE_2D, 0, storage_type, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+void GLTexture2D::configure(int storage_type, int data_type, int width, int height){
+    if(configured) reset();
+    bind(0);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, storage_type, width, height, 0, GL_RGBA, data_type, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    configured = true;
+}
+
+void GLTexture2D::reset(){
+    glDeleteTextures(1, &this->texture);
+    glGenTextures(1, &this->texture);
 }
 
 GLTextureArray::GLTextureArray(){

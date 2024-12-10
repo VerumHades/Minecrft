@@ -1,5 +1,9 @@
 #version 330 core
 
+layout (location = 0) out vec3 gPosition;
+layout (location = 1) out vec3 gNormal;
+layout (location = 2) out vec4 gAlbedoSpec;
+
 precision highp float; 
 
 in vec3 Normal;
@@ -10,9 +14,6 @@ in vec4 FragPosLightSpace;
 in vec3 FragPos;
 in vec3 pos;
 in float occlusion;
-
-out vec4 FragColor;
-
 
 uniform sampler2DArray textureArray;
 uniform sampler2D shadowMap;
@@ -62,46 +63,12 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 
 void main()
 {
-    //FragColor = texture(texture1, TexCoords) * vec4(LightLevel,1); //* diffuse;
-
-    /*float lightAngleDeg = (time / 2400) * 180;
-    float rads = lightAngleDeg * (3.14159265359 / 180.0);
-    
-    vec3 lightDirection = vec3(cos(rads),sin(rads),0);
-
-    float dst = max(dot(lightDirection, Normals),0);
-    vec4 color = texture(textureArray, vec3(TexCoords, TexIndex)) + vec4(Normals / 10,1.0);
-
-    FragColor = color;// * texture(lightArray, pos / vec3(64,256,64));*/
-
-    /*float depthValue = texture(shadowMap, TexCoords).r;
-    FragColor = vec4(vec3(depthValue), 1.0);
-*/
-
     vec4 full_color = texture(textureArray, vec3(TexCoords, TexIndex));
     if(full_color.a < 0.1) discard;
     vec3 color = full_color.rgb;
 
-    //vec3 normal = normalize(-Normal);
-    //vec3 lightColor = vec3(1.0);
-    // ambient
-    //vec3 ambient = 0.4 * lightColor;
-    // diffuse
-    //vec3 lightDir = normalize(lightPos - FragPos);
-    //lightDir *= -1;
-
-    //float diff = max(dot(normalize(sunDir), normal), 0.0);
-    //vec3 diffuse = diff * lightColor;
-
-    // calculate shadow
-    //float shadow = ShadowCalculation(FragPosLightSpace);       
-    
-    //vec3 lighting = (ambient + (1.0) * (1.0 - occlusion)) * color;
-    //vec3 lighting = vec3(shadow);
-
-    //vec3 lighting = (ambient + (1.0 - shadow) * 1.0) * color;
-    FragColor = vec4(color, 1.0);
-    //FragColor = vec4((Normal + 1.0) * 0.5,1.0);
-    //float depthValue = texture(shadowMap, TexCoords).r;
-    //FragColor = vec4(vec3(depthValue), 1.0); 
+    gPosition = FragPos;
+    gNormal = normalize(Normal);
+    gAlbedoSpec.rgb = full_color.rgb;
+    gAlbedoSpec.a = full_color.r;
 }
