@@ -20,10 +20,6 @@ WorldGenerator::WorldGenerator(BlockRegistry&  blockRegistry):  blockRegistry(bl
         std::cerr << "Generation program missing world position uniform";
     }
 
-    GLuint uniformBlockIndex = glGetUniformBlockIndex(computeProgram.getID(), "UniformBuffer");
-    glUniformBlockBinding(computeProgram.getID(), uniformBlockIndex, 1);
-
-
     //CHECK_GL_ERROR();
 
     //noise = std::make_unique<FastNoiseLite>();

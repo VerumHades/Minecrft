@@ -17,10 +17,13 @@ out vec3 FragPos;
 out vec2 TexCoords;
 out float IsSolidColor;
 out vec3 SolidColor;
+out vec3 Normal;
 
 void main()
 {
     mat4 modelMatrix = mat4(aInstanceMatrixComponent1,aInstanceMatrixComponent2,aInstanceMatrixComponent3,aInstanceMatrixComponent4);
+
+    Normal = transpose(inverse(mat3(modelMatrix))) * aNormal;
 
     FragPos = vec3(modelMatrix * vec4(aPos, 1.0));
     gl_Position = player_camera_projection_matrix * player_camera_view_matrix * vec4(FragPos,1.0);

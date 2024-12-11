@@ -1,5 +1,8 @@
 #version 330 core
-out vec4 FragColor;
+
+layout (location = 0) out vec3 gPosition;
+layout (location = 1) out vec3 gNormal;
+layout (location = 2) out vec4 gAlbedoSpec;
 
 in vec3 TexCoords;
 
@@ -26,6 +29,6 @@ void main()
         finalColor = mix(vec4(1.0, 0.8, 0.6,1.0), finalColor, intensity); // Sun halo
     }
 
-    FragColor = finalColor;
-    //FragColor = texture(skybox, TexCoords);
+    gAlbedoSpec.rgb = finalColor.rgb;
+    gAlbedoSpec.a = finalColor.r;
 }

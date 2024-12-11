@@ -18,6 +18,7 @@ class BindableTexture{
         virtual ~BindableTexture();
     public:
         void bind(int unit);
+        void unbind(int unit);
         uint getType();
         uint getID();
 };

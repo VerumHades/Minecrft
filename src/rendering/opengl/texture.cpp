@@ -21,6 +21,17 @@ void BindableTexture::bind(int unit){
 
     texture_bindings[unit] = this->texture;
 }  
+
+void BindableTexture::unbind(int unit){
+    if(unit < 0 || unit >= 32) return;
+    if(texture_bindings[unit] != this->texture) return;
+
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(TYPE, 0);
+
+    texture_bindings[unit] = 0;
+}
+
 uint BindableTexture::getType() {return TYPE;}
 uint BindableTexture::getID() {return texture;}
 

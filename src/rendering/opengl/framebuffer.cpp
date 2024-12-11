@@ -24,8 +24,13 @@ void GLFramebuffer::attach(int attachment, GLTexture2D& texture){
     uint attachment_number = GL_COLOR_ATTACHMENT0 + attachment;
     glFramebufferTexture2D(GL_FRAMEBUFFER, attachment_number, GL_TEXTURE_2D, texture.getID(), 0);
 
-    GLenum drawBuffers[] = { attachment_number };
-    glDrawBuffers(1, drawBuffers);
+    unbind();
+}
+
+void GLFramebuffer::activateAttachments(uint* attachments, size_t count){
+    bind();
+
+    glDrawBuffers(count, attachments);
 
     unbind();
 }

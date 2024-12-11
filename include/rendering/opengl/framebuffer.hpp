@@ -7,9 +7,11 @@
 class GLFramebuffer{
     private:
         uint framebuffer_id;
+        
     public:
         GLFramebuffer();
         void bind();
         void unbind();
         void attach(int attachment, GLTexture2D& texture);
+        void activateAttachments(uint* attachments, size_t count);
 };

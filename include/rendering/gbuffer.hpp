@@ -8,6 +8,8 @@ class GBuffer: public GLFramebuffer{
         GLTexture2D normalTexture;
         GLTexture2D albedoTexture;
 
+        uint depthRenderbuffer;
+
         GLVertexArray vao;
         GLBuffer<float, GL_ARRAY_BUFFER> quad_buffer;
 

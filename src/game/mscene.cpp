@@ -248,7 +248,7 @@ void MainScene::updateCursor(){
     blockUnderCursorEmpty = hit.lastPosition;
 
     if(!blockUnderCursor || blockUnderCursor->id == BLOCK_AIR_INDEX) wireframeRenderer.removeCube(0);
-    else wireframeRenderer.setCube(0,glm::vec3(hit.position) - 0.005f, {1.01,01.01,1.01},{0,0,0});
+    else wireframeRenderer.setCube(0,glm::vec3(hit.position) - 0.005f, {1.01,01.01,1.01},{1.0,0,0});
     
     //wireframeRenderer.setCube(1,glm::vec3(hit.lastPosition) - 0.005f, {1.01,01.01,1.01},{1.0,0,0});
 }
@@ -441,17 +441,19 @@ void MainScene::render(){
     glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
     // ====
 
+    gBuffer.bind();
+
+    blockTextureRegistry.getLoadedTextureArray().bind(0);
+    
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     // Draw skybox
     glDisable(GL_CULL_FACE);
     skyboxProgram.use();
     skybox.draw();
     glEnable(GL_CULL_FACE);
     // ====
-
-
-    gBuffer.bind();
-    glClearColor(0.0, 0.0, 0.0, 1.0); // keep it black so it doesn't leak into g-buffer
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     // Draw terrain
     terrainProgram.updateUniforms();

@@ -31,6 +31,8 @@ void UIOpenglBackend::setupRender(){
 
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     //glEnable(GL_SCISSOR_TEST);
     //glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -42,6 +44,9 @@ void UIOpenglBackend::setupRender(){
 
 void UIOpenglBackend::cleanupRender(){
     glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     vao.unbind();
 }
 

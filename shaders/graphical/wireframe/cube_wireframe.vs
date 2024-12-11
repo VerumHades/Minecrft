@@ -5,11 +5,15 @@ layout (location = 2) in vec3 aScale;
 layout (location = 3) in vec3 aColor; 
 
 out vec3 instanceColor; 
+out vec3 FragPos;
 
 uniform mat4 player_camera_projection_matrix;
 uniform mat4 player_camera_view_matrix;
 
 void main() {
     instanceColor = aColor;  
-    gl_Position = player_camera_projection_matrix * player_camera_view_matrix * vec4(aPos * aScale + aOffset, 1.0);
+
+    FragPos = aPos * aScale + aOffset;
+
+    gl_Position = player_camera_projection_matrix * player_camera_view_matrix * vec4(FragPos,1.0);
 }

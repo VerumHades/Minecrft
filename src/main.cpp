@@ -170,8 +170,6 @@ int main() {
     //glEnable(GL_FRAMEBUFFER_SRGB);
     glEnable(GL_MULTISAMPLE);  // Redundant perhaps
     //glDepthMask(GL_FALSE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
 
     uniformLinker.ignore("textureArray");
@@ -180,11 +178,11 @@ int main() {
     uniformLinker.ignore("tex");
     uniformLinker.ignore("textureIn");
 
-    /*
+    
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
-    */
+    
 
     glLineWidth(2.0f);
     
@@ -295,7 +293,7 @@ int main() {
             }
             last = current;
 
-            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             sceneManager.render();

@@ -20,7 +20,7 @@ uniform sampler2D shadowMap;
 uniform vec3 sunDir;
 //uniform sampler3D lightArray;
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+/*float ShadowCalculation(vec4 fragPosLightSpace)
 {   
     // perform perspective divide
     vec4 projCoords = fragPosLightSpace / fragPosLightSpace.w;
@@ -42,7 +42,7 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
     
-    /*float shadow = 0.0;
+    float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
     for(int x = -1; x <= 1; ++x)
     {
@@ -52,14 +52,14 @@ float ShadowCalculation(vec4 fragPosLightSpace)
             shadow += currentDepth > pcfDepth ? 1.0 : 0.0;        
         }    
     }
-    shadow /= 9.0;*/
+    shadow /= 9.0;
     float bias = max(0.0002 * (1.0 - dot(Normal, sunDir)), 0.00001);  
 
     //float bias = 0.0002;
     float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;  
 
     return shadow;
-} 
+} */
 
 void main()
 {
