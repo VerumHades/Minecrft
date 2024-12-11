@@ -168,7 +168,7 @@ static inline void processFaces(std::vector<ChunkMeshGenerator::Face> faces, Fac
                 faceHeight = face.width;
 
                 texture = type->single_texture ? type->textures[0] : type->textures[!forward];
-                normal = forward ? 1 : 0;
+                normal = forward ? 0 : 1;
                 clockwise = !forward;
                 break;
             case Z:

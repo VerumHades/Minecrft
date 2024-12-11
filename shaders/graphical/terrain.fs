@@ -17,7 +17,7 @@ in float occlusion;
 
 uniform sampler2DArray textureArray;
 uniform sampler2D shadowMap;
-uniform vec3 sunDir;
+uniform vec3 sun_direction;
 //uniform sampler3D lightArray;
 
 /*float ShadowCalculation(vec4 fragPosLightSpace)
@@ -35,7 +35,7 @@ uniform vec3 sunDir;
     //projCoords.xy = projCoords.xy * 0.5 + 0.5;
     //projCoords.z = projCoords.z * 0.5 + 0.5;
 
-    //projCoords.z -= acos(dot(Normal, sunDir)) * 0.0005;
+    //projCoords.z -= acos(dot(Normal, sun_direction)) * 0.0005;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
     float closestDepth = texture(shadowMap, projCoords.xy).r; 
     // get depth of current fragment from light's perspective
@@ -53,7 +53,7 @@ uniform vec3 sunDir;
         }    
     }
     shadow /= 9.0;
-    float bias = max(0.0002 * (1.0 - dot(Normal, sunDir)), 0.00001);  
+    float bias = max(0.0002 * (1.0 - dot(Normal, sun_direction)), 0.00001);  
 
     //float bias = 0.0002;
     float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;  

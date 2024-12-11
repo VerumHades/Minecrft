@@ -436,12 +436,10 @@ void MainScene::render(){
     chunkMeshRegistry.draw();
     
     glEnable( GL_CULL_FACE );
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
     // ====
 
     gBuffer.bind();
+    glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
 
     blockTextureRegistry.getLoadedTextureArray().bind(0);
     
@@ -477,7 +475,6 @@ void MainScene::render(){
     wireframeRenderer.draw();
 
     gBuffer.unbind();
-
     gBuffer.render();
 }
 

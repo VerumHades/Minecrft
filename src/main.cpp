@@ -177,6 +177,9 @@ int main() {
     uniformLinker.ignore("textAtlas");
     uniformLinker.ignore("tex");
     uniformLinker.ignore("textureIn");
+    uniformLinker.ignore("gNormal");
+    uniformLinker.ignore("gPosition");
+    uniformLinker.ignore("gAlbedoSpec");
 
     
     glEnable(GL_DEBUG_OUTPUT);

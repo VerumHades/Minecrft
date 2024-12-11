@@ -4,17 +4,8 @@
 
 class GBuffer: public GLFramebuffer{
     private:
-        GLTexture2D positionTexture;
-        GLTexture2D normalTexture;
-        GLTexture2D albedoTexture;
-
-        uint depthRenderbuffer;
-
-        GLVertexArray vao;
-        GLBuffer<float, GL_ARRAY_BUFFER> quad_buffer;
-
-        int width;
-        int height;
+        GLVertexArray vao = {};
+        GLBuffer<float, GL_ARRAY_BUFFER> quad_buffer = {};
 
         ShaderProgram shader_program = ShaderProgram("shaders/graphical/deffered_shading/gbuffer.vs","shaders/graphical/deffered_shading/gbuffer.fs");
         

@@ -74,7 +74,7 @@ class MainScene: public Scene{
         //int sunDistance = ((CHUNK_SIZE * renderDistance) / 2) ;
         int sunDistance = 100;
         float sunAngle = 70.0f;
-        Uniform<glm::vec3> sunDirUniform = Uniform<glm::vec3>("sunDir");
+        Uniform<glm::vec3> sunDirUniform = Uniform<glm::vec3>("sun_direction");
 
         float camSpeed = 0.01f;
         float camFOV = 90.0f;
