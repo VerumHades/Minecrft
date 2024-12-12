@@ -91,11 +91,11 @@ GLTexture2D::GLTexture2D(unsigned char* data, int width, int height){
     loadData(data, width, height, 4);
 }
 
-void GLTexture2D::configure(int storage_type, int data_type, int width, int height){
+void GLTexture2D::configure(int storage_type, int color_format, int data_type, int width, int height, void* data){
     if(configured) reset();
     bind(0);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, storage_type, width, height, 0, GL_RGBA, data_type, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, storage_type, width, height, 0, color_format, data_type, data );
     
     parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);

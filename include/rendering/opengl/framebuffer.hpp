@@ -7,7 +7,8 @@
 class GLFramebuffer{
     public:
         struct FramebufferTexture{
-            uint storage_type;
+            uint internal_format;
+            uint format;
             uint data_type;
         };
 

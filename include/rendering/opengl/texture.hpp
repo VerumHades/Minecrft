@@ -33,7 +33,7 @@ class GLTexture2D: public BindableTexture{
         GLTexture2D(){TYPE = GL_TEXTURE_2D;};
         GLTexture2D(const char* filename);
         GLTexture2D(unsigned char* data, int width, int height);
-        void configure(int storage_type, int data_type, int width, int height);
+        void configure(int internal_format, int format, int data_type, int width, int height, void* data = nullptr);
         void reset();
 };
 

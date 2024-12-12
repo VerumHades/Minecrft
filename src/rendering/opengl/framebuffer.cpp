@@ -21,7 +21,7 @@ GLFramebuffer::GLFramebuffer(int width, int height, std::vector<FramebufferTextu
         auto& definition = texture_definitions[i];
         auto& texture = textures[i];
 
-        texture.configure(definition.storage_type, definition.data_type, width, height);
+        texture.configure(definition.internal_format, definition.format, definition.data_type, width, height);
 
         attachments[i] = GL_COLOR_ATTACHMENT0 + i;
         
