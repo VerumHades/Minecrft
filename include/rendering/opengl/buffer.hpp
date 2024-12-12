@@ -70,6 +70,11 @@ class GLBuffer{
             glDeleteBuffers(1, &opengl_buffer_id);
         }
 
+        GLBuffer(std::vector<T> data): GLBuffer(){
+            initialize(data.size());
+            insert(0,data.size(), data.data());
+        }
+
         /*
             Creates the actual buffer of some size
         */

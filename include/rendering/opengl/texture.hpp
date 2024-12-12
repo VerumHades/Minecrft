@@ -19,6 +19,7 @@ class BindableTexture{
     public:
         void bind(int unit);
         void unbind(int unit);
+        void parameter(int identifier, int value);
         uint getType();
         uint getID();
 };

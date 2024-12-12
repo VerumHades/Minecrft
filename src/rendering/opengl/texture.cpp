@@ -32,6 +32,10 @@ void BindableTexture::unbind(int unit){
     texture_bindings[unit] = 0;
 }
 
+void BindableTexture::parameter(int identifier, int value){
+    glTexParameteri(TYPE, identifier, value);
+}
+
 uint BindableTexture::getType() {return TYPE;}
 uint BindableTexture::getID() {return texture;}
 
@@ -92,8 +96,11 @@ void GLTexture2D::configure(int storage_type, int data_type, int width, int heig
     bind(0);
 
     glTexImage2D(GL_TEXTURE_2D, 0, storage_type, width, height, 0, GL_RGBA, data_type, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+    parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);  
 
     configured = true;
 }

@@ -1,4 +1,4 @@
-#include <game/mscene.hpp>
+#include <game/main_scene.hpp>
 
 void MainScene::initialize(){
     fpsLock = false;
@@ -89,6 +89,10 @@ void MainScene::initialize(){
     terrainProgram.setSamplerSlot("shadowMap", 1);
 
     modelProgram.setSamplerSlot("textureIn",0);
+
+    gBufferProgram.setSamplerSlot("gPosition", 0);
+    gBufferProgram.setSamplerSlot("gNormal", 1);
+    gBufferProgram.setSamplerSlot("gAlbedoSpec", 2);
 
     camera.setPosition(0.0f,160.0f,0.0f);
 
@@ -384,16 +388,11 @@ void MainScene::render(){
     current = glfwGetTime();
     deltatime = (float)(current - last);
     last = current;
-
-    threadPool->deployPendingJobs();
     
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 
-    auto& player = world->getPlayer();
-    const glm::vec3& playerPosition = player.getPosition();
-    glm::vec3 camPosition = playerPosition + camOffset;
-    glm::vec3 camDir = glm::normalize(camera.getDirection());
+    glm::vec3 camPosition = world->getPlayer().getPosition() + camOffset;
 
     camera.setPosition(camPosition);
     chunkMeshGenerator.loadMeshFromQueue(chunkMeshRegistry);
@@ -401,10 +400,7 @@ void MainScene::render(){
     processMouseMovement();
 
     if(updateVisibility > 0){
-        auto istart = std::chrono::high_resolution_clock::now();
-
         chunkMeshRegistry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
-
         updateVisibility = 0;
     }
     
@@ -434,48 +430,52 @@ void MainScene::render(){
     terrainProgram.updateUniforms();
     suncam.prepareForRender();
     chunkMeshRegistry.draw();
-    
     glEnable( GL_CULL_FACE );
     // ====
 
     gBuffer.bind();
-    glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
+        glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
 
-    blockTextureRegistry.getLoadedTextureArray().bind(0);
+        blockTextureRegistry.getLoadedTextureArray().bind(0);
+
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Draw skybox
+        glDisable(GL_CULL_FACE);
+        skyboxProgram.use();
+        skybox.draw();
+        glEnable(GL_CULL_FACE);
+        // ====
+
+        // Draw terrain
+        terrainProgram.updateUniforms();
+        chunkMeshRegistry.draw();
+
+        // Draw models
+        itemPrototypeRegistry.updateModelsDrawRequestBuffer();
+        modelProgram.updateUniforms();
+        itemPrototypeRegistry.drawItemModels();
+
+        glDisable( GL_CULL_FACE );
+
+        int start_index = 20;
+        wireframeRenderer.setCubes(start_index);
+        world->drawEntityColliders(wireframeRenderer, start_index);
+
+        wireframeRenderer.draw();
+    gBuffer.unbind();
     
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    gBufferProgram.updateUniforms();
+    
+    glViewport(0, 0, gBuffer.getWidth(), gBuffer.getHeight());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Draw skybox
-    glDisable(GL_CULL_FACE);
-    skyboxProgram.use();
-    skybox.draw();
-    glEnable(GL_CULL_FACE);
-    // ====
-    
-    // Draw terrain
-    terrainProgram.updateUniforms();
-    terrainProgram.use();
+    gBuffer.bindTextures();
 
-    camera.setModelPosition({0,0,0});
-    terrainProgram.updateUniforms();
-    chunkMeshRegistry.draw();
+    fullscreen_quad.render();
 
-    // Draw models
-    itemPrototypeRegistry.updateModelsDrawRequestBuffer();
-    modelProgram.updateUniforms();
-    itemPrototypeRegistry.drawItemModels();
-    
-    glDisable( GL_CULL_FACE );
-
-    int start_index = 20;
-    wireframeRenderer.setCubes(start_index);
-    world->drawEntityColliders(wireframeRenderer, start_index);
-
-    wireframeRenderer.draw();
-
-    gBuffer.unbind();
-    gBuffer.render();
+    gBuffer.unbindTextures();
 }
 
 void MainScene::regenerateChunkMesh(Chunk* chunk){
@@ -518,6 +518,8 @@ void MainScene::physicsUpdate(){
     while(running){
         current = glfwGetTime();
         deltatime = (float)(current - last);
+
+        threadPool->deployPendingJobs();
 
         if(!allGenerated) continue;
         if(deltatime < tickTime) continue;

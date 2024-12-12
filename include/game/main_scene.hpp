@@ -12,6 +12,7 @@
 #include <rendering/wireframes.hpp>
 #include <rendering/texture_registry.hpp>
 #include <rendering/gbuffer.hpp>
+#include <rendering/opengl/quad.hpp>
 
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
@@ -38,11 +39,13 @@ class MainScene: public Scene{
         DepthCamera suncam = DepthCamera("sun");
 
         GBuffer gBuffer = GBuffer(1920,1080);
+        GLFullscreenQuad fullscreen_quad;
         
         ShaderProgram modelProgram = ShaderProgram("shaders/graphical/model/model.vs","shaders/graphical/model/model.fs");
         ShaderProgram terrainProgram = ShaderProgram("shaders/graphical/terrain.vs","shaders/graphical/terrain.fs");
         ShaderProgram skyboxProgram  = ShaderProgram("shaders/graphical/skybox.vs", "shaders/graphical/skybox.fs");
-
+        ShaderProgram gBufferProgram = ShaderProgram("shaders/graphical/deffered_shading/gbuffer.vs","shaders/graphical/deffered_shading/gbuffer.fs");
+        
         std::unique_ptr<ThreadPool> threadPool;
 
         GLSkybox skybox;

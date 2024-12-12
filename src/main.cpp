@@ -6,7 +6,7 @@
 #include <ui/manager.hpp>
 #include <ui/loader.hpp>
 #include <scene.hpp>
-#include <game/mscene.hpp>
+#include <game/main_scene.hpp>
 #include <rendering/allocator.hpp>
 #include <test_scene.hpp>
 
