@@ -25,5 +25,5 @@ void main()
         return;
     }
 
-    FragColor = vec4(vec3(1) * occlusion, 1.0);
+    FragColor = vec4(Albedo * occlusion, 1.0);
 }  

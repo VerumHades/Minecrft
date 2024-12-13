@@ -42,11 +42,13 @@ class MainScene: public Scene{
         GBuffer gBuffer = GBuffer(1920,1080);
         GLFullscreenQuad fullscreen_quad;
         GLSSAO ssao;
-        
+        GLFramebuffer blured_ssao_framebuffer = GLFramebuffer(1920,1080,{{GL_RED,GL_RED,GL_FLOAT}});
+
         ShaderProgram modelProgram = ShaderProgram("shaders/graphical/model/model.vs","shaders/graphical/model/model.fs");
         ShaderProgram terrainProgram = ShaderProgram("shaders/graphical/terrain.vs","shaders/graphical/terrain.fs");
         ShaderProgram skyboxProgram  = ShaderProgram("shaders/graphical/skybox.vs", "shaders/graphical/skybox.fs");
         ShaderProgram gBufferProgram = ShaderProgram("shaders/graphical/deffered_shading/gbuffer.vs","shaders/graphical/deffered_shading/gbuffer.fs");
+        ShaderProgram blur_program = ShaderProgram("shaders/graphical/quad.vs","shaders/graphical/blur.fs");
         
         std::unique_ptr<ThreadPool> threadPool;
 

@@ -10,7 +10,7 @@ uniform sampler2D texNoise;
 
 int kernelSize = 64;
 float radius = 0.5;
-float bias = 0.0025;
+float bias = 0.025;
 
 uniform vec3 ssao_samples[64];
 uniform mat4 player_camera_projection_matrix;
@@ -22,7 +22,7 @@ void main()
 {
     // get input for SSAO algorithm
     vec3 fragPos = texture(gPosition, TexCoords).xyz;
-    vec3 normal = normalize(texture(gNormal, TexCoords).rgb);
+    vec3 normal = normalize(texture(gNormal, TexCoords).xyz);
     vec3 randomVec = normalize(texture(texNoise, TexCoords * noiseScale).xyz);
     // create TBN change-of-basis matrix: from tangent-space to view-space
     vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));

@@ -13,8 +13,8 @@ GLSSAO::GLSSAO(){
     {
         glm::vec3 sample(
             randomFloats(generator) * 2.0f - 1.0f, 
-            randomFloats(generator) * 2.0f - 1.0f, 
-            randomFloats(generator)
+            -randomFloats(generator) , 
+            randomFloats(generator) * 2.0f - 1.0f
         );
         sample  = glm::normalize(sample);
         float scale = (float)i / 64.0; 
@@ -28,8 +28,9 @@ GLSSAO::GLSSAO(){
     {
         glm::vec3 noise_vector(
             randomFloats(generator) * 2.0 - 1.0, 
-            randomFloats(generator) * 2.0 - 1.0, 
-            0.0f); 
+            0.0f,
+            randomFloats(generator) * 2.0 - 1.0
+        ); 
         noise.push_back(noise_vector);
     }  
 

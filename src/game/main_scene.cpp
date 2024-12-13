@@ -95,6 +95,8 @@ void MainScene::initialize(){
     gBufferProgram.setSamplerSlot("gAlbedoSpec", 2);
     gBufferProgram.setSamplerSlot("AmbientOcclusion", 3);
 
+    blur_program.setSamplerSlot("input", 0);
+
     camera.setPosition(0.0f,160.0f,0.0f);
 
     sunDirUniform.setValue({ 
@@ -470,13 +472,20 @@ void MainScene::render(){
     auto& gTextures = gBuffer.getTextures();
     ssao.render(gTextures[0],gTextures[1], fullscreen_quad);
     
+    blured_ssao_framebuffer.bind(); 
+        ssao.getResultTexture().bind(0);
+        blur_program.updateUniforms();
+
+        fullscreen_quad.render();
+    blured_ssao_framebuffer.unbind();
+    
     gBufferProgram.updateUniforms();
     
     glViewport(0, 0, gBuffer.getWidth(), gBuffer.getHeight());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     gBuffer.bindTextures();
-    ssao.getResultTexture().bind(3);
+    blured_ssao_framebuffer.getTextures()[0].bind(3);
 
     fullscreen_quad.render();
 
