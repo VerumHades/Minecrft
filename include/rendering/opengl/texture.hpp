@@ -17,11 +17,11 @@ class BindableTexture{
         BindableTexture();
         virtual ~BindableTexture();
     public:
-        void bind(int unit);
-        void unbind(int unit);
+        void bind(int unit) const;
+        void unbind(int unit) const;
         void parameter(int identifier, int value);
-        uint getType();
-        uint getID();
+        uint getType() const;
+        uint getID() const;
 };
 
 class GLTexture2D: public BindableTexture{

@@ -25,8 +25,9 @@ void main()
 
     Normal = transpose(inverse(mat3(modelMatrix))) * aNormal;
 
-    FragPos = vec3(modelMatrix * vec4(aPos, 1.0));
-    gl_Position = player_camera_projection_matrix * player_camera_view_matrix * vec4(FragPos,1.0);
+    vec4 viewPos = player_camera_view_matrix * modelMatrix * vec4(aPos, 1.0);
+    FragPos = viewPos.xyz;
+    gl_Position = player_camera_projection_matrix * viewPos;
 
     TexCoords = aTexCoords;
     IsSolidColor = aIsSolidColor;

@@ -13,7 +13,7 @@ uniform mat4 player_camera_view_matrix;
 void main() {
     instanceColor = aColor;  
 
-    FragPos = aPos * aScale + aOffset;
-
-    gl_Position = player_camera_projection_matrix * player_camera_view_matrix * vec4(FragPos,1.0);
+    vec4 viewPos = player_camera_view_matrix  * vec4(aPos * aScale + aOffset, 1.0);
+    FragPos = viewPos.xyz;
+    gl_Position = player_camera_projection_matrix * viewPos;
 }

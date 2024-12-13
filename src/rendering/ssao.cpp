@@ -20,7 +20,7 @@ GLSSAO::GLSSAO(){
         float scale = (float)i / 64.0; 
         scale   = lerp(0.1f, 1.0f, scale * scale);
         sample *= scale;
-        kernel.push_back(sample);  
+        kernel_uniform.getValue().push_back(sample);  
     }
 
     std::vector<glm::vec3> noise;
@@ -37,4 +37,22 @@ GLSSAO::GLSSAO(){
     noiseTexture.parameter(GL_TEXTURE_WRAP_S, GL_REPEAT);
     noiseTexture.parameter(GL_TEXTURE_WRAP_T, GL_REPEAT);  
 
+    shader_program.setSamplerSlot("gPosition", 0);
+    shader_program.setSamplerSlot("gNormal" , 1);
+    shader_program.setSamplerSlot("texNoise", 2);
+}
+
+void GLSSAO::render(GLTexture2D& gPositionTexture, GLTexture2D& gNormalTexture, GLFullscreenQuad& quad){
+    framebuffer.bind();
+    glDisable(GL_DEPTH_TEST);
+    glViewport(0,0,framebuffer.getWidth(), framebuffer.getHeight());
+    
+    shader_program.updateUniforms();
+    gPositionTexture.bind(0);
+    gNormalTexture.bind(1);
+    noiseTexture.bind(2);
+
+    quad.render();
+
+    framebuffer.unbind();
 }

@@ -93,6 +93,7 @@ void MainScene::initialize(){
     gBufferProgram.setSamplerSlot("gPosition", 0);
     gBufferProgram.setSamplerSlot("gNormal", 1);
     gBufferProgram.setSamplerSlot("gAlbedoSpec", 2);
+    gBufferProgram.setSamplerSlot("AmbientOcclusion", 3);
 
     camera.setPosition(0.0f,160.0f,0.0f);
 
@@ -465,6 +466,9 @@ void MainScene::render(){
 
         wireframeRenderer.draw();
     gBuffer.unbind();
+
+    auto& gTextures = gBuffer.getTextures();
+    ssao.render(gTextures[0],gTextures[1], fullscreen_quad);
     
     gBufferProgram.updateUniforms();
     
@@ -472,6 +476,7 @@ void MainScene::render(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     gBuffer.bindTextures();
+    ssao.getResultTexture().bind(3);
 
     fullscreen_quad.render();
 

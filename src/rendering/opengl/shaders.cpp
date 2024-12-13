@@ -84,7 +84,7 @@ void ShaderUniformLinker::updateUniforms(ShaderProgram* program){
     for(auto& [name,location]: shaderPrograms[program].uniforms){
         if(!uniforms.contains(name)){
             if(ignored_uniforms.contains(name)) continue;
-            std::cerr << "Shader program is missing a uniform: " << name << std::endl;
+            //std::cerr << "Shader program is missing a uniform: " << name << std::endl;
             continue;
         }
 
@@ -100,14 +100,20 @@ void ShaderUniformLinker::addProgram(ShaderProgram* program){
     glGetProgramiv(program->getID(), GL_ACTIVE_UNIFORMS, &numUniforms);
 
     for (GLint i = 0; i < numUniforms; ++i) {
-        char name[256]; 
+        char name_buffer[256]; 
         GLsizei nameLength = 0;
         GLint size = 0;
         GLenum type = 0;
 
-        glGetActiveUniform(program->getID(), i, sizeof(name), &nameLength, &size, &type, name);
+        glGetActiveUniform(program->getID(), i, sizeof(name_buffer), &nameLength, &size, &type, name_buffer);
 
-        int location = glGetUniformLocation(program->getID(), name);
+        std::string name = std::string(name_buffer);
+        if(name.ends_with("]")){ // For array uniforms
+            name = name.substr(0, name.size() - 3);
+            std::cout << "Changed name: " << name <<  std::endl;
+        }
+
+        int location = glGetUniformLocation(program->getID(), name.c_str());
 
         if(location == -1) {
             std::cerr << "Reported uniform '" << name << "' not found." << std::endl;

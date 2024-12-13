@@ -13,6 +13,7 @@
 #include <rendering/texture_registry.hpp>
 #include <rendering/gbuffer.hpp>
 #include <rendering/opengl/quad.hpp>
+#include <rendering/ssao.hpp>
 
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
@@ -40,6 +41,7 @@ class MainScene: public Scene{
 
         GBuffer gBuffer = GBuffer(1920,1080);
         GLFullscreenQuad fullscreen_quad;
+        GLSSAO ssao;
         
         ShaderProgram modelProgram = ShaderProgram("shaders/graphical/model/model.vs","shaders/graphical/model/model.fs");
         ShaderProgram terrainProgram = ShaderProgram("shaders/graphical/terrain.vs","shaders/graphical/terrain.fs");

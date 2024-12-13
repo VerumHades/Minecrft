@@ -31,12 +31,13 @@ const vec3 Normals[6] = vec3[6](
 
 void main()
 {
-    FragPos = vec3(player_camera_model_matrix * vec4(aPos, 1.0));
-    gl_Position = player_camera_projection_matrix * player_camera_view_matrix * vec4(FragPos,1.0);
+    vec4 viewPos = player_camera_view_matrix * player_camera_model_matrix * vec4(aPos, 1.0);
+    FragPos = viewPos.xyz;
+    gl_Position = player_camera_projection_matrix * viewPos;
 
     int index = int(aNormal);
 
-    Normal = /*transpose(inverse(mat3(player_camera_model_matrix))) */ Normals[index];
+    Normal = Normals[index];
     TexCoords = aTexCoords;
     TexIndex = aTexIndex;
     occlusion = aOcclusion;

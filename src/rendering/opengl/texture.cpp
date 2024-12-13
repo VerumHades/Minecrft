@@ -12,7 +12,7 @@ BindableTexture::BindableTexture(){
 BindableTexture::~BindableTexture(){
     glDeleteTextures(1, &this->texture);
 }
-void BindableTexture::bind(int unit){
+void BindableTexture::bind(int unit) const{
     if(unit < 0 || unit >= 32) return;
     if(texture_bindings[unit] == this->texture) return;
 
@@ -22,7 +22,7 @@ void BindableTexture::bind(int unit){
     texture_bindings[unit] = this->texture;
 }  
 
-void BindableTexture::unbind(int unit){
+void BindableTexture::unbind(int unit) const{
     if(unit < 0 || unit >= 32) return;
     if(texture_bindings[unit] != this->texture) return;
 
@@ -36,8 +36,8 @@ void BindableTexture::parameter(int identifier, int value){
     glTexParameteri(TYPE, identifier, value);
 }
 
-uint BindableTexture::getType() {return TYPE;}
-uint BindableTexture::getID() {return texture;}
+uint BindableTexture::getType() const {return TYPE;}
+uint BindableTexture::getID() const {return texture;}
 
 void GLTexture2D::loadData(unsigned char* data, int width, int height, int channels){
     glBindTexture(GL_TEXTURE_2D, this->texture);

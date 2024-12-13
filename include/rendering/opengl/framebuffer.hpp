@@ -27,7 +27,7 @@ class GLFramebuffer{
         void bind();
         void unbind();
 
-        std::vector<GLTexture2D>& getTextures();
+        std::vector<GLTexture2D>& getTextures() { return textures; };
 
         void bindTextures();
         void unbindTextures();

@@ -86,6 +86,7 @@ class ShaderProgram{
                 std::cerr << "No sample under name '" << name << "' found." << std::endl;
                 return;
             }
+            uniformLinker.ignore(name);
             glUniform1i(location,slot);
         }
         void addShader(std::string filename, int type);
@@ -145,6 +146,10 @@ class Uniform: public UniformBase{
 
         void setUniformValue(const glm::vec3& vec, int32_t location) {
             glUniform3fv(location, 1, glm::value_ptr(vec));
+        }
+
+        void setUniformValue(const std::vector<glm::vec3>& vectors, int32_t location){
+            glUniform3fv(location, static_cast<GLsizei>(vectors.size()), glm::value_ptr(vectors[0]));
         }
 
         void setUniformValue(const std::vector<glm::mat4>& mats, int32_t location){

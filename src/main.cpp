@@ -170,22 +170,14 @@ int main() {
     //glEnable(GL_FRAMEBUFFER_SRGB);
     glEnable(GL_MULTISAMPLE);  // Redundant perhaps
     //glDepthMask(GL_FALSE);
-    
-
-    uniformLinker.ignore("textureArray");
-    uniformLinker.ignore("text");
-    uniformLinker.ignore("textAtlas");
-    uniformLinker.ignore("tex");
-    uniformLinker.ignore("textureIn");
-    uniformLinker.ignore("gNormal");
-    uniformLinker.ignore("gPosition");
-    uniformLinker.ignore("gAlbedoSpec");
 
     
+
+    /*
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
-    
+    */
 
     glLineWidth(2.0f);
     
