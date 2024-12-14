@@ -1,9 +1,11 @@
 #pragma once
 
 #include <rendering/opengl/texture.hpp>
+#include <stb_image.h>
 
 #include <unordered_map>
 #include <vector>
+#include <filesystem>
 
 class TextureRegistry{
     private:
@@ -22,7 +24,7 @@ class TextureRegistry{
 
         std::unordered_map<std::string, RegisteredTexture> textures;
     public:
-        TextureRegistry(): TextureRegistry(0,0) {}
+        TextureRegistry(): TextureRegistry(64,64) {}
         TextureRegistry(int texture_width, int texture_height): texture_width(texture_width), texture_height(texture_height)  {}
 
         void setTextureSize(int width, int height){
@@ -40,10 +42,12 @@ class TextureRegistry{
         */
         size_t getTextureIndex(std::string name);
 
+        void loadFromFolder(std::string path);
+
         /*
             Creates the actual opengl object that holds the textures
         */
         void load();
 
-        GLTextureArray& getLoadedTextureArray()  { return opengl_loaded_textures; };
+        GLTextureArray& getLoadedTextureArray() { return opengl_loaded_textures; };
 };

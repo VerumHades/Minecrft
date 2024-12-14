@@ -1,7 +1,16 @@
 #include <parsing/shader_parser.hpp>
 
-ShaderProgramSource::ShaderProgramSource(std::string source){
+static inline uint getShaderTypeForName(std::string& name){
+    if     (name == "vertex")   return GL_VERTEX_SHADER;
+    else if(name == "fragment") return GL_FRAGMENT_SHADER;
+    else if(name == "compute")  return GL_COMPUTE_SHADER;
+    else {
+        std::cerr << "Shader type '" << name << "' not recognized." << std::endl;
+        return 0;
+    }
+}
 
+ShaderProgramSource::ShaderProgramSource(std::string source){
     bool capturing = false;
     size_t capture_start = 0;
     std::string capture_name = "";
@@ -16,32 +25,19 @@ ShaderProgramSource::ShaderProgramSource(std::string source){
         if(current_token.type() != Token::Type::MACRO) continue;
 
         Token macro_id = current_token.subtoken(1);
-
         if(macro_id.content() != "shader") continue;
 
         Token shader_type = macro_id.next().next();
-
         std::string shader_type_name = shader_type.content();
+
+        if(capturing) 
+            shader_sources.push_back(
+                ShaderSource{
+                    getShaderTypeForName(capture_name),
+                    source.substr(capture_start, (current_token.start() - 1) - capture_start)
+                }
+            );
         
-        if(!capturing){
-            capture_start = current_token.end();
-            capture_name = shader_type_name;
-            capturing = true;
-            continue;
-        }
-
-        ShaderSource shader_source = {};
-
-        if     (capture_name == "vertex")   shader_source.shader_type = GL_VERTEX_SHADER;
-        else if(capture_name == "fragment") shader_source.shader_type = GL_FRAGMENT_SHADER;
-        else if(capture_name == "compute")  shader_source.shader_type = GL_COMPUTE_SHADER;
-        else {
-            std::cerr << "Shader type '" << capture_name << "' not recognized." << std::endl;
-            continue;
-        }
-
-        shader_source.source = source.substr(capture_start, (current_token.start() - 1) - capture_start);
-        shader_sources.push_back(shader_source);
 
         capture_start = current_token.end();
         capture_name = shader_type_name;
@@ -49,20 +45,14 @@ ShaderProgramSource::ShaderProgramSource(std::string source){
 
     } while(current_token.hasNext());
 
-    if(capturing){
-        ShaderSource shader_source = {};
-
-        if     (capture_name == "vertex")   shader_source.shader_type = GL_VERTEX_SHADER;
-        else if(capture_name == "fragment") shader_source.shader_type = GL_FRAGMENT_SHADER;
-        else if(capture_name == "compute")  shader_source.shader_type = GL_COMPUTE_SHADER;
-        else {
-            std::cerr << "Shader type '" << capture_name << "' not recognized." << std::endl;
-            return;
-        }
-
-        shader_source.source = source.substr(capture_start, source.size() - capture_start);
-        shader_sources.push_back(shader_source);
-    }
+    if(capturing)
+        shader_sources.push_back(
+            ShaderSource{
+                getShaderTypeForName(capture_name),
+                source.substr(capture_start, source.size() - capture_start)
+            }
+        );
+    
 }
 
 ShaderProgramSource ShaderProgramSource::fromFile(std::string path){

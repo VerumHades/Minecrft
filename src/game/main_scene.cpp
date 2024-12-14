@@ -62,20 +62,8 @@ void MainScene::initialize(){
     
     terrainProgram.use();
     
-    blockTextureRegistry.addTexture("grass_top"     ,"textures/grass_top.png");
-    blockTextureRegistry.addTexture("grass_side"    ,"textures/grass_side.png");
-    blockTextureRegistry.addTexture("dirt"          ,"textures/dirt.png");
-    blockTextureRegistry.addTexture("stone"         ,"textures/stone.png");
-    blockTextureRegistry.addTexture("oak_log_top"   ,"textures/oak_log_top.png");
-    blockTextureRegistry.addTexture("oak_log    "   ,"textures/oak_log.png");
-    blockTextureRegistry.addTexture("oak_leaves"    ,"textures/oak_leaves.png");
-    blockTextureRegistry.addTexture("birch_leaves"  ,"textures/birch_leaves.png");
-    blockTextureRegistry.addTexture("birch_log"     ,"textures/birch_log.png");
-    blockTextureRegistry.addTexture("birch_log_top" ,"textures/birch_log_top.png");
-    blockTextureRegistry.addTexture("blue_wool"     ,"textures/blue_wool.png");
-    blockTextureRegistry.addTexture("sand"          ,"textures/sand.png");
-    blockTextureRegistry.addTexture("grass_bilboard","textures/grass_bilboard.png");
     
+    blockTextureRegistry.loadFromFolder("textures");
     blockTextureRegistry.setTextureSize(160,160);
     blockTextureRegistry.load();
 
