@@ -15,6 +15,8 @@
 #include <rendering/opengl/quad.hpp>
 #include <rendering/ssao.hpp>
 
+#include <parsing/shader_parser.hpp>
+
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
 #include <ui/loader.hpp>
@@ -45,7 +47,7 @@ class MainScene: public Scene{
         GLFramebuffer blured_ssao_framebuffer = GLFramebuffer(1920,1080,{{GL_RED,GL_RED,GL_FLOAT}});
 
         ShaderProgram modelProgram = ShaderProgram("shaders/graphical/model/model.vs","shaders/graphical/model/model.fs");
-        ShaderProgram terrainProgram = ShaderProgram("shaders/graphical/terrain.vs","shaders/graphical/terrain.fs");
+        ShaderProgram terrainProgram = ShaderProgram(ShaderProgramSource::fromFile("shaders/terrain.sp"));
         ShaderProgram skyboxProgram  = ShaderProgram("shaders/graphical/skybox.vs", "shaders/graphical/skybox.fs");
         ShaderProgram gBufferProgram = ShaderProgram("shaders/graphical/deffered_shading/gbuffer.vs","shaders/graphical/deffered_shading/gbuffer.fs");
         ShaderProgram blur_program = ShaderProgram("shaders/graphical/quad.vs","shaders/graphical/blur.fs");

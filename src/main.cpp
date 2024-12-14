@@ -9,6 +9,7 @@
 #include <game/main_scene.hpp>
 #include <rendering/allocator.hpp>
 #include <test_scene.hpp>
+#include <parsing/shader_parser.hpp>
 
 
 /*void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){

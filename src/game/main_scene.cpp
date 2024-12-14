@@ -564,10 +564,10 @@ void MainScene::physicsUpdate(){
 
         if(!world->getChunk(camWorldPosition)) continue;
 
-        world->updateEntities();
-        itemPrototypeRegistry.resetModelsDrawRequests();
-        world->drawEntities();
-        itemPrototypeRegistry.passModelsDrawRequests();
+        //world->updateEntities();
+        //itemPrototypeRegistry.resetModelsDrawRequests();
+        //world->drawEntities();
+        //itemPrototypeRegistry.passModelsDrawRequests();
 
     }
 

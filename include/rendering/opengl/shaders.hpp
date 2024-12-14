@@ -12,6 +12,7 @@
 #include <fstream>
 #include <sstream>
 #include <unordered_set>
+#include <parsing/shader_parser.hpp>
 
 #define MAX_SHADERS 16
 
@@ -76,6 +77,10 @@ class ShaderProgram{
         }
         ShaderProgram(std::string compute_shader_path): ShaderProgram() {
             addShader(compute_shader_path, GL_COMPUTE_SHADER);
+            compile();
+        }
+        ShaderProgram(ShaderProgramSource shader_source): ShaderProgram() {
+            for(auto& source: shader_source.getSources()) addShaderSource(source.source, source.shader_type);
             compile();
         }
 
