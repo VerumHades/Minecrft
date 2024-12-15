@@ -1,12 +1,13 @@
 #include <rendering/mesh.hpp>
 
-LoadedMesh::LoadedMesh(Mesh& mesh){
+LoadedMesh::LoadedMesh(Mesh& mesh, std::vector<GLVertexValueType> instance_types){
     vao.bind();
     vao.attachBuffer(&vertex_buffer, mesh.vertex_format);
+    vao.attachBuffer(&instance_buffer, {instance_types, true});
     vao.attachIndexBuffer(&index_buffer);
 
-    vertex_buffer.insert(0, mesh.vertices.size(), mesh.vertices.data());
-    index_buffer.insert(0, mesh.indices.size(), mesh.indices.data());
+    vertex_buffer.initialize(mesh.vertices.size(), mesh.vertices.data());
+    index_buffer.initialize(mesh.indices.size(), mesh.indices.data());
 
     vao.unbind();
 }
