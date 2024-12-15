@@ -62,7 +62,6 @@ void MainScene::initialize(){
     
     terrainProgram.use();
     
-    
     blockTextureRegistry.loadFromFolder("textures");
     blockTextureRegistry.setTextureSize(160,160);
     blockTextureRegistry.load();
@@ -457,7 +456,7 @@ void MainScene::render(){
         wireframeRenderer.draw();
     gBuffer.unbind();
 
-    auto& gTextures = gBuffer.getTextures();
+    /*auto& gTextures = gBuffer.getTextures();
     ssao.render(gTextures[0],gTextures[1], fullscreen_quad);
     
     blured_ssao_framebuffer.bind(); 
@@ -465,7 +464,7 @@ void MainScene::render(){
         blur_program.updateUniforms();
 
         fullscreen_quad.render();
-    blured_ssao_framebuffer.unbind();
+    blured_ssao_framebuffer.unbind();*/
     
     gBufferProgram.updateUniforms();
     
@@ -473,7 +472,7 @@ void MainScene::render(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     gBuffer.bindTextures();
-    blured_ssao_framebuffer.getTextures()[0].bind(3);
+    //blured_ssao_framebuffer.getTextures()[0].bind(3);
 
     fullscreen_quad.render();
 

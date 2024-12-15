@@ -58,9 +58,6 @@ class MeshRegion{
         /*
             Has no mesh
         */
-        bool meshless = true;
-        bool meshless_first = true;
-
         bool propagated = false; // If it has reported its existence to all parents already
         std::vector<std::tuple<Transform,size_t>> in_parent_draw_call_references; // References to all parent meshes
 
@@ -95,8 +92,6 @@ class MeshRegion{
             Only for level 1 regions.
         */
         bool propagateDrawCall();
-
-        void setMeshless(bool value);
 
         /*
             Returns an index from subregions relative position

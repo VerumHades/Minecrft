@@ -1,20 +1,5 @@
 #include <rendering/chunk_buffer.hpp>
 
-void MeshRegion::setMeshless(bool value){
-    if(value == meshless && !meshless_first) return; // Already set
-    meshless_first = false;
-
-    meshless = value;
-
-    if(value){ // Being set to meshless
-        //updateMeshInformation({0});
-    }
-    else{ // Being set to having a mesh
-        propagateDrawCall();
-        updatePropagatedDrawCalls();
-    }
-}
-
 bool MeshRegion::propagateDrawCall(){
     if(transform.level != 1 || propagated) return false; // Non level 1 regions cannot propagate, cannot propagate twice
     
@@ -189,15 +174,10 @@ std::tuple<bool,size_t,size_t> ChunkMeshRegistry::allocateOrUpdateMesh(Mesh* mes
 
 bool ChunkMeshRegistry::addMesh(Mesh* mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
+
+    if(mesh->getVertices().size() == 0) return true;    
+    if(getRegion(transform)) return updateMesh(mesh, pos); // Mesh and region already exist
     
-    if(getRegion(transform)) return false; // Mesh and region already exist
-
-    if(mesh->getVertices().size() == 0){
-        MeshRegion* region = createRegion(transform);
-        region->setMeshless(true);
-        return true;
-    }
-
     auto [success, vertexBufferOffset, indexBufferOffset] = allocateOrUpdateMesh(mesh);
     if(!success) return false;
     
@@ -213,7 +193,8 @@ bool ChunkMeshRegistry::addMesh(Mesh* mesh, const glm::ivec3& pos){
         mesh->getIndices().size(),
         vertexBufferOffset / vertexSize,
     };
-    region->setMeshless(false);
+
+    region->propagateDrawCall();
 
     return true;
 }
@@ -222,17 +203,12 @@ bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
 
     if(!getRegion(transform)) return false; // Mesh region doesn't exist
-    if(mesh->getVertices().size() == 0){
-        getRegion(transform)->setMeshless(true);
-        return false; // Don't register empty meshes
-    }
+    if(mesh->getVertices().size() == 0) return false; // Don't register empty meshes
 
     auto& region = regions.at(transform);
 
     auto [success, vertexBufferOffset, indexBufferOffset] = allocateOrUpdateMesh(mesh, region.mesh_information.vertex_data_start, region.mesh_information.index_data_start);
     if(!success) return false;
-
-    region.setMeshless(false);
 
     bool update_success = region.updateMeshInformation(
         {
@@ -247,7 +223,9 @@ bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
         }
     );
 
-    return true;
+    if(update_success) region.updatePropagatedDrawCalls();
+    
+    return update_success;
 }   
 
 DrawElementsIndirectCommand ChunkMeshRegistry::getCommandFor(const glm::ivec3& position){
@@ -279,8 +257,8 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
     int level_size_in_chunks = getRegionSizeForLevel(region->transform.level);
     int level_size_in_blocks = level_size_in_chunks * CHUNK_SIZE; 
 
-    //glm::ivec3 min = region->transform.position * level_size_in_blocks;
-    //if(!frustum.isAABBWithing(min, min + level_size_in_blocks)) return; // Not visible
+    glm::ivec3 min = region->transform.position * level_size_in_blocks;
+    if(!frustum.isAABBWithing(min, min + level_size_in_blocks)) return; // Not visible
 
     if(region->transform.level == 1){ // The region is directly drawable
         DrawElementsIndirectCommand command = region->generateDrawCommand();
@@ -288,14 +266,14 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
         draw_call_counter++;
         return;
     }
-    else{
+    /*else{
         size_t draw_calls_size = region->draw_commands.size();
         drawCallBuffer->appendData(region->draw_commands.data(), draw_calls_size);
 
         draw_call_counter += draw_calls_size;
 
         return;
-    }
+    }*/
 
 
     for(int x = 0; x < 2; x++)
@@ -304,7 +282,6 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
     { // Go trough all subregions and check them if possible
         MeshRegion* subregion = region->getSubregion(x,y,z);
         if(!subregion) continue; // Region doesn't exist
-        if(subregion->meshless) continue; // Dont bother calling the function for meshless chunks
         
         processRegionForDrawing(frustum, subregion, draw_call_counter);
     }
@@ -330,10 +307,7 @@ void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& fru
     {   
         auto position = center_position + glm::ivec3(x,y,z);
         MeshRegion* region = getRegion({position, maxRegionLevel});
-        if(!region){
-            //std::cout << "Core region not found?" << std::endl;
-            continue;
-        }
+        if(!region) continue;
 
         processRegionForDrawing(frustum, region, drawCallCount);
     }   

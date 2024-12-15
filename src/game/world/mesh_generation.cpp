@@ -10,12 +10,7 @@ void ChunkMeshGenerator::loadMeshFromQueue(ChunkMeshRegistry&  buffer){
     if(meshLoadingQueue.empty()) return;
     auto& [position,mesh] = meshLoadingQueue.front();
 
-    bool loaded = false;
-    
-    if(buffer.isChunkLoaded(position)) loaded = buffer.updateMesh(mesh.get(), position);
-    else loaded = buffer.addMesh(mesh.get(), position);
-
-    if(loaded){
+    if(buffer.addMesh(mesh.get(), position)){
         meshLoadingQueue.pop();
     }
 }
@@ -39,8 +34,7 @@ void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegis
     auto world_position = chunk->getWorldPosition();
     auto solid_mesh = generateChunkMesh(world_position, chunk);
 
-    if(buffer.isChunkLoaded(world_position)) buffer.updateMesh(solid_mesh.get(), world_position);
-    else buffer.addMesh(solid_mesh.get(), world_position);
+    buffer.addMesh(solid_mesh.get(), world_position);
 }
 
 /*
