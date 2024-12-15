@@ -1,29 +1,14 @@
 #include <rendering/mesh.hpp>
 
-VertexFormat::VertexFormat(std::vector<uint> sizes){
-    this->sizes = sizes;
-    for(auto& size: sizes) totalSize += size;
-}
+LoadedMesh::LoadedMesh(Mesh& mesh){
+    vao.bind();
+    vao.attachBuffer(&vertex_buffer, mesh.vertex_format);
+    vao.attachIndexBuffer(&index_buffer);
 
-void VertexFormat::apply(){
-    int vertexSize = 0;
-    for(auto& sz: sizes) vertexSize += sz;
+    vertex_buffer.insert(0, mesh.vertices.size(), mesh.vertices.data());
+    index_buffer.insert(0, mesh.indices.size(), mesh.indices.data());
 
-    size_t stride =  vertexSize * sizeof(float);
-
-    size_t size_to_now = 0;
-    for(int i = 0;i < sizes.size();i++){
-        size_t current_size = sizes[i];
-        
-        uintptr_t pointer = size_to_now * sizeof(float);
-
-        //printf("Size: %lu Pointer: %lu Stride: %lu\n",current_size,pointer,stride);
-
-        glVertexAttribPointer(i, (int) current_size, GL_FLOAT, GL_FALSE, (int)stride, (void*)pointer);
-        glEnableVertexAttribArray(i);
-
-        size_to_now += current_size;
-    }
+    vao.unbind();
 }
 
 void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height){

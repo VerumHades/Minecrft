@@ -34,26 +34,6 @@ class GLBinding{
 void checkGLError(const char *file, int line);
 #define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
 
-class GLBufferLegacy{
-    private:
-        uint data;
-        uint index;
-        uint vao;
-
-        size_t vertexCount = 0;
-        size_t indiciesCount = 0;
-
-        bool dataLoaded = false;
-    public:
-        GLBufferLegacy();
-        ~GLBufferLegacy();
-        void loadMesh(Mesh& mesh);
-        void draw();
-        void drawInstances(int count);
-
-        uint getID(){ return data; } 
-};
-
 template <typename T, int type>
 class GLBuffer{
     private:
@@ -416,11 +396,22 @@ class GLAlignedBuffer: public GLBuffer<T,type>{
         size_t size() { return buffer_size; }
 };*/
 
-enum GLSlotBinding{
+enum GLVertexValueType{
     FLOAT = 1,
     VEC2 = 2,
     VEC3 = 3,
     VEC4 = 4
+};
+
+class GLVertexFormat{
+    private:
+        std::vector<GLVertexValueType> bindings = {};
+        uint totalSize = 0;
+        bool per_instance = false;
+    public:
+        GLVertexFormat(std::vector<GLVertexValueType> bindings, bool per_instance = false);
+        void apply(uint& slot);
+        uint getVertexSize(){return totalSize;}
 };
 
 /*
@@ -432,9 +423,7 @@ class GLVertexArray{
 
         struct BoundBuffer{
             GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer;
-            std::vector<GLSlotBinding> bindings;
-            size_t size;
-            bool per_instance = false;
+            GLVertexFormat format;
         };
 
         std::vector<BoundBuffer> buffers;
@@ -446,16 +435,14 @@ class GLVertexArray{
             glDeleteVertexArrays(1,  &vao_id);
         }
 
-        size_t attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, std::vector<GLSlotBinding> bindings, bool per_instance = false){
-            size_t vertex_size = 0;
-            for(auto& binding: bindings) vertex_size += binding;
-
-            buffers.push_back({buffer_pointer, bindings, vertex_size, per_instance});
+        size_t attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format){
+            buffers.push_back({buffer_pointer, format});
 
             update();
             
-            return vertex_size;
+            return format.getVertexSize();
         }
+
         void attachIndexBuffer(GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>* buffer){
             bind();
             buffer->bind();
@@ -470,37 +457,17 @@ class GLVertexArray{
 
             uint slot = 0;
 
-            for(auto& [buffer_pointer, bindings, vertex_size, per_instance]: buffers){
+            for(auto& [buffer_pointer, format]: buffers){
                 buffer_pointer->bind();
-
-                size_t stride =  vertex_size * sizeof(float);
-                size_t size_to_now = 0;
-
-                for(auto& current_size: bindings){
-                    /*if(current_size == MAT4){
-                        glVertexAttribPointer(pos1, 4, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4 * 4, (void*)(0));
-                        glVertexAttribPointer(pos2, 4, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4 * 4, (void*)(sizeof(float) * 4));
-                        glVertexAttribPointer(pos3, 4, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4 * 4, (void*)(sizeof(float) * 8));
-                        glVertexAttribPointer(pos4, 4, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4 * 4, (void*)(sizeof(float) * 12));
-                    }*/
-
-                    uintptr_t pointer = size_to_now * sizeof(float);
-
-                    glVertexAttribPointer(slot, (int) current_size, GL_FLOAT, GL_FALSE, (int)stride, (void*)pointer);
-                    glEnableVertexAttribArray(slot);
-                    if(per_instance) glVertexAttribDivisor(slot, 1);
-
-                    size_to_now += current_size;
-                    slot++;
-                }
+                format.apply(slot);
             }
 
             unbind();
         }
-        void bind(){
+        void bind() const {
             glBindVertexArray(vao_id);
         }
-        void unbind(){
+        void unbind() const {
             glBindVertexArray(0);
         }
 };

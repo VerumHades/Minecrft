@@ -13,39 +13,37 @@
 #include <GLFW/glfw3.h>
 #include <general.hpp>
 
-class VertexFormat{
+#include <rendering/opengl/buffer.hpp>
+
+class Mesh;
+
+class LoadedMesh{
     private:
-        std::vector<uint> sizes = {};
-        uint totalSize = 0;
+        GLVertexArray vao;
+        GLBuffer<float, GL_ARRAY_BUFFER> vertex_buffer;
+        GLBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> index_buffer;
+
+        LoadedMesh(Mesh& mesh);
+        friend class Mesh;
+
     public:
-        VertexFormat(){};
-        VertexFormat(std::vector<uint> sizes);
-        void apply();
-        uint getVertexSize(){return totalSize;}
+        const GLVertexArray& getVAO() {return vao;};
 };
 
 class Mesh{
     private:
         std::vector<float> vertices;
         std::vector<uint> indices;
-        VertexFormat format;
-
-        int textureIndex = -1;
+        GLVertexFormat vertex_format;
 
     public:
-        size_t vertexSize = 0;
+        Mesh(GLVertexFormat vertex_format): vertex_format(vertex_format){}
 
-        Mesh(){}
-
-        void setVertexFormat(const VertexFormat& format) {this->format = format;};
         void addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height);
         void addQuadFace(std::array<glm::vec3, 4> vertices, glm::vec3 normal, bool clockwise, std::vector<float> metadata = {});
 
         std::vector<float>& getVertices() {return this->vertices;}
         std::vector<uint>& getIndices() {return this->indices;}
-        VertexFormat& getFormat() {return this->format;}
-
-        void setTextureIndex(int index){textureIndex = index;}
-        int getTextureIndex(){return textureIndex;};
+        friend class LoadedMesh;
 };
 #endif

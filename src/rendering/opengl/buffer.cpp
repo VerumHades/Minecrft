@@ -19,99 +19,23 @@ void checkGLError(const char *file, int line){
     }
 }
 
-GLBufferLegacy::GLBufferLegacy() {
-    glGenVertexArrays(1, &this->vao);
-    glGenBuffers(1, &this->data);
-    glGenBuffers(1, &this->index);
+GLVertexFormat::GLVertexFormat(std::vector<GLVertexValueType> bindings, bool per_instance = false): per_instance(per_instance), bindings(bindings){
+    totalSize = 0;
+    for(auto& size: bindings) totalSize += size;
+}   
 
-    //std::cerr << "GLBufferLegacy constructor called for object at " << this << std::endl;
-}
-GLBufferLegacy::~GLBufferLegacy(){
-    glDeleteBuffers(1 , &this->data);
-    glDeleteBuffers(1 , &this->index);
-    glDeleteVertexArrays(1, &this->vao);
+void GLVertexFormat::apply(uint& slot){
+    size_t stride =  totalSize * sizeof(float);
+    size_t size_to_now = 0;
 
-    //std::cerr << "GLBufferLegacy destructor called for object at " << this << std::endl;
-}
+    for(auto& current_size: bindings){
+        uintptr_t pointer = size_to_now * sizeof(float);
 
-void GLBufferLegacy::loadMesh(Mesh& mesh){
-    uint buffer = this->data;
-    uint index_buffer = this->index;
-    
-    glBindVertexArray(vao);
+        glVertexAttribPointer(slot, (int) current_size, GL_FLOAT, GL_FALSE, (int)stride, (void*)pointer);
+        glEnableVertexAttribArray(slot);
+        if(per_instance) glVertexAttribDivisor(slot, 1);
 
-    //CHECK_GL_ERROR();;
-
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, mesh.getVertices().size() * sizeof(float), mesh.getVertices().data(), GL_DYNAMIC_DRAW);
-    
-    //CHECK_GL_ERROR();;
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.getIndices().size() * sizeof(uint),mesh.getIndices().data(), GL_DYNAMIC_DRAW);
-    
-    //CHECK_GL_ERROR();;
-
-    mesh.getFormat().apply();
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    this->vertexCount   = mesh.getVertices().size();
-    this->indiciesCount = mesh.getIndices().size();
-
-    this->dataLoaded = true;
-}
-
-void GLBufferLegacy::draw(){
-    uint buffer = this->data;
-    uint index_buffer =this->index;
-
-    //printf("%u %u %u\n", buffer, index_buffer, vao);
-
-    glBindVertexArray(vao);
-
-    //glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer)
-
-    glDrawElements(
-        GL_TRIANGLES,      // mode
-        (int) this->indiciesCount,    // count
-        GL_UNSIGNED_INT,   // type
-        (void*)0           // element array buffer offset
-    );
-
-    //CHECK_GL_ERROR();;
-
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-}
-
-void GLBufferLegacy::drawInstances(int count){
-    uint buffer = this->data;
-    uint index_buffer =this->index;
-
-    //printf("%u %u %u\n", buffer, index_buffer, vao);
-
-    glBindVertexArray(vao);
-
-   // glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-
-    //CHECK_GL_ERROR();;
-
-    //std::cout << this->indiciesCount << "Instances:" << count << std::endl;
-
-    glDrawElementsInstanced(
-        GL_TRIANGLES,      // mode
-        (int) this->indiciesCount,    // count
-        GL_UNSIGNED_INT,   // type
-        (void*)0,           // element array buffer offset,
-        count
-    );
-
-    //CHECK_GL_ERROR();;
-
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+        size_to_now += current_size;
+        slot++;
+    }
 }

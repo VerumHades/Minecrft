@@ -2,11 +2,9 @@
 
 #include <rendering/opengl/buffer.hpp>
 
-class GLInstancedBuffer: public GLBuffer<float,GL_ARRAY_BUFFER>{
+class GLInstancedBuffer{
     private:
-        GLBuffer<float, GL_ARRAY_BUFFER> vertex_buffer;
-        GLBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> index_buffer;
-
+        std::vector<LoadedMesh> instanced_meshes;
         
     public:
 

@@ -33,8 +33,8 @@ void TextureRegistry::loadFromFolder(std::string path){
         auto& path = entry.path();
 
         int width, height, channels;
-        if (!stbi_info(path.c_str(), &width, &height, &channels)) continue;
+        if (!stbi_info(path.string().c_str(), &width, &height, &channels)) continue;
 
-        addTexture(path.stem().string(), path);
+        addTexture(path.stem().string(), path.string());
     }
 }
