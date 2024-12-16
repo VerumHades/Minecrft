@@ -19,7 +19,7 @@ void checkGLError(const char *file, int line){
     }
 }
 
-GLVertexFormat::GLVertexFormat(std::vector<GLVertexValueType> bindings, bool per_instance = false): per_instance(per_instance), bindings(bindings){
+GLVertexFormat::GLVertexFormat(std::initializer_list<GLVertexValueType> bindings, bool per_instance = false): per_instance(per_instance), bindings(bindings){
     totalSize = 0;
     for(auto& size: bindings) totalSize += size;
 }   

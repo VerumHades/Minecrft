@@ -50,4 +50,5 @@ class Mesh{
 
         LoadedMesh load(std::vector<GLVertexValueType> instance_types = {}) { return LoadedMesh(*this, instance_types); };
 };
+
 #endif

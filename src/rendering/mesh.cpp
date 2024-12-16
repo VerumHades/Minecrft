@@ -105,9 +105,3 @@ void Mesh::addQuadFace(std::array<glm::vec3, 4> vertices_, glm::vec3 normal, boo
     if (clockwise) this->indices.insert(this->indices.end(), {vecIndices[0], vecIndices[1], vecIndices[3], vecIndices[1], vecIndices[2], vecIndices[3]});
     else this->indices.insert(this->indices.end(), {vecIndices[3], vecIndices[1], vecIndices[0], vecIndices[3], vecIndices[2], vecIndices[1]});
 }
-/*
-    textureX, textureY
-    textureX + textureSize, textureY,
-    textureX + textureSize, textureY + textureSize
-    textureX, textureY + textureSize
-*/

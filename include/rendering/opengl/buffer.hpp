@@ -409,7 +409,7 @@ class GLVertexFormat{
         uint totalSize = 0;
         bool per_instance = false;
     public:
-        GLVertexFormat(std::vector<GLVertexValueType> bindings, bool per_instance = false);
+        GLVertexFormat(std::initializer_list<GLVertexValueType> bindings, bool per_instance = false);
         void apply(uint& slot);
         uint getVertexSize(){return totalSize;}
 };

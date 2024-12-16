@@ -97,7 +97,7 @@ class CoherentList{
             if(internal_data) delete internal_data;
         }
 
-        const RegionIterator append(T* data, size_t size){
+        const RegionIterator append(const T* data, const size_t size){
             RegionIterator region_iter = 
                 regions.insert(regions.end(), {content_size, size});
 
@@ -112,8 +112,6 @@ class CoherentList{
                 delete old_data;
             }
 
-            std::cout << "Current size: " << internal_size << " appending size: " << size << " at: "  << content_size << std::endl;
-
             std::memcpy(internal_data + content_size, data, size * sizeof(T));
             content_size += size;
             
@@ -126,7 +124,6 @@ class CoherentList{
                 internal_data + region->start + region->size,
                 (content_size - region->start - region->size) * sizeof(T)
             );
-            std::cout << "Copying: " << (content_size - region->start - region->size) << std::endl;
             content_size -= region->size;
 
             for (auto it = region; it != regions.end(); ++it) it->start -= region->size;
