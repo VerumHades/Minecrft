@@ -278,7 +278,7 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
     }
     
     /*
-        Mesh bilboards
+        Mesh billboards
     */
 
     for(auto& [type,block,field]: group->getLayers()){

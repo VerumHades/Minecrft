@@ -22,34 +22,41 @@ const std::vector<float>& InstancedMesh::getInstanceData(FaceType type){
 }
 
 InstancedMeshBuffer::InstancedMeshBuffer(){
-    std::array<float, 20> x_aligned_quad_data = {
+    std::array<float, 20 * 5> aligned_quad_data = {
+        // X aligned face
         0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 
         0.0f, 0.0f, 1.0f,  1.0f, 1.0f, 
         0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 
         0.0f, 1.0f, 1.0f,  1.0f, 0.0f, 
-    };
-
-    std::array<float, 20> y_aligned_quad_data = {
+        // Y aligned face
         0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 
         0.0f, 0.0f, 1.0f,  1.0f, 1.0f, 
         1.0f, 0.0f, 0.0f,  0.0f, 0.0f, 
         1.0f, 0.0f, 1.0f,  1.0f, 0.0f, 
-    };
-
-    std::array<float, 20> z_aligned_quad_data = {
+        // Z aligned face
         0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 
         1.0f, 0.0f, 0.0f,  1.0f, 1.0f, 
         0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 
         1.0f, 1.0f, 0.0f,  1.0f, 0.0f, 
+
+        // Diagonal billboard faces
+        0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 
+        1.0f, 0.0f, 1.0f,  1.0f, 1.0f, 
+        0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 
+        1.0f, 1.0f, 1.0f,  1.0f, 0.0f, 
+
+        0.0f, 0.0f, 1.0f,  0.0f, 1.0f, 
+        1.0f, 0.0f, 0.0f,  1.0f, 1.0f, 
+        0.0f, 1.0f, 1.0f,  0.0f, 0.0f, 
+        1.0f, 1.0f, 0.0f,  1.0f, 0.0f, 
     };
 
-    loaded_face_buffers[InstancedMesh::X_ALIGNED].initialize(x_aligned_quad_data.size(), x_aligned_quad_data.data());
-    loaded_face_buffers[InstancedMesh::Y_ALIGNED].initialize(y_aligned_quad_data.size(), y_aligned_quad_data.data());
-    loaded_face_buffers[InstancedMesh::Z_ALIGNED].initialize(z_aligned_quad_data.size(), z_aligned_quad_data.data());
+
+    loaded_face_buffer.initialize(aligned_quad_data.size(), aligned_quad_data.data());
 
     for(int i = 0;i < distinct_face_count;i++){
         vaos[i].attachBuffer(&instance_buffers[i], {VEC3, VEC2, FLOAT, FLOAT});
-        vaos[i].attachBuffer(&loaded_face_buffers[i], {VEC3, VEC2});
+        vaos[i].attachBuffer(&loaded_face_buffer, {VEC3, VEC2});
     }
 }
 
@@ -59,11 +66,21 @@ void InstancedMeshBuffer::renderMesh(LoadedMeshIterator iterator){
 
         glDrawArraysInstancedBaseInstance(
             GL_TRIANGLE_STRIP, 
-            0, 
+            4 * i, // Offset in the buffer
             4, 
             iterator->loaded_regions[i]->size  / InstancedMesh::instance_data_size,
             iterator->loaded_regions[i]->start / InstancedMesh::instance_data_size
         );
+
+        if(i == 3){ // Draw the seconds diagonal
+            glDrawArraysInstancedBaseInstance(
+                GL_TRIANGLE_STRIP, 
+                4 * (i + 1), // Offset in the buffer
+                4, 
+                iterator->loaded_regions[i]->size  / InstancedMesh::instance_data_size,
+                iterator->loaded_regions[i]->start / InstancedMesh::instance_data_size
+            );
+        }
     }
     vaos[0].unbind();
 }

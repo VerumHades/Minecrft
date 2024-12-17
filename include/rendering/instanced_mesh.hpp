@@ -13,7 +13,7 @@ class InstancedMesh{
             X_ALIGNED = 0,
             Y_ALIGNED = 1,
             Z_ALIGNED = 2,
-            BILBOARD  = 3
+            BILLBOARD  = 3
         };
 
         enum Direction{
@@ -45,8 +45,9 @@ class InstancedMeshBuffer{
         std::array<CoherentList<float>, distinct_face_count> instance_data;
 
         std::array<GLVertexArray, distinct_face_count> vaos;
+        GLBuffer<float, GL_ARRAY_BUFFER> loaded_face_buffer;
+
         std::array<GLBuffer<float, GL_ARRAY_BUFFER>, distinct_face_count> instance_buffers;
-        std::array<GLBuffer<float, GL_ARRAY_BUFFER>, distinct_face_count> loaded_face_buffers;
 
     public:
         InstancedMeshBuffer();
