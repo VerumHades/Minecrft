@@ -25,7 +25,7 @@ class LoadedMesh{
         
         GLBuffer<float, GL_ARRAY_BUFFER> instance_buffer;
 
-        LoadedMesh(Mesh& mesh, std::vector<GLVertexValueType> instance_types);
+        LoadedMesh(Mesh& mesh, std::initializer_list<GLVertexValueType> instance_types);
         friend class Mesh;
 
     public:
@@ -48,7 +48,7 @@ class Mesh{
         std::vector<uint>& getIndices() {return this->indices;}
         friend class LoadedMesh;
 
-        LoadedMesh load(std::vector<GLVertexValueType> instance_types = {}) { return LoadedMesh(*this, instance_types); };
+        LoadedMesh load(std::initializer_list<GLVertexValueType> instance_types = {}) { return LoadedMesh(*this, instance_types); };
 };
 
 #endif

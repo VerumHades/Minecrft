@@ -1,6 +1,6 @@
 #include <rendering/mesh.hpp>
 
-LoadedMesh::LoadedMesh(Mesh& mesh, std::vector<GLVertexValueType> instance_types){
+LoadedMesh::LoadedMesh(Mesh& mesh, std::initializer_list<GLVertexValueType> instance_types){
     vao.bind();
     vao.attachBuffer(&vertex_buffer, mesh.vertex_format);
     vao.attachBuffer(&instance_buffer, {instance_types, true});

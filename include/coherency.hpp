@@ -119,12 +119,15 @@ class CoherentList{
         }
 
         void remove(const RegionIterator region){
-            std::memmove(
-                internal_data + region->start,
-                internal_data + region->start + region->size,
-                (content_size - region->start - region->size) * sizeof(T)
-            );
-            content_size -= region->size;
+            size_t total_to_move = (content_size - region->start - region->size);
+            if(total_to_move > 0){
+                std::memmove(
+                    internal_data + region->start,
+                    internal_data + region->start + region->size,
+                    total_to_move * sizeof(T)
+                );
+                content_size -= region->size;
+            }
 
             for (auto it = region; it != regions.end(); ++it) it->start -= region->size;
             regions.erase(region);
