@@ -9,7 +9,6 @@
 #include <rendering/chunk_buffer.hpp>
 #include <rendering/mesh.hpp>
 #include <rendering/camera.hpp>
-#include <rendering/external_model.hpp>
 #include <rendering/bitworks.hpp>
 #include <game/threadpool.hpp>
 #include <blockarray.hpp>

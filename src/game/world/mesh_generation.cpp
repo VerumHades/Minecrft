@@ -1,7 +1,7 @@
 #include <game/world/mesh_generation.hpp>
 
 
-void ChunkMeshGenerator::addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<Mesh> mesh){
+void ChunkMeshGenerator::addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<InstancedMesh> mesh){
     std::lock_guard<std::mutex> lock(meshLoadingMutex);
     meshLoadingQueue.push({position,std::move(mesh)});
 }
@@ -121,88 +121,66 @@ std::vector<ChunkMeshGenerator::Face> ChunkMeshGenerator::greedyMeshPlane(BitPla
 #define AGREGATE_TYPES(axis) std::vector<BlockID> agregateTypes##axis = next##axis->getPresentTypes(); \
     agregateTypes##axis.insert(agregateTypes##axis.end(), group->getPresentTypes().begin(), group->getPresentTypes().end());
 
-enum FaceDirection{
-    X,Y,Z
-};
-
-static inline void processFaces(std::vector<ChunkMeshGenerator::Face> faces, FaceDirection direction, bool forward, BlockRegistry::BlockPrototype* type, Mesh* mesh, int worldX, int worldY, int worldZ, int layer, float scale){
-    std::array<glm::vec3, 4> vertices;
+static inline void processFaces(
+    std::vector<ChunkMeshGenerator::Face> faces,
+    InstancedMesh::FaceType face_type,
+    InstancedMesh::Direction direction,
+    BlockRegistry::BlockPrototype* type,
+    InstancedMesh* mesh, 
+    glm::vec3 world_position,
+    int layer,
+    float scale
+){
+    glm::vec3 face_position;
     int texture = 0;
     int normal;
     bool clockwise;
 
+    bool texture_index = direction == InstancedMesh::Backward;
+
     float occlusion[4] = {0,0,0,0};
-    
-    glm::vec3 worldOffset = {worldX,worldY,worldZ};
 
     for(auto& face: faces){
         int faceWidth  = face.width;
         int faceHeight = face.height;
-        switch(direction){
-            case X:
-                vertices = {
-                    glm::vec3(layer + 1, face.y + face.height, face.x             ) * scale + worldOffset,
-                    glm::vec3(layer + 1, face.y + face.height, face.x + face.width) * scale + worldOffset,
-                    glm::vec3(layer + 1, face.y              , face.x + face.width) * scale + worldOffset,
-                    glm::vec3(layer + 1, face.y              , face.x             ) * scale + worldOffset
-                };
-                texture = type->single_texture ? type->textures[0] : type->textures[4 + forward];
-                normal = forward ? 3 : 2;
-                clockwise = forward;
+
+        switch(face_type){
+            case InstancedMesh::X_ALIGNED:
+                face_position = glm::vec3(layer + 1, face.y + face.height, face.x) * scale + world_position;
+
+                texture = type->single_texture ? type->textures[0] : type->textures[4 + texture_index ];
+
                 break;
-            case Y:
-                vertices = {
-                    glm::vec3(face.y              , layer + 1, face.x              ) * scale + worldOffset,
-                    glm::vec3(face.y + face.height, layer + 1, face.x              ) * scale + worldOffset,
-                    glm::vec3(face.y + face.height, layer + 1, face.x + face.width ) * scale + worldOffset,
-                    glm::vec3(face.y              , layer + 1, face.x + face.width ) * scale + worldOffset
-                };
+            case InstancedMesh::Y_ALIGNED:
+                face_position = glm::vec3(face.y              , layer + 1, face.x              ) * scale + world_position;
 
                 faceWidth = face.height;
                 faceHeight = face.width;
 
-                texture = type->single_texture ? type->textures[0] : type->textures[!forward];
-                normal = forward ? 0 : 1;
-                clockwise = !forward;
+                texture = type->single_texture ? type->textures[0] : type->textures[!texture_index ];
                 break;
-            case Z:
-                vertices = {
-                    glm::vec3(face.x              , face.y + face.height, layer + 1) * scale + worldOffset,
-                    glm::vec3(face.x + face.width , face.y + face.height, layer + 1) * scale + worldOffset,
-                    glm::vec3(face.x + face.width , face.y              , layer + 1) * scale + worldOffset,
-                    glm::vec3(face.x              , face.y              , layer + 1) * scale + worldOffset
-                };
-
-                texture = type->single_texture ? type->textures[0] : type->textures[2 + forward];
-                normal = forward ? 5 : 4;
-                clockwise = !forward;
+            case InstancedMesh::Z_ALIGNED:
+                face_position = glm::vec3(face.x              , face.y + face.height, layer + 1) * scale + world_position;
+  
+                texture = type->single_texture ? type->textures[0] : type->textures[2 + texture_index ];
                 break;
         }
 
-        mesh->addQuadFaceGreedy(
-            vertices.data(),
-            normal,
-            occlusion,
-            static_cast<float>(texture),
-            clockwise,
-            faceWidth,
-            faceHeight
-        );
+        mesh->addQuadFace(face_position, faceWidth, faceHeight, texture, face_type, direction);
     }
 }   
 
-std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosition, Chunk* group){
+std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosition, Chunk* group){
     auto start = std::chrono::high_resolution_clock::now();
 
-    auto solidMesh = std::make_unique<Mesh>();
+    auto solidMesh = std::make_unique<InstancedMesh>();
     if(!group){
         std::cout << "Empty group" << std::endl;
         return solidMesh;
     }
     //this->solidMesh->setVertexFormat(VertexFormat({3,1,2,1,1}));  // Unused
-    float worldX = worldPosition.x * CHUNK_SIZE;
-    float worldY = worldPosition.y * CHUNK_SIZE;
-    float worldZ = worldPosition.z * CHUNK_SIZE;
+
+    glm::vec3 world_position = worldPosition * CHUNK_SIZE;
 
     int size = CHUNK_SIZE;
     float scale = 1.0;
@@ -266,14 +244,14 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
             //std::cout << "Solving plane: " << getBlockTypeName(type) << std::endl;
             //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
 
-            processFaces(greedyMeshPlane(planesXforward [static_cast<size_t>(type)], size), X, true , definition, solidMesh.get(), worldX, worldY, worldZ, layer, scale);
-            processFaces(greedyMeshPlane(planesXbackward[static_cast<size_t>(type)], size), X, false, definition, solidMesh.get(), worldX, worldY, worldZ, layer, scale);
+            processFaces(greedyMeshPlane(planesXforward [static_cast<size_t>(type)], size), InstancedMesh::X_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, layer, scale);
+            processFaces(greedyMeshPlane(planesXbackward[static_cast<size_t>(type)], size), InstancedMesh::X_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer, scale);
 
-            processFaces(greedyMeshPlane(planesYforward [static_cast<size_t>(type)], size), Y, true , definition, solidMesh.get(), worldX, worldY, worldZ, layer, scale);
-            processFaces(greedyMeshPlane(planesYbackward[static_cast<size_t>(type)], size), Y, false, definition, solidMesh.get(), worldX, worldY, worldZ, layer, scale);
+            processFaces(greedyMeshPlane(planesYforward [static_cast<size_t>(type)], size), InstancedMesh::Y_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, layer, scale);
+            processFaces(greedyMeshPlane(planesYbackward[static_cast<size_t>(type)], size), InstancedMesh::Y_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer, scale);
 
-            processFaces(greedyMeshPlane(planesZforward [static_cast<size_t>(type)], size), Z, true , definition, solidMesh.get(), worldX, worldY, worldZ, layer, scale);
-            processFaces(greedyMeshPlane(planesZbackward[static_cast<size_t>(type)], size), Z, false, definition, solidMesh.get(), worldX, worldY, worldZ, layer, scale);
+            processFaces(greedyMeshPlane(planesZforward [static_cast<size_t>(type)], size), InstancedMesh::Z_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, layer, scale);
+            processFaces(greedyMeshPlane(planesZbackward[static_cast<size_t>(type)], size), InstancedMesh::Z_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer, scale);
         }
     }
     
@@ -288,59 +266,9 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
         for(int x = 0;x < size;x++) for(int y = 0;y < size;y++) for(int z = 0;z < size;z++){
             if(!field.get(x,y,z)) continue;
 
-            int normal = 0;
+            glm::vec3 position = glm::vec3{x,y,z} * scale + world_position;
 
-            float occlusion[4] = {0,0,0,0};
-            glm::vec3 worldOffset = {worldX,worldY,worldZ};
-            glm::vec3 position = {x,y,z};
-            
-            std::array<glm::vec3, 4> vertices1 = {
-                (glm::vec3(0,1,0) + position) * scale + worldOffset,
-                (glm::vec3(1,1,1) + position) * scale + worldOffset,
-                (glm::vec3(1,0,1) + position) * scale + worldOffset,
-                (glm::vec3(0,0,0) + position) * scale + worldOffset
-            };
-
-            std::array<glm::vec3, 4> vertices2 = {
-                (glm::vec3(0,1,1) + position) * scale + worldOffset,
-                (glm::vec3(1,1,0) + position) * scale + worldOffset,
-                (glm::vec3(1,0,0) + position) * scale + worldOffset,
-                (glm::vec3(0,0,1) + position) * scale + worldOffset
-            };
-            
-            solidMesh->addQuadFaceGreedy(
-                vertices1.data(),
-                normal,
-                occlusion,
-                static_cast<float>(definition->textures[0]), // Texture is the first one
-                true,
-                1,1
-            );
-            solidMesh->addQuadFaceGreedy(
-                vertices1.data(),
-                normal,
-                occlusion,
-                static_cast<float>(definition->textures[0]), // Texture is the first one
-                false,
-                1,1
-            );
-
-            solidMesh->addQuadFaceGreedy(
-                vertices2.data(),
-                normal,
-                occlusion,
-                static_cast<float>(definition->textures[0]), // Texture is the first one
-                true,
-                1,1
-            );
-            solidMesh->addQuadFaceGreedy(
-                vertices2.data(),
-                normal,
-                occlusion,
-                static_cast<float>(definition->textures[0]), // Texture is the first one
-                false,
-                1,1
-            );
+            solidMesh->addQuadFace(position,1,1,definition->textures[0], InstancedMesh::BILLBOARD, InstancedMesh::Forward);
         }
     }
     /*
@@ -456,14 +384,14 @@ std::unique_ptr<Mesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosi
         auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
         if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
-        processFaces(greedyMeshPlane(planesXforward [static_cast<size_t>(type)], size), X, false, definition, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
-        processFaces(greedyMeshPlane(planesXbackward[static_cast<size_t>(type)], size), X, true , definition, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
+        processFaces(greedyMeshPlane(planesXforward [static_cast<size_t>(type)], size), InstancedMesh::X_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, scale);
+        processFaces(greedyMeshPlane(planesXbackward[static_cast<size_t>(type)], size), InstancedMesh::X_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, -1, scale);
 
-        processFaces(greedyMeshPlane(planesYforward [static_cast<size_t>(type)], size), Y, false, definition, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
-        processFaces(greedyMeshPlane(planesYbackward[static_cast<size_t>(type)], size), Y, true , definition, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
+        processFaces(greedyMeshPlane(planesYforward [static_cast<size_t>(type)], size), InstancedMesh::Y_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, scale);
+        processFaces(greedyMeshPlane(planesYbackward[static_cast<size_t>(type)], size), InstancedMesh::Y_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, -1, scale);
 
-        processFaces(greedyMeshPlane(planesZforward [static_cast<size_t>(type)], size), Z, false, definition, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
-        processFaces(greedyMeshPlane(planesZbackward[static_cast<size_t>(type)], size), Z, true , definition, solidMesh.get(), worldX, worldY, worldZ, -1, scale);
+        processFaces(greedyMeshPlane(planesZforward [static_cast<size_t>(type)], size), InstancedMesh::Z_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, scale);
+        processFaces(greedyMeshPlane(planesZbackward[static_cast<size_t>(type)], size), InstancedMesh::Z_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, -1, scale);
     }
     //std::cout << "Vertices:" << solidMesh.get()->getIndices().size() << std::endl;
     

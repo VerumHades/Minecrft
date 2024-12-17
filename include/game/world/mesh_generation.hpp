@@ -2,6 +2,7 @@
 
 #include <mutex>
 #include <game/world/world.hpp>
+#include <instanced_mesh.hpp>
 #include <blockarray.hpp>
 
 class ChunkMeshGenerator{
@@ -14,7 +15,7 @@ class ChunkMeshGenerator{
         };
     private:
         std::vector<Face> greedyMeshPlane(BitPlane<64> rows, int size);
-        std::unique_ptr<Mesh> generateChunkMesh(glm::ivec3 position, Chunk* group);
+        std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group);
 
         BitFieldCache cache;
         BlockRegistry& blockRegistry;
@@ -23,14 +24,14 @@ class ChunkMeshGenerator{
         
         struct MeshLoadingMember{
             glm::ivec3 position;
-            std::unique_ptr<Mesh> mesh;
+            std::unique_ptr<InstancedMesh> mesh;
         };
 
         std::queue<MeshLoadingMember> meshLoadingQueue;
 
         World* world = nullptr; // Points to the world relative to which you generate meshes, doesnt need to be set
 
-        void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<Mesh> mesh);
+        void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<InstancedMesh> mesh);
 
     public:
         ChunkMeshGenerator(BlockRegistry& blockRegistry): blockRegistry(blockRegistry) {}
