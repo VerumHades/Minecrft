@@ -385,12 +385,12 @@ void MainScene::render(){
     glm::vec3 camPosition = world->getPlayer().getPosition() + camOffset;
 
     camera.setPosition(camPosition);
-    chunkMeshGenerator.loadMeshFromQueue(chunkMeshRegistry);
+    //chunkMeshGenerator.loadMeshFromQueue(chunkMeshRegistry);
 
     processMouseMovement();
 
     if(updateVisibility > 0){
-        chunkMeshRegistry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
+        //chunkMeshRegistry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
         updateVisibility = 0;
     }
     
@@ -440,7 +440,10 @@ void MainScene::render(){
 
         // Draw terrain
         terrainProgram.updateUniforms();
-        chunkMeshRegistry.draw();
+        //chunkMeshRegistry.draw();
+        for(auto& loaded_mesh: loaded_meshes){
+            chunkMeshBuffer.renderMesh(loaded_mesh);
+        }
 
         // Draw models
         itemPrototypeRegistry.updateModelsDrawRequestBuffer();
@@ -480,7 +483,7 @@ void MainScene::render(){
 }
 
 void MainScene::regenerateChunkMesh(Chunk* chunk){
-    chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry);
+    loaded_meshes.push_back(chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshBuffer));
     this->updateVisibility = 1;
     //chunkMeshRegistry.unloadChunkMesh(chunk->getWorldPosition());
 }
@@ -593,12 +596,12 @@ void MainScene::generateSurroundingChunks(){
     for(int x = -renderDistance ; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
         glm::ivec3 chunkPosition = camWorldPosition + glm::ivec3(x,y,z);
         
-        Chunk* meshlessChunk = world->getChunk(chunkPosition);
-        if(!meshlessChunk){
+        Chunk* chunk = world->getChunk(chunkPosition);
+        if(!chunk){
             std::cerr << "Chunk not generated when generating meshes?" << std::endl;
             continue;
         }
-        chunkMeshGenerator.syncGenerateSyncUploadMesh(meshlessChunk, chunkMeshRegistry);
+        loaded_meshes.push_back(chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshBuffer));
     }
     while(!threadPool->finished()){ // Wait for everything to generate
         std::this_thread::sleep_for(std::chrono::milliseconds(10));

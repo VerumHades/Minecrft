@@ -2,7 +2,7 @@
 
 #include <mutex>
 #include <game/world/world.hpp>
-#include <instanced_mesh.hpp>
+#include <rendering/instanced_mesh.hpp>
 #include <blockarray.hpp>
 
 class ChunkMeshGenerator{
@@ -36,7 +36,7 @@ class ChunkMeshGenerator{
     public:
         ChunkMeshGenerator(BlockRegistry& blockRegistry): blockRegistry(blockRegistry) {}
 
-        void loadMeshFromQueue(ChunkMeshRegistry&  buffer);
+        //void loadMeshFromQueue(ChunkMeshRegistry&  buffer);
 
         /*
             Launches a thread if possible, the when the mesh is generated sends it to the worlds mesh loading queue,
@@ -55,7 +55,7 @@ class ChunkMeshGenerator{
         /*
             Generates and uploads the newly generated chunk mesh right away
         */
-        void syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegistry& buffer);
+        InstancedMeshBuffer::LoadedMeshIterator syncGenerateSyncUploadMesh(Chunk* chunk, InstancedMeshBuffer& buffer);
 
         void setWorld(World* world){this->world = world;}
 };

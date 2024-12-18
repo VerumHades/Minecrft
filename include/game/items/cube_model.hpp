@@ -6,7 +6,7 @@
 class CubeModel: public Model{
     public:
         CubeModel(std::string texture_path){
-            Mesh mesh;
+            Mesh mesh = Mesh({VEC3, VEC3, VEC2});
 
             std::array<glm::vec3,8> vertices = {
                 glm::vec3(0.0f,1.0f,0.0f),

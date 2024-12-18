@@ -1,6 +1,7 @@
 #pragma once
 
 #include <rendering/opengl/buffer.hpp>
+#include <array>
 
 class GLFullscreenQuad{
     private:

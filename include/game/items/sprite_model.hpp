@@ -1,6 +1,7 @@
 #pragma once
 
 #include <rendering/texture_registry.hpp>
+#include <rendering/mesh.hpp>
 #include <rendering/model.hpp>
 #include <stb_image.h>
 #include <memory>

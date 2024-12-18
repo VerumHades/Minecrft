@@ -19,7 +19,7 @@ void checkGLError(const char *file, int line){
     }
 }
 
-GLVertexFormat::GLVertexFormat(std::initializer_list<GLVertexValueType> bindings, bool per_instance = false): per_instance(per_instance), bindings(bindings){
+GLVertexFormat::GLVertexFormat(std::initializer_list<GLVertexValueType> bindings, bool per_instance): per_instance(per_instance), bindings(bindings){
     totalSize = 0;
     for(auto& size: bindings) totalSize += size;
 }   
@@ -38,4 +38,22 @@ void GLVertexFormat::apply(uint& slot){
         size_to_now += current_size;
         slot++;
     }
+}
+
+void GLDrawCallBuffer::clear(){
+    draw_commands.clear();
+}
+void GLDrawCallBuffer::push(GLDrawCallBuffer::DrawCommand& command){
+    draw_commands.push(command);
+}
+void GLDrawCallBuffer::push(GLDrawCallBuffer::DrawCommand* commands, size_t size){
+    draw_commands.push(commands,size);
+}
+void GLDrawCallBuffer::flush(){
+    if(draw_commands.size() > buffer.size()) buffer.initialize(draw_commands.size(), draw_commands.data());
+    else buffer.insert(0, draw_commands.size(), draw_commands.data());
+}
+
+void GLDrawCallBuffer::bind(){
+    buffer.bind();
 }

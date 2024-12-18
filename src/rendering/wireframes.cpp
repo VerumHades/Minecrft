@@ -28,8 +28,8 @@ WireframeCubeRenderer::WireframeCubeRenderer(){
     instanceBuffer.bind();
 
     vao.attachBuffer(&vertexBuffer, {VEC3});
-    vao.attachBuffer(&instanceBuffer, {VEC3, VEC3, VEC3}, true);
-    vao.attachIndexBuffer(&indexBuffer);
+    vao.attachBuffer(&instanceBuffer, {{VEC3, VEC3, VEC3}, true});
+    vao.attachBuffer(&indexBuffer);
 }
 
 void WireframeCubeRenderer::setCube(size_t index, glm::vec3 position, glm::vec3 scale, glm::vec3 color){

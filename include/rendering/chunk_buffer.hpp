@@ -2,11 +2,12 @@
 
 #include <vec_hash.hpp>
 
-#include <rendering/mesh.hpp>
+#include <rendering/instanced_mesh.hpp>
 #include <rendering/allocator.hpp>
 #include <rendering/opengl/buffer.hpp>
 #include <rendering/culling.hpp>
 #include <rendering/wireframes.hpp>
+
 
 #include <sstream>    
 #include <iomanip>    
@@ -48,10 +49,6 @@ class MeshRegion{
             uint level = 1;
         } transform;
 
-        using DrawCommandList = std::vector<DrawElementsIndirectCommand>;
-        // Commands to draw the region and all its subregions
-        DrawCommandList draw_commands;
-
         ChunkMeshRegistry& registry;
         MeshRegion(Transform& transform, ChunkMeshRegistry& registry): transform(transform), registry(registry) {}
         
@@ -67,39 +64,9 @@ class MeshRegion{
         /* 
             Information relevent for only level 1 meshes
         */
-        struct MeshInformation{ 
-            size_t vertex_data_start = 0;
-            size_t index_data_start  = 0;
+        bool is_mesh_loaded = false;
+        const InstancedMeshBuffer::LoadedMeshIterator loaded_mesh_iterator;
 
-            size_t vertex_data_size = 0;
-            size_t index_data_size  = 0;
-
-            // Information for the draw call
-            size_t first_index = 0;
-            size_t count = 0;
-            size_t base_vertex  = 0;
-        } mesh_information;
-
-        /*
-            Updates mesh information, will cause parent regions to split apart if they merged this one
-        */
-        bool updateMeshInformation(MeshInformation information);
-
-        bool updatePropagatedDrawCalls();
-        /*
-            Establishes its own draw call in all the parent regions.
-
-            Only for level 1 regions.
-        */
-        bool propagateDrawCall();
-
-        /*
-            Returns an index from subregions relative position
-        */
-        uint getSubregionIndexFromPosition(uint x, uint y, uint z) {
-            return x + y * 2 + z * 4;
-        }
-        
         /*
             Returns a pointer to the regions parent, if the region has no parents return nullptr
         */
@@ -156,21 +123,9 @@ class ChunkMeshRegistry{
         GLVertexArray vao;
         
         size_t drawCallCount = 0;
-
-        size_t vertexBufferSize = 0;
-        size_t indexBufferSize = 0;
-
-        size_t maxVertexCount = 0;
-        size_t maxIndexCount = 0;
-
         size_t maxDrawCalls = 0;
 
-        size_t vertexSize = 0;
-
-        std::unique_ptr<GLCachedDoubleBuffer<DrawElementsIndirectCommand, GL_DRAW_INDIRECT_BUFFER>> drawCallBuffer;
-
-        GLAllocatedBuffer<float, GL_ARRAY_BUFFER        > vertexBuffer;
-        GLAllocatedBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> indexBuffer;
+        InstancedMeshBuffer mesh_buffer;
 
         // Highest region level, no regions higher than maxRegionLevel will be registered or created
         const static uint maxRegionLevel = 5;
@@ -211,7 +166,7 @@ class ChunkMeshRegistry{
 
             Takes the camera position in world coordinates
         */
-        void updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum);
+        //void updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum);
 
         /*
             Uploads the mesh as a level 1 region. (All parents are automatically created if they dont already exist)
@@ -244,11 +199,6 @@ class ChunkMeshRegistry{
             if(level < 1 || level > maxRegionLevel) return 0;
             return actualRegionSizes[level - 1];
         }
-
-        // The maximal number of floats the buffer can store
-        size_t getVertexBufferSize() { return maxVertexCount; }
-        // The maximal number of uints the buffer can store
-        size_t getIndexBufferSize() { return maxIndexCount; }
 
         void setDrawCallCount(int value){drawCallCount = value;}
 

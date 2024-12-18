@@ -5,8 +5,8 @@ Model::Model(){
         auto& vao = vaos[i];
         auto& instance_buffer = instance_buffers[i];
 
-        vao.attachBuffer(&instance_buffer, {VEC4,VEC4,VEC4,VEC4}, true);
-        vao.attachIndexBuffer(&index_buffer);
+        vao.attachBuffer(&instance_buffer, {{VEC4,VEC4,VEC4,VEC4}, true});
+        vao.attachBuffer(&index_buffer);
         vao.attachBuffer(&vertex_buffer, {VEC3,VEC3,VEC2,FLOAT,VEC3});
 
         instance_buffer.initialize(1);

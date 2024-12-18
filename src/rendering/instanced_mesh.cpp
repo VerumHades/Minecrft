@@ -60,7 +60,19 @@ InstancedMeshBuffer::InstancedMeshBuffer(){
     }
 }
 
-void InstancedMeshBuffer::renderMesh(LoadedMeshIterator iterator){
+InstancedMeshBuffer::LoadedMesh::~LoadedMesh(){
+    creator.removeMesh(*this);
+}
+
+void InstancedMeshBuffer::LoadedMesh::update(InstancedMesh& mesh){
+    creator.updateMesh(*this, mesh);
+}
+
+void InstancedMeshBuffer::LoadedMesh::render(){
+    creator.renderMesh(*this);
+}
+
+void InstancedMeshBuffer::renderMesh(LoadedMesh& mesh){
     for(int i = 0;i < distinct_face_count;i++){
         vaos[i].bind();
 
@@ -68,8 +80,8 @@ void InstancedMeshBuffer::renderMesh(LoadedMeshIterator iterator){
             GL_TRIANGLE_STRIP, 
             4 * i, // Offset in the buffer
             4, 
-            iterator->loaded_regions[i]->size  / InstancedMesh::instance_data_size,
-            iterator->loaded_regions[i]->start / InstancedMesh::instance_data_size
+            mesh.loaded_regions[i]->size  / InstancedMesh::instance_data_size,
+            mesh.loaded_regions[i]->start / InstancedMesh::instance_data_size
         );
 
         if(i == 3){ // Draw the seconds diagonal
@@ -77,16 +89,16 @@ void InstancedMeshBuffer::renderMesh(LoadedMeshIterator iterator){
                 GL_TRIANGLE_STRIP, 
                 4 * (i + 1), // Offset in the buffer
                 4, 
-                iterator->loaded_regions[i]->size  / InstancedMesh::instance_data_size,
-                iterator->loaded_regions[i]->start / InstancedMesh::instance_data_size
+                mesh.loaded_regions[i]->size  / InstancedMesh::instance_data_size,
+                mesh.loaded_regions[i]->start / InstancedMesh::instance_data_size
             );
         }
     }
     vaos[0].unbind();
 }
 
-InstancedMeshBuffer::LoadedMeshIterator InstancedMeshBuffer::loadMesh(InstancedMesh& mesh){
-    LoadedMesh loadedMesh = {};
+InstancedMeshBuffer::LoadedMesh InstancedMeshBuffer::loadMesh(InstancedMesh& mesh){
+    LoadedMesh loadedMesh = {*this};
 
     for(int i = 0;i < distinct_face_count;i++){
         auto& component_data = mesh.getInstanceData(static_cast<InstancedMesh::FaceType>(i));
@@ -95,12 +107,20 @@ InstancedMeshBuffer::LoadedMeshIterator InstancedMeshBuffer::loadMesh(InstancedM
         loadedMesh.loaded_regions[i] = instance_data[i].append(component_data.data(), component_data.size());
     }
 
-    return loadedMeshes.insert(loadedMeshes.end(), loadedMesh);
+    return loadedMesh;
 }
 
-void InstancedMeshBuffer::removeMesh(InstancedMeshBuffer::LoadedMeshIterator iterator){
+void InstancedMeshBuffer::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new_mesh){
     for(int i = 0;i < distinct_face_count;i++){
-        instance_data[i].remove(iterator->loaded_regions[i]);
+        auto& component_data = new_mesh.getInstanceData(static_cast<InstancedMesh::FaceType>(i));
+        if(component_data.size() == 0) continue;
+
+        loaded_mesh.loaded_regions[i] = instance_data[i].update(loaded_mesh.loaded_regions[i], component_data.data(), component_data.size());
     }
-    loadedMeshes.erase(iterator);
+}
+
+void InstancedMeshBuffer::removeMesh(LoadedMesh& mesh){
+    for(int i = 0;i < distinct_face_count;i++){
+        instance_data[i].remove(mesh.loaded_regions[i]);
+    }
 }

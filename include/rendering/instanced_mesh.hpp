@@ -14,7 +14,7 @@ class InstancedMesh{
             Y_ALIGNED = 1,
             Z_ALIGNED = 2,
             BILLBOARD  = 3
-        };
+        }; 
 
         enum Direction{
             Forward = 1,
@@ -32,27 +32,36 @@ class InstancedMesh{
 
 class InstancedMeshBuffer{
     public:
-        struct LoadedMesh{
-            std::array<CoherentList<float>::RegionIterator, 4> loaded_regions; 
+        class LoadedMesh{
+            private:
+                InstancedMeshBuffer& creator;
+                std::array<CoherentList<float>::RegionIterator, 4> loaded_regions; 
+
+                LoadedMesh(InstancedMeshBuffer& creator): creator(creator) {}
+
+                friend class InstancedMeshBuffer;
+            public:
+                void render();
+                void update(InstancedMesh& mesh);
+                ~LoadedMesh();
         };
         
-        using LoadedMeshIterator = std::list<LoadedMesh>::iterator;
     private:
         static const size_t distinct_face_count = 4;
-
-        std::list<LoadedMesh> loadedMeshes;
 
         std::array<CoherentList<float>, distinct_face_count> instance_data;
 
         std::array<GLVertexArray, distinct_face_count> vaos;
         GLBuffer<float, GL_ARRAY_BUFFER> loaded_face_buffer;
-
+        
         std::array<GLBuffer<float, GL_ARRAY_BUFFER>, distinct_face_count> instance_buffers;
 
+        void removeMesh(LoadedMesh& mesh);
+        void renderMesh(LoadedMesh& mesh);
+        void updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new_mesh);
+                
     public:
         InstancedMeshBuffer();
 
-        void renderMesh(LoadedMeshIterator iterator);
-        LoadedMeshIterator loadMesh(InstancedMesh& mesh);
-        void removeMesh(LoadedMeshIterator iterator);
+        LoadedMesh loadMesh(InstancedMesh& mesh);
 };

@@ -8,7 +8,7 @@ UIOpenglBackend::UIOpenglBackend(){
 
     vao.attachBuffer(&vertex_buffer, {VEC2,VEC4,VEC2,FLOAT});
     vertex_buffer.initialize(1);
-    vao.attachIndexBuffer(&index_buffer);
+    vao.attachBuffer(&index_buffer);
     index_buffer.initialize(1);
 
     vao.unbind();

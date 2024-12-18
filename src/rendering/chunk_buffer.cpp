@@ -1,26 +1,6 @@
 #include <rendering/chunk_buffer.hpp>
 
-bool MeshRegion::propagateDrawCall(){
-    if(transform.level != 1 || propagated) return false; // Non level 1 regions cannot propagate, cannot propagate twice
-    
-    MeshRegion* current_region = this;
-    DrawElementsIndirectCommand command = generateDrawCommand();
 
-    propagated = true;
-
-    for(;;){
-        current_region = current_region->getParentRegion();
-        if(!current_region) return false;
-        
-        in_parent_draw_call_references.push_back( 
-            {current_region->transform, current_region->draw_commands.size()}
-        );
-
-        current_region->draw_commands.push_back(command);
-    }
-
-    return true;
-}
 
 MeshRegion* MeshRegion::getParentRegion(){
     glm::ivec3 parent_position = getParentPosition();
@@ -49,47 +29,6 @@ MeshRegion* MeshRegion::getSubregion(uint x, uint y, uint z){
     return  registry.getRegion({subregion_position, subregion_level});
 }
 
-
-
-bool MeshRegion::updateMeshInformation(MeshInformation information){
-    if(transform.level != 1 || !propagated) return false;
-
-    mesh_information = information;
-    updatePropagatedDrawCalls();
-
-    return true;
-}
-
-bool MeshRegion::updatePropagatedDrawCalls(){
-    DrawElementsIndirectCommand command = generateDrawCommand();
-    
-    for(auto& [transform, index]: in_parent_draw_call_references){
-        MeshRegion* region = registry.getRegion(transform);
-        if(!region){
-            std::cerr << "Draw call reference is invalid for the region doesnt exist?" <<  std::endl;
-            continue;
-        }
-
-        if(index >= region->draw_commands.size()){
-            std::cerr << "Invalid draw call index stored: " << index << std::endl;
-            continue;
-        }
-
-        region->draw_commands[index] = command;
-    }
-
-    return true;
-}
-
-DrawElementsIndirectCommand MeshRegion::generateDrawCommand(){
-    return {
-        static_cast<GLuint>(mesh_information.count),
-        1,
-        static_cast<GLuint>(mesh_information.first_index),
-        static_cast<GLuint>(mesh_information.base_vertex) ,
-        0
-    };
-}
 std::string formatSize(size_t bytes) {
     const char* suffixes[] = {"B", "KB", "MB", "GB", "TB"};
     size_t suffixIndex = 0;
@@ -139,37 +78,16 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
     size_t total = vertexPerFace + indexPerFace;
     size_t segment = totalMemoryToAllocate / total;
 
-    vertexBufferSize = segment * vertexPerFace;
-    indexBufferSize = segment * indexPerFace;
-    
-    maxVertexCount = vertexBufferSize / sizeof(float);
-    maxIndexCount  = indexBufferSize / sizeof(uint);
-
-    std::cout << "Video RAM allocated for vertices total: " << formatSize(vertexBufferSize) << std::endl;
-    std::cout << "Video RAM allocated for indices total : " << formatSize(indexBufferSize)  << std::endl;
-    std::cout << "Total Video RAM allocated: " << formatSize(vertexBufferSize + indexBufferSize) << std::endl;
-
-    
-    vertexSize = vao.attachBuffer(reinterpret_cast<GLBuffer<float, GL_ARRAY_BUFFER>*>(&vertexBuffer), {VEC3, FLOAT, VEC2, FLOAT, FLOAT});
-    vao.attachIndexBuffer(reinterpret_cast<GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>*>(&indexBuffer));
-    
-    vertexBuffer.initialize(maxVertexCount, vertexSize);
-    indexBuffer.initialize(maxIndexCount);
 
     vao.unbind();
     //CHECK_GL_ERROR();
 }
 
 std::tuple<bool,size_t,size_t> ChunkMeshRegistry::allocateOrUpdateMesh(Mesh* mesh, size_t vertexPosition, size_t indexPosition){
-    auto [vertexSuccess, vertexBufferOffset] = 
-        vertexBuffer.insertOrUpdate(mesh->getVertices().data(), mesh->getVertices().size(), vertexPosition);
-        
-    auto [indexSuccess, indexBufferOffset] = 
-        indexBuffer.insertOrUpdate(mesh->getIndices().data(), mesh->getIndices().size(), indexPosition);
-    
-    if(!vertexSuccess || !indexSuccess) return {false,0,0};
+  
+    //if(!vertexSuccess || !indexSuccess) return {false,0,0};
 
-    return {true, vertexBufferOffset, indexBufferOffset};
+    return {false, 0, 0};
 }
 
 bool ChunkMeshRegistry::addMesh(Mesh* mesh, const glm::ivec3& pos){
@@ -182,19 +100,7 @@ bool ChunkMeshRegistry::addMesh(Mesh* mesh, const glm::ivec3& pos){
     if(!success) return false;
     
     MeshRegion* region = createRegion(transform);
-    region->mesh_information = {
-        vertexBufferOffset,
-        indexBufferOffset,
-
-        mesh->getVertices().size(),
-        mesh->getIndices().size(),
-
-        indexBufferOffset,
-        mesh->getIndices().size(),
-        vertexBufferOffset / vertexSize,
-    };
-
-    region->propagateDrawCall();
+   
 
     return true;
 }
@@ -206,26 +112,9 @@ bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
     if(mesh->getVertices().size() == 0) return false; // Don't register empty meshes
 
     auto& region = regions.at(transform);
-
-    auto [success, vertexBufferOffset, indexBufferOffset] = allocateOrUpdateMesh(mesh, region.mesh_information.vertex_data_start, region.mesh_information.index_data_start);
-    if(!success) return false;
-
-    bool update_success = region.updateMeshInformation(
-        {
-            vertexBufferOffset,
-            indexBufferOffset,
-
-            mesh->getVertices().size(),
-            mesh->getIndices().size(),
-            indexBufferOffset,
-            mesh->getIndices().size(),
-            vertexBufferOffset / vertexSize,
-        }
-    );
-
-    if(update_success) region.updatePropagatedDrawCalls();
     
-    return update_success;
+    //return update_success;
+    return true;
 }   
 
 DrawElementsIndirectCommand ChunkMeshRegistry::getCommandFor(const glm::ivec3& position){
@@ -252,7 +141,7 @@ MeshRegion* ChunkMeshRegistry::createRegion(MeshRegion::Transform transform){
 
 const int halfChunkSize = (CHUNK_SIZE / 2);
 void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* region, size_t& draw_call_counter){
-    if(region->draw_commands.size() == 0 && region->transform.level != 1) return; // No meshes are present, no point in searching
+    //if(region->draw_commands.size() == 0 && region->transform.level != 1) return; // No meshes are present, no point in searching
     
     int level_size_in_chunks = getRegionSizeForLevel(region->transform.level);
     int level_size_in_blocks = level_size_in_chunks * CHUNK_SIZE; 
@@ -262,7 +151,7 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
 
     if(region->transform.level == 1){ // The region is directly drawable
         DrawElementsIndirectCommand command = region->generateDrawCommand();
-        drawCallBuffer->appendData(&command, 1);
+        //drawCallBuffer->appendData(&command, 1);
         draw_call_counter++;
         return;
     }
@@ -288,7 +177,7 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
     
 }
 
-void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum){
+/*void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum){
     drawCallCount = 0;
 
     int max_level_size_in_chunks = getRegionSizeForLevel(maxRegionLevel);
@@ -313,7 +202,7 @@ void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& fru
     }   
 
     drawCallBuffer->flush();
-}
+}*/
 
 void ChunkMeshRegistry::draw(){
     vao.bind();

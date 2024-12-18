@@ -3,9 +3,9 @@
 
 void ChunkMeshGenerator::addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<InstancedMesh> mesh){
     std::lock_guard<std::mutex> lock(meshLoadingMutex);
-    meshLoadingQueue.push({position,std::move(mesh)});
+    //meshLoadingQueue.push({position,std::move(mesh)});
 }
-void ChunkMeshGenerator::loadMeshFromQueue(ChunkMeshRegistry&  buffer){
+/*void ChunkMeshGenerator::loadMeshFromQueue(ChunkMeshRegistry&  buffer){
     std::lock_guard<std::mutex> lock(meshLoadingMutex);
     if(meshLoadingQueue.empty()) return;
     auto& [position,mesh] = meshLoadingQueue.front();
@@ -13,7 +13,7 @@ void ChunkMeshGenerator::loadMeshFromQueue(ChunkMeshRegistry&  buffer){
     if(buffer.addMesh(mesh.get(), position)){
         meshLoadingQueue.pop();
     }
-}
+}*/
 
 void ChunkMeshGenerator::syncGenerateAsyncUploadMesh(Chunk* chunk){
     auto start = std::chrono::high_resolution_clock::now();
@@ -30,11 +30,11 @@ void ChunkMeshGenerator::asyncGenerateAsyncUploadMesh(Chunk* chunk, ThreadPool& 
     });
 }
 
-void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegistry& buffer){
+InstancedMeshBuffer::LoadedMeshIterator ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, InstancedMeshBuffer& buffer){
     auto world_position = chunk->getWorldPosition();
     auto solid_mesh = generateChunkMesh(world_position, chunk);
 
-    buffer.addMesh(solid_mesh.get(), world_position);
+    return buffer.loadMesh(*solid_mesh.get());
 }
 
 /*

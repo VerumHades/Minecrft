@@ -11,8 +11,8 @@
 #include <map>
 #include <list>
 
-#include <rendering/mesh.hpp>
 #include <rendering/allocator.hpp>
+#include <general.hpp>
 
 #include <chrono>
 
@@ -199,123 +199,6 @@ class GLAllocatedBuffer: public GLBuffer<T,type>{
         const auto& getTakenBlocks() const {return allocator.getTakenBlocks();}
 };
 
-/*
-    All added data is cached up to a set size and then flushed right before drawing
-*/
-template <typename T, int  type>
-class GLLazyBuffer: public GLBuffer<T,type>{
-    private:
-        size_t buffer_write_position = 0;
-
-        T* cache;
-        size_t cache_max_size = 4096;
-        size_t cache_write_position = 0;
-
-    public:
-        GLLazyBuffer(size_t size){
-            cache = new T[size];
-
-            GLBuffer<T,type>::initialize(size);
-        }
-        ~GLLazyBuffer(){
-            delete cache;
-        }
-        /*
-            Copies data into the temporary cache
-        */
-        bool append(T* data, size_t size){
-            if(cache_write_position + size > cache_max_size){
-                if(!flush()) return false; // Try to flush the cache, fail if the buffer is full
-            }; // Down overflow
-            
-            std::memcpy(
-                cache + cache_write_position,
-                data,
-                size * sizeof(T)
-            );
-
-            cache_write_position += size;
-            return true;
-        }
-
-        /*
-            Uploads cached data to the buffer
-        */
-        bool flush(){
-            if(cache_write_position == 0) return true; // Nothing to flush
-
-            bool output = GLBuffer<T,type>::insert(buffer_write_position, cache_write_position, cache);
-
-            buffer_write_position += cache_write_position;
-            cache_write_position = 0;
-
-            return output;
-        }
-};
-/*
-    A buffer of constant size but not persitently mapped
-*/
-template <typename T, int type>
-class GLCachedDoubleBuffer{
-    private:
-        GLBuffer<T,type> buffer;
-
-        size_t size_total = 0;
-        size_t current_offset = 0;
-
-
-        T* cache;
-        size_t cache_size = 0;
-
-        size_t last_cache_size = 0;
-
-    public:
-        size_t getCurrentOffset(){return current_offset;}
-
-        /*
-            Initialize with the size of a single portion, total size is double (double buffering)
-        */
-        GLCachedDoubleBuffer(size_t size): size_total(size * 2){
-            cache = new T[size];
-
-            buffer.initialize(size_total);
-        }
-        ~GLCachedDoubleBuffer(){
-            delete cache;
-        }
-
-        /*
-            Uploads cached data to the GPU and swaps
-        */
-        void flush(){
-            current_offset = (current_offset + size_total / 2) % size_total;
-
-            buffer.insert(current_offset, cache_size, cache);
-
-            cache_size = 0;
-        }
-
-        void bind(){
-            buffer.bind();
-        }
-
-        /*
-            Copies data into the temporary cache, size is in the number of elements T
-        */
-        bool appendData(T* data, size_t size){
-            if(cache_size + size > size_total / 2) return false; // Down overflow
-            
-            std::memcpy(
-                cache + cache_size,
-                data,
-                size * sizeof(T)
-            );
-
-            cache_size += size;
-            return true;
-        }
-};
-
 template <typename T>
 class GLPersistentBuffer{
     private:
@@ -344,6 +227,28 @@ class GLPersistentBuffer{
         uint getID() {return buffer_id;}
         T* data() {return this->_data;};
 
+};
+
+class GLDrawCallBuffer{
+    public:
+        struct DrawCommand{
+            GLuint  count;      // Number of indices for the current draw call.
+            GLuint  instanceCount; // Number of instances to render.
+            GLuint  firstIndex; // Offset into the element array buffer.
+            GLuint  baseVertex; // Base vertex for index calculations.
+            GLuint  baseInstance; // Base instance for instanced rendering.
+        };
+
+    private:
+        List<DrawCommand> draw_commands;
+        GLBuffer<DrawCommand, GL_DRAW_INDIRECT_BUFFER> buffer;
+
+    public:
+        void clear();
+        void push(DrawCommand& command);
+        void push(DrawCommand* commands, size_t size);
+        void flush();
+        void bind();
 };
 
 /*
@@ -443,9 +348,15 @@ class GLVertexArray{
             return format.getVertexSize();
         }
 
-        void attachIndexBuffer(GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>* buffer){
+        void attachBuffer(GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>* buffer){
             bind();
             buffer->bind();
+            unbind();
+        }
+
+        void attachBuffer(GLDrawCallBuffer& buffer){
+            bind();
+            buffer.bind();
             unbind();
         }
 

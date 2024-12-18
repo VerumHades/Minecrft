@@ -133,7 +133,7 @@ class CoherentList{
             regions.erase(region);
         }
 
-        const RegionIterator update(const RegionIterator region, T* data, size_t size){
+        const RegionIterator update(const RegionIterator region, const T* data, const size_t size){
             if(region.size == size){
                 std::memcpy(internal_data + region->start, data, size * sizeof(T));
                 return region;
@@ -144,4 +144,63 @@ class CoherentList{
 
         T* data() {return internal_data; };
         size_t size() {return content_size; };
+};
+
+/*
+    Similar to the vector just without any additional checks, be careful when using it
+*/
+template <typename T>
+class List{
+    private:
+        T* _data  = nullptr;
+        size_t _size = 0;
+        size_t count = 0;
+
+    public:
+        void push(T data){
+            if(count + 1 >= _size) resize(_size * 2);
+
+            _data[count++] = data;
+        }
+        void push(T* data, size_t size){
+            if(count + size >= _size) resize(_size * 2);
+
+            std::memcpy(_data + count, data, size * sizeof(T));
+            count += size;
+        }
+        /*
+            Resizes the actual size doesnt interact with count
+        */
+        void resize(size_t size){
+            if(size == 0) throw std::logic_error("Invalid list size: 0");
+            size_t copy_size = std::min(_size, size);
+
+            T* old_data = _data;
+            _data = new T[size];
+            
+            std::memcpy(_data, old_data, copy_size * sizeof(T));
+
+            delete old_data;
+        }
+
+        // Clears the list, doesnt delete anything nor does it resize tho
+        void clear(){
+            count = 0;
+        }
+        
+        T& operator[](std::size_t index) {
+            return data[index];
+        }
+
+        const T& operator[](std::size_t index) const {
+            return data[index];
+        }
+
+        size_t size(){
+            return _size;
+        }
+
+        T* data(){
+            return _data;
+        }
 };

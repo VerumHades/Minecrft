@@ -4,7 +4,7 @@ LoadedMesh::LoadedMesh(Mesh& mesh, std::initializer_list<GLVertexValueType> inst
     vao.bind();
     vao.attachBuffer(&vertex_buffer, mesh.vertex_format);
     vao.attachBuffer(&instance_buffer, {instance_types, true});
-    vao.attachIndexBuffer(&index_buffer);
+    vao.attachBuffer(&index_buffer);
 
     vertex_buffer.initialize(mesh.vertices.size(), mesh.vertices.data());
     index_buffer.initialize(mesh.indices.size(), mesh.indices.data());
