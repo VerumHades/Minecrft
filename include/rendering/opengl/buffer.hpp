@@ -12,6 +12,7 @@
 #include <list>
 
 #include <rendering/allocator.hpp>
+#include <coherency.hpp>
 #include <general.hpp>
 
 #include <chrono>
@@ -232,12 +233,18 @@ class GLPersistentBuffer{
 class GLDrawCallBuffer{
     public:
         struct DrawCommand{
+            GLuint count;         // Number of vertices to draw.
+            GLuint instanceCount; // Number of instances to draw.
+            GLuint first;         // Starting index in the vertex array.
+            GLuint baseInstance;  // Instance ID of the first instance.
+        };
+        /*struct DrawCommand{ multiDrawElementsIndirect
             GLuint  count;      // Number of indices for the current draw call.
             GLuint  instanceCount; // Number of instances to render.
             GLuint  firstIndex; // Offset into the element array buffer.
             GLuint  baseVertex; // Base vertex for index calculations.
             GLuint  baseInstance; // Base instance for instanced rendering.
-        };
+        };*/
 
     private:
         List<DrawCommand> draw_commands;
@@ -249,6 +256,22 @@ class GLDrawCallBuffer{
         void push(DrawCommand* commands, size_t size);
         void flush();
         void bind();
+
+        // Count of draw commands
+        size_t count() { return draw_commands.size(); };
+};
+
+/*
+    CoherentList with a opengl buffer attached, flushes its contents into it
+*/
+template <typename T, int type>
+class GLCoherentBuffer: public CoherentList<T> {
+    private:
+        GLBuffer<T, type> buffer;
+
+    public:
+        auto& getBuffer() { return buffer; };
+        void flush();
 };
 
 /*

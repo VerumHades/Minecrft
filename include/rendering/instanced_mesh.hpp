@@ -28,35 +28,41 @@ class InstancedMesh{
     public:
         void addQuadFace(glm::vec3 position, float width, float height, int texture_index, FaceType type, Direction direction);
         const std::vector<float>& getInstanceData(FaceType type);
+        bool empty();
 };
 
 class InstancedMeshBuffer{
     public:
         class LoadedMesh{
             private:
+                bool valid = true;
                 InstancedMeshBuffer& creator;
                 std::array<CoherentList<float>::RegionIterator, 4> loaded_regions; 
 
                 LoadedMesh(InstancedMeshBuffer& creator): creator(creator) {}
 
                 friend class InstancedMeshBuffer;
+
             public:
+                ~LoadedMesh() {destroy();}
+                // Adds the meshes draw call to the next batch
+                void addDrawCall();
                 void render();
                 void update(InstancedMesh& mesh);
-                ~LoadedMesh();
+                void destroy();
         };
         
     private:
         static const size_t distinct_face_count = 4;
 
-        std::array<CoherentList<float>, distinct_face_count> instance_data;
+        std::array<GLCoherentBuffer<float, GL_ARRAY_BUFFER>, distinct_face_count> instance_data;
+        std::array<GLDrawCallBuffer, distinct_face_count> draw_call_buffers;
 
         std::array<GLVertexArray, distinct_face_count> vaos;
         GLBuffer<float, GL_ARRAY_BUFFER> loaded_face_buffer;
-        
-        std::array<GLBuffer<float, GL_ARRAY_BUFFER>, distinct_face_count> instance_buffers;
 
         void removeMesh(LoadedMesh& mesh);
+        void addDrawCall(LoadedMesh& mesh);
         void renderMesh(LoadedMesh& mesh);
         void updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new_mesh);
                 
@@ -64,4 +70,7 @@ class InstancedMeshBuffer{
         InstancedMeshBuffer();
 
         LoadedMesh loadMesh(InstancedMesh& mesh);
+        void render();
+        void clearDrawCalls();
+        void flushDrawCalls();
 };

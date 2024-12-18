@@ -52,77 +52,35 @@ void ChunkMeshRegistry::initialize(uint renderDistance){
     for(int i = 1;i < maxRegionLevel;i++){
         actualRegionSizes.push_back(pow(i, 2));
     }
-    
-    maxDrawCalls = pow((renderDistance + 1) * 2, 3);
-
-    vao.bind();
-
-    /*
-        Create and map buffer for draw calls
-    */
-
-    drawCallBuffer = std::make_unique<GLCachedDoubleBuffer<DrawElementsIndirectCommand, GL_DRAW_INDIRECT_BUFFER>>(maxDrawCalls);
-
-    //syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-
-    //CHECK_GL_ERROR();
-
-    /*
-        Create and map vertex and index buffers
-    */
-    size_t totalMemoryToAllocate = (1024ULL * 1024ULL * 1024ULL) / 4ULL; // 1/4GB of video memory
-
-    size_t vertexPerFace = (3 + 1 + 2 + 1 + 1) * 4; // For vertices per face
-    size_t indexPerFace  = 6;
-
-    size_t total = vertexPerFace + indexPerFace;
-    size_t segment = totalMemoryToAllocate / total;
-
-
-    vao.unbind();
-    //CHECK_GL_ERROR();
 }
 
-std::tuple<bool,size_t,size_t> ChunkMeshRegistry::allocateOrUpdateMesh(Mesh* mesh, size_t vertexPosition, size_t indexPosition){
-  
-    //if(!vertexSuccess || !indexSuccess) return {false,0,0};
-
-    return {false, 0, 0};
-}
-
-bool ChunkMeshRegistry::addMesh(Mesh* mesh, const glm::ivec3& pos){
+bool ChunkMeshRegistry::addMesh(InstancedMesh* mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
 
-    if(mesh->getVertices().size() == 0) return true;    
-    if(getRegion(transform)) return updateMesh(mesh, pos); // Mesh and region already exist
-    
-    auto [success, vertexBufferOffset, indexBufferOffset] = allocateOrUpdateMesh(mesh);
-    if(!success) return false;
+    if(mesh->empty()) return true;    
+    if(getRegion(transform)) return updateMesh(mesh, pos); // InstancedMesh and region already exist
     
     MeshRegion* region = createRegion(transform);
    
+    region->loaded_mesh = 
+        std::make_unique<InstancedMeshBuffer::LoadedMesh>(
+            std::move(mesh_buffer.loadMesh(*mesh))
+        );
 
     return true;
 }
 
-bool ChunkMeshRegistry::updateMesh(Mesh* mesh, const glm::ivec3& pos){
+bool ChunkMeshRegistry::updateMesh(InstancedMesh* mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
 
-    if(!getRegion(transform)) return false; // Mesh region doesn't exist
-    if(mesh->getVertices().size() == 0) return false; // Don't register empty meshes
+    if(!getRegion(transform)) return false; // InstancedMesh region doesn't exist
+    if(mesh->empty() == 0) return false; // Don't register empty meshes
 
     auto& region = regions.at(transform);
+    region.loaded_mesh->update(*mesh);
     
-    //return update_success;
     return true;
 }   
-
-DrawElementsIndirectCommand ChunkMeshRegistry::getCommandFor(const glm::ivec3& position){
-    MeshRegion* region = getRegion({position,1});
-    if(!region) return {};
-
-    return region->generateDrawCommand();
-}
 
 MeshRegion* ChunkMeshRegistry::createRegion(MeshRegion::Transform transform){
     if(transform.level > maxRegionLevel) return nullptr; // Over the max region level
@@ -150,9 +108,7 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
     if(!frustum.isAABBWithing(min, min + level_size_in_blocks)) return; // Not visible
 
     if(region->transform.level == 1){ // The region is directly drawable
-        DrawElementsIndirectCommand command = region->generateDrawCommand();
-        //drawCallBuffer->appendData(&command, 1);
-        draw_call_counter++;
+        region->loaded_mesh->addDrawCall();
         return;
     }
     /*else{
@@ -177,8 +133,8 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
     
 }
 
-/*void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum){
-    drawCallCount = 0;
+void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum){
+    mesh_buffer.clearDrawCalls();
 
     int max_level_size_in_chunks = getRegionSizeForLevel(maxRegionLevel);
 
@@ -201,21 +157,11 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
         processRegionForDrawing(frustum, region, drawCallCount);
     }   
 
-    drawCallBuffer->flush();
-}*/
+    mesh_buffer.flushDrawCalls();
+}
 
 void ChunkMeshRegistry::draw(){
-    vao.bind();
-
-    //int drawCalls = maxDrawCalls - freeDrawCallIndices.size();
-    //CHECK_GL_ERROR();
-
-    drawCallBuffer->bind();
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)(drawCallBuffer->getCurrentOffset() * sizeof(DrawElementsIndirectCommand)), drawCallCount, sizeof(DrawElementsIndirectCommand));
-
-    //CHECK_GL_ERROR();
-
-    vao.unbind();
+    mesh_buffer.render();
 }
 
 void ChunkMeshRegistry::clear(){

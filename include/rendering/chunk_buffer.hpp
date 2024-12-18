@@ -18,23 +18,6 @@ struct TransformHash;
 struct TransformEqual;
 class ChunkMeshRegistry;
 
-struct DrawElementsIndirectCommand {
-    GLuint  count;      // Number of indices for the current draw call.
-    GLuint  instanceCount; // Number of instances to render.
-    GLuint  firstIndex; // Offset into the element array buffer.
-    GLuint  baseVertex; // Base vertex for index calculations.
-    GLuint  baseInstance; // Base instance for instanced rendering.
-
-    void print() const {
-        std::cout << "DrawElementsIndirectCommand:" << std::endl;
-        std::cout << "  count: " << count << std::endl;
-        std::cout << "  instanceCount: " << instanceCount << std::endl;
-        std::cout << "  firstIndex: " << firstIndex << std::endl;
-        std::cout << "  baseVertex: " << baseVertex << std::endl;
-        std::cout << "  baseInstance: " << baseInstance << std::endl;
-    }
-};
-
 class MeshRegion{
     private:
         struct Transform{
@@ -51,21 +34,8 @@ class MeshRegion{
 
         ChunkMeshRegistry& registry;
         MeshRegion(Transform& transform, ChunkMeshRegistry& registry): transform(transform), registry(registry) {}
-        
-        /*
-            Has no mesh
-        */
-        bool propagated = false; // If it has reported its existence to all parents already
-        std::vector<std::tuple<Transform,size_t>> in_parent_draw_call_references; // References to all parent meshes
 
-                
-        // Creates a draw command from current mesh information
-        DrawElementsIndirectCommand generateDrawCommand();
-        /* 
-            Information relevent for only level 1 meshes
-        */
-        bool is_mesh_loaded = false;
-        const InstancedMeshBuffer::LoadedMeshIterator loaded_mesh_iterator;
+        std::unique_ptr<InstancedMeshBuffer::LoadedMesh> loaded_mesh;
 
         /*
             Returns a pointer to the regions parent, if the region has no parents return nullptr
@@ -120,8 +90,6 @@ struct TransformEqual {
 
 class ChunkMeshRegistry{
     private:
-        GLVertexArray vao;
-        
         size_t drawCallCount = 0;
         size_t maxDrawCalls = 0;
 
@@ -134,17 +102,6 @@ class ChunkMeshRegistry{
         std::vector<uint> actualRegionSizes;
 
         std::unordered_map<MeshRegion::Transform, MeshRegion, TransformHash, TransformEqual> regions;
-
-        /*
-            Allocates and copies the buffer into the respective buffers,
-
-            returns the a tuple: 
-                - bool => did the allocation succeed
-                - size_t => vertex data offset in the vertex buffer
-                - size_t => index data offset in the index buffer 
-            
-        */
-        std::tuple<bool,size_t,size_t> allocateOrUpdateMesh(Mesh* mesh, size_t vertexPosition = -1ULL, size_t indexPosition = -1ULL);
 
         /*
             Checks the region againist the frustum. Does an octree search among its children.
@@ -166,19 +123,19 @@ class ChunkMeshRegistry{
 
             Takes the camera position in world coordinates
         */
-        //void updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum);
+        void updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum);
 
         /*
             Uploads the mesh as a level 1 region. (All parents are automatically created if they dont already exist)
 
             Empty meshes will be ingnored. But registered as empty regions.
         */
-        bool addMesh(Mesh* mesh, const glm::ivec3& pos);
+        bool addMesh(InstancedMesh* mesh, const glm::ivec3& pos);
 
         /*
             Updates a mesh, splits regions if old mesh is a part of them
         */
-        bool updateMesh(Mesh* mesh, const glm::ivec3& pos);
+        bool updateMesh(InstancedMesh* mesh, const glm::ivec3& pos);
 
         /*
             Creates a region and all its parents if they dont already exist.
@@ -200,9 +157,6 @@ class ChunkMeshRegistry{
             return actualRegionSizes[level - 1];
         }
 
-        void setDrawCallCount(int value){drawCallCount = value;}
-
-        DrawElementsIndirectCommand getCommandFor(const glm::ivec3& pos);
         void draw();
 };
 

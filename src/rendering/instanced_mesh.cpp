@@ -21,6 +21,14 @@ const std::vector<float>& InstancedMesh::getInstanceData(FaceType type){
     return  instance_data[type];
 }
 
+bool InstancedMesh::empty(){
+    for(int i = 0;i < 4;i++){
+        if(instance_data.size() == 0) continue;
+        return false;
+    }
+    return true;
+}
+
 InstancedMeshBuffer::InstancedMeshBuffer(){
     std::array<float, 20 * 5> aligned_quad_data = {
         // X aligned face
@@ -55,23 +63,30 @@ InstancedMeshBuffer::InstancedMeshBuffer(){
     loaded_face_buffer.initialize(aligned_quad_data.size(), aligned_quad_data.data());
 
     for(int i = 0;i < distinct_face_count;i++){
-        vaos[i].attachBuffer(&instance_buffers[i], {VEC3, VEC2, FLOAT, FLOAT});
+        vaos[i].attachBuffer(&instance_data[i].getBuffer(), {VEC3, VEC2, FLOAT, FLOAT});
         vaos[i].attachBuffer(&loaded_face_buffer, {VEC3, VEC2});
     }
 }
 
-InstancedMeshBuffer::LoadedMesh::~LoadedMesh(){
+void InstancedMeshBuffer::LoadedMesh::destroy(){
     creator.removeMesh(*this);
+    valid = false;
 }
 
 void InstancedMeshBuffer::LoadedMesh::update(InstancedMesh& mesh){
+    if(!valid) throw std::logic_error("Cannot update destroyed mesh.");
     creator.updateMesh(*this, mesh);
 }
 
 void InstancedMeshBuffer::LoadedMesh::render(){
+    if(!valid) throw std::logic_error("Cannot render destroyed mesh.");
     creator.renderMesh(*this);
 }
 
+void InstancedMeshBuffer::LoadedMesh::addDrawCall(){
+    if(!valid) throw std::logic_error("Cannot add draw call of destroyed mesh.");
+    creator.addDrawCall(*this);
+}
 void InstancedMeshBuffer::renderMesh(LoadedMesh& mesh){
     for(int i = 0;i < distinct_face_count;i++){
         vaos[i].bind();
@@ -105,9 +120,27 @@ InstancedMeshBuffer::LoadedMesh InstancedMeshBuffer::loadMesh(InstancedMesh& mes
         if(component_data.size() == 0) continue;
 
         loadedMesh.loaded_regions[i] = instance_data[i].append(component_data.data(), component_data.size());
+        instance_data[i].flush();
     }
 
     return loadedMesh;
+}
+
+void InstancedMeshBuffer::addDrawCall(LoadedMesh& mesh){
+    for(int i = 0;i < distinct_face_count;i++){
+        GLDrawCallBuffer::DrawCommand draw_call = {
+            4, // Offset in the buffer
+            mesh.loaded_regions[i]->size  / InstancedMesh::instance_data_size, // Number of vertices to draw,
+            4 * i, // First vertex
+            mesh.loaded_regions[i]->start / InstancedMesh::instance_data_size // Instance offset
+        };
+
+        draw_call_buffers[i].push(draw_call);
+        if(i == 3){ // Draw the seconds diagonal
+            draw_call.first += 4;
+            draw_call_buffers[i].push(draw_call);
+        }
+    }
 }
 
 void InstancedMeshBuffer::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new_mesh){
@@ -116,6 +149,7 @@ void InstancedMeshBuffer::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new
         if(component_data.size() == 0) continue;
 
         loaded_mesh.loaded_regions[i] = instance_data[i].update(loaded_mesh.loaded_regions[i], component_data.data(), component_data.size());
+        instance_data[i].flush();
     }
 }
 
@@ -123,4 +157,20 @@ void InstancedMeshBuffer::removeMesh(LoadedMesh& mesh){
     for(int i = 0;i < distinct_face_count;i++){
         instance_data[i].remove(mesh.loaded_regions[i]);
     }
+}
+
+void InstancedMeshBuffer::render(){
+    for(int i = 0;i < distinct_face_count;i++){
+        vaos[i].bind();
+        glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, draw_call_buffers[i].count(), sizeof(GLDrawCallBuffer::DrawCommand));
+    }
+    vaos[0].unbind();
+}
+
+void InstancedMeshBuffer::clearDrawCalls(){
+    for(int i = 0;i < distinct_face_count;i++) draw_call_buffers[i].clear();
+}
+
+void InstancedMeshBuffer::flushDrawCalls(){
+    for(int i = 0;i < distinct_face_count;i++) draw_call_buffers[i].flush();
 }
