@@ -57,8 +57,3 @@ void GLDrawCallBuffer::flush(){
 void GLDrawCallBuffer::bind(){
     buffer.bind();
 }
-
-void GLCoherentBuffer::flush(){
-    if(size() > buffer.size()) buffer.initialize(size(), data());
-    else buffer.insert(0, size(), data());
-}

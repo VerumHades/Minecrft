@@ -114,7 +114,7 @@ GLTextureArray::GLTextureArray(){
     TYPE = GL_TEXTURE_2D_ARRAY;
     glBindTexture(GL_TEXTURE_2D_ARRAY, this->texture);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BASE_LEVEL, 0);
 
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -123,7 +123,7 @@ GLTextureArray::GLTextureArray(){
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT);
 }
 
-void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layerWidth, int layerHeight){
+void GLTextureArray::loadFromFiles(std::vector<std::string>& filenames, int layerWidth, int layerHeight){
     TYPE = GL_TEXTURE_2D_ARRAY;
     glBindTexture(GL_TEXTURE_2D_ARRAY, this->texture);
 
@@ -140,10 +140,11 @@ void GLTextureArray::loadFromFiles(std::vector<std::string> filenames, int layer
         data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 4);
     
         if (!data) {
+            std::cout << "Failed to load texture: " << filenames[i] << std::endl;
             throw std::runtime_error("Failed to load texture '%s'\n");
         }
 
-        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, layerWidth, layerHeight, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, std::min(width, layerWidth), std::min(height, layerHeight), 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
         stbi_image_free(data);
     }
 

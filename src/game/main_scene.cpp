@@ -440,10 +440,7 @@ void MainScene::render(){
 
         // Draw terrain
         terrainProgram.updateUniforms();
-        //chunkMeshRegistry.draw();
-        for(auto& loaded_mesh: loaded_meshes){
-            chunkMeshBuffer.renderMesh(loaded_mesh);
-        }
+        chunkMeshRegistry.draw();
 
         // Draw models
         itemPrototypeRegistry.updateModelsDrawRequestBuffer();
@@ -483,7 +480,7 @@ void MainScene::render(){
 }
 
 void MainScene::regenerateChunkMesh(Chunk* chunk){
-    loaded_meshes.push_back(chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshBuffer));
+    chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry);
     this->updateVisibility = 1;
     //chunkMeshRegistry.unloadChunkMesh(chunk->getWorldPosition());
 }
@@ -601,7 +598,7 @@ void MainScene::generateSurroundingChunks(){
             std::cerr << "Chunk not generated when generating meshes?" << std::endl;
             continue;
         }
-        loaded_meshes.push_back(chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshBuffer));
+        chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry);
     }
     while(!threadPool->finished()){ // Wait for everything to generate
         std::this_thread::sleep_for(std::chrono::milliseconds(10));

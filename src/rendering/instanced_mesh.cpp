@@ -69,6 +69,7 @@ InstancedMeshBuffer::InstancedMeshBuffer(){
 }
 
 void InstancedMeshBuffer::LoadedMesh::destroy(){
+    if(!valid) throw std::logic_error("Cannot destroy destroyed mesh.");
     creator.removeMesh(*this);
     valid = false;
 }

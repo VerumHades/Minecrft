@@ -56,7 +56,7 @@ class GLTextureArray: public BindableTexture{
             bind(0);
             glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, width, height,  layers);
         }
-        void loadFromFiles(std::vector<std::string> filenames, int layerWidth, int layerHeight);
+        void loadFromFiles(std::vector<std::string>& filenames, int layerWidth, int layerHeight);
 };
 
 class GLSkybox: public BindableTexture{

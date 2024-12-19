@@ -134,7 +134,7 @@ class CoherentList{
         }
 
         const RegionIterator update(const RegionIterator region, const T* data, const size_t size){
-            if(region.size == size){
+            if(region->size == size){
                 std::memcpy(internal_data + region->start, data, size * sizeof(T));
                 return region;
             }

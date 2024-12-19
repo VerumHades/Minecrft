@@ -44,12 +44,13 @@ class InstancedMeshBuffer{
                 friend class InstancedMeshBuffer;
 
             public:
-                ~LoadedMesh() {destroy();}
+                //~LoadedMesh() {destroy();}
                 // Adds the meshes draw call to the next batch
                 void addDrawCall();
                 void render();
                 void update(InstancedMesh& mesh);
                 void destroy();
+                bool isValid(){return valid;}
         };
         
     private:

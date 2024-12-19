@@ -43,7 +43,7 @@ std::unique_ptr<Mesh> SpriteModel::generateFaces(){
         std::cout << "Failed to load image: " << stbi_failure_reason() << std::endl;
         return nullptr;
     }
-    auto mesh = std::make_unique<Mesh>({VEC3, VEC3, VEC2});
+    auto mesh = std::make_unique<Mesh>(GLVertexFormat({VEC3, VEC3, VEC2}));
 
     const int size = std::min(width,height);
     float thickness = scale / (float)size;

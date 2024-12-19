@@ -74,7 +74,7 @@ bool ChunkMeshRegistry::updateMesh(InstancedMesh* mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
 
     if(!getRegion(transform)) return false; // InstancedMesh region doesn't exist
-    if(mesh->empty() == 0) return false; // Don't register empty meshes
+    if(mesh->empty()) return false; // Don't register empty meshes
 
     auto& region = regions.at(transform);
     region.loaded_mesh->update(*mesh);

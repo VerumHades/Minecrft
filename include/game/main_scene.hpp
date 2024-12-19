@@ -64,10 +64,7 @@ class MainScene: public Scene{
         
         ChunkMeshRegistry chunkMeshRegistry;
         ChunkMeshGenerator chunkMeshGenerator = ChunkMeshGenerator(blockRegistry);
-        InstancedMeshBuffer chunkMeshBuffer;
-
-        std::vector<InstancedMeshBuffer::LoadedMeshIterator> loaded_meshes;
-
+        
         ItemTextureAtlas itemTextureAtlas;
         ItemPrototypeRegistry itemPrototypeRegistry;
         std::shared_ptr<ItemSlot> held_item_slot;
