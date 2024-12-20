@@ -435,7 +435,7 @@ void MainScene::render(){
         glDisable(GL_CULL_FACE);
         skyboxProgram.use();
         skybox.draw();
-        glEnable(GL_CULL_FACE);
+        
         // ====
 
         // Draw terrain

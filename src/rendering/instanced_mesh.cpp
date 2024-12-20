@@ -32,40 +32,39 @@ bool InstancedMesh::empty(){
 InstancedMeshBuffer::InstancedMeshBuffer(){
     std::array<float, 20 * 5> aligned_quad_data = {
         // X aligned face
-        0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 
-        0.0f, 0.0f, 1.0f,  1.0f, 1.0f, 
-        0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 
-        0.0f, 1.0f, 1.0f,  1.0f, 0.0f, 
+        0.0f,  0.0f, 0.0f,  0.0f, 1.0f, 
+        0.0f,  0.0f, 1.0f,  1.0f, 1.0f, 
+        0.0f, -1.0f, 0.0f,  0.0f, 0.0f, 
+        0.0f, -1.0f, 1.0f,  1.0f, 0.0f, 
         // Y aligned face
         0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 
         0.0f, 0.0f, 1.0f,  1.0f, 1.0f, 
         1.0f, 0.0f, 0.0f,  0.0f, 0.0f, 
         1.0f, 0.0f, 1.0f,  1.0f, 0.0f, 
         // Z aligned face
-        0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 
-        1.0f, 0.0f, 0.0f,  1.0f, 1.0f, 
-        0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 
-        1.0f, 1.0f, 0.0f,  1.0f, 0.0f, 
+        0.0f,  0.0f, 0.0f,  0.0f, 1.0f, 
+        1.0f,  0.0f, 0.0f,  1.0f, 1.0f, 
+        0.0f, -1.0f, 0.0f,  0.0f, 0.0f, 
+        1.0f, -1.0f, 0.0f,  1.0f, 0.0f, 
 
         // Diagonal billboard faces
-        0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 
-        1.0f, 0.0f, 1.0f,  1.0f, 1.0f, 
-        0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 
-        1.0f, 1.0f, 1.0f,  1.0f, 0.0f, 
+        0.0f,  0.0f, 0.0f,  0.0f, 1.0f, 
+        1.0f,  0.0f, 1.0f,  1.0f, 1.0f, 
+        0.0f, -1.0f, 0.0f,  0.0f, 0.0f, 
+        1.0f, -1.0f, 1.0f,  1.0f, 0.0f, 
 
-        0.0f, 0.0f, 1.0f,  0.0f, 1.0f, 
-        1.0f, 0.0f, 0.0f,  1.0f, 1.0f, 
-        0.0f, 1.0f, 1.0f,  0.0f, 0.0f, 
-        1.0f, 1.0f, 0.0f,  1.0f, 0.0f, 
+        0.0f,  0.0f, 1.0f,  0.0f, 1.0f, 
+        1.0f,  0.0f, 0.0f,  1.0f, 1.0f, 
+        0.0f, -1.0f, 1.0f,  0.0f, 0.0f, 
+        1.0f, -1.0f, 0.0f,  1.0f, 0.0f, 
     };
 
 
     loaded_face_buffer.initialize(aligned_quad_data.size(), aligned_quad_data.data());
 
     for(int i = 0;i < distinct_face_count;i++){
-        vaos[i].attachBuffer(&instance_data[i].getBuffer(), {VEC3, VEC2, FLOAT, FLOAT});
+        vaos[i].attachBuffer(&instance_data[i].getBuffer(), {{VEC3, VEC2, FLOAT, FLOAT}, true});
         vaos[i].attachBuffer(&loaded_face_buffer, {VEC3, VEC2});
-        vaos[i].attachBuffer(draw_call_buffers[i]);
     }
 }
 
@@ -144,7 +143,7 @@ void InstancedMeshBuffer::addDrawCall(LoadedMesh& mesh){
         size_t instance_offset = mesh.loaded_regions[i]->start / InstancedMesh::instance_data_size;
 
         GLDrawCallBuffer::DrawCommand draw_call = {
-            4, // Offset in the buffer
+            4, // Count
             instances_total, // Number of instances to draw,
             4 * i, // First vertex
             instance_offset // Instance offset
@@ -182,6 +181,7 @@ void InstancedMeshBuffer::removeMesh(LoadedMesh& mesh){
 void InstancedMeshBuffer::render(){
     for(int i = 0;i < distinct_face_count;i++){
         vaos[i].bind();
+        draw_call_buffers[i].bind();
         glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, draw_call_buffers[i].count(), sizeof(GLDrawCallBuffer::DrawCommand));
     }
     vaos[0].unbind();

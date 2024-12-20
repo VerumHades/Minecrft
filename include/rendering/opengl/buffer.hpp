@@ -380,12 +380,6 @@ class GLVertexArray{
             unbind();
         }
 
-        void attachBuffer(GLDrawCallBuffer& buffer){
-            bind();
-            buffer.bind();
-            unbind();
-        }
-
         /*
             Updates buffers, bindings locations are based on how the buffers were attached sequentialy
         */

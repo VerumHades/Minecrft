@@ -35,7 +35,7 @@ const vec3 Normals[6] = vec3[6](
 
 void main()
 {
-    vec3 pos = aPos + aInstancePosition;
+    vec3 pos = aPos * vec3(aInstanceSize.x, aInstanceSize.y, aInstanceSize.x) + aInstancePosition;
 
     vec4 viewPos = player_camera_view_matrix * player_camera_model_matrix * vec4(pos, 1.0);
     FragPos = viewPos.xyz;
@@ -44,7 +44,7 @@ void main()
     int index = int(0);
 
     Normal = Normals[index];
-    TexCoords = aTexCoords;
+    TexCoords = aTexCoords * aInstanceSize;
     TexIndex = aTextureIndex;
 }
 

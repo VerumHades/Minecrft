@@ -2,9 +2,9 @@ clear
 
 mkdir -p build
 mkdir -p build/debug
-# rm -rf build
-# mkdir build
-# cmake ..
+#rm -rf build
+#mkdir build
+#cmake ..
 #cd build/debug
 #cmake ../.. -DCMAKE_BUILD_TYPE=Debug
 #cd ../..
