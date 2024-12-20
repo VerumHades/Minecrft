@@ -90,9 +90,6 @@ struct TransformEqual {
 
 class ChunkMeshRegistry{
     private:
-        size_t drawCallCount = 0;
-        size_t maxDrawCalls = 0;
-
         InstancedMeshBuffer mesh_buffer;
 
         // Highest region level, no regions higher than maxRegionLevel will be registered or created
@@ -108,7 +105,7 @@ class ChunkMeshRegistry{
             Ignores region that arent drawn.
             Writes their calls directly into the draw call buffer begining at the draw call index.
         */
-        void processRegionForDrawing(Frustum& frustum, MeshRegion* region, size_t& draw_call_counter);
+        void processRegionForDrawing(Frustum& frustum, MeshRegion* region);
 
     public:
         void initialize(uint renderDistance);

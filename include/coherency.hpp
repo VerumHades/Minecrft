@@ -157,13 +157,24 @@ class List{
         size_t count = 0;
 
     public:
+        List(){
+            _data = new T[1];
+            _size = 1;
+        }
+        ~List(){
+            delete _data;
+        }
         void push(T data){
             if(count + 1 >= _size) resize(_size * 2);
 
             _data[count++] = data;
         }
         void push(T* data, size_t size){
-            if(count + size >= _size) resize(_size * 2);
+            if(count + size >= _size){
+                size_t new_size = _size * 2;
+                while(count + size >= new_size) new_size *= 2;
+                resize(_size * 2);
+            }
 
             std::memcpy(_data + count, data, size * sizeof(T));
             count += size;
@@ -173,12 +184,15 @@ class List{
         */
         void resize(size_t size){
             if(size == 0) throw std::logic_error("Invalid list size: 0");
-            size_t copy_size = std::min(_size, size);
+            size_t copy_size = std::min(count, size);
+
+            if(size < count) count = size;
 
             T* old_data = _data;
             _data = new T[size];
             
             std::memcpy(_data, old_data, copy_size * sizeof(T));
+            _size = size;
 
             delete old_data;
         }
@@ -197,7 +211,7 @@ class List{
         }
 
         size_t size(){
-            return _size;
+            return count;
         }
 
         T* data(){

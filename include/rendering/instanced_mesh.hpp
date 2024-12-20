@@ -35,9 +35,10 @@ class InstancedMeshBuffer{
     public:
         class LoadedMesh{
             private:
-                bool valid = true;
                 InstancedMeshBuffer& creator;
-                std::array<CoherentList<float>::RegionIterator, 4> loaded_regions; 
+                bool valid = true;
+                std::array<CoherentList<float>::RegionIterator, 4> loaded_regions = {}; 
+                std::array<bool, 4> has_region = {};
 
                 LoadedMesh(InstancedMeshBuffer& creator): creator(creator) {}
 

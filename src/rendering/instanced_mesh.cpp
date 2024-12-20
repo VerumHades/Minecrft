@@ -65,6 +65,7 @@ InstancedMeshBuffer::InstancedMeshBuffer(){
     for(int i = 0;i < distinct_face_count;i++){
         vaos[i].attachBuffer(&instance_data[i].getBuffer(), {VEC3, VEC2, FLOAT, FLOAT});
         vaos[i].attachBuffer(&loaded_face_buffer, {VEC3, VEC2});
+        vaos[i].attachBuffer(draw_call_buffers[i]);
     }
 }
 
@@ -92,12 +93,15 @@ void InstancedMeshBuffer::renderMesh(LoadedMesh& mesh){
     for(int i = 0;i < distinct_face_count;i++){
         vaos[i].bind();
 
+        size_t instances_total = mesh.loaded_regions[i]->size  / InstancedMesh::instance_data_size;
+        size_t instance_offset = mesh.loaded_regions[i]->start / InstancedMesh::instance_data_size;
+
         glDrawArraysInstancedBaseInstance(
             GL_TRIANGLE_STRIP, 
             4 * i, // Offset in the buffer
             4, 
-            mesh.loaded_regions[i]->size  / InstancedMesh::instance_data_size,
-            mesh.loaded_regions[i]->start / InstancedMesh::instance_data_size
+            instances_total,
+            instance_offset
         );
 
         if(i == 3){ // Draw the seconds diagonal
@@ -105,8 +109,8 @@ void InstancedMeshBuffer::renderMesh(LoadedMesh& mesh){
                 GL_TRIANGLE_STRIP, 
                 4 * (i + 1), // Offset in the buffer
                 4, 
-                mesh.loaded_regions[i]->size  / InstancedMesh::instance_data_size,
-                mesh.loaded_regions[i]->start / InstancedMesh::instance_data_size
+                instances_total,
+                instance_offset
             );
         }
     }
@@ -114,26 +118,36 @@ void InstancedMeshBuffer::renderMesh(LoadedMesh& mesh){
 }
 
 InstancedMeshBuffer::LoadedMesh InstancedMeshBuffer::loadMesh(InstancedMesh& mesh){
-    LoadedMesh loadedMesh = {*this};
+    LoadedMesh loaded_mesh = {*this};
 
     for(int i = 0;i < distinct_face_count;i++){
         auto& component_data = mesh.getInstanceData(static_cast<InstancedMesh::FaceType>(i));
-        if(component_data.size() == 0) continue;
+        if(component_data.size() == 0){
+            loaded_mesh.has_region[i] = false;
+            continue;
+        }
 
-        loadedMesh.loaded_regions[i] = instance_data[i].append(component_data.data(), component_data.size());
+        loaded_mesh.loaded_regions[i] = instance_data[i].append(component_data.data(), component_data.size());
+        loaded_mesh.has_region[i] = true;
+
         instance_data[i].flush();
     }
 
-    return loadedMesh;
+    return loaded_mesh;
 }
 
 void InstancedMeshBuffer::addDrawCall(LoadedMesh& mesh){
     for(int i = 0;i < distinct_face_count;i++){
+        if(!mesh.has_region[i]) continue;
+        
+        size_t instances_total = mesh.loaded_regions[i]->size  / InstancedMesh::instance_data_size;
+        size_t instance_offset = mesh.loaded_regions[i]->start / InstancedMesh::instance_data_size;
+
         GLDrawCallBuffer::DrawCommand draw_call = {
             4, // Offset in the buffer
-            mesh.loaded_regions[i]->size  / InstancedMesh::instance_data_size, // Number of vertices to draw,
+            instances_total, // Number of instances to draw,
             4 * i, // First vertex
-            mesh.loaded_regions[i]->start / InstancedMesh::instance_data_size // Instance offset
+            instance_offset // Instance offset
         };
 
         draw_call_buffers[i].push(draw_call);
@@ -147,9 +161,14 @@ void InstancedMeshBuffer::addDrawCall(LoadedMesh& mesh){
 void InstancedMeshBuffer::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new_mesh){
     for(int i = 0;i < distinct_face_count;i++){
         auto& component_data = new_mesh.getInstanceData(static_cast<InstancedMesh::FaceType>(i));
-        if(component_data.size() == 0) continue;
+        if(component_data.size() == 0){
+            loaded_mesh.has_region[i] = false;
+            continue;
+        }
 
         loaded_mesh.loaded_regions[i] = instance_data[i].update(loaded_mesh.loaded_regions[i], component_data.data(), component_data.size());
+        loaded_mesh.has_region[i] = true;
+
         instance_data[i].flush();
     }
 }

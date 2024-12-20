@@ -67,6 +67,7 @@ bool ChunkMeshRegistry::addMesh(InstancedMesh* mesh, const glm::ivec3& pos){
             std::move(mesh_buffer.loadMesh(*mesh))
         );
 
+
     return true;
 }
 
@@ -98,16 +99,21 @@ MeshRegion* ChunkMeshRegistry::createRegion(MeshRegion::Transform transform){
 
 
 const int halfChunkSize = (CHUNK_SIZE / 2);
-void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* region, size_t& draw_call_counter){
+void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* region){
     //if(region->draw_commands.size() == 0 && region->transform.level != 1) return; // No meshes are present, no point in searching
     
-    int level_size_in_chunks = getRegionSizeForLevel(region->transform.level);
-    int level_size_in_blocks = level_size_in_chunks * CHUNK_SIZE; 
-
-    glm::ivec3 min = region->transform.position * level_size_in_blocks;
-    if(!frustum.isAABBWithing(min, min + level_size_in_blocks)) return; // Not visible
+   // int level_size_in_chunks = getRegionSizeForLevel(region->transform.level);
+    //int level_size_in_blocks = level_size_in_chunks * CHUNK_SIZE; 
+    
+    //glm::ivec3 min = region->transform.position * level_size_in_blocks;
+    //if(!frustum.isAABBWithing(min, min + level_size_in_blocks)) return; // Not visible
 
     if(region->transform.level == 1){ // The region is directly drawable
+        if(!region->loaded_mesh){
+            std::cerr << "A loaded region has to have a  mesh!" << std::endl;
+            return;
+        }
+
         region->loaded_mesh->addDrawCall();
         return;
     }
@@ -128,7 +134,7 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
         MeshRegion* subregion = region->getSubregion(x,y,z);
         if(!subregion) continue; // Region doesn't exist
         
-        processRegionForDrawing(frustum, subregion, draw_call_counter);
+        processRegionForDrawing(frustum, subregion);
     }
     
 }
@@ -154,7 +160,7 @@ void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& fru
         MeshRegion* region = getRegion({position, maxRegionLevel});
         if(!region) continue;
 
-        processRegionForDrawing(frustum, region, drawCallCount);
+        processRegionForDrawing(frustum, region);
     }   
 
     mesh_buffer.flushDrawCalls();

@@ -390,7 +390,7 @@ void MainScene::render(){
     processMouseMovement();
 
     if(updateVisibility > 0){
-        //chunkMeshRegistry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
+        chunkMeshRegistry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
         updateVisibility = 0;
     }
     

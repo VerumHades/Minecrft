@@ -50,6 +50,8 @@ void GLDrawCallBuffer::push(GLDrawCallBuffer::DrawCommand* commands, size_t size
     draw_commands.push(commands,size);
 }
 void GLDrawCallBuffer::flush(){
+    if(draw_commands.size() == 0) return;
+    
     if(draw_commands.size() > buffer.size()) buffer.initialize(draw_commands.size(), draw_commands.data());
     else buffer.insert(0, draw_commands.size(), draw_commands.data());
 }
