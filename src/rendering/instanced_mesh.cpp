@@ -9,6 +9,7 @@ void InstancedMesh::addQuadFace(glm::vec3 position, float width, float height, i
         width,
         height,
 
+        type,
         direction,
         texture_index
     };
@@ -32,20 +33,20 @@ bool InstancedMesh::empty(){
 InstancedMeshBuffer::InstancedMeshBuffer(){
     std::array<float, 20 * 5> aligned_quad_data = {
         // X aligned face
-        0.0f,  0.0f, 0.0f,  0.0f, 1.0f, 
-        0.0f,  0.0f, 1.0f,  1.0f, 1.0f, 
-        0.0f, -1.0f, 0.0f,  0.0f, 0.0f, 
-        0.0f, -1.0f, 1.0f,  1.0f, 0.0f, 
+        0.0f,  0.0f, 0.0f,  0.0f, 0.0f, 
+        0.0f,  0.0f, 1.0f,  1.0f, 0.0f, 
+        0.0f, -1.0f, 0.0f,  0.0f, 1.0f, 
+        0.0f, -1.0f, 1.0f,  1.0f, 1.0f, 
         // Y aligned face
         0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 
         0.0f, 0.0f, 1.0f,  1.0f, 1.0f, 
         1.0f, 0.0f, 0.0f,  0.0f, 0.0f, 
         1.0f, 0.0f, 1.0f,  1.0f, 0.0f, 
         // Z aligned face
-        0.0f,  0.0f, 0.0f,  0.0f, 1.0f, 
-        1.0f,  0.0f, 0.0f,  1.0f, 1.0f, 
-        0.0f, -1.0f, 0.0f,  0.0f, 0.0f, 
-        1.0f, -1.0f, 0.0f,  1.0f, 0.0f, 
+        0.0f,  0.0f, 0.0f,  0.0f, 0.0f, 
+        1.0f,  0.0f, 0.0f,  1.0f, 0.0f, 
+        0.0f, -1.0f, 0.0f,  0.0f, 1.0f, 
+        1.0f, -1.0f, 0.0f,  1.0f, 1.0f, 
 
         // Diagonal billboard faces
         0.0f,  0.0f, 0.0f,  0.0f, 1.0f, 
@@ -63,7 +64,7 @@ InstancedMeshBuffer::InstancedMeshBuffer(){
     loaded_face_buffer.initialize(aligned_quad_data.size(), aligned_quad_data.data());
 
     for(int i = 0;i < distinct_face_count;i++){
-        vaos[i].attachBuffer(&instance_data[i].getBuffer(), {{VEC3, VEC2, FLOAT, FLOAT}, true});
+        vaos[i].attachBuffer(&instance_data[i].getBuffer(), {{VEC3, VEC2, FLOAT, FLOAT, FLOAT}, true});
         vaos[i].attachBuffer(&loaded_face_buffer, {VEC3, VEC2});
     }
 }
@@ -164,8 +165,12 @@ void InstancedMeshBuffer::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new
             loaded_mesh.has_region[i] = false;
             continue;
         }
+    
+        if(loaded_mesh.has_region[i])
+            loaded_mesh.loaded_regions[i] = instance_data[i].update(loaded_mesh.loaded_regions[i], component_data.data(), component_data.size());
+        else
+            loaded_mesh.loaded_regions[i] = instance_data[i].append(component_data.data(), component_data.size());
 
-        loaded_mesh.loaded_regions[i] = instance_data[i].update(loaded_mesh.loaded_regions[i], component_data.data(), component_data.size());
         loaded_mesh.has_region[i] = true;
 
         instance_data[i].flush();

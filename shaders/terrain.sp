@@ -6,11 +6,12 @@
 
 layout(location = 0) in vec3  aInstancePosition;
 layout(location = 1) in vec2  aInstanceSize;
-layout(location = 2) in float aInstanceDirection;
-layout(location = 3) in float aTextureIndex;
+layout(location = 2) in float aInstaceType;
+layout(location = 3) in float aInstanceDirection;
+layout(location = 4) in float aTextureIndex;
 
-layout(location = 4) in vec3 aPos;
-layout(location = 5) in vec2 aTexCoords;
+layout(location = 5) in vec3 aPos;
+layout(location = 6) in vec2 aTexCoords;
 
 uniform mat4 player_camera_projection_matrix;
 uniform mat4 player_camera_view_matrix;
@@ -35,7 +36,17 @@ const vec3 Normals[6] = vec3[6](
 
 void main()
 {
-    vec3 pos = aPos * vec3(aInstanceSize.x, aInstanceSize.y, aInstanceSize.x) + aInstancePosition;
+    float width = aInstanceSize.x;
+    float height = aInstanceSize.y;
+
+    vec3 Size[4] = vec3[4](
+        vec3(1    ,height,width ),
+        vec3(width,1     ,height),
+        vec3(width,height,1     ),
+        vec3(1,1,1)
+    );
+
+    vec3 pos = aPos * Size[int(aInstaceType)] + aInstancePosition;
 
     vec4 viewPos = player_camera_view_matrix * player_camera_model_matrix * vec4(pos, 1.0);
     FragPos = viewPos.xyz;
@@ -44,7 +55,15 @@ void main()
     int index = int(0);
 
     Normal = Normals[index];
-    TexCoords = aTexCoords * aInstanceSize;
+
+    vec2 TextCoordList[4] = vec2[4](
+        aInstanceSize,
+        vec2(height, width),
+        aInstanceSize,
+        aInstanceSize
+    );
+
+    TexCoords = aTexCoords * TextCoordList[int(aInstaceType)];
     TexIndex = aTextureIndex;
 }
 

@@ -328,8 +328,8 @@ void MainScene::open(GLFWwindow* window){
     
     world = std::make_unique<World>(worldPath, blockRegistry);
 
-    for(int i = 0;i < 20;i++){
-        for(int j = 0;j < 20;j++){
+    for(int i = 0;i < 10;i++){
+        for(int j = 0;j < 10;j++){
             auto entity = DroppedItem(itemPrototypeRegistry.createItem("crazed"), glm::vec3((float)i, 50, (float)j));
             world->addEntity(entity);
         }
@@ -449,9 +449,9 @@ void MainScene::render(){
 
         glDisable( GL_CULL_FACE );
 
-        int start_index = 20;
-        wireframeRenderer.setCubes(start_index);
-        world->drawEntityColliders(wireframeRenderer, start_index);
+        //int start_index = 20;
+        //wireframeRenderer.setCubes(start_index);
+        //world->drawEntityColliders(wireframeRenderer, start_index);
 
         wireframeRenderer.draw();
     gBuffer.unbind();
@@ -508,7 +508,7 @@ void MainScene::physicsUpdate(){
     double current = glfwGetTime();
     float deltatime;
 
-    float targetTPS = 60;
+    float targetTPS = 120;
     float tickTime = 1.0f / targetTPS;
 
     world->updateEntities();
@@ -551,10 +551,10 @@ void MainScene::physicsUpdate(){
 
         if(!world->getChunk(camWorldPosition)) continue;
 
-        //world->updateEntities();
-        //itemPrototypeRegistry.resetModelsDrawRequests();
-        //world->drawEntities();
-        //itemPrototypeRegistry.passModelsDrawRequests();
+        world->updateEntities();
+        itemPrototypeRegistry.resetModelsDrawRequests();
+        world->drawEntities();
+        itemPrototypeRegistry.passModelsDrawRequests();
 
     }
 
@@ -564,28 +564,9 @@ void MainScene::physicsUpdate(){
 void MainScene::generateSurroundingChunks(){
     glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
     int pregenDistance = renderDistance + 1; 
-    
-    int generatedTotal = 0;
-    int* gptr = &generatedTotal;
 
-    /*for(int x = -pregenDistance ; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
-        int chunkX = camWorldX + x;
-        int chunkY = camWorldY + y;
-        int chunkZ = camWorldZ + z;
-
-            //if(chunkY > 4) return;
-        if(world->isChunkLoadable(chunkX,chunkY,chunkZ)){
-            //std::cout << "Loading chunk" << std::endl;
-            world->loadChunk(chunkX,chunkY,chunkZ);
-            generatedTotal++;
-        }
-    }*/
-
-        
     for(int x = -pregenDistance ; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
         glm::ivec3 chunkPosition = camWorldPosition + glm::ivec3(x,y,z);
-
-        //if(chunkY > 4) return;
 
         world->generateChunk(chunkPosition);
     }

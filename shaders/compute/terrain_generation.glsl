@@ -77,7 +77,7 @@ void main() {
 
     vec3 position = gl_GlobalInvocationID.xyz + worldPosition;
     // Determine if this block (bit) should be set or cleared
-    bool isActive = position.y < (sin(position.x / 64) * 10);//position.y < 0.0;
+    bool isActive = position.y < ((sin(position.x / 64) + cos(position.z / 64)) * 10);//position.y < 0.0;
 
     // Set or clear the bit within the uint
     if (isActive) {

@@ -157,7 +157,7 @@ static inline void processFaces(
                 faceWidth = face.height;
                 faceHeight = face.width;
 
-                texture = type->single_texture ? type->textures[0] : type->textures[!texture_index ];
+                texture = type->single_texture ? type->textures[0] : type->textures[texture_index];
                 break;
             case InstancedMesh::Z_ALIGNED:
                 face_position = glm::vec3(face.x              , face.y + face.height, layer + 1) * scale + world_position;

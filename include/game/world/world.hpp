@@ -41,23 +41,11 @@ class World: public virtual Collidable{
 
         std::vector<Entity> entities;
 
-        const int entity_region_size = 4;
-        std::unordered_map<glm::ivec3, std::vector<Entity*>, IVec3Hash, IVec3Equal> entity_regions;
-
         std::unique_ptr<WorldStream> stream;
         WorldGenerator generator;
         BlockRegistry&  blockRegistry;
 
         glm::ivec3 blockToChunkPosition(glm::ivec3 blockPosition) const;
-        glm::ivec3 getEntityRegionPosition(const Entity& entity) const;
-        glm::ivec3 getRegionPosition(glm::vec3 position) const;
-
-        void updateEntityRegionCorespondence(Entity& entity);
-
-        std::tuple<int,std::array<glm::ivec3,8>>  getRegionsForCollider(const glm::vec3 position, const RectangularCollider* collider);
-
-        void addEntityToRegion(const glm::ivec3 region_position, Entity& entity);
-        bool removeEntityFromRegion(const glm::ivec3 region_position, Entity& entity);
 
         void drawEntity(Entity& entity);
         
