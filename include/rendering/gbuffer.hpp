@@ -5,5 +5,4 @@
 class GBuffer: public GLFramebuffer{
     public:
         GBuffer(int width, int height);
-        void resize(int width, int height);
 };

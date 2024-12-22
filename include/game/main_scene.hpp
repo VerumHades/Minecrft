@@ -43,6 +43,7 @@ class MainScene: public Scene{
 
         GBuffer gBuffer = GBuffer(1920,1080);
         GLFullscreenQuad fullscreen_quad;
+        
         GLSSAO ssao;
         GLFramebuffer blured_ssao_framebuffer = GLFramebuffer(1920,1080,{{GL_RED,GL_RED,GL_FLOAT}});
 

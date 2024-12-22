@@ -9,7 +9,3 @@ GBuffer::GBuffer(int width, int height):
     ){
 
 }
-
-void GBuffer::resize(int width, int height){
-    
-}

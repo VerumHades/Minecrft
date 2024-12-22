@@ -165,7 +165,7 @@ void MainScene::initialize(){
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
     camera.resizeScreen(width, height, camFOV);
-    gBuffer.resize(width, height);
+    gBuffer = GBuffer(width,height);
     
     terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
