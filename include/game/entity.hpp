@@ -20,7 +20,7 @@ class Entity;
 
 class Collidable{
     public:
-        virtual bool collidesWith(glm::vec3 position, Entity* collider) = 0;
+        virtual bool collidesWith(glm::vec3 position, Entity* collider, bool vertical_check = false) = 0;
 };
 
 class DroppedItem;
@@ -38,6 +38,7 @@ class Entity{
         float maxVelocityVertical = 0.5f;
         float friction = 0.005f;
         bool hasGravity = true;
+        bool on_ground = false;
 
     protected:
         std::string entity_typename = "entity";
@@ -45,6 +46,7 @@ class Entity{
         RectangularCollider collider;
         std::shared_ptr<Model> model;
         unsigned char entity_data[128];
+        bool solid = true;
 
     public:
         Entity(glm::vec3 position, glm::vec3 colliderDimensions);
@@ -52,12 +54,14 @@ class Entity{
         std::function<void(Entity*, Entity*)> onCollision;
         bool destroy = false;
 
-        void update(Collidable* world);
-        bool checkForCollision(Collidable* collidable, bool withVelocity, glm::vec3 offset = {0,0,0});
+        void update(Collidable* world, bool altered);
+        bool checkForCollision(Collidable* collidable, bool withVelocity, glm::vec3 offset = {0,0,0}, bool vertical_check = false);
         
         void accelerate(glm::vec3 direction);
         void setGravity(bool value){hasGravity = value;}
         void setModel(std::shared_ptr<Model> model) {this->model = model;}
+        bool isSolid(){return solid;}
+        bool setOnGround(bool value){on_ground = true;}
 
         std::shared_ptr<Model>& getModel() {return model;}
 

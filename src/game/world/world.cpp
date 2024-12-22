@@ -3,7 +3,7 @@
 World::World(std::string filepath, BlockRegistry& blockRegistry): blockRegistry(blockRegistry), generator(blockRegistry){  
     stream = std::make_unique<WorldStream>(filepath);
     generator.setSeed(stream->getSeed());
-    addEntity(Entity(glm::vec3(0,0,0), glm::vec3(0.6, 1.8, 0.6))); // Player
+    addEntity(Entity(glm::vec3(0,60,0), glm::vec3(0.6, 1.8, 0.6))); // Player
 }
 
 std::shared_mutex chunkGenLock;
@@ -77,7 +77,7 @@ std::tuple<bool, Block*> World::checkForPointCollision(glm::vec3 position, bool 
     return {false, nullptr};
 }
 
-bool World::collidesWith(glm::vec3 position, Entity* checked_entity) {
+bool World::collidesWith(glm::vec3 position, Entity* checked_entity, bool vertical_check) {
     int range = 1;
     const RectangularCollider* collider = &checked_entity->getCollider();
 
@@ -94,16 +94,14 @@ bool World::collidesWith(glm::vec3 position, Entity* checked_entity) {
                     if(!definition) continue;
                     if(definition->colliders.size() == 0 || blocki->id == BLOCK_AIR_INDEX) continue;
 
-                    //printf("x:%i y:%i z:%i ax:%f ay:%f az:%f\n",cx,cy,cz,x,y,z);
-
+               
                     for(int colliderIndex = 0;colliderIndex < definition->colliders.size(); colliderIndex++){
                         RectangularCollider* blockCollider = &definition->colliders[colliderIndex];
-                        
-                        //printf("%f %f %f %f %f %f\n", colliderX, colliderY, colliderZ, blockCollider->width, blockCollider->height, blockCollider->depth);
-            
+      
                         if(
                             blockCollider->collidesWith(collider, {cx,cy,cz}, position)
                         ){
+                            if(vertical_check) checked_entity->setOnGround(true);
                             return true;
                         }
                     }
@@ -112,14 +110,24 @@ bool World::collidesWith(glm::vec3 position, Entity* checked_entity) {
         }
     }
     
+    if(!checked_entity->isSolid()) return false;
+
     for(auto& entity: entities){
-        if(collider == &entity.getCollider()) continue;
-        if(entity.getCollider().collidesWith(collider, entity.getPosition(), position)){
+        if(&entity == checked_entity) continue;
+
+        auto& entity_collider = entity.getCollider();
+        auto& checked_collider = checked_entity->getCollider();
+
+        float distance = glm::distance(entity_collider.center, checked_collider.center);
+        if(distance > checked_collider.bounding_sphere_radius + entity_collider.bounding_sphere_radius) continue; // Definitly dont collide
+        
+
+        if(entity_collider.collidesWith(&checked_collider, entity.getPosition(), position)){
             if(checked_entity->onCollision) checked_entity->onCollision(checked_entity, &entity);
             if(entity.onCollision) entity.onCollision(&entity, checked_entity);
-            return true;
+            
+            if(entity.isSolid()) return true;
         }
-    
     }
 
     return false;
@@ -188,6 +196,7 @@ bool World::setBlock(glm::ivec3 position, Block block){
 
     Chunk* chunk = this->getChunk(chunkPosition);
     if(!chunk) return false;//this->generateAndGetChunk(chunkX, chunkZ)->setBlock(ix,y,iz,index);
+    blocks_altered = true;
     chunk->setBlock(blockPosition, block);
 
     return true;
@@ -225,7 +234,7 @@ void World::updateEntities(){
     for(int index = 0;index < entities.size();){
         Entity& entity = entities[index];
 
-        entity.update(this);
+        entity.update(this, blocks_altered);
         if(entity.shouldGetDestroyed()){
             entities.erase(entities.begin() + index);
             continue;
@@ -233,6 +242,7 @@ void World::updateEntities(){
 
         index++;
     }
+    blocks_altered = false;
 }
 void World::drawEntityColliders(WireframeCubeRenderer& renderer, size_t start_index){
     /*for(auto& [region_position,entities]: entity_regions){

@@ -9,6 +9,7 @@
 #include <mutex> 
 #include <chrono>
 #include <queue>
+#include <atomic>
 
 #include <iostream>
 #include <fstream>
@@ -48,6 +49,8 @@ class World: public virtual Collidable{
         glm::ivec3 blockToChunkPosition(glm::ivec3 blockPosition) const;
 
         void drawEntity(Entity& entity);
+
+        std::atomic<bool> blocks_altered = false;
         
     public:
         World(std::string filepath, BlockRegistry& blockRegistry);
@@ -65,7 +68,7 @@ class World: public virtual Collidable{
         glm::ivec3 getGetChunkRelativeBlockPosition(glm::ivec3 position);
 
         std::tuple<bool, Block*> checkForPointCollision(glm::vec3 position, bool includeRectangularColliderLess);
-        bool collidesWith(glm::vec3 position, Entity* collider) override;
+        bool collidesWith(glm::vec3 position, Entity* collider, bool vertical_check = false) override;
 
         RaycastResult raycast(glm::vec3 from, glm::vec3 direction, float maxDistance);
 

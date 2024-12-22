@@ -76,6 +76,8 @@ class DroppedItem: public Entity{
             }
             VALID_ENTITY_DATA(Data);
 
+            solid = false;
+
             entity_typename = "dropped_item";
             reinterpret_cast<Data*>(entity_data)->item = item;
 

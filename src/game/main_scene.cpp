@@ -328,9 +328,9 @@ void MainScene::open(GLFWwindow* window){
     
     world = std::make_unique<World>(worldPath, blockRegistry);
 
-    for(int i = 0;i < 10;i++){
-        for(int j = 0;j < 10;j++){
-            auto entity = DroppedItem(itemPrototypeRegistry.createItem("crazed"), glm::vec3((float)i, 50, (float)j));
+    for(int i = 0;i < 50;i++){
+        for(int j = 0;j < 50;j++){
+            auto entity = DroppedItem(itemPrototypeRegistry.createItem("crazed"), glm::vec3((float)i / 2.0, 20, (float)j / 2.0));
             world->addEntity(entity);
         }
     }
