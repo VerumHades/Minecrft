@@ -21,8 +21,7 @@ void MainScene::initialize(){
     crosshair->setAttribute(&UIFrame::Style::textColor, {255,255,255});
 
     getUILayer("default").addElement(crosshair);
-    //bob.loadFromFile("models/dio_brando/scene.gltf", "models/dio_brando");
-    
+
     std::array<std::string,6> skyboxPaths = {
         "skybox/stars/right.png",
         "skybox/stars/left.png",
