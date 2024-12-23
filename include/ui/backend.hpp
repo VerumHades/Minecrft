@@ -5,8 +5,7 @@
 #include <ui/color.hpp>
 
 struct UIRenderCommand{
-    glm::vec2 position;
-    glm::vec2 size;
+    std::array<glm::vec2,4> vertex_positions;
     
     UIColor color;
     UIRegion uvs;
@@ -37,6 +36,8 @@ struct UIRenderBatch{
     void Texture(UITransform transform, UIRegion texture_coords);
 
     void Text(std::string text, int x, int y, int font_size, UIColor color);
+
+    static std::array<glm::vec2, 4> GetRetangleVertices(int x, int y, int width, int height);
 };
 
 

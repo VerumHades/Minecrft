@@ -134,12 +134,12 @@ void UIOpenglBackend::renderBatch(std::list<UIBackend::Batch>::iterator batch_it
 };
 
 void UIOpenglBackend::processTextCommand(UIRenderCommand& command, float*& vertices, uint*& indices, int& index_offset){
-    int font_size = command.size.x;
-    int x = command.position.x;
-    int y = command.position.y;
+    int font_size = command.vertex_positions[1].x;
+    int x = command.vertex_positions[0].x;
+    int y = command.vertex_positions[0].y;
     std::string& text = command.text;
 
-    float scale = static_cast<float>(command.size.x) / static_cast<float>(mainFont.getSize());
+    float scale = static_cast<float>(font_size) / static_cast<float>(mainFont.getSize());
     //std::cout << scale << std::endl;
     glm::vec2 textDimensions = mainFont.getTextDimensions(text, font_size);
 
@@ -154,14 +154,7 @@ void UIOpenglBackend::processTextCommand(UIRenderCommand& command, float*& verti
         GLfloat h = ch.Size.y * scale;
 
         UIRenderCommand glyph_command = {
-            {
-                static_cast<int>(xpos),
-                static_cast<int>(ypos),
-            },
-            {
-                static_cast<int>(w),
-                static_cast<int>(h),
-            },
+            UIRenderBatch::GetRetangleVertices(xpos,ypos,w,h),
             command.color,
             UIRegion{
                 ch.TexCoordsMin,
@@ -183,7 +176,7 @@ void UIOpenglBackend::proccessRenderCommand(UIRenderCommand& command, float*& ve
         return;
     }
 
-    int x = command.position.x;
+    /*int x = command.position.x;
     int y = command.position.y;
     int width = command.size.x;
     int height = command.size.y;
@@ -193,7 +186,7 @@ void UIOpenglBackend::proccessRenderCommand(UIRenderCommand& command, float*& ve
         {x + width, y    },
         {x + width, y + height},
         {x    , y + height}
-    };
+    };*/
 
     float textureX = command.uvs.min.x;
     float textureY = command.uvs.min.y;
@@ -215,8 +208,8 @@ void UIOpenglBackend::proccessRenderCommand(UIRenderCommand& command, float*& ve
     uint startIndex =  index_offset;
 
     for(int i = 0; i < 4; i++){
-        vertices[0] = vertices_[i].x;
-        vertices[1] = vertices_[i].y;
+        vertices[0] = command.vertex_positions[i].x;
+        vertices[1] = command.vertex_positions[i].y;
 
         vertices[2] = command.color.r;
         vertices[3] = command.color.g;

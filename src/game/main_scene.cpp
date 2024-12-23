@@ -33,6 +33,7 @@ void MainScene::initialize(){
 
     itemPrototypeRegistry.addPrototype(ItemPrototype("diamond","textures/diamond32.png"));
     itemPrototypeRegistry.addPrototype(ItemPrototype("crazed","textures/crazed32.png"));
+    itemPrototypeRegistry.addPrototype(ItemPrototype("crazed2","textures/dirt.png"));
 
     held_item_slot = std::make_shared<ItemSlot>(itemTextureAtlas,*uiManager);
 
@@ -49,6 +50,7 @@ void MainScene::initialize(){
     auto item2 = itemPrototypeRegistry.createItem("crazed");
     inventory->setItem(1,0,item);
     inventory->setItem(0,4,item2);
+    inventory->setItem(1,4, itemPrototypeRegistry.createItem("crazed2"));
 
     setUILayer("menu");
     addElement(inventory);

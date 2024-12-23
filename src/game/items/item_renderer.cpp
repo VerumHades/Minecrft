@@ -7,23 +7,18 @@ ItemTextureAtlas::StoredTexture* ItemTextureAtlas::getPrototypeTexture(ItemProto
     if(!stored_textures.contains(prototype)){
         this->texture_array->bind(0);
 
-        int width, height, original_channels;
-        unsigned char* image_data;
-        // Load the image with 4 channels (RGBA)
-        image_data = stbi_load(prototype->texture_path.c_str(), &width, &height, &original_channels, 4);
+        Image original_image{prototype->texture_path};
+        Image reduced_image = Image::perfectPixelReduce(original_image, single_texture_size, single_texture_size);
 
-        if (!image_data) {
-            std::cout << "Failed to load image: " << stbi_failure_reason() << std::endl;
+        if(reduced_image.getWidth() != reduced_image.getHeight() || reduced_image.getWidth() != single_texture_size){
+            std::cerr << "Item prototype texture has invalid size" << reduced_image.getWidth() << "x" << reduced_image.getHeight() << std::endl;
             return nullptr;
         }
 
-
-        if(width != single_texture_size || height != single_texture_size){
-            std::cerr << "Item prototype texture has invalid size: " << width << "x" << height << " and not " << single_texture_size << "x" << single_texture_size << std::endl;
-            stbi_image_free(image_data);
-            return nullptr;
-        }
-
+        int width = reduced_image.getWidth();
+        int height = reduced_image.getHeight();
+        auto* image_data = reduced_image.getData();
+        
         const int layerIndex = 0;
         int textures_per_row = atlas_size / single_texture_size;
 
@@ -47,10 +42,6 @@ ItemTextureAtlas::StoredTexture* ItemTextureAtlas::getPrototypeTexture(ItemProto
         };
 
         textures_stored_total++;
-
-        //CHECK_GL_ERROR();;
-
-        stbi_image_free(image_data);
     }
 
     return &stored_textures[prototype];
@@ -119,14 +110,15 @@ void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
     if(!prototype) return;
 
     auto* texture_info = textureAtlas.getPrototypeTexture(prototype);
-
-    batch.Texture(
-        transform.x,transform.y,transform.width,transform.height,
-        {
-            texture_info->uv_min, 
-            texture_info->uv_max
-        }
-    );
+    if(texture_info){
+        batch.Texture(
+            transform.x,transform.y,transform.width,transform.height,
+            {
+                texture_info->uv_min, 
+                texture_info->uv_max
+            }
+        );
+    }
 
     int slot_x = transform.x + slot_padding;
     int slot_y = transform.y + slot_padding;
@@ -206,10 +198,18 @@ bool ItemInventory::addItem(Item item){
     return false;
 }
 void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
-    UIFrame::getRenderingInformation(batch);
-
     int line_width = borderSizes.top;
     UIColor line_color = getAttribute(&UIFrame::Style::borderColor).top;
+
+    batch.BorderedRectangle(
+        transform.x - borderSizes.left + line_width / 2,
+        transform.y - borderSizes.top  + line_width / 2,
+        transform.width  - line_width / 2,
+        transform.height - line_width / 2,
+        getAttribute(&UIFrame::Style::backgroundColor),
+        borderSizes,
+        getAttribute(&UIFrame::Style::borderColor)
+    );
 
     for(int y = 1;y < slots_verticaly; y++){
         batch.Rectangle(
@@ -226,7 +226,7 @@ void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
             transform.x + x * slot_size - line_width / 2,
             transform.y,
             line_width,
-            transform.height,
+            transform.height - line_width,
             line_color
         );
     }
@@ -247,16 +247,18 @@ void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
             int slot_width  = slot_size - slot_padding * 2;
             int slot_height = slot_width;
 
-            batch.Texture(
-                slot_x,
-                slot_y,
-                slot_width,
-                slot_height,
-                {
-                    texture_info->uv_min, 
-                    texture_info->uv_max
-                }
-            );
+            if(texture_info){
+                batch.Texture(
+                    slot_x,
+                    slot_y,
+                    slot_width,
+                    slot_height,
+                    {
+                        texture_info->uv_min, 
+                        texture_info->uv_max
+                    }
+                );
+            }
 
             std::string quantity_number = std::to_string(item.getQuantity());
             UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(quantity_number, quantity_number_font_size);

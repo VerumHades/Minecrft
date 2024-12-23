@@ -9,6 +9,9 @@
 #include <unordered_map>
 #include <glm/glm.hpp>
 #include <general.hpp>
+#include <stb_image.h>
+
+#include <rendering/image_processing.hpp>
 
 class BindableTexture{
     protected: 
@@ -27,12 +30,12 @@ class BindableTexture{
 class GLTexture2D: public BindableTexture{
     private:
         bool configured = false;
-        void loadData(unsigned char* data, int width, int height, int channels);
+        void loadData(const Image& image);
 
     public:
         GLTexture2D(){TYPE = GL_TEXTURE_2D;};
         GLTexture2D(const char* filename);
-        GLTexture2D(unsigned char* data, int width, int height);
+        GLTexture2D(const Image& image);
         void configure(int internal_format, int format, int data_type, int width, int height, void* data = nullptr);
         void reset();
 };

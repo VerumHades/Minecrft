@@ -1,12 +1,14 @@
 #pragma once
 
 #include <optional>
-#include <rendering/opengl/texture.hpp>
 #include <memory>
 #include <stb_image.h>
 #include <ui/manager.hpp>
 #include <game/items/item.hpp>
 #include <vector>
+
+#include <rendering/opengl/texture.hpp>
+#include <rendering/image_processing.hpp>
 
 class ItemTextureAtlas{
     private:

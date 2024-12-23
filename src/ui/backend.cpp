@@ -1,10 +1,18 @@
 #include <ui/backend.hpp>
 
+std::array<glm::vec2, 4> UIRenderBatch::GetRetangleVertices(int x, int y, int width, int height){
+    return {
+        glm::vec2{x        , y    },
+        glm::vec2{x + width, y    },
+        glm::vec2{x + width, y + height},
+        glm::vec2{x        , y + height}
+    };
+}
+
 void UIRenderBatch::Rectangle(int x, int y, int width, int height, UIColor fill_color){
     commands.push_back(
         UIRenderCommand{
-            {x,y},
-            {width,height},
+            GetRetangleVertices(x,y,width,height),
             fill_color,
             {{0,0},{0,0}},
             UIRenderCommand::SOLID
@@ -59,8 +67,7 @@ void UIRenderBatch::BorderedRectangle(UITransform transform, UIColor fill_color,
 
 void UIRenderBatch::Texture(int x, int y, int width, int height, UIRegion texture_coords){
     commands.push_back({
-        {x,y},
-        {width,height},
+        GetRetangleVertices(x,y,width,height),
         UIColor{0,0,0,0},
         texture_coords,
         UIRenderCommand::TEXTURE
@@ -71,8 +78,10 @@ void UIRenderBatch::Texture(UITransform transform, UIRegion texture_coords){
 }
 void UIRenderBatch::Text(std::string text, int x, int y, int font_size, UIColor color){
     commands.push_back(UIRenderCommand{
-        {x,y},
-        {font_size,0},
+        {
+            glm::vec2{x,y},
+            glm::vec2{font_size}   
+        },
         color,
         {{0,0},{0,0}},
         UIRenderCommand::TEXT,

@@ -1,8 +1,5 @@
 #include <rendering/opengl/texture.hpp>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
+#include <rendering/image_processing.hpp>
 
 static std::array<uint, 32> texture_bindings = {};
 
@@ -39,7 +36,7 @@ void BindableTexture::parameter(int identifier, int value){
 uint BindableTexture::getType() const {return TYPE;}
 uint BindableTexture::getID() const {return texture;}
 
-void GLTexture2D::loadData(unsigned char* data, int width, int height, int channels){
+void GLTexture2D::loadData(const Image& image){
     glBindTexture(GL_TEXTURE_2D, this->texture);
 
     //CHECK_GL_ERROR();;
@@ -52,6 +49,7 @@ void GLTexture2D::loadData(unsigned char* data, int width, int height, int chann
 
     //CHECK_GL_ERROR();;
 
+    int channels = image.getChannels();
     //printf("Texture channels: %i\n", nrChannels);
     // Load image data to GPU
     if(channels != 3 && channels != 4){
@@ -61,7 +59,7 @@ void GLTexture2D::loadData(unsigned char* data, int width, int height, int chann
     }
 
     GLenum format = (channels == 4) ? GL_RGBA : GL_RGB;
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, image.getWidth(), image.getHeight(), 0, format, GL_UNSIGNED_BYTE, image.getData());
 
     //CHECK_GL_ERROR();;
 
@@ -73,22 +71,13 @@ void GLTexture2D::loadData(unsigned char* data, int width, int height, int chann
 GLTexture2D::GLTexture2D(const char* filename){
     TYPE = GL_TEXTURE_2D;
 
-    int width = 0, height = 0, nrChannels = 0;
-    unsigned char *data = stbi_load(filename, &width, &height, &nrChannels, 0);
-    if (!data) {
-        std::cerr << "Failed to load texture: " << filename << std::endl;
-        return;
-    }
-
-    loadData(data, width, height, nrChannels);
-
-    stbi_image_free(data);
+    loadData(Image(filename));
 }
 
-GLTexture2D::GLTexture2D(unsigned char* data, int width, int height){
+GLTexture2D::GLTexture2D(const Image& image){
     TYPE = GL_TEXTURE_2D;
 
-    loadData(data, width, height, 4);
+    loadData(image);
 }
 
 void GLTexture2D::configure(int storage_type, int color_format, int data_type, int width, int height, void* data){
