@@ -20,12 +20,17 @@ class ItemTextureAtlas{
         size_t textures_stored_total;
         
         struct StoredTexture{
-            glm::vec2 uv_min;
-            glm::vec2 uv_max;
+            UIRegion uvs;
             int index;
         };
 
-        std::unordered_map<ItemPrototype*, StoredTexture> stored_textures;
+        struct TextureSet{
+            std::array<StoredTexture,3> textures;
+        };
+
+        std::unordered_map<ItemPrototype*, TextureSet> stored_textures;
+
+        StoredTexture storeImage(Image& image);
 
     public:
         ItemTextureAtlas() {
@@ -35,7 +40,10 @@ class ItemTextureAtlas{
         /*
             Loads the texture if not loaded, returs its uv coordinates and index
         */
-        StoredTexture* getPrototypeTexture(ItemPrototype* prototype);
+        TextureSet* getPrototypeTextureSet(ItemPrototype* prototype);
+
+        void RenderItemIntoSlot(UIRenderBatch& batch, ItemPrototype* prototype, UITransform slot_transform);
+
         std::shared_ptr<GLTextureArray>& getTextureArray() {return texture_array;};
 };
 

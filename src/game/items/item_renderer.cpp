@@ -1,47 +1,59 @@
 #include <game/items/item_renderer.hpp>
 
 
-ItemTextureAtlas::StoredTexture* ItemTextureAtlas::getPrototypeTexture(ItemPrototype* prototype){
+ItemTextureAtlas::StoredTexture ItemTextureAtlas::storeImage(Image& image){
+    int width = image.getWidth();
+    int height = image.getHeight();
+    auto* image_data = image.getData();
+    
+    const int layerIndex = 0;
+    int textures_per_row = atlas_size / single_texture_size;
+
+    int x = (textures_stored_total % textures_per_row) * single_texture_size;
+    int y = (textures_stored_total / textures_per_row) * single_texture_size;
+    // Upload the image data to the specified layer
+    glTexSubImage3D(
+        GL_TEXTURE_2D_ARRAY, // Target
+        0,                  // Mipmap level
+        x, y, layerIndex,   // x, y, and z (layer) offsets
+        width, height, 1,   // Width, height, depth (only one layer here)
+        GL_RGBA,            // Format of the pixel data
+        GL_UNSIGNED_BYTE,   // Data type of the pixel data
+        image_data          // Pointer to the image data
+    );
+
+    textures_stored_total++;
+
+    return {
+        {
+            glm::vec2{x,y} / static_cast<float>(atlas_size) ,
+            glm::vec2{x + width, y + height} / static_cast<float>(atlas_size) ,
+        },
+        1
+    };
+}
+
+ItemTextureAtlas::TextureSet* ItemTextureAtlas::getPrototypeTextureSet(ItemPrototype* prototype){
     if(!prototype) return nullptr;
 
     if(!stored_textures.contains(prototype)){
         this->texture_array->bind(0);
 
-        Image original_image{prototype->texture_path};
-        Image reduced_image = Image::perfectPixelReduce(original_image, single_texture_size, single_texture_size);
+        TextureSet set = {};
 
-        if(reduced_image.getWidth() != reduced_image.getHeight() || reduced_image.getWidth() != single_texture_size){
-            std::cerr << "Item prototype texture has invalid size" << reduced_image.getWidth() << "x" << reduced_image.getHeight() << std::endl;
-            return nullptr;
+        for(int i = 0;i < (prototype->display_type == ItemPrototype::SIMPLE ? 1 : 3);i++){
+            Image original_image{prototype->texture_paths[i]};
+            Image reduced_image = Image::perfectPixelReduce(original_image, single_texture_size, single_texture_size);
+
+            if(reduced_image.getWidth() != reduced_image.getHeight() || reduced_image.getWidth() != single_texture_size){
+                std::cerr << "Item prototype texture has invalid size" << reduced_image.getWidth() << "x" << reduced_image.getHeight() << std::endl;
+                return nullptr;
+            }
+
+            set.textures[i] = storeImage(reduced_image);
         }
-
-        int width = reduced_image.getWidth();
-        int height = reduced_image.getHeight();
-        auto* image_data = reduced_image.getData();
         
-        const int layerIndex = 0;
-        int textures_per_row = atlas_size / single_texture_size;
-
-        int x = (textures_stored_total % textures_per_row) * single_texture_size;
-        int y = (textures_stored_total / textures_per_row) * single_texture_size;
-        // Upload the image data to the specified layer
-        glTexSubImage3D(
-            GL_TEXTURE_2D_ARRAY, // Target
-            0,                  // Mipmap level
-            x, y, layerIndex,   // x, y, and z (layer) offsets
-            width, height, 1,   // Width, height, depth (only one layer here)
-            GL_RGBA,            // Format of the pixel data
-            GL_UNSIGNED_BYTE,   // Data type of the pixel data
-            image_data          // Pointer to the image data
-        );
-
-        stored_textures[prototype] = {
-            glm::vec2{x,y} / static_cast<float>(atlas_size) ,
-            glm::vec2{x + width, y + height} / static_cast<float>(atlas_size) ,
-            1
-        };
-
-        textures_stored_total++;
+        stored_textures[prototype] = set;
     }
 
     return &stored_textures[prototype];
@@ -94,6 +106,68 @@ void LogicalItemSlot::clear(){
     item_option.reset();
 }
 
+void ItemTextureAtlas::RenderItemIntoSlot(UIRenderBatch& batch, ItemPrototype* prototype, UITransform transform){
+    auto* texture_info = getPrototypeTextureSet(prototype);
+    if(!texture_info) return;
+    
+    if(prototype->display_type == ItemPrototype::SIMPLE)
+        batch.Texture(transform, texture_info->textures[0].uvs);
+    else{
+        int x = transform.x;
+        int y = transform.y;
+        int center_x = transform.x + transform.width / 2;
+        int center_y = transform.y + transform.height / 2;
+        int right_x = transform.x + transform.width;
+        int bottom_y = transform.y + transform.height;
+
+        glm::vec2 center = {center_x, center_y};
+        glm::vec2 quarter_right = {right_x , y + transform.height / 4};
+        glm::vec2 quarter_left  = {x       , y + transform.height / 4};
+
+        batch.TexturePolygon(
+            {
+                glm::vec2{center_x, y       },
+                quarter_right,
+                center,
+                quarter_left
+            },
+            texture_info->textures[0].uvs
+        );
+
+        batch.TexturePolygon(
+            {
+                quarter_right,
+                quarter_right + glm::vec2{0, transform.height / 2},
+                glm::vec2{center_x, bottom_y},
+                center
+            },
+            texture_info->textures[1].uvs,
+            {100,100,100}
+        );
+
+        batch.TexturePolygon(
+            {
+                quarter_left,
+                center,
+                glm::vec2{center_x, bottom_y},
+                quarter_left + glm::vec2{0, transform.height / 2}
+            },
+            texture_info->textures[2].uvs,
+            {150,150,150}
+        );
+
+        
+        /*batch.Texture(
+            transform,
+            texture_info->textures[0].uvs
+        );
+        /*
+        batch.Texture(
+            transform.x,transform.y,transform.width,transform.height,
+            texture_info->textures[0].uvs
+        );*/
+    }
+}
 
 void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
    /*yeet(
@@ -109,16 +183,7 @@ void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
     auto* prototype = item.getPrototype();
     if(!prototype) return;
 
-    auto* texture_info = textureAtlas.getPrototypeTexture(prototype);
-    if(texture_info){
-        batch.Texture(
-            transform.x,transform.y,transform.width,transform.height,
-            {
-                texture_info->uv_min, 
-                texture_info->uv_max
-            }
-        );
-    }
+    textureAtlas.RenderItemIntoSlot(batch,prototype,transform);
 
     int slot_x = transform.x + slot_padding;
     int slot_y = transform.y + slot_padding;
@@ -240,25 +305,18 @@ void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
             auto* prototype = item.getPrototype();
             if(!prototype) continue;
 
-            auto* texture_info = textureAtlas.getPrototypeTexture(prototype);
 
             int slot_x = transform.x + x * slot_size + slot_padding;
             int slot_y = transform.y + y * slot_size + slot_padding;
             int slot_width  = slot_size - slot_padding * 2;
             int slot_height = slot_width;
 
-            if(texture_info){
-                batch.Texture(
-                    slot_x,
-                    slot_y,
-                    slot_width,
-                    slot_height,
-                    {
-                        texture_info->uv_min, 
-                        texture_info->uv_max
-                    }
-                );
-            }
+            textureAtlas.RenderItemIntoSlot(batch,prototype,{
+                slot_x,
+                slot_y,
+                slot_width,
+                slot_height,
+            });
 
             std::string quantity_number = std::to_string(item.getQuantity());
             UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(quantity_number, quantity_number_font_size);

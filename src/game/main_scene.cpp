@@ -33,7 +33,7 @@ void MainScene::initialize(){
 
     itemPrototypeRegistry.addPrototype(ItemPrototype("diamond","textures/diamond32.png"));
     itemPrototypeRegistry.addPrototype(ItemPrototype("crazed","textures/crazed32.png"));
-    itemPrototypeRegistry.addPrototype(ItemPrototype("crazed2","textures/dirt.png"));
+    itemPrototypeRegistry.addPrototype(ItemPrototype("crazed2",{"textures/dirt.png","textures/dirt.png","textures/dirt.png"}));
 
     held_item_slot = std::make_shared<ItemSlot>(itemTextureAtlas,*uiManager);
 
@@ -181,7 +181,10 @@ void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
 void MainScene::unlockedMouseMove(GLFWwindow* window, int mouseX, int mouseY){
     if(menuOpen){
         if(held_item_slot){
-            held_item_slot->setPosition(mouseX,mouseY);
+            held_item_slot->setPosition(
+                mouseX,
+                mouseY
+            );
             held_item_slot->calculateTransforms();
             held_item_slot->update();
         }

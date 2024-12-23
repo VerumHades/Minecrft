@@ -32,8 +32,10 @@ struct UIRenderBatch{
     void BorderedRectangle(int x, int y, int width, int height, UIColor fill_color, UIBorderSizes border_sizes, UIBorderColors border_colors);
     void BorderedRectangle(UITransform transform, UIColor fill_color, UIBorderSizes border_sizes, UIBorderColors border_colors);
 
-    void Texture(int x, int y, int width, int height, UIRegion texture_coords);
-    void Texture(UITransform transform, UIRegion texture_coords);
+    void Texture(int x, int y, int width, int height, UIRegion texture_coords, UIColor color_mask = {255,255,255});
+    void Texture(UITransform transform, UIRegion texture_coords, UIColor color_mask = {255,255,255});
+
+    void TexturePolygon(std::array<glm::vec2, 4> positions, UIRegion texture_coords, UIColor color_mask = {255,255,255});
 
     void Text(std::string text, int x, int y, int font_size, UIColor color);
 

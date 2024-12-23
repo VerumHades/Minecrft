@@ -15,15 +15,32 @@ class Item;
 class ItemPrototype{
     private:
         std::string name;
-        std::string texture_path;
+
+        enum IconDisplayType{
+            SIMPLE,
+            BLOCK
+        } display_type = SIMPLE;
+        
+        std::array<std::string,3> texture_paths = {};
+        
         std::shared_ptr<SpriteModel> model;
 
         friend class ItemPrototypeRegistry;
         friend class ItemTextureAtlas;
     
     public:
-        ItemPrototype(std::string name, std::string texture_path): name(name), texture_path(texture_path){
+        ItemPrototype(std::string name, std::string texture_path): name(name){
+            display_type = SIMPLE;
+            texture_paths[0] = texture_path;
             model = std::make_shared<SpriteModel>(texture_path);
+        }
+
+        /*
+            Block textures from clockwise from top
+        */
+        ItemPrototype(std::string name, std::array<std::string,3> texture_path): name(name), texture_paths(texture_path){
+            display_type = BLOCK;
+            model = std::make_shared<SpriteModel>(texture_path[0]);
         }
         std::shared_ptr<SpriteModel>& getModel() {return model;}
 };

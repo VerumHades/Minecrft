@@ -17,7 +17,7 @@ void main()
     FragColor = 
         Type < 0.5 ? Color : 
         Type < 1.5 ? sampledText * Color :
-        Type < 2.5 ? sampledTexture : vec4(1.0,0,0,1.0);
+        Type < 2.5 ? sampledTexture * Color : vec4(1.0,0,0,1.0);
 
     //FragColor = vec4(TexCoords,0.0,1.0);
 }

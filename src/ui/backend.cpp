@@ -65,16 +65,25 @@ void UIRenderBatch::BorderedRectangle(UITransform transform, UIColor fill_color,
 }
 
 
-void UIRenderBatch::Texture(int x, int y, int width, int height, UIRegion texture_coords){
+void UIRenderBatch::Texture(int x, int y, int width, int height, UIRegion texture_coords, UIColor color_mask){
     commands.push_back({
         GetRetangleVertices(x,y,width,height),
-        UIColor{0,0,0,0},
+        color_mask,
         texture_coords,
         UIRenderCommand::TEXTURE
     });
 }
-void UIRenderBatch::Texture(UITransform transform, UIRegion texture_coords){
-    Texture(transform.x, transform.y, transform.width, transform.height, texture_coords);
+void UIRenderBatch::TexturePolygon(std::array<glm::vec2, 4> positions, UIRegion texture_coords, UIColor color_mask){
+    commands.push_back({
+        positions,
+        color_mask,
+        texture_coords,
+        UIRenderCommand::TEXTURE
+    });
+}
+
+void UIRenderBatch::Texture(UITransform transform, UIRegion texture_coords, UIColor color_mask){
+    Texture(transform.x, transform.y, transform.width, transform.height, texture_coords, color_mask);
 }
 void UIRenderBatch::Text(std::string text, int x, int y, int font_size, UIColor color){
     commands.push_back(UIRenderCommand{
