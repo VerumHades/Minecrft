@@ -60,11 +60,7 @@ class ItemPrototypeRegistry{
         bool prototypeExists(std::string name);
 
         void drawItemModels();
-        
-        void resetModelsDrawRequests();
-        void passModelsDrawRequests();
-
-        void updateModelsDrawRequestBuffer();
+        void swapModelBuffers();
 
         Item createItem(std::string prototype_name);
         Item createItem(ItemPrototype* prototype);

@@ -458,7 +458,6 @@ void MainScene::render(){
         chunkMeshRegistry.draw();
     
         // Draw models
-        itemPrototypeRegistry.updateModelsDrawRequestBuffer();
         modelProgram.updateUniforms();
         itemPrototypeRegistry.drawItemModels();
 
@@ -527,9 +526,8 @@ void MainScene::physicsUpdate(){
     float tickTime = 1.0f / targetTPS;
 
     world->updateEntities();
-    itemPrototypeRegistry.resetModelsDrawRequests();
     world->drawEntities();
-    itemPrototypeRegistry.passModelsDrawRequests();
+
 
     while(running){
         current = glfwGetTime();
@@ -566,6 +564,9 @@ void MainScene::physicsUpdate(){
 
         if(!world->getChunk(camWorldPosition)) continue;
 
+        world->updateEntities();
+        world->drawEntities();
+
         auto& in_hand_slot = hotbar->getSelectedSlot();
         if(in_hand_slot.hasItem()){
             auto* prototype = in_hand_slot.getItem()->getPrototype();
@@ -574,12 +575,8 @@ void MainScene::physicsUpdate(){
                 prototype->getModel()->requestDraw(camera.getPosition() + item_offset, {1,1,1}, {0,-camera.getYaw(),0}, {-0.5,-0.5,0});
             }
         }
-
-        world->updateEntities();
-        itemPrototypeRegistry.resetModelsDrawRequests();
-        world->drawEntities();
-        itemPrototypeRegistry.passModelsDrawRequests();
-
+        
+        itemPrototypeRegistry.swapModelBuffers();
     }
 
     threadsStopped++;

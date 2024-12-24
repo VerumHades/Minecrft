@@ -26,40 +26,29 @@ void Model::requestDraw(glm::vec3 position, glm::vec3 scale, glm::vec3 rotation,
     modelMatrix = glm::translate(modelMatrix, rotation_center_offset);
 
     //modelMatrix = glm::scale(modelMatrix, scale);
+        
+    auto& request_back_buffer = request_buffers[!selected];
 
-    request_buffer.append(glm::value_ptr(modelMatrix), 4 * 4);
-    pending_update = true;
-}
-void Model::updateRequestBuffer(){
-    if(!upload_data) return;
-    if(request_buffer.size() == 0) return;
-    
-    auto& back_buffer = getBackInstanceBuffer();
-
-    if(back_buffer.size() < request_buffer.size()) back_buffer.initialize(request_buffer.size());
-    request_buffer.upload(back_buffer);
-
-    swapInstanceBuffers();
-
-    upload_data = false;
+    auto* data = glm::value_ptr(modelMatrix);
+    request_back_buffer.insert(request_back_buffer.end(), data, data + 16);
 }
 
 void Model::drawAllRequests(){
+    auto& request_buffer = request_buffers[selected];
+
     if(request_buffer.size() == 0) return;
     if(texture) texture->bind(0);
+
+    if(upload_data){
+        auto& front_buffer = getFrontInstanceBuffer();
+        
+        if(front_buffer.size() < request_buffer.size()) front_buffer.initialize(request_buffer.size());
+        front_buffer.insert(0, request_buffer.size(), request_buffer.data());
+
+        upload_data = false;
+    }
 
     vaos[selected].bind();
     glDrawElementsInstanced(GL_TRIANGLES, index_buffer.size(), GL_UNSIGNED_INT, 0, request_buffer.size() / request_size);
     vaos[selected].unbind();
-}
-
-void Model::resetRequests(){
-    request_buffer.clear();
-    pending_update = true;
-}
-
-void Model::passRequests(){
-    if(!pending_update) return;
-    request_buffer.pass();
-    upload_data = true;
 }

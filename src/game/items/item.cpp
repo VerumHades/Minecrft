@@ -50,19 +50,8 @@ void ItemPrototypeRegistry::drawItemModels(){
     }
 }
 
-void ItemPrototypeRegistry::resetModelsDrawRequests(){
+void ItemPrototypeRegistry::swapModelBuffers(){
     for(auto& prototype: prototypes){
-        prototype.getModel()->resetRequests();
-    }
-}
-void ItemPrototypeRegistry::passModelsDrawRequests(){
-    for(auto& prototype: prototypes){
-        prototype.getModel()->passRequests();
-    }
-}
-
-void ItemPrototypeRegistry::updateModelsDrawRequestBuffer(){
-    for(auto& prototype: prototypes){
-        prototype.getModel()->updateRequestBuffer();
+        prototype.getModel()->swap();
     }
 }
