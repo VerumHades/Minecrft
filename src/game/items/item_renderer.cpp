@@ -136,10 +136,10 @@ void ItemTextureAtlas::RenderItemIntoSlot(UIRenderBatch& batch, ItemPrototype* p
 
         batch.TexturePolygon(
             {
+                center,
                 quarter_right,
                 quarter_right + glm::vec2{0, transform.height / 2},
-                glm::vec2{center_x, bottom_y},
-                center
+                glm::vec2{center_x, bottom_y}
             },
             texture_info->textures[1].uvs,
             {100,100,100}
@@ -207,7 +207,10 @@ ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, UIManager& manager,
 {
     dedicated_texture_array = textureAtlas.getTextureArray();
 
-    this->setSize(slots_horizontaly * slot_size, slots_verticaly * slot_size);
+    setSize(slots_horizontaly * slot_size, slots_verticaly * slot_size);
+    setAttribute(&UIFrame::Style::backgroundColor, {20,20,20,200});
+    setAttribute(&UIFrame::Style::borderWidth, {3,3,3,3});
+    setAttribute(&UIFrame::Style::borderColor, {UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}});
 
     onMouseEvent = [this](UIManager& manager, int button, int action, int mods){
         if(!this->hover) return;

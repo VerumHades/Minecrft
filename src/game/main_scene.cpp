@@ -33,7 +33,6 @@ void MainScene::initialize(){
 
     itemPrototypeRegistry.addPrototype(ItemPrototype("diamond","textures/diamond32.png"));
     itemPrototypeRegistry.addPrototype(ItemPrototype("crazed","textures/crazed32.png"));
-    itemPrototypeRegistry.addPrototype(ItemPrototype("crazed2",{"textures/dirt.png","textures/dirt.png","textures/dirt.png"}));
 
     held_item_slot = std::make_shared<ItemSlot>(itemTextureAtlas,*uiManager);
 
@@ -42,20 +41,24 @@ void MainScene::initialize(){
         {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}},
         {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}}
     );
-    inventory->setAttribute(&UIFrame::Style::backgroundColor, {20,20,20,100});
-    inventory->setAttribute(&UIFrame::Style::borderWidth, {3,3,3,3});
-    inventory->setAttribute(&UIFrame::Style::borderColor, {UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}});
 
     auto item = itemPrototypeRegistry.createItem("diamond");
     auto item2 = itemPrototypeRegistry.createItem("crazed");
     inventory->setItem(1,0,item);
     inventory->setItem(0,4,item2);
-    inventory->setItem(1,4, itemPrototypeRegistry.createItem("crazed2"));
+
+    hotbar = std::make_shared<UIHotbar>(itemTextureAtlas, *uiManager, held_item_slot);
+    hotbar->setPosition(
+        {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}},
+        {OPERATION_MINUS,{OPERATION_MINUS, {PERCENT,100}, {MY_PERCENT,100}},20}
+    );
 
     setUILayer("menu");
     addElement(inventory);
+    addElement(hotbar);
     addElement(held_item_slot);
     setUILayer("default");
+    addElement(hotbar);
 
     skyboxProgram.use();
 
@@ -262,6 +265,11 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
     if (
         button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS 
     ){
+        auto* block_prototype = blockRegistry.getBlockPrototypeByIndex(blockUnderCursor->id);
+        auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(block_prototype, blockTextureRegistry);
+
+        inventory->addItem(itemPrototypeRegistry.createItem(item_prototype));
+
         world->setBlock(blockUnderCursorPosition, {BLOCK_AIR_INDEX});
 
         auto chunk = world->getChunkFromBlockPosition(blockUnderCursorPosition);
@@ -299,9 +307,12 @@ void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
 
         camera.adjustFOV(camFOV);
     }
-    //else{
-    //    selectedBlock = (selectedBlock + 1) % predefinedBlocks.size();
-    //}
+    else{
+        int scroll = abs(yoffset) / yoffset;
+
+        hotbar->selectSlot(hotbar->getSelectedSlotNumber() - scroll);
+        hotbar->update();
+    }
 }
 
 void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
@@ -332,8 +343,8 @@ void MainScene::open(GLFWwindow* window){
     
     world = std::make_unique<World>(worldPath, blockRegistry);
 
-    for(int i = 0;i < 50;i++){
-        for(int j = 0;j < 50;j++){
+    for(int i = 0;i < 10;i++){
+        for(int j = 0;j < 10;j++){
             auto entity = DroppedItem(itemPrototypeRegistry.createItem("crazed"), glm::vec3((float)i / 2.0, 20, (float)j / 2.0));
             world->addEntity(entity);
         }
@@ -445,7 +456,7 @@ void MainScene::render(){
         // Draw terrain
         terrainProgram.updateUniforms();
         chunkMeshRegistry.draw();
-
+    
         // Draw models
         itemPrototypeRegistry.updateModelsDrawRequestBuffer();
         modelProgram.updateUniforms();
@@ -555,6 +566,15 @@ void MainScene::physicsUpdate(){
 
         if(!world->getChunk(camWorldPosition)) continue;
 
+        auto& in_hand_slot = hotbar->getSelectedSlot();
+        if(in_hand_slot.hasItem()){
+            auto* prototype = in_hand_slot.getItem()->getPrototype();
+            if(prototype){
+                glm::vec3 item_offset = camera.getDirection() - camera.getLeft();
+                prototype->getModel()->requestDraw(camera.getPosition() + item_offset, {1,1,1}, {0,-camera.getYaw(),0}, {-0.5,-0.5,0});
+            }
+        }
+
         world->updateEntities();
         itemPrototypeRegistry.resetModelsDrawRequests();
         world->drawEntities();
@@ -629,5 +649,19 @@ void UICrosshair::getRenderingInformation(UIRenderBatch& batch){
         thickness,
         transform.height / 2 - part_margin,
         color
+    );
+}
+
+void UIHotbar::getRenderingInformation(UIRenderBatch& batch){
+    ItemInventory::getRenderingInformation(batch);
+
+    batch.BorderedRectangle(
+        transform.x + selected_slot * slot_size,
+        transform.y,
+        slot_size,
+        slot_size,
+        UIColor{0,0,0,0},
+        UIBorderSizes{3,3,3,3},
+        UIColor{180,180,180}
     );
 }

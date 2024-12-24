@@ -41,6 +41,7 @@ class TextureRegistry{
             Returns the index of a registered texture
         */
         size_t getTextureIndex(std::string name);
+        RegisteredTexture* getTextureByName(std::string name);
 
         void loadFromFolder(std::string path);
 

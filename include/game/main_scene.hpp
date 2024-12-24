@@ -36,6 +36,8 @@
 #include <set>
 #include <memory>
 
+class UIHotbar;
+
 class MainScene: public Scene{
     private:
         PerspectiveCamera camera = PerspectiveCamera("player");
@@ -70,6 +72,7 @@ class MainScene: public Scene{
         ItemPrototypeRegistry itemPrototypeRegistry;
         std::shared_ptr<ItemSlot> held_item_slot;
         std::shared_ptr<ItemInventory> inventory;
+        std::shared_ptr<UIHotbar> hotbar;
 
         std::string worldPath = "saves/worldsave.bin";
         int renderDistance = 3;
@@ -162,5 +165,25 @@ class UICrosshair: public UIFrame{
         int thickness = 5;
     public:
         UICrosshair(UIManager& manager): UIFrame(manager){setFocusable(false);setHoverable(false);}
-        virtual void getRenderingInformation(UIRenderBatch& batch);
+        void getRenderingInformation(UIRenderBatch& batch) override;
+};
+
+class UIHotbar: public ItemInventory{
+    private:
+        int selected_slot = 0;
+        const int slots_total = 9;
+
+    public:
+        UIHotbar(ItemTextureAtlas& textureAtlas, UIManager& manager, std::shared_ptr<ItemSlot> held_item_ptr): 
+        ItemInventory(textureAtlas, manager, 9, 1, held_item_ptr){}
+
+        void getRenderingInformation(UIRenderBatch& batch) override;
+        void selectSlot(int slot){
+            selected_slot = (slot + slots_total) % slots_total;
+        }
+        int getSelectedSlotNumber(){return selected_slot;}
+
+        LogicalItemSlot& getSelectedSlot() {
+            return getItemSlot(selected_slot,0);
+        };
 };

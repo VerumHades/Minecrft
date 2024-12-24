@@ -10,7 +10,8 @@ void BlockRegistry::addFullBlock(std::string name, std::string texture_name, boo
         true,
         transparent,
         {texture_registry.getTextureIndex(texture_name)},
-        FULL_BLOCK
+        FULL_BLOCK,
+        {texture_name}
     });
 }
 
@@ -31,7 +32,8 @@ void BlockRegistry::addFullBlock(std::string name, std::array<std::string,6> tex
         false,
         transparent,
         textures,
-        FULL_BLOCK
+        FULL_BLOCK,
+        texture_names
     });
 }
 
@@ -45,7 +47,8 @@ void BlockRegistry::addBillboardBlock(std::string name, std::string texture_name
         true,
         false,
         {texture_registry.getTextureIndex(texture_name)},
-        BILLBOARD
+        BILLBOARD,
+        {texture_name}
     });
 }
 

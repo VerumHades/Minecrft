@@ -8,6 +8,7 @@
 #include <list>
 #include <game/entity.hpp>
 #include <game/items/sprite_model.hpp>
+#include <game/blocks.hpp>
 
 class ItemTextureAtlas;
 class Item;
@@ -54,6 +55,10 @@ class ItemPrototypeRegistry{
         ItemPrototype* addPrototype(ItemPrototype prototype);
         ItemPrototype* getPrototype(std::string name);
 
+        ItemPrototype* createPrototypeForBlock(BlockRegistry::BlockPrototype* prototype, TextureRegistry& texture_registry);
+
+        bool prototypeExists(std::string name);
+
         void drawItemModels();
         
         void resetModelsDrawRequests();
@@ -62,6 +67,7 @@ class ItemPrototypeRegistry{
         void updateModelsDrawRequestBuffer();
 
         Item createItem(std::string prototype_name);
+        Item createItem(ItemPrototype* prototype);
 };
 
 class Item{

@@ -89,11 +89,11 @@ class ItemSlot: public UIFrame{
 };
 
 class ItemInventory: public UIFrame{
-    private:
+    protected:
         const int slot_size = 64;
         const int slot_padding = 4;
         const int quantity_number_font_size = 12;
-
+    private:
         std::vector<LogicalItemSlot> items;
         ItemTextureAtlas& textureAtlas;
         int slots_horizontaly;
@@ -114,6 +114,10 @@ class ItemInventory: public UIFrame{
         }
         void removeItem(int x, int y){
             items[getIndex(x,y)].clear();
+        }
+
+        LogicalItemSlot& getItemSlot(int x, int y){
+            return items[getIndex(x,y)];
         }
 
         bool addItem(Item item);

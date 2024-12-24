@@ -30,6 +30,7 @@ class BlockRegistry{
             bool transparent = false; // If faces around it should get culled
             std::array<size_t,6> textures; // Top, bottom, left, rigth, front, back                     
             BlockRenderType render_type;
+            std::array<std::string,6> texture_names;
         };
 
     private:
@@ -43,7 +44,8 @@ class BlockRegistry{
                 true,
                 true,
                 {},
-                FULL_BLOCK
+                FULL_BLOCK,
+                {}
             });
         }
 

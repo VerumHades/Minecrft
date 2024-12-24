@@ -91,6 +91,7 @@ void PerspectiveCamera::setRotation(float pitch_, float yaw_){
     front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
     this->direction = glm::normalize(front);
+    this->left = glm::normalize(glm::cross(up,direction));
     this->viewMatrix = glm::lookAt(this->position.getValue(), this->position.getValue() + this->direction, this->up);
     calculateFrustum();
 }

@@ -16,6 +16,10 @@ size_t TextureRegistry::getTextureIndex(std::string name){
     if(!textures.contains(name)) return 0;
     return textures.at(name).index;
 }
+ TextureRegistry::RegisteredTexture* TextureRegistry::getTextureByName(std::string name){
+    if(!textures.contains(name)) return nullptr;
+    return &textures.at(name);
+}
 
 void TextureRegistry::load(){
     std::vector<std::string> ordered_paths;

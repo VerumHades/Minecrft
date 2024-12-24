@@ -37,6 +37,7 @@ class PerspectiveCamera: public Camera{
         Uniform<glm::vec3> position;
         glm::vec3 direction = glm::vec3(1,0,0);
         glm::vec3 up = glm::vec3(0,1,0);
+        glm::vec3 left = glm::vec3(0,0,0);
 
         glm::vec3 modelPosition = glm::vec3(0);
         glm::vec3 modelRotation = glm::vec3(0);
@@ -76,6 +77,8 @@ class PerspectiveCamera: public Camera{
         glm::vec3& getPosition() {return position.getValue();}
         glm::vec3& getDirection() {return direction;}
         glm::vec3& getUp() {return up;}
+        glm::vec3& getLeft() {return left;}
+
         Frustum& getFrustum() {return frustum;}
         Frustum& getLocalFrustum() {return localFrustum;}
         
