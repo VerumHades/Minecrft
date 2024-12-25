@@ -9,6 +9,7 @@
 #include <game/entity.hpp>
 #include <game/items/sprite_model.hpp>
 #include <game/blocks.hpp>
+#include <game/items/block_model.hpp>
 
 class ItemTextureAtlas;
 class Item;
@@ -21,14 +22,21 @@ class ItemPrototype{
             SIMPLE,
             BLOCK
         } display_type = SIMPLE;
+
+        BlockID block_id = 0;
         
         std::array<std::string,3> texture_paths = {};
         
-        std::shared_ptr<SpriteModel> model;
+        std::shared_ptr<Model> model;
 
         friend class ItemPrototypeRegistry;
         friend class ItemTextureAtlas;
-    
+
+        /*
+            Block textures from clockwise from top
+        */
+        ItemPrototype(std::string name, const BlockRegistry::BlockPrototype* block_prototype);
+
     public:
         ItemPrototype(std::string name, std::string texture_path): name(name){
             display_type = SIMPLE;
@@ -36,14 +44,9 @@ class ItemPrototype{
             model = std::make_shared<SpriteModel>(texture_path);
         }
 
-        /*
-            Block textures from clockwise from top
-        */
-        ItemPrototype(std::string name, std::array<std::string,3> texture_path): name(name), texture_paths(texture_path){
-            display_type = BLOCK;
-            model = std::make_shared<SpriteModel>(texture_path[0]);
-        }
-        std::shared_ptr<SpriteModel>& getModel() {return model;}
+        bool isBlock(){return display_type == BLOCK;}
+        BlockID getBlockID(){return block_id;}
+        std::shared_ptr<Model>& getModel() {return model;}
 };
 
 class ItemPrototypeRegistry{
@@ -55,7 +58,7 @@ class ItemPrototypeRegistry{
         ItemPrototype* addPrototype(ItemPrototype prototype);
         ItemPrototype* getPrototype(std::string name);
 
-        ItemPrototype* createPrototypeForBlock(BlockRegistry::BlockPrototype* prototype, TextureRegistry& texture_registry);
+        ItemPrototype* createPrototypeForBlock(const BlockRegistry::BlockPrototype* prototype);
 
         bool prototypeExists(std::string name);
 

@@ -7,22 +7,23 @@ Model::Model(){
 
         vao.attachBuffer(&instance_buffer, {{VEC4,VEC4,VEC4,VEC4}, true});
         vao.attachBuffer(&index_buffer);
-        vao.attachBuffer(&vertex_buffer, {VEC3,VEC3,VEC2,FLOAT,VEC3});
+        vao.attachBuffer(&vertex_buffer, {VEC3,VEC3,VEC2,FLOAT,VEC3,FLOAT});
 
         instance_buffer.initialize(1);
     }
 }
 
-void Model::requestDraw(glm::vec3 position, glm::vec3 scale, glm::vec3 rotation, glm::vec3 rotation_center_offset){
-    glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotation.x), glm::vec3(1, 0, 0));  // Rotation around X axis
-    glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotation.y), glm::vec3(0, 1, 0));  // Rotation around Y axis
-    glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), glm::radians(rotation.z), glm::vec3(0, 0, 1));  // Rotation around Z axis
-
+void Model::requestDraw(glm::vec3 position, glm::vec3 scale, glm::vec3 rotation, glm::vec3 rotation_center_offset, std::array<Rotation,3> rotation_order){
+    std::array<glm::mat4,3> rotation_matrices = {
+        glm::rotate(glm::mat4(1.0f), glm::radians(rotation.x), glm::vec3(1, 0, 0)),  // Rotation around X axis
+        glm::rotate(glm::mat4(1.0f), glm::radians(rotation.y), glm::vec3(0, 1, 0)),  // Rotation around Y axis
+        glm::rotate(glm::mat4(1.0f), glm::radians(rotation.z), glm::vec3(0, 0, 1))  // Rotation around Z axis
+    };
 
     glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
     modelMatrix = glm::scale(modelMatrix, scale);
     //modelMatrix = glm::translate(modelMatrix, -rotation_center_offset);
-    modelMatrix *= rotationZ * rotationY * rotationX;
+    modelMatrix *= rotation_matrices[rotation_order[0]] * rotation_matrices[rotation_order[1]] * rotation_matrices[rotation_order[2]];
     modelMatrix = glm::translate(modelMatrix, rotation_center_offset);
 
     //modelMatrix = glm::scale(modelMatrix, scale);

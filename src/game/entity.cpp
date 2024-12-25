@@ -27,6 +27,8 @@ void Entity::update(Collidable* world, bool altered){
     
     if(hasGravity && !on_ground) this->accelerate(glm::vec3(0,-0.01,0));
     
+    if(this->velocity.x != 0 || this->velocity.y != 0 || this->velocity.z != 0) on_ground = false;
+
     glm::vec3& vel = this->velocity;
 
     float len = glm::length(vel);

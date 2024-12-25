@@ -11,20 +11,18 @@ in vec2 TexCoords;
 in float IsSolidColor;
 in vec3 SolidColor;
 in vec3 Normal;
+in float PixelPerfectSampling;
 
 uniform sampler2D textureIn;
 
 void main()
 {
-    //vec2 pixel_position = floor(TexCoords * ) + 0.5;
-
     const float sprite_size = 32.0;
     
     vec2 pixel_position  = vec2(floor(TexCoords * sprite_size)) + 0.5;
     vec2 sample_position = vec2(pixel_position) / sprite_size;
 
-    //FragColor = vec4(pixel_position,0.5,1.0);
-    vec4 full_color = IsSolidColor > 0.5 ? vec4(SolidColor, 1.0) : texture(textureIn, sample_position);
+    vec4 full_color = IsSolidColor > 0.5 ? vec4(SolidColor, 1.0) : texture(textureIn, PixelPerfectSampling > 0.5 ? sample_position : TexCoords);
     if(full_color.a == 0) discard;
 
     gPosition = FragPos;

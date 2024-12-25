@@ -19,7 +19,8 @@ void SpriteModel::setupMesh(){
 
     std::vector<float> metadata = {
         0, // Is not solid colored
-        0,0,0
+        0,0,0,
+        1 // Pixel perfect sampling enabled
     };
 
     mesh->addQuadFace({vertices[0],vertices[1],vertices[2],vertices[3]}, {0,0,-1}, true , metadata); // Front face
@@ -30,6 +31,8 @@ void SpriteModel::setupMesh(){
 
     index_buffer.initialize(mesh->getIndices().size());
     index_buffer.insert(0, mesh->getIndices().size(), mesh->getIndices().data());
+
+    rotation_center_offset = {-0.5,-0.5,0};
 
     texture = std::make_shared<GLTexture2D>(sprite_path.c_str());
 }
@@ -64,7 +67,8 @@ std::unique_ptr<Mesh> SpriteModel::generateFaces(){
                 1, // Is solid colored
                 static_cast<float>(current_pixel.r) / 255.0f,
                 static_cast<float>(current_pixel.g) / 255.0f,
-                static_cast<float>(current_pixel.b) / 255.0f
+                static_cast<float>(current_pixel.b) / 255.0f,
+                0 // Doesnt matter
             };
 
             if(left_pixel.a == 0){

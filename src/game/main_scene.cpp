@@ -70,11 +70,11 @@ void MainScene::initialize(){
     blockTextureRegistry.setTextureSize(160,160);
     blockTextureRegistry.load();
 
-
     blockRegistry.addFullBlock("dirt", "dirt");
     blockRegistry.addFullBlock("stone", "stone");
     blockRegistry.addFullBlock("grass", {"grass_top","dirt","grass_side","grass_side","grass_side","grass_side"});
     blockRegistry.addFullBlock("oak_leaves", "oak_leaves", true);
+    blockRegistry.addFullBlock("crazed", "crazed");
 
     terrainProgram.setSamplerSlot("textureArray", 0);
     terrainProgram.setSamplerSlot("shadowMap", 1);
@@ -264,11 +264,14 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
     if (
         button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS 
-    ){
+    ){  
         auto* block_prototype = blockRegistry.getBlockPrototypeByIndex(blockUnderCursor->id);
-        auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(block_prototype, blockTextureRegistry);
+        auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(block_prototype);
 
-        inventory->addItem(itemPrototypeRegistry.createItem(item_prototype));
+        auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), glm::vec3(blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5));
+        world->addEntity(entity);
+        //auto& selected_slot = hotbar->getSelectedSlot();
+        //inventory->addItem();
 
         world->setBlock(blockUnderCursorPosition, {BLOCK_AIR_INDEX});
 
@@ -281,7 +284,13 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
     ){
         glm::ivec3 blockPosition = glm::floor(blockUnderCursorEmpty);
 
-        world->setBlock(blockPosition, {static_cast<BlockID>(selectedBlock)});
+        auto& selected_slot = hotbar->getSelectedSlot();
+        if(!selected_slot.hasItem()) return;
+
+        auto* prototype = selected_slot.getItem()->getPrototype();
+        if(!prototype || !prototype->isBlock()) return;
+
+        world->setBlock(blockPosition, {prototype->getBlockID()});
         if(
             player.checkForCollision(world.get(), false) ||
             player.checkForCollision(world.get(), true)
@@ -289,6 +298,9 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
             world->setBlock(blockPosition, {BLOCK_AIR_INDEX});
             return;
         }
+
+        selected_slot.decreaseQuantity(1);
+        hotbar->update();
 
         auto* chunk = world->getChunkFromBlockPosition(blockPosition);
         if(!chunk) return;
@@ -327,6 +339,21 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
     if(key == GLFW_KEY_K && action == GLFW_PRESS){
         updateVisibility = 1;
     }
+
+    if(key == GLFW_KEY_Q && action == GLFW_PRESS){
+        auto& slot = hotbar->getSelectedSlot();
+        if(!slot.hasItem()) return;
+        
+        auto* item_prototype = slot.getItem()->getPrototype();
+        if(!item_prototype) return;
+        
+        auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), camera.getPosition() + camera.getDirection() * 0.5f);
+        entity.accelerate(camera.getDirection());
+        world->addEntity(entity);
+
+        slot.decreaseQuantity(1);
+        hotbar->update();
+    }
 }
 
 void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
@@ -343,11 +370,13 @@ void MainScene::open(GLFWwindow* window){
     
     world = std::make_unique<World>(worldPath, blockRegistry);
 
-    for(int i = 0;i < 10;i++){
-        for(int j = 0;j < 10;j++){
-            auto entity = DroppedItem(itemPrototypeRegistry.createItem("crazed"), glm::vec3((float)i / 2.0, 20, (float)j / 2.0));
-            world->addEntity(entity);
-        }
+    int i = 0;
+    for(auto& prototype: blockRegistry.prototypes()){
+        if(prototype.id == 0) continue; // Dont make air
+
+        auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(&prototype);
+        auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), glm::vec3(0, 20, i++));
+        world->addEntity(entity);
     }
 
     world->getPlayer().onCollision = [this](Entity* self, Entity* collided_with){
@@ -355,7 +384,11 @@ void MainScene::open(GLFWwindow* window){
 
         const auto* data = reinterpret_cast<const DroppedItem::Data*>(collided_with->getData());
         
-        this->inventory->addItem(data->item);
+        if(!this->hotbar->addItem(data->item))
+            this->inventory->addItem(data->item);
+
+        this->update_hotbar = true;
+        //else this->hotbar->update();
     };
 
     chunkMeshGenerator.setWorld(world.get());
@@ -401,6 +434,10 @@ void MainScene::render(){
 
     camera.setPosition(camPosition);
     //chunkMeshGenerator.loadMeshFromQueue(chunkMeshRegistry);
+    if(update_hotbar){
+        hotbar->update();
+        update_hotbar = false;
+    } 
 
     processMouseMovement();
 
@@ -522,7 +559,7 @@ void MainScene::physicsUpdate(){
     double current = glfwGetTime();
     float deltatime;
 
-    float targetTPS = 120;
+    float targetTPS = 60;
     float tickTime = 1.0f / targetTPS;
 
     world->updateEntities();
@@ -571,8 +608,8 @@ void MainScene::physicsUpdate(){
         if(in_hand_slot.hasItem()){
             auto* prototype = in_hand_slot.getItem()->getPrototype();
             if(prototype){
-                glm::vec3 item_offset = camera.getDirection() - camera.getLeft();
-                prototype->getModel()->requestDraw(camera.getPosition() + item_offset, {1,1,1}, {0,-camera.getYaw(),0}, {-0.5,-0.5,0});
+                glm::vec3 item_offset = camera.getDirection() * 0.5f - camera.getLeft() + camera.getRelativeUp() * 0.4f;
+                prototype->getModel()->requestDraw(camera.getPosition() + item_offset, {1,1,1}, {0,-camera.getYaw(),camera.getPitch()}, {-0.5,-0.5,0}, {Model::Y,Model::Z,Model::X});
             }
         }
         

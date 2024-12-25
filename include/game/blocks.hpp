@@ -23,6 +23,7 @@ class BlockRegistry{
         } type;
 
         struct BlockPrototype{
+            BlockID id;
             std::string name;
             std::vector<RectangularCollider> colliders;
             
@@ -30,15 +31,19 @@ class BlockRegistry{
             bool transparent = false; // If faces around it should get culled
             std::array<size_t,6> textures; // Top, bottom, left, rigth, front, back                     
             BlockRenderType render_type;
+
             std::array<std::string,6> texture_names;
+            std::array<std::string,6> texture_paths;
         };
 
     private:
         TextureRegistry& texture_registry;
         std::vector<BlockPrototype> blocks;
+        
     public:
         BlockRegistry(TextureRegistry& texture_registry): texture_registry(texture_registry) {
             blocks.push_back({
+                0,
                 "air",
                 {},
                 true,
@@ -68,6 +73,7 @@ class BlockRegistry{
         BlockPrototype* getBlockPrototypeByIndex(BlockID id);
 
         size_t registeredBlocksTotal(){return blocks.size();}
+        const std::vector<BlockPrototype>& prototypes() {return blocks;};
 };
 
 struct Block{

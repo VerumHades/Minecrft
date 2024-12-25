@@ -15,6 +15,7 @@ class Image{
     
     public:
         Image(std::string path);
+        Image(){}
         Image(int width, int height, int nrChannels);
         Image(unsigned char* data, int width, int height, int nrChannels);
         Image(std::vector<unsigned char> data, int width, int height, int nrChannels);

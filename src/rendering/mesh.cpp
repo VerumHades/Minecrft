@@ -63,22 +63,10 @@ void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcc
     
 }
 
-void Mesh::addQuadFace(std::array<glm::vec3, 4> vertices_, glm::vec3 normal, bool clockwise, std::vector<float> metadata){
+void Mesh::addQuadFace(std::array<glm::vec3, 4> vertices_, glm::vec3 normal, bool clockwise, std::vector<float> metadata, std::array<glm::vec2, 4> textureCoordinates){
     const int size = 8 + metadata.size();
     uint vecIndices[4];
     
-    float textureX = 0.0;
-    float textureY = 0.0;
-    float textureXW = textureX + 1;
-    float textureYH = textureY + 1;
-    
-    glm::vec2 textureCoordinates[4] = {
-        {textureX , textureY },
-        {textureXW, textureY },
-        {textureXW, textureYH},
-        {textureX , textureYH}
-    };
-
     std::vector<float> vertex = std::vector<float>(size * 4);
     uint startIndex = (uint) this->vertices.size() / size;
     for(int i = 0; i < 4; i++){

@@ -33,17 +33,26 @@ class Model{
     protected:
         std::shared_ptr<GLTexture2D> texture = nullptr;
 
+        glm::vec3 rotation_center_offset = {0,0,0};
+
         GLBuffer<float, GL_ARRAY_BUFFER> vertex_buffer;
         GLBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> index_buffer;
 
     public:
+        enum Rotation{
+            X,
+            Y,
+            Z
+        };
+
         Model();
         /*
             Adds a position to where an instance of the model will be drawn
 
             Rotation is in degrees
         */
-        void requestDraw(glm::vec3 position, glm::vec3 scale = {1,1,1}, glm::vec3 rotation = {0,0,0}, glm::vec3 rotation_center_offset = {0,0,0});
+        void requestDraw(glm::vec3 position, glm::vec3 scale = {1,1,1}, 
+            glm::vec3 rotation = {0,0,0}, glm::vec3 rotation_center_offset = {0,0,0}, std::array<Rotation,3> rotation_order = {Z,Y,X});
 
         void drawAllRequests();
 
@@ -52,4 +61,6 @@ class Model{
             request_buffers[!selected].clear();
             upload_data = true;
         }
+
+        const glm::vec3& getRotationCenterOffset(){return rotation_center_offset;}
 };

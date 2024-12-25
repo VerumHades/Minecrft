@@ -7,14 +7,15 @@
 
 Image::Image(std::string path){
     unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 4);
-    
+   
     if (!data) {
-        std::cerr << "Failed to load texture: " << path << std::endl;
+        std::cerr << "Failed to load image: " << path << std::endl;
         return;
     }
 
     nrChannels = 4;
-    this->data = std::vector(data, data + width * height * nrChannels);
+    this->data = std::vector(data, data + (width * height * nrChannels));
+    stbi_image_free(data);
 }
 
 unsigned char* Image::getPixel(int x, int y){

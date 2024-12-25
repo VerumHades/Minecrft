@@ -9,6 +9,7 @@ layout(location = 5) in vec3  aNormal;
 layout(location = 6) in vec2  aTexCoords;
 layout(location = 7) in float aIsSolidColor;
 layout(location = 8) in vec3  aSolidColor;
+layout(location = 9) in float aPixelPerfectSampling;
 
 uniform mat4 player_camera_projection_matrix;
 uniform mat4 player_camera_view_matrix;
@@ -18,6 +19,7 @@ out vec2 TexCoords;
 out float IsSolidColor;
 out vec3 SolidColor;
 out vec3 Normal;
+out float PixelPerfectSampling;
 
 void main()
 {
@@ -32,4 +34,5 @@ void main()
     TexCoords = aTexCoords;
     IsSolidColor = aIsSolidColor;
     SolidColor = aSolidColor;
+    PixelPerfectSampling = aPixelPerfectSampling;
 }

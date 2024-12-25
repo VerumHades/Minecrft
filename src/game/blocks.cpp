@@ -5,13 +5,15 @@
 */
 void BlockRegistry::addFullBlock(std::string name, std::string texture_name, bool transparent){
     blocks.push_back({
+        blocks.size(),
         name,
         {{0, 0, 0, 1.0f, 1.0f, 1.0f}},
         true,
         transparent,
         {texture_registry.getTextureIndex(texture_name)},
         FULL_BLOCK,
-        {texture_name}
+        {texture_name},
+        {texture_registry.getTextureByName(texture_name)->path}
     });
 }
 
@@ -20,20 +22,31 @@ void BlockRegistry::addFullBlock(std::string name, std::string texture_name, boo
 */
 void BlockRegistry::addFullBlock(std::string name, std::array<std::string,6> texture_names, bool transparent){
     std::array<size_t, 6> textures;
+    std::array<std::string, 6> texture_paths;
 
     int i = 0;
     for(auto& name: texture_names){
+        auto* texture = texture_registry.getTextureByName(name);
+        if(!texture) {
+            std::cerr << "Invalid texture name: " << name << std::endl;
+            continue;
+        }
+        texture_paths[i] = texture->path;
         textures[i++] = texture_registry.getTextureIndex(name);
+
+        std::cout << texture_paths[i] << " " << name << std::endl;
     }
 
     blocks.push_back({
+        blocks.size(),
         name,
         {{0, 0, 0, 1.0f, 1.0f, 1.0f}},
         false,
         transparent,
         textures,
         FULL_BLOCK,
-        texture_names
+        texture_names,
+        texture_paths
     });
 }
 
@@ -42,13 +55,15 @@ void BlockRegistry::addFullBlock(std::string name, std::array<std::string,6> tex
 */
 void BlockRegistry::addBillboardBlock(std::string name, std::string texture_name){
     blocks.push_back({
+        blocks.size(),
         name,
         {},
         true,
         false,
         {texture_registry.getTextureIndex(texture_name)},
         BILLBOARD,
-        {texture_name}
+        {texture_name},
+        {texture_registry.getTextureByName(texture_name)->path}
     });
 }
 

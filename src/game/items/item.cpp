@@ -10,27 +10,32 @@ ItemPrototype* ItemPrototypeRegistry::getPrototype(std::string name){
     return &(*name_to_iterator[name]);
 }
 
-ItemPrototype* ItemPrototypeRegistry::createPrototypeForBlock(BlockRegistry::BlockPrototype* prototype, TextureRegistry& texture_registry){
+ItemPrototype::ItemPrototype(std::string name, const BlockRegistry::BlockPrototype* prototype): name(name){
+    display_type = BLOCK;
+
+    if(prototype->single_texture){
+        auto texture_path = prototype->texture_paths[0];
+        texture_paths = {texture_path, texture_path, texture_path};
+    }
+    else if(prototype->render_type == BlockRegistry::FULL_BLOCK){
+        texture_paths = {
+            prototype->texture_paths[0],
+            prototype->texture_paths[2],
+            prototype->texture_paths[4]
+        };
+    }
+
+    model = std::make_shared<BlockModel>(prototype);
+    this->block_id = prototype->id;
+}
+
+ItemPrototype* ItemPrototypeRegistry::createPrototypeForBlock(const BlockRegistry::BlockPrototype* prototype){
     std::string prototype_name = "block_" + prototype->name;
     
     auto* existing_prototype = getPrototype(prototype_name);
     if(existing_prototype) return existing_prototype;
 
-    std::array<std::string, 3> texture_paths = {};
-
-    if(prototype->single_texture){
-        auto texture_path = texture_registry.getTextureByName(prototype->texture_names[0])->path;
-        texture_paths = {texture_path, texture_path, texture_path};
-    }
-    else if(prototype->render_type == BlockRegistry::FULL_BLOCK){
-        texture_paths = {
-            texture_registry.getTextureByName(prototype->texture_names[0])->path,
-            texture_registry.getTextureByName(prototype->texture_names[2])->path,
-            texture_registry.getTextureByName(prototype->texture_names[4])->path
-        };
-    }
-
-    return addPrototype({prototype_name, texture_paths});
+    return addPrototype({prototype_name, prototype});
 }
 
 bool ItemPrototypeRegistry::prototypeExists(std::string name){

@@ -102,6 +102,13 @@ bool LogicalItemSlot::moveItemTo(LogicalItemSlot& destination, int quantity){
     return destination.takeItemFrom(*this, quantity);
 }
 
+void LogicalItemSlot::decreaseQuantity(int number){
+    if(!hasItem()) return;
+    auto& item = getItem().value();
+
+    if(item.getQuantity() <= number) clear();
+    else item.setQuantity(item.getQuantity() - number);
+}
 void LogicalItemSlot::clear(){
     item_option.reset();
 }
@@ -254,14 +261,22 @@ ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, UIManager& manager,
 bool ItemInventory::addItem(Item item){
     auto* prototype = item.getPrototype();
 
+    LogicalItemSlot* first_empty_slot = nullptr;
     for(int x = 0;x < slots_horizontaly;x++){
         for(int y = 0;y < slots_verticaly;y++){
             auto& item_slot = items[getIndex(x,y)];
 
-        
+            if(!item_slot.hasItem()){
+                if(first_empty_slot == nullptr) first_empty_slot = &item_slot;
+                continue;
+            }
+
             if(item_slot.addItem(item)) return true;
         }
     }
+
+    if(first_empty_slot)
+        return first_empty_slot->addItem(item);
 
     return false;
 }

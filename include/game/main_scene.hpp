@@ -5,6 +5,8 @@
 #include <iostream>
 #include <cmath>
 
+#include <glm/gtc/random.hpp>
+
 #include <rendering/opengl/buffer.hpp>
 #include <rendering/opengl/shaders.hpp>
 #include <rendering/opengl/texture.hpp>
@@ -35,6 +37,8 @@
 #include <scene.hpp>
 #include <set>
 #include <memory>
+#include <random>
+#include <atomic>
 
 class UIHotbar;
 
@@ -73,6 +77,8 @@ class MainScene: public Scene{
         std::shared_ptr<ItemSlot> held_item_slot;
         std::shared_ptr<ItemInventory> inventory;
         std::shared_ptr<UIHotbar> hotbar;
+        
+        std::atomic<bool> update_hotbar = false;
 
         std::string worldPath = "saves/worldsave.bin";
         int renderDistance = 3;

@@ -94,6 +94,20 @@ void GLTexture2D::configure(int storage_type, int color_format, int data_type, i
     configured = true;
 }
 
+void GLTexture2D::putImage(int x, int y, Image& image){
+    bind(0);
+
+    glTexSubImage2D(
+        GL_TEXTURE_2D, // Target
+        0,                  // Mipmap level
+        x, y,   // x, y, 
+        image.getWidth(), image.getHeight(),   // Width, height
+        GL_RGBA,            // Format of the pixel data
+        GL_UNSIGNED_BYTE,   // Data type of the pixel data
+        image.getData()          // Pointer to the image data
+    );
+}
+
 void GLTexture2D::reset(){
     glDeleteTextures(1, &this->texture);
     glGenTextures(1, &this->texture);

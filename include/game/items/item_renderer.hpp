@@ -64,6 +64,7 @@ class LogicalItemSlot{
 
         void clear();
         bool hasItem() {return item_option.has_value();}
+        void decreaseQuantity(int number);
 
         std::optional<Item>& getItem() {return item_option;}
 };

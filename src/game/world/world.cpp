@@ -211,7 +211,7 @@ static float position_mult = 1;
 void World::drawEntity(Entity& entity){
     if(!entity.getModel()) return;
         
-    entity.getModel()->requestDraw(entity.getPosition() + glm::vec3{0,position,0}, {0.5,0.5,0.5}, {0,rotation,0}, {-0.5,0,0});
+    entity.getModel()->requestDraw(entity.getPosition() + glm::vec3{0,position,0}, {0.5,0.5,0.5}, {0,rotation,0}, entity.getModel()->getRotationCenterOffset());
 }
 
 void World::drawEntities(){
