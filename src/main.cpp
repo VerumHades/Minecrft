@@ -174,11 +174,11 @@ int main() {
 
     
 
-    /*
+    
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
-    */
+    
 
     glLineWidth(2.0f);
     

@@ -13,12 +13,15 @@ std::mt19937 rng(dev());
 std::uniform_int_distribution<std::mt19937::result_type> dist6(1,10); // distribution in range [1, 6]
 
 WorldGenerator::WorldGenerator(BlockRegistry&  blockRegistry):  blockRegistry(blockRegistry){
-    computeBuffer = std::make_unique<GLPersistentBuffer<uint>>(64 * 64  * (64 / 32) * sizeof(uint), GL_SHADER_STORAGE_BUFFER);
-
-    worldPositionUniformID = glGetUniformLocation(computeProgram.getID(),"worldPosition");
-    if(worldPositionUniformID == -1) {
-        std::cerr << "Generation program missing world position uniform";
+    for(auto& layer: compute_layers){
+        layer.worldPositionUniformID = glGetUniformLocation(layer.program.getID(),"worldPosition");
+        if(layer.worldPositionUniformID == -1) {
+            std::cerr << "Generation program missing world position uniform for layer: " << layer.name << std::endl;
+        }
+        layer.program.setSamplerSlot("noiseTexture", 0);
     }
+
+    computeBuffer.initialize(64 * 64  * (64 / 32));
 
     //CHECK_GL_ERROR();
 
@@ -28,6 +31,24 @@ WorldGenerator::WorldGenerator(BlockRegistry&  blockRegistry):  blockRegistry(bl
     noise.SetFractalOctaves(3);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetSeed(1984);
+
+    const int noise_width = 1024;
+    const int noise_height = 1024;
+
+    Image noise_img{noise_width,noise_height,1};
+
+    for(int x = 0;x < noise_width;x++){
+        for(int y = 0;y < noise_height;y++){
+            *noise_img.getPixel(x,y) = (noise.GetNoise(static_cast<float>(x),static_cast<float>(y)) + 1.0) / 2 * 255;
+        }
+    }
+
+    noise_img.save("temp_noise.png");
+    noiseTexture.configure(GL_R8, GL_RED, GL_UNSIGNED_BYTE, noise_width, noise_height, (void*) noise_img.getData(), 1);
+    noiseTexture.parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    noiseTexture.parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    noiseTexture.parameter(GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    noiseTexture.parameter(GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);  
 }
 
 static inline float transcribeNoiseValue(float value, float ry){
@@ -98,57 +119,25 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, int chunkX, int chunkY, 
 
 bool first = true;
 void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, glm::ivec3 chunkPosition){
-    auto start = std::chrono::high_resolution_clock::now();
-
-    computeProgram.use();
-
     glm::vec3 worldPosition = chunkPosition * CHUNK_SIZE;
-    glUniform3fv(worldPositionUniformID, 1, glm::value_ptr(worldPosition));
+    computeBuffer.bindBase(0);
+    noiseTexture.bind(0);
 
-    //computeProgram.updateUniforms();
-    //CHECK_GL_ERROR();
+    for(auto& layer: compute_layers){
+        layer.program.use();
 
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, computeBuffer->getID());
+        glUniform3fv(layer.worldPositionUniformID, 1, glm::value_ptr(worldPosition));
+        /*
+            64 / 32 (division because one uint is 32 bits) by 64 by 64
+        */
+        glDispatchCompute(64, 64, 64 / 32);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
+        BlockID block_id = blockRegistry.getIndexByName(layer.name);
+        if(!chunk->hasLayerOfType(block_id)) chunk->createLayer(block_id, {});
 
-    //CHECK_GL_ERROR();
-    
-    /*
-        64 / 32 (division because one uint is 32 bits) by 64 by 64
-    */
-    glDispatchCompute(64, 64, 64 / 32);
+        computeBuffer.get(reinterpret_cast<uint*>(chunk->getLayer(block_id).field.data().data()), computeBuffer.size());
 
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-    GLsync fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-
-    // Wait until the GPU has finished processing (with a timeout to avoid blocking indefinitely)
-    GLenum waitReturn;
-    do {
-        waitReturn = glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000); // 1ms timeout
-    } while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED);
-
-    glDeleteSync(fence);
-
-    //CHECK_GL_ERROR();
-
-    /*if(first){
-        for(int i = 0;i < 10;i++){
-            std::cout << std::bitset<64>(reinterpret_cast<uint64_t*>(computeBuffer->data())[i]) << std::endl;
-        }
-        first = false;
-    }*/
-
-    BlockID grass_id = blockRegistry.getIndexByName("grass");
-
-    if(!chunk->hasLayerOfType(grass_id)) chunk->createLayer(grass_id, {});
-
-    uint64_t* data = reinterpret_cast<uint64_t*>(computeBuffer->data());
-    chunk->getLayer(grass_id).field.setData(data);
-    chunk->getSolidField().setData(data);
-    
-    auto end = std::chrono::high_resolution_clock::now();
-
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    //std::cout << "Generated chunk (" << chunkPosition.x << "," << chunkPosition.y << "," << chunkPosition.z << ") in: " << duration << " microseconds" << std::endl;
+        chunk->getSolidField().applyOR(chunk->getLayer(block_id).field.data());
+    }
 }

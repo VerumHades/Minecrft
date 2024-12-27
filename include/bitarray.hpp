@@ -38,8 +38,14 @@ class BitField3D{
             id = last_id++;
         }
 
-        void setData(uint64_t* data){
-            std::memcpy(_internal_data.data(), data, 64 * 64 * sizeof(uint64_t));
+        void applyOR(const std::array<uint64_t, 64 * 64>& data){
+            for(int i = 0;i < 64 * 64;i++){
+                _internal_data[i] |= data[i];
+            }
+        }
+
+        std::array<uint64_t, 64 * 64>& data(){
+            return _internal_data;
         }
         /* 
           Sets a bit at x,y,z.

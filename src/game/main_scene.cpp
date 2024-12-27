@@ -73,6 +73,7 @@ void MainScene::initialize(){
     blockRegistry.addFullBlock("dirt", "dirt");
     blockRegistry.addFullBlock("stone", "stone");
     blockRegistry.addFullBlock("grass", {"grass_top","dirt","grass_side","grass_side","grass_side","grass_side"});
+    blockRegistry.addFullBlock("oak_log", {"oak_log_top", "oak_log_top", "oak_log", "oak_log", "oak_log", "oak_log"});
     blockRegistry.addFullBlock("oak_leaves", "oak_leaves", true);
     blockRegistry.addFullBlock("crazed", "crazed");
 
@@ -379,7 +380,9 @@ void MainScene::open(GLFWwindow* window){
         world->addEntity(entity);
     }
 
-    world->getPlayer().onCollision = [this](Entity* self, Entity* collided_with){
+    auto& player = world->getPlayer();
+
+    player.onCollision = [this](Entity* self, Entity* collided_with){
         if(collided_with->getTypename() != "dropped_item") return;
 
         const auto* data = reinterpret_cast<const DroppedItem::Data*>(collided_with->getData());
@@ -397,6 +400,12 @@ void MainScene::open(GLFWwindow* window){
     //generationThread.detach();
 
     generateSurroundingChunks();
+
+    player.setPosition({0,255,0});
+    while(
+        !player.checkForCollision(world.get(), false, {0,-1,0}) && 
+        player.getPosition().y > 0
+    ) player.setPosition(player.getPosition() + glm::vec3{0,-1,0});
 
     //std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));

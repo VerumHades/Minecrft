@@ -82,12 +82,30 @@ class GLBuffer{
 
             return true;
         }
+
+        /*
+            Writes the buffers contents into the destination
+        */
+        void get(T* destination, size_t size, size_t offset = 0){
+            if(!initialized) throw std::runtime_error("Getting data from an uninitialized buffer.");
+
+            glGetBufferSubData(type, offset * sizeof(T), size * sizeof(T), destination);
+        }
+
         void bind(){
             glBindBuffer(type, opengl_buffer_id);
         }
 
+        void bindBase(uint slot){
+            glBindBufferBase(type, slot, opengl_buffer_id);
+        }
+
         size_t size(){
             return buffer_size;
+        }
+
+        uint getID(){
+            return opengl_buffer_id;
         }
 };
 

@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <rendering/opengl/shaders.hpp>
+#include <rendering/opengl/texture.hpp>
 
 #include <FastNoiseLite.h> 
 
@@ -17,10 +18,20 @@ class WorldGenerator{
         FastNoiseLite noise;
         int seed;
 
-        uint worldPositionUniformID;
+        struct ComputeLayer{
+            ShaderProgram program;
+            std::string name;
+            uint worldPositionUniformID;
+        };
 
-        ShaderProgram computeProgram = ShaderProgram("shaders/compute/terrain_generation.glsl");
-        std::unique_ptr<GLPersistentBuffer<uint>> computeBuffer;
+        std::array<ComputeLayer, 3> compute_layers = {
+            ComputeLayer{ShaderProgram("shaders/compute/grass.glsl"), "grass"},
+            ComputeLayer{ShaderProgram("shaders/compute/dirt.glsl"), "dirt"},
+            ComputeLayer{ShaderProgram("shaders/compute/stone.glsl"), "stone"},
+        };
+
+        GLBuffer<uint, GL_SHADER_STORAGE_BUFFER> computeBuffer;
+        GLTexture2D noiseTexture;
         BlockRegistry& blockRegistry;
 
     public:

@@ -50,22 +50,18 @@ void GLTexture2D::loadData(const Image& image){
     //CHECK_GL_ERROR();;
 
     int channels = image.getChannels();
-    //printf("Texture channels: %i\n", nrChannels);
-    // Load image data to GPU
-    if(channels != 3 && channels != 4){
-        std::cout << "Invalid number of channels: " << channels;
-        std::terminate();
-        return;
-    }
 
-    GLenum format = (channels == 4) ? GL_RGBA : GL_RGB;
+    std::array<GLenum, 4> formats = {
+        GL_R8,
+        GL_RG,
+        GL_RGB,
+        GL_RGBA
+    };
+
+    GLenum format = formats[channels - 1];
+    glPixelStorei(GL_UNPACK_ALIGNMENT, channels);
     glTexImage2D(GL_TEXTURE_2D, 0, format, image.getWidth(), image.getHeight(), 0, format, GL_UNSIGNED_BYTE, image.getData());
-
-    //CHECK_GL_ERROR();;
-
     glGenerateMipmap(GL_TEXTURE_2D);
-
-    //CHECK_GL_ERROR();;
 }
 
 GLTexture2D::GLTexture2D(const char* filename){
@@ -80,10 +76,11 @@ GLTexture2D::GLTexture2D(const Image& image){
     loadData(image);
 }
 
-void GLTexture2D::configure(int storage_type, int color_format, int data_type, int width, int height, void* data){
+void GLTexture2D::configure(int storage_type, int color_format, int data_type, int width, int height, void* data, int pixel_pack){
     if(configured) reset();
     bind(0);
 
+    glPixelStorei(GL_UNPACK_ALIGNMENT, pixel_pack);
     glTexImage2D(GL_TEXTURE_2D, 0, storage_type, width, height, 0, color_format, data_type, data );
     
     parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -94,9 +91,43 @@ void GLTexture2D::configure(int storage_type, int color_format, int data_type, i
     configured = true;
 }
 
+Image GLTexture2D::fetch(){
+    bind(0);
+    GLint width, height;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+    GLint internalFormat;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internalFormat);
+
+    int numChannels = 0;
+    switch (internalFormat) {
+        case GL_R8:          // Single channel (grayscale)
+            numChannels = 1;
+            break;
+        case GL_RGB8:        // 3 channels (RGB)
+        case GL_RGB:         // 3 channels (RGB)
+            numChannels = 3;
+            break;
+        case GL_RGBA8:       // 4 channels (RGBA)
+        case GL_RGBA:        // 4 channels (RGBA)
+            numChannels = 4;
+            break;
+        case GL_RG8:         // 2 channels (RG)
+            numChannels = 2;
+            break;
+    }
+
+    Image image{width,height,numChannels};
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, (void*) image.getData());
+
+    return image;
+}
+
 void GLTexture2D::putImage(int x, int y, Image& image){
     bind(0);
 
+    glPixelStorei(GL_UNPACK_ALIGNMENT, image.getChannels());
     glTexSubImage2D(
         GL_TEXTURE_2D, // Target
         0,                  // Mipmap level

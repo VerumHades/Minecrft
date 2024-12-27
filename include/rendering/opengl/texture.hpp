@@ -38,8 +38,9 @@ class GLTexture2D: public BindableTexture{
         GLTexture2D(const Image& image);
 
         void putImage(int x, int y, Image& image);
-        void configure(int internal_format, int format, int data_type, int width, int height, void* data = nullptr);
+        void configure(int internal_format, int format, int data_type, int width, int height, void* data = nullptr, int pixel_pack = 4);
         void reset();
+        Image fetch();
 };
 
 class GLDepthTexture: public BindableTexture{
