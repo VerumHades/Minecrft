@@ -1,5 +1,7 @@
 #include <rendering/bitworks.hpp>
 
+using namespace bitworks;
+
 static uint32_t valueMask = ~0U >> 2;
 void compressed_24bit::setValue(uint32_t value){
     uint8_t mode = getMode();

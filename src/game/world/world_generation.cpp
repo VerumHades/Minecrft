@@ -134,10 +134,30 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, glm::ivec3 ch
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
         BlockID block_id = blockRegistry.getIndexByName(layer.name);
+
+        //timer.timestamp("GPU generated");
+        std::array<uint64_t, 64 * 64> data = {};
+        computeBuffer.get(reinterpret_cast<uint*>(data.data()),computeBuffer.size());
+        //timer.timestamp("Fetched from GPU");
+        bool empty = true;
+        for(int i = 0;i < 64 * 64;i++){
+            if(data[i] == 0ULL) continue;
+            empty = false;
+            break;
+        }
+        //timer.timestamp("Checked for emptiness");
+        if(empty) continue;
+        auto compressed = BitField3D::compress(data);
+        
+        BitField3D::decompress(data,compressed);
+        //timer.timestamp("Compressed and decompressed");
+
+        std::cout << "Compressed size: " << compressed.size() * 8 << "bytes" << std::endl;
+        std::cout << "Compression percent for: " << layer.name << " " << ((float) compressed.size() / (float) data.size()) * 100 << "%" << std::endl;
+
         if(!chunk->hasLayerOfType(block_id)) chunk->createLayer(block_id, {});
 
-        computeBuffer.get(reinterpret_cast<uint*>(chunk->getLayer(block_id).field.data().data()), computeBuffer.size());
-
-        chunk->getSolidField().applyOR(chunk->getLayer(block_id).field.data());
+        chunk->getLayer(block_id).field.data() = data;
+        chunk->getSolidField().applyOR(data);
     }
 }

@@ -1,7 +1,7 @@
 #include <rendering/bitworks.hpp>
 
 template <int bits>
-CompressedArray bitworks::compress(uint_t<bits>* flatArray, size_t size){
+bitworks::CompressedArray bitworks::compress(uint_t<bits>* flatArray, size_t size){
     std::vector<compressed_24bit> compressedOutput = {};
 
     const size_t size_bits = size * bits;
@@ -48,7 +48,7 @@ CompressedArray bitworks::compress(uint_t<bits>* flatArray, size_t size){
 }
 
 template <int bits>
-void bitworks::decompress(CompressedArray compressed_data, std::vector<uint_t<bits>>& result){
+void bitworks::decompress(bitworks::CompressedArray compressed_data, std::vector<uint_t<bits>>& result){
     const size_t size = compressed_data.source_size;
 
     size_t arrayIndex = 0;

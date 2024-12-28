@@ -171,7 +171,7 @@ static inline void processFaces(
 }   
 
 std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosition, Chunk* group){
-    auto start = std::chrono::high_resolution_clock::now();
+    //ScopeTimer timer("Generated mesh");
 
     auto solidMesh = std::make_unique<InstancedMesh>();
     if(!group){
@@ -254,6 +254,8 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
             processFaces(greedyMeshPlane(planesZbackward[static_cast<size_t>(type)], size), InstancedMesh::Z_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer, scale);
         }
     }
+
+    //timer.timestamp("Inner faces");
     
     /*
         Mesh billboards
@@ -271,6 +273,8 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
             solidMesh->addQuadFace(position,1,1,definition->textures[0], InstancedMesh::BILLBOARD, InstancedMesh::Forward);
         }
     }
+
+    //timer.timestamp("Billboards");
     /*
         Mesh cross chunk faces
     */
@@ -395,10 +399,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
     }
     //std::cout << "Vertices:" << solidMesh.get()->getIndices().size() << std::endl;
     
-    auto end = std::chrono::high_resolution_clock::now();
-
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    //std::cout << "Generated chunk mesh (" <<  worldPosition.x << "," << worldPosition.y << "," << worldPosition.z << ") in: " << duration << " microseconds" << std::endl;
+    
     solidMesh->shrink();
     return solidMesh;
 }

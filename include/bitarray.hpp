@@ -9,8 +9,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <bitset>
 
-using std::vector<uint8_t> = ByteArray;
+using CompressedArray = std::vector<uint64_t>;
 
 class BitFieldCache;
 /*
@@ -28,10 +29,10 @@ class BitField3D{
 
         std::array<uint64_t, 64 * 64> _internal_data = {0};
 
-        bool inBounds(uint x, uint y, uint z = 0) const {
+        static bool inBounds(uint x, uint y, uint z = 0) {
             return x >= 0 && y >= 0 && z >= 0 && x < 64 && y < 64 && z < 64;
         }
-        uint calculateIndex(uint x, uint y) const {
+        static uint calculateIndex(uint x, uint y) {
             return x + y * 64;
         }
 
@@ -122,7 +123,10 @@ class BitField3D{
         */
         BitField3D* getTransposed();
 
-        ByteArray getCompressed();
+        CompressedArray getCompressed();
+
+        static CompressedArray compress(std::array<uint64_t, 64 * 64>& source);
+        static void decompress(std::array<uint64_t, 64 * 64>& destination, CompressedArray source);
 
         friend class BitFieldCache;
 };

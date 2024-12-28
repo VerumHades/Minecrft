@@ -40,12 +40,6 @@ struct compressed_24bit{
         
         std::string to_string();
 };
-
-struct CompressedArray{
-    std::vector<compressed_24bit> data;
-    size_t source_size;
-};
-
 /*
     Type that selects the smallest type that fits the set number of bits
 
@@ -78,6 +72,11 @@ namespace bitworks{
         file.read(reinterpret_cast<char*>(&value), sizeof(T));
         return value;
     }
+
+    struct CompressedArray{
+        std::vector<compressed_24bit> data;
+        size_t source_size;
+    };
 
     /*
         Compresses an array of unsigned integers to an array of 3 byte chunks that each represents a number of consecutive ones or zeroes
