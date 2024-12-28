@@ -22,7 +22,7 @@ class BitField3D{
             size_t creator_id;
             size_t cache_id = -1ULL; // Index in the cache
         };
-        BitField3D* cached_version_pointer = nullptr;
+        BitField3D* transposed_cache_version_pointer = nullptr;
 
         std::array<uint64_t, 64 * 64> _internal_data = {0};
 
@@ -55,9 +55,9 @@ class BitField3D{
         bool set(uint x, uint y, uint z){
             if(!inBounds(x,y,z)) return false;
 
-            if(cached_version_pointer){ // Do we have a cached rotated version?
-                if(cached_version_pointer->creator_id == id) cached_version_pointer->set(z,y,x); // Is it still ours?
-                else cached_version_pointer = nullptr; // Its not
+            if(transposed_cache_version_pointer){ // Do we have a cached rotated version?
+                if(transposed_cache_version_pointer->creator_id == id) transposed_cache_version_pointer->set(z,y,x); // Is it still ours?
+                else transposed_cache_version_pointer = nullptr; // Its not
             }
 
             _internal_data[calculateIndex(x,y)] |= (1ULL << (63 - z));
@@ -72,9 +72,9 @@ class BitField3D{
         bool reset(uint x, uint y, uint z){
             if(!inBounds(x,y,z)) return false;
 
-            if(cached_version_pointer){ // Do we have a cached rotated version?
-                if(cached_version_pointer->creator_id == id) cached_version_pointer->reset(z,y,x); // Is it still ours?
-                else cached_version_pointer = nullptr; // Its not
+            if(transposed_cache_version_pointer){ // Do we have a cached rotated version?
+                if(transposed_cache_version_pointer->creator_id == id) transposed_cache_version_pointer->reset(z,y,x); // Is it still ours?
+                else transposed_cache_version_pointer = nullptr; // Its not
             }
 
             _internal_data[calculateIndex(x,y)] &= ~(1ULL << (63 - z));
@@ -118,7 +118,7 @@ class BitField3D{
         /*
             Returnes a pointer to a transposed version of the bitfield (rotated) in the cache
         */
-        BitField3D* getTransposed(BitFieldCache* cache);
+        BitField3D* getTransposed();
 
         friend class BitFieldCache;
 };
@@ -139,10 +139,5 @@ class BitFieldCache{
             *out = {}; // zero out
             out->creator_id = id;
             return {out, next_spot++};
-        }
-
-        BitField3D* getByID(size_t cache_id){
-            if(cache_id < 0 || cache_id >= max_cached) return nullptr;
-            return &cached_fields[cache_id];
         }
 };

@@ -39,7 +39,7 @@ WorldGenerator::WorldGenerator(BlockRegistry&  blockRegistry):  blockRegistry(bl
 
     for(int x = 0;x < noise_width;x++){
         for(int y = 0;y < noise_height;y++){
-            *noise_img.getPixel(x,y) = (noise.GetNoise(static_cast<float>(x),static_cast<float>(y)) + 1.0) / 2 * 255;
+            *noise_img.getPixel(x,y) = (noise.GetNoise(static_cast<float>(x),static_cast<float>(y)) + 1.0) / 2 * 80;
         }
     }
 

@@ -18,7 +18,6 @@ class ChunkMeshGenerator{
         std::vector<Face> greedyMeshPlane(BitPlane<64> rows, int size);
         std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group);
 
-        BitFieldCache cache;
         BlockRegistry& blockRegistry;
 
         std::mutex meshLoadingMutex;

@@ -1,16 +1,18 @@
 #include <bitarray.hpp>
 
-BitField3D* BitField3D::getTransposed(BitFieldCache* cache){
-    if(cached_version_pointer && cached_version_pointer->creator_id == id){
-        return cached_version_pointer;
+static BitFieldCache transposed_cache = {};
+
+BitField3D* BitField3D::getTransposed(){
+    if(transposed_cache_version_pointer && transposed_cache_version_pointer->creator_id == id){
+        return transposed_cache_version_pointer;
     }
 
     /*
         TODO: implement transposing
     */
 
-    auto [transposed,new_cache_id] = cache->getNext(id);
-    cached_version_pointer = transposed;
+    auto [transposed,new_cache_id] = transposed_cache.getNext(id);
+    transposed_cache_version_pointer = transposed;
     cache_id = new_cache_id;
 
     for(int z = 0;z < 64;z++){
@@ -27,6 +29,5 @@ BitField3D* BitField3D::getTransposed(BitFieldCache* cache){
         }
     }
 
-    //cache->add(transposed, cache_id);
-    return transposed;//cache->get(cache_id); 
+    return transposed;
 }

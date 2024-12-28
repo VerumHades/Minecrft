@@ -44,6 +44,7 @@ class SparseBlockArray{
 
         std::vector<BlockID>& getPresentTypes() { return present_types; }
         std::vector<Layer>& getLayers() { return layers; }
+        
     private:
         BlockRegistry& blockRegistry;
         Block airBlock = {BLOCK_AIR_INDEX};

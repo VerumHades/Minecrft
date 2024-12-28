@@ -190,7 +190,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         Mesh chunk faces
     */
 
-    auto* solidRotated = group->getSolidField().getTransposed(&cache);
+    auto* solidRotated = group->getSolidField().getTransposed();
 
     for(int layer = 0; layer < size - 1;layer++){
         BlockBitPlanes<64> planesXforward = {};
@@ -207,7 +207,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
                 auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
                 if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
-                auto* rotatedField = field.getTransposed(&cache);
+                auto* rotatedField = field.getTransposed();
 
                 if(!definition->transparent){
                     uint64_t allFacesX = (field.getRow(layer,row) | field.getRow(layer + 1,row)) & (group->getSolidField().getRow(layer,row) ^ group->getSolidField().getRow(layer + 1,row));
@@ -302,7 +302,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
     BitField3D& nextXSolid = nextX->getSolidField();
     BitField3D& nextYSolid = nextY->getSolidField();
 
-    auto* nextZSolidRotated = nextZ->getSolidField().getTransposed(&cache);
+    auto* nextZSolidRotated = nextZ->getSolidField().getTransposed();
     
     AGREGATE_TYPES(X);
     AGREGATE_TYPES(Y);
@@ -360,10 +360,10 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
             uint64_t localMaskRow = 0ULL;
-            if(group->hasLayerOfType(type)) localMaskRow = group->getLayer(type).field.getTransposed(&cache)->getRow(0,row);
+            if(group->hasLayerOfType(type)) localMaskRow = group->getLayer(type).field.getTransposed()->getRow(0,row);
             
             uint64_t otherMaskRow = 0ULL;
-            if(nextZ->hasLayerOfType(type)) otherMaskRow = nextZ->getLayer(type).field.getTransposed(&cache)->getRow(size - 1,row); 
+            if(nextZ->hasLayerOfType(type)) otherMaskRow = nextZ->getLayer(type).field.getTransposed()->getRow(size - 1,row); 
             
             if(!definition->transparent){
                 uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (solidRotated->getRow(0,row) ^ nextZSolidRotated->getRow(size - 1,row));
@@ -399,6 +399,6 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
 
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     //std::cout << "Generated chunk mesh (" <<  worldPosition.x << "," << worldPosition.y << "," << worldPosition.z << ") in: " << duration << " microseconds" << std::endl;
-
+    solidMesh->shrink();
     return solidMesh;
 }

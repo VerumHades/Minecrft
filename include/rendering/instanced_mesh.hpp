@@ -29,6 +29,7 @@ class InstancedMesh{
         void addQuadFace(glm::vec3 position, float width, float height, int texture_index, FaceType type, Direction direction);
         const std::vector<float>& getInstanceData(FaceType type);
         bool empty();
+        void shrink();
 };
 
 class InstancedMeshBuffer{

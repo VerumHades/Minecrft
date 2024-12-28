@@ -199,3 +199,7 @@ void InstancedMeshBuffer::clearDrawCalls(){
 void InstancedMeshBuffer::flushDrawCalls(){
     for(int i = 0;i < distinct_face_count;i++) draw_call_buffers[i].flush();
 }
+
+void InstancedMesh::shrink(){
+    for(int i = 0;i < 4;i++) instance_data[i].shrink_to_fit();
+}
