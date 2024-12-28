@@ -83,50 +83,28 @@ class CoherentList{
         using RegionIterator = typename std::list<CoherentList<T>::Region>::iterator;
     private:
         std::list<Region> regions = {};
-
-        T* internal_data = nullptr;
-        size_t internal_size = 1;
-
-        size_t content_size = 0;
+        std::vector<T> internal_data = {};
 
     public:
-        CoherentList(){
-            internal_data = new T[internal_size];
-        }
-        ~CoherentList(){
-            if(internal_data) delete internal_data;
-        }
-
         const RegionIterator append(const T* data, const size_t size){
             RegionIterator region_iter = 
-                regions.insert(regions.end(), {content_size, size});
+                regions.insert(regions.end(), {internal_data.size(), size});
 
-            if(internal_size < content_size + size){
-                T* old_data = internal_data;
-                
-                while(internal_size < content_size + size) internal_size *= 2;
-                internal_data = new T[internal_size];
 
-                std::memcpy(internal_data, old_data, content_size * sizeof(T));
-
-                delete old_data;
-            }
-
-            std::memcpy(internal_data + content_size, data, size * sizeof(T));
-            content_size += size;
+            internal_data.insert(internal_data.end(), data, data + size * sizeof(T));
             
             return region_iter;
         }
 
         void remove(const RegionIterator region){
-            size_t total_to_move = (content_size - region->start - region->size);
+            size_t total_to_move = (internal_data.size() - region->start - region->size);
             if(total_to_move > 0){
                 std::memmove(
-                    internal_data + region->start,
-                    internal_data + region->start + region->size,
+                    internal_data.data() + region->start,
+                    internal_data.data() + region->start + region->size,
                     total_to_move * sizeof(T)
                 );
-                content_size -= region->size;
+                internal_data.resize(internal_data.size() - region->size);
             }
 
             for (auto it = region; it != regions.end(); ++it) it->start -= region->size;
@@ -135,15 +113,15 @@ class CoherentList{
 
         const RegionIterator update(const RegionIterator region, const T* data, const size_t size){
             if(region->size == size){
-                std::memcpy(internal_data + region->start, data, size * sizeof(T));
+                std::memcpy(internal_data.data() + region->start, data, size * sizeof(T));
                 return region;
             }
             remove(region);
             return append(data,size);
         }
 
-        T* data() {return internal_data; };
-        size_t size() {return content_size; };
+        T* data() {return internal_data.data(); };
+        size_t size() {return internal_data.size(); };
 };
 
 /*

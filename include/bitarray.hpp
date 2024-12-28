@@ -10,6 +10,8 @@
 #include <cstring>
 #include <iostream>
 
+using std::vector<uint8_t> = ByteArray;
+
 class BitFieldCache;
 /*
   A tree dimensional array of bits (64 * 64 * 64), stored as and array of unsigned 64 bit integers
@@ -119,6 +121,8 @@ class BitField3D{
             Returnes a pointer to a transposed version of the bitfield (rotated) in the cache
         */
         BitField3D* getTransposed();
+
+        ByteArray getCompressed();
 
         friend class BitFieldCache;
 };
