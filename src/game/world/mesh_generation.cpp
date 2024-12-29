@@ -203,7 +203,10 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         BlockBitPlanes<64> planesZbackward = {};
         
         for(int row = 0;row < size;row++){
-            for(auto& [type,block,field]: group->getLayers()){
+            for(auto& field_layer: group->getLayers()){
+                auto& [type,block,_field] = field_layer;
+                auto& field = field_layer.field();
+
                 auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
                 if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
@@ -261,7 +264,10 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         Mesh billboards
     */
 
-    for(auto& [type,block,field]: group->getLayers()){
+    for(auto& field_layer: group->getLayers()){
+        auto& [type,block,_field] = field_layer;
+        auto& field = field_layer.field();
+        
         auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
         if(!definition || definition->render_type != BlockRegistry::BILLBOARD) continue;
 
@@ -321,8 +327,8 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
             auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
-            const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field.getRow(0,row) : 0ULL;
-            const uint64_t otherMaskRow = nextX->hasLayerOfType(type) ? nextX->getLayer(type).field.getRow(size - 1,row)   : 0ULL;
+            const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field().getRow(0,row) : 0ULL;
+            const uint64_t otherMaskRow = nextX->hasLayerOfType(type) ? nextX->getLayer(type).field().getRow(size - 1,row)   : 0ULL;
             
             if(!definition->transparent){
                 uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (group->getSolidField().getRow(0,row) ^ nextXSolid.getRow(size - 1,row));
@@ -342,8 +348,8 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
             auto* definition = blockRegistry.getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
-            const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field.getRow(row,0) : 0ULL;
-            const uint64_t otherMaskRow = nextY->hasLayerOfType(type) ? nextY->getLayer(type).field.getRow(row,size - 1)   : 0ULL;
+            const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field().getRow(row,0) : 0ULL;
+            const uint64_t otherMaskRow = nextY->hasLayerOfType(type) ? nextY->getLayer(type).field().getRow(row,size - 1)   : 0ULL;
             
             if(!definition->transparent){
                 uint64_t allFacesY =  (localMaskRow | otherMaskRow) & (group->getSolidField().getRow(row,0) ^ nextYSolid.getRow(row,size - 1));
@@ -364,10 +370,10 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
             uint64_t localMaskRow = 0ULL;
-            if(group->hasLayerOfType(type)) localMaskRow = group->getLayer(type).field.getTransposed()->getRow(0,row);
+            if(group->hasLayerOfType(type)) localMaskRow = group->getLayer(type).field().getTransposed()->getRow(0,row);
             
             uint64_t otherMaskRow = 0ULL;
-            if(nextZ->hasLayerOfType(type)) otherMaskRow = nextZ->getLayer(type).field.getTransposed()->getRow(size - 1,row); 
+            if(nextZ->hasLayerOfType(type)) otherMaskRow = nextZ->getLayer(type).field().getTransposed()->getRow(size - 1,row); 
             
             if(!definition->transparent){
                 uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (solidRotated->getRow(0,row) ^ nextZSolidRotated->getRow(size - 1,row));

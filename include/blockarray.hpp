@@ -8,7 +8,9 @@ class SparseBlockArray{
         struct Layer{
             BlockID  type;
             Block internal_block;
-            BitField3D field;
+            CompressedBitField3D _field;
+            
+            BitField3D& field() {return *_field.get();};
         };
 
         /*
@@ -62,7 +64,7 @@ class SparseBlockArray{
         void setBlock(glm::ivec3 position, Block block){
             auto* block_here = getBlock(position);
             if(block_here != &airBlock){
-                getLayer(block_here->id).field.reset(position.x,position.y,position.z);
+                getLayer(block_here->id).field().reset(position.x,position.y,position.z);
             }
 
             if(block.id == BLOCK_AIR_INDEX){
@@ -75,7 +77,7 @@ class SparseBlockArray{
             }
 
             auto& layer = getLayer(block.id);
-            layer.field.set(position.x,position.y,position.z);
+            layer.field().set(position.x,position.y,position.z);
 
             auto* block_definition = blockRegistry.getBlockPrototypeByIndex(block.id);
             if(!block_definition) return;
@@ -89,7 +91,7 @@ class SparseBlockArray{
         */
         Block* getBlock(glm::ivec3 position){
             for(auto& layer: layers){
-                if(!layer.field.get(position.x,position.y,position.z)) continue;
+                if(!layer.field().get(position.x,position.y,position.z)) continue;
 
                 return &layer.internal_block;
             }

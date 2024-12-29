@@ -162,5 +162,5 @@ BitField3D* CompressedBitField3D::get(){
 
 void CompressedBitField3D::set(const BitField3D& source){
     cached_ptr = nullptr;
-    *data_ptr = BitField3D::compress(source.data());
+    *data_ptr = std::move(BitField3D::compress(source.data()));
 }

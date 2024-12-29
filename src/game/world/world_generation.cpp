@@ -147,17 +147,14 @@ void WorldGenerator::generateTerrainChunkAccelerated(Chunk* chunk, glm::ivec3 ch
         }
         //timer.timestamp("Checked for emptiness");
         if(empty) continue;
-        auto compressed = BitField3D::compress(data);
-        
-        BitField3D::decompress(data,compressed);
         //timer.timestamp("Compressed and decompressed");
 
-        std::cout << "Compressed size: " << compressed.size() * 8 << "bytes" << std::endl;
-        std::cout << "Compression percent for: " << layer.name << " " << ((float) compressed.size() / (float) data.size()) * 100 << "%" << std::endl;
+        //std::cout << "Compressed size: " << compressed.size() * 8 << "bytes" << std::endl;
+        //std::cout << "Compression percent for: " << layer.name << " " << ((float) compressed.size() / (float) data.size()) * 100 << "%" << std::endl;
 
         if(!chunk->hasLayerOfType(block_id)) chunk->createLayer(block_id, {});
 
-        chunk->getLayer(block_id).field.data() = data;
+        chunk->getLayer(block_id).field().data() = data;
         chunk->getSolidField().applyOR(data);
     }
 }

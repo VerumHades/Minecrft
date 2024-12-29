@@ -107,7 +107,7 @@ struct TCacheMember{
 */
 class BitFieldCache{
     private:
-        const static int max_cached = 2 * 1024; // 2 * 32MB cache (32KB per field * 1024)
+        const static int max_cached = 1024; // 2 * 32MB cache (32KB per field * 1024)
         
         std::array<TCacheMember, max_cached> cached_fields{};
         size_t next_spot = 0;
@@ -134,13 +134,20 @@ class CompressedBitField3D{
         CCacheMember* cached_ptr = nullptr;
 
     public:
+        CompressedBitField3D(){
+            data_ptr = std::make_shared<CompressedArray>();
+        }
+        CompressedBitField3D(const BitField3D& source){
+            data_ptr = std::make_shared<CompressedArray>(BitField3D::compress(source.data()));
+        }
+
         void set(const BitField3D& source);
         BitField3D* get();
 };
 
 class CompressedBitFieldCache{
     private:
-        const static int max_cached = 2 * 1024; // 2 * 32MB cache (32KB per field * 1024)
+        const static int max_cached = 1024; // 2 * 32MB cache (32KB per field * 1024)
         std::array<CCacheMember, max_cached> cached_fields{};
 
         size_t next_spot = 0;
