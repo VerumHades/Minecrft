@@ -265,7 +265,7 @@ class GLDrawCallBuffer{
         };*/
 
     private:
-        List<DrawCommand> draw_commands;
+        std::vector<DrawCommand> draw_commands;
         GLBuffer<DrawCommand, GL_DRAW_INDIRECT_BUFFER> buffer;
 
     public:

@@ -44,10 +44,10 @@ void GLDrawCallBuffer::clear(){
     draw_commands.clear();
 }
 void GLDrawCallBuffer::push(GLDrawCallBuffer::DrawCommand& command){
-    draw_commands.push(command);
+    draw_commands.push_back(command);
 }
 void GLDrawCallBuffer::push(GLDrawCallBuffer::DrawCommand* commands, size_t size){
-    draw_commands.push(commands,size);
+    draw_commands.insert(draw_commands.end(), commands, commands + size);
 }
 void GLDrawCallBuffer::flush(){
     if(draw_commands.size() == 0) return;
