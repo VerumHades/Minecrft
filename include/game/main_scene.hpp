@@ -76,6 +76,8 @@ class MainScene: public Scene{
         ChunkMeshRegistry chunkMeshRegistry;
         ChunkMeshGenerator chunkMeshGenerator = ChunkMeshGenerator(blockRegistry);
         
+        std::shared_ptr<UILabel> fps_label;
+
         ItemTextureAtlas itemTextureAtlas;
         ItemPrototypeRegistry itemPrototypeRegistry;
         std::shared_ptr<ItemSlot> held_item_slot;

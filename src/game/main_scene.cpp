@@ -12,6 +12,10 @@ void MainScene::initialize(){
 
     this->setUILayer("default");
 
+    fps_label = uiManager->createElement<UILabel>();
+    fps_label->setPosition(10,10);
+    addElement(fps_label);
+
     auto crosshair = uiManager->createElement<UICrosshair>();
     crosshair->setSize(60,60);
     crosshair->setPosition(
@@ -435,6 +439,9 @@ void MainScene::render(){
     current = glfwGetTime();
     deltatime = (float)(current - last);
     last = current;
+
+    fps_label->setText(std::to_string(1.0f / deltatime) + "FPS");
+    fps_label->update();
     
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
