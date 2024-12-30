@@ -23,7 +23,7 @@ void main() {
     //float current_height = ((sin(position.x / 64) + cos(position.z / 64)) * 10);
     float current_height = texture(noiseTexture, (position.xz + 512) / 1024.0f).r * 255;
     // Determine if this block (bit) should be set or cleared
-    bool isActive = int(position.y) == int(current_height) + 1;//position.y < 0.0;
+    bool isActive = int(position.y) == int(current_height);//position.y < 0.0;
 
     // Set or clear the bit within the uint
     if (isActive) {

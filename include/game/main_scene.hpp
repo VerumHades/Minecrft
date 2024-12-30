@@ -34,6 +34,8 @@
 #include <game/items/item.hpp>
 #include <game/items/item_renderer.hpp>
 
+#include <indexing.hpp>
+
 #include <scene.hpp>
 #include <set>
 #include <memory>
@@ -46,6 +48,8 @@ class MainScene: public Scene{
     private:
         PerspectiveCamera camera = PerspectiveCamera("player");
         DepthCamera suncam = DepthCamera("sun");
+
+        SpiralIndexer3D indexer;
 
         GBuffer gBuffer = GBuffer(1920,1080);
         GLFullscreenQuad fullscreen_quad;
@@ -81,7 +85,7 @@ class MainScene: public Scene{
         std::atomic<bool> update_hotbar = false;
 
         std::string worldPath = "saves/worldsave.bin";
-        int renderDistance = 3;
+        int renderDistance = 8;
         int selectedBlock = 4;
 
         bool allGenerated = false;

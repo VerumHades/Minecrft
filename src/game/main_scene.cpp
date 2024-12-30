@@ -454,6 +454,13 @@ void MainScene::render(){
         chunkMeshRegistry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
         updateVisibility = 0;
     }
+
+    if(indexer.getCurrentDistance() < renderDistance){
+        auto position = indexer.next();
+        Chunk* chunk = world->getChunk(position);
+        if(!chunk) std::cerr << "Chunk not generated when generating meshes?" << std::endl;
+        else chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry); 
+    }
     
     int offsetX = ((int) camera.getPosition().x / 64) * 64;
     int offsetY = ((int) camera.getPosition().y / 64) * 64;
@@ -638,7 +645,7 @@ void MainScene::generateSurroundingChunks(){
         world->generateChunk(chunkPosition);
     }
 
-    for(int x = -renderDistance ; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
+    /*for(int x = -renderDistance ; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
         glm::ivec3 chunkPosition = camWorldPosition + glm::ivec3(x,y,z);
         
         Chunk* chunk = world->getChunk(chunkPosition);
@@ -647,10 +654,7 @@ void MainScene::generateSurroundingChunks(){
             continue;
         }
         chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry);
-    }
-    while(!threadPool->finished()){ // Wait for everything to generate
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
+    }*/
 
    
     allGenerated = true;

@@ -134,8 +134,6 @@ void BitField3D::decompress(std::array<uint64_t, 64 * 64>& destination, Compress
 
         else row = *data++;
     }
-
-    std::cout << data - (value_mask + 64) << std::endl;
 }
 
 
