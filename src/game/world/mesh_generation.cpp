@@ -161,12 +161,30 @@ std::tuple<ChunkMeshGenerator::OccludedPlane, bool, ChunkMeshGenerator::Occluded
     };
 }
 
+
+struct OcclusionOffset{
+    glm::ivec2 offset;
+    std::array<bool, 4> affects;
+};
+const static std::array<OcclusionOffset, 8> occlusion_offsets = {
+    // Whole sides
+    OcclusionOffset{{ 1, 0}, {0,1,1,0}},
+    OcclusionOffset{{-1, 0}, {1,0,0,1}},
+    OcclusionOffset{{ 0, 1}, {0,0,1,1}},
+    OcclusionOffset{{ 0,-1}, {1,1,0,0}},
+    // Corners 
+    OcclusionOffset{{-1, 1}, {0,0,0,1}},
+    OcclusionOffset{{ 1, 1}, {0,0,1,0}},
+    OcclusionOffset{{ 1,-1}, {0,1,0,0}},
+    OcclusionOffset{{-1,-1}, {1,0,0,0}}
+};
+
 std::vector<ChunkMeshGenerator::OccludedPlane> ChunkMeshGenerator::calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, BitPlane<64>& occlusion_plane){
     std::vector<OccludedPlane> planes;
     planes.reserve(16);
     planes.push_back({{0,0,0,0}, source_plane});
     
-    for(auto& [offset, affects]: offsets){
+    for(auto& [offset, affects]: occlusion_offsets){
         for(auto& plane: planes){
             auto [plane_1, plane_1_empty, plane_2, plane_2_empty] = segregatePlane(plane, occlusion_plane, affects, offset);
 
@@ -205,7 +223,7 @@ static inline void processFaces(
 
     bool texture_index = direction == InstancedMesh::Backward;
 
-    float occlusion[4] = {0,0,0,0};
+    std::array<float, 4> occlusion = {1,1,1,1};
 
     for(auto& face: faces){
         int faceWidth  = face.width;
@@ -233,7 +251,7 @@ static inline void processFaces(
                 break;
         }
 
-        mesh->addQuadFace(face_position, faceWidth, faceHeight, texture, face_type, direction);
+        mesh->addQuadFace(face_position, faceWidth, faceHeight, texture, face_type, direction, occlusion);
     }
 }   
 
@@ -343,7 +361,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
 
             glm::vec3 position = glm::vec3{x,y,z} * scale + world_position;
 
-            solidMesh->addQuadFace(position,1,1,definition->textures[0], InstancedMesh::BILLBOARD, InstancedMesh::Forward);
+            solidMesh->addQuadFace(position,1,1,definition->textures[0], InstancedMesh::BILLBOARD, InstancedMesh::Forward, {0,0,0,0});
         }
     }
 

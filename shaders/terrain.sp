@@ -9,9 +9,10 @@ layout(location = 1) in vec2  aInstanceSize;
 layout(location = 2) in float aInstaceType;
 layout(location = 3) in float aInstanceDirection;
 layout(location = 4) in float aTextureIndex;
+layout(location = 5) in vec4 aOcclusion;
 
-layout(location = 5) in vec3 aPos;
-layout(location = 6) in vec2 aTexCoords;
+layout(location = 6) in vec3 aPos;
+layout(location = 7) in vec2 aTexCoords;
 
 uniform mat4 player_camera_projection_matrix;
 uniform mat4 player_camera_view_matrix;
@@ -21,6 +22,7 @@ uniform mat4 sun_depth_camera_lightspace_matrix;
 out vec3 Normal;
 out vec2 TexCoords;
 out float TexIndex;
+out float Occlusion;
 
 out vec3 FragPos;
 uniform vec3 camPos;
@@ -65,6 +67,8 @@ void main()
 
     TexCoords = aTexCoords * TextCoordList[int(aInstaceType)];
     TexIndex = aTextureIndex;
+
+    Occlusion = aOcclusion[gl_VertexID % 4];
 }
 
 // ================================================
@@ -86,7 +90,7 @@ in float TexIndex;
 in vec4 FragPosLightSpace;
 in vec3 FragPos;
 in vec3 pos;
-in float occlusion;
+in float Occlusion;
 
 uniform sampler2DArray textureArray;
 uniform sampler2D shadowMap;
@@ -97,7 +101,8 @@ void main()
 {
     vec4 full_color = texture(textureArray, vec3(TexCoords, TexIndex));
     if(full_color.a < 0.1) discard;
-    vec3 color = full_color.rgb;
+    
+    full_color.rgb = full_color.rgb - (Occlusion / 3);
 
     gPosition = FragPos;
     gNormal = normalize(Normal);

@@ -38,22 +38,6 @@ class ChunkMeshGenerator{
         World* world = nullptr; // Points to the world relative to which you generate meshes, doesnt need to be set
 
         void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<InstancedMesh> mesh);
-
-        struct OcclusionOffset{
-            glm::ivec2 offset;
-            std::array<bool, 4> affects;
-        };
-        std::array<OcclusionOffset, 8> offsets = {
-            {glm::ivec2{ 1, 0}, {0,1,1,0}},
-            {glm::ivec2{-1, 0}, {1,0,0,1}},
-            {glm::ivec2{ 0, 1}, {0,0,0,0}},
-            {glm::ivec2{ 0,-1}, {0,0,0,0}},
-            {glm::ivec2{ 1, 1}, {0,0,0,0}},
-            {glm::ivec2{ 1,-1}, {0,0,0,0}},
-            {glm::ivec2{-1, 1}, {0,0,0,0}},
-            {glm::ivec2{-1,-1}, {0,0,0,0}}
-        };
-
         /*
             Creates separate planes from one plane with occlusion values
         */

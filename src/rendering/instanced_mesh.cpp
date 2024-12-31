@@ -1,6 +1,6 @@
 #include <rendering/instanced_mesh.hpp>
 
-void InstancedMesh::addQuadFace(glm::vec3 position, float width, float height, int texture_index, FaceType type, Direction direction){
+void InstancedMesh::addQuadFace(glm::vec3 position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion){
     std::array<float, InstancedMesh::instance_data_size> data = {
         position.x,
         position.y,
@@ -11,7 +11,12 @@ void InstancedMesh::addQuadFace(glm::vec3 position, float width, float height, i
 
         type,
         direction,
-        texture_index
+        texture_index,
+
+        occlusion[0],
+        occlusion[1],
+        occlusion[3], // Swapped because of how occlusion is calculated, this changes clockwise order from the top left into one for GL_TRIGNALE_STRIP
+        occlusion[2]
     };
 
     auto& instance_data_list =  instance_data[type];
@@ -64,7 +69,7 @@ InstancedMeshBuffer::InstancedMeshBuffer(){
     loaded_face_buffer.initialize(aligned_quad_data.size(), aligned_quad_data.data());
 
     for(int i = 0;i < distinct_face_count;i++){
-        vaos[i].attachBuffer(&instance_data[i].getBuffer(), {{VEC3, VEC2, FLOAT, FLOAT, FLOAT}, true});
+        vaos[i].attachBuffer(&instance_data[i].getBuffer(), {{VEC3, VEC2, FLOAT, FLOAT, FLOAT, VEC4}, true});
         vaos[i].attachBuffer(&loaded_face_buffer, {VEC3, VEC2});
     }
 }
