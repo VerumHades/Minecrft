@@ -118,6 +118,73 @@ std::vector<ChunkMeshGenerator::Face> ChunkMeshGenerator::greedyMeshPlane(BitPla
 
 */
 
+std::tuple<ChunkMeshGenerator::OccludedPlane, bool, ChunkMeshGenerator::OccludedPlane, bool> ChunkMeshGenerator::segregatePlane(
+    OccludedPlane& source_plane,
+    BitPlane<64>& occlusion_plane,
+    std::array<bool,4> affects,
+    glm::ivec2 lookup_offset
+){
+    OccludedPlane true_plane  = {source_plane.occlusion};
+    OccludedPlane false_plane = {source_plane.occlusion};
+
+    true_plane.occlusion[0] += affects[0];
+    true_plane.occlusion[1] += affects[1];
+    true_plane.occlusion[2] += affects[2];
+    true_plane.occlusion[3] += affects[3];
+
+    bool true_plane_empty  = true;
+    bool false_plane_empty = true;
+
+    for(int i = 0;i < 64;i++){
+        int lookup_y = i + lookup_offset.y;
+
+        uint64_t occlusion_row = 
+            (lookup_y >= 0 && lookup_y < 64) ? occlusion_plane[i] : 0ULL;
+        
+        occlusion_row = 
+            (lookup_offset.x > 0) ? 
+                (occlusion_plane[i] >>  lookup_offset.x): 
+                (occlusion_plane[i] << -lookup_offset.x);
+
+        true_plane .plane[i] = source_plane.plane[i] &  occlusion_row;
+        false_plane.plane[i] = source_plane.plane[i] & ~occlusion_row;
+
+        if(true_plane .plane[i] != 0ULL) true_plane_empty  = false;
+        if(false_plane.plane[i] != 0ULL) false_plane_empty = false;
+    }
+
+    return {
+        true_plane,
+        true_plane_empty,
+        false_plane,
+        false_plane_empty
+    };
+}
+
+std::vector<ChunkMeshGenerator::OccludedPlane> ChunkMeshGenerator::calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, BitPlane<64>& occlusion_plane){
+    std::vector<OccludedPlane> planes;
+    planes.reserve(16);
+    planes.push_back({{0,0,0,0}, source_plane});
+    
+    for(auto& [offset, affects]: offsets){
+        for(auto& plane: planes){
+            auto [plane_1, plane_1_empty, plane_2, plane_2_empty] = segregatePlane(plane, occlusion_plane, affects, offset);
+
+            if(plane_1_empty){
+                plane = plane_2;
+                continue;
+            }
+
+            plane = plane_1;
+            
+            if(plane_2_empty) continue;
+            planes.push_back(plane_2);
+        }
+    }
+
+    return planes;
+}   
+
 #define AGREGATE_TYPES(axis) std::vector<BlockID> agregateTypes##axis = next##axis->getPresentTypes(); \
     agregateTypes##axis.insert(agregateTypes##axis.end(), group->getPresentTypes().begin(), group->getPresentTypes().end());
 

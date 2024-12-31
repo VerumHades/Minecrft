@@ -5,6 +5,7 @@
 #include <rendering/instanced_mesh.hpp>
 #include <rendering/chunk_buffer.hpp>
 #include <blockarray.hpp>
+#include <glm/glm.hpp>
 
 class ChunkMeshGenerator{
     public:
@@ -14,6 +15,11 @@ class ChunkMeshGenerator{
             int width;
             int height;
         };
+        struct OccludedPlane{
+            std::array<float, 4> occlusion = {0,0,0,0};
+            BitPlane<64> plane;
+        };
+
     private:
         std::vector<Face> greedyMeshPlane(BitPlane<64> rows, int size);
         std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group);
@@ -33,6 +39,36 @@ class ChunkMeshGenerator{
 
         void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<InstancedMesh> mesh);
 
+        struct OcclusionOffset{
+            glm::ivec2 offset;
+            std::array<bool, 4> affects;
+        };
+        std::array<OcclusionOffset, 8> offsets = {
+            {glm::ivec2{ 1, 0}, {0,1,1,0}},
+            {glm::ivec2{-1, 0}, {1,0,0,1}},
+            {glm::ivec2{ 0, 1}, {0,0,0,0}},
+            {glm::ivec2{ 0,-1}, {0,0,0,0}},
+            {glm::ivec2{ 1, 1}, {0,0,0,0}},
+            {glm::ivec2{ 1,-1}, {0,0,0,0}},
+            {glm::ivec2{-1, 1}, {0,0,0,0}},
+            {glm::ivec2{-1,-1}, {0,0,0,0}}
+        };
+
+        /*
+            Creates separate planes from one plane with occlusion values
+        */
+        std::vector<OccludedPlane> calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, BitPlane<64>& occlusion_plane);
+
+        /*
+            Returns two plains separated by the occlusion at the offset and information whether they are empty
+        */
+        std::tuple<OccludedPlane, bool, OccludedPlane, bool> segregatePlane(
+            OccludedPlane& source_plane,
+            BitPlane<64>& occlusion_plane,
+            std::array<bool,4> affects,
+            glm::ivec2 lookup_offset
+        );
+    
     public:
         ChunkMeshGenerator(BlockRegistry& blockRegistry): blockRegistry(blockRegistry) {}
 
