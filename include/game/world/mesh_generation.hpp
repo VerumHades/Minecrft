@@ -18,6 +18,8 @@ class ChunkMeshGenerator{
         struct OccludedPlane{
             std::array<float, 4> occlusion = {0,0,0,0};
             BitPlane<64> plane;
+
+            int start = 0; // Zeroes from the start that can be skipped
         };
 
     private:

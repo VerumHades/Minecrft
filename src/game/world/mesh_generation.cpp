@@ -137,7 +137,7 @@ std::tuple<ChunkMeshGenerator::OccludedPlane, bool, ChunkMeshGenerator::Occluded
     bool true_plane_empty  = true;
     bool false_plane_empty = true;
 
-    for(int i = 0;i < 64;i++){
+    for(int i = source_plane.start;i < 64;i++){
         int lookup_y = i + lookup_offset.y;
 
         uint64_t occlusion_row = 
@@ -153,6 +153,9 @@ std::tuple<ChunkMeshGenerator::OccludedPlane, bool, ChunkMeshGenerator::Occluded
 
         if(true_plane .plane[i] != 0ULL) true_plane_empty  = false;
         if(false_plane.plane[i] != 0ULL) false_plane_empty = false;
+
+        if(true_plane_empty) true_plane.start = i;
+        if(false_plane_empty) false_plane.start = i;
     }
 
     return {
@@ -183,7 +186,7 @@ const static std::array<OcclusionOffset, 8> occlusion_offsets = {
 
 std::vector<ChunkMeshGenerator::OccludedPlane> ChunkMeshGenerator::calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, BitPlane<64>& occlusion_plane){
     std::vector<OccludedPlane> planes;
-    planes.reserve(16);
+    planes.reserve(4);
     planes.push_back({{0,0,0,0}, source_plane});
     
     for(auto& [offset, affects]: occlusion_offsets){
