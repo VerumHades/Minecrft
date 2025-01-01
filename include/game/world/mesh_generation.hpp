@@ -21,7 +21,7 @@ class ChunkMeshGenerator{
         };
 
     private:
-        std::vector<Face> greedyMeshPlane(BitPlane<64> rows, int size);
+        std::vector<Face> greedyMeshPlane(BitPlane<64> rows, int size = 64);
         std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group);
 
         BlockRegistry& blockRegistry;
@@ -51,6 +51,18 @@ class ChunkMeshGenerator{
             BitPlane<64>& occlusion_plane,
             std::array<bool,4> affects,
             glm::ivec2 lookup_offset
+        );
+
+        void proccessOccludedFaces(
+            BitPlane<64>& source_plane,
+            BitPlane<64>& occlusion_plane,
+            
+            InstancedMesh::FaceType face_type,
+            InstancedMesh::Direction direction,
+            BlockRegistry::BlockPrototype* type,
+            InstancedMesh* mesh, 
+            glm::vec3 world_position,
+            int layer
         );
     
     public:
