@@ -375,15 +375,6 @@ void MainScene::open(GLFWwindow* window){
     
     world = std::make_unique<World>(worldPath, blockRegistry);
 
-    int i = 0;
-    for(auto& prototype: blockRegistry.prototypes()){
-        if(prototype.id == 0) continue; // Dont make air
-
-        auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(&prototype);
-        auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), glm::vec3(0, 20, i++));
-        world->addEntity(entity);
-    }
-
     auto& player = world->getPlayer();
 
     player.onCollision = [this](Entity* self, Entity* collided_with){
@@ -410,6 +401,16 @@ void MainScene::open(GLFWwindow* window){
         !player.checkForCollision(world.get(), false, {0,-1,0}) && 
         player.getPosition().y > 0
     ) player.setPosition(player.getPosition() + glm::vec3{0,-1,0});
+
+
+    for(auto& prototype: blockRegistry.prototypes()){
+        if(prototype.id == 0) continue; // Dont make air
+
+        auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(&prototype);
+        Item it = itemPrototypeRegistry.createItem(item_prototype);
+        it.setQuantity(256);
+        hotbar->addItem(it);
+    }
 
     //std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));

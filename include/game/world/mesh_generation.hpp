@@ -20,6 +20,7 @@ class ChunkMeshGenerator{
             BitPlane<64> plane;
 
             int start = 0; // Zeroes from the start that can be skipped
+            int end = 64; // Zeroes to the bottom
         };
 
     private:

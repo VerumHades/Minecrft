@@ -137,22 +137,28 @@ std::tuple<ChunkMeshGenerator::OccludedPlane, bool, ChunkMeshGenerator::Occluded
     bool true_plane_empty  = true;
     bool false_plane_empty = true;
 
-    for(int i = source_plane.start;i < 64;i++){
+    for(int i = source_plane.start;i < source_plane.end;i++){
         int lookup_y = i + lookup_offset.y;
 
         uint64_t occlusion_row = 
-            (lookup_y >= 0 && lookup_y < 64) ? occlusion_plane[i] : 0ULL;
+            (lookup_y >= 0 && lookup_y < 64) ? occlusion_plane[lookup_y] : 0ULL;
         
         occlusion_row = 
             (lookup_offset.x > 0) ? 
-                (occlusion_plane[i] >>  lookup_offset.x): 
-                (occlusion_plane[i] << -lookup_offset.x);
+                (occlusion_row <<  lookup_offset.x): 
+                (occlusion_row >> -lookup_offset.x);
 
         true_plane .plane[i] = source_plane.plane[i] &  occlusion_row;
         false_plane.plane[i] = source_plane.plane[i] & ~occlusion_row;
 
-        if(true_plane .plane[i] != 0ULL) true_plane_empty  = false;
-        if(false_plane.plane[i] != 0ULL) false_plane_empty = false;
+        if(true_plane .plane[i] != 0ULL){
+            true_plane.end = i + 1;
+            true_plane_empty  = false;
+        }
+        if(false_plane.plane[i] != 0ULL){
+            false_plane.end = i + 1;
+            false_plane_empty = false;
+        }
 
         if(true_plane_empty) true_plane.start = i;
         if(false_plane_empty) false_plane.start = i;
@@ -300,9 +306,11 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         auto* solidRotated = group->getSolidField().getTransposed();
         // 64 planes internale 65th external
 
-        for(int x = 0;x < 64;x++) for(int y = 0;y < 64;y++) occlusionPlanesX[x][y] = solidField.getRow(x,y);    
-        for(int x = 0;x < 64;x++) for(int y = 0;y < 64;y++) occlusionPlanesY[y][x] = solidField.getRow(x,y);
-        for(int z = 0;z < 64;z++) for(int y = 0;y < 64;y++) occlusionPlanesZ[z][y] = solidRotated->getRow(z,y);   
+        for(int x = 0;x < 64;x++) for(int y = 0;y < 64;y++){
+            occlusionPlanesX[x][y] = solidField.getRow(x,y);    
+            occlusionPlanesY[y][x] = solidField.getRow(x,y);
+            occlusionPlanesZ[x][y] = solidRotated->getRow(x,y);
+        }   
     }
     timer.timestamp("Generated occlusion planes");
 

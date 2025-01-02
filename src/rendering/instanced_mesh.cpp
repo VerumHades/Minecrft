@@ -38,20 +38,20 @@ bool InstancedMesh::empty(){
 InstancedMeshBuffer::InstancedMeshBuffer(){
     std::array<float, 20 * 5> aligned_quad_data = {
         // X aligned face
-        0.0f,  0.0f, 0.0f,  0.0f, 0.0f, 
-        0.0f,  0.0f, 1.0f,  1.0f, 0.0f, 
         0.0f, -1.0f, 0.0f,  0.0f, 1.0f, 
         0.0f, -1.0f, 1.0f,  1.0f, 1.0f, 
+        0.0f,  0.0f, 0.0f,  0.0f, 0.0f, 
+        0.0f,  0.0f, 1.0f,  1.0f, 0.0f, 
         // Y aligned face
         0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 
         0.0f, 0.0f, 1.0f,  1.0f, 1.0f, 
         1.0f, 0.0f, 0.0f,  0.0f, 0.0f, 
         1.0f, 0.0f, 1.0f,  1.0f, 0.0f, 
         // Z aligned face
-        0.0f,  0.0f, 0.0f,  0.0f, 0.0f, 
-        1.0f,  0.0f, 0.0f,  1.0f, 0.0f, 
         0.0f, -1.0f, 0.0f,  0.0f, 1.0f, 
         1.0f, -1.0f, 0.0f,  1.0f, 1.0f, 
+        0.0f,  0.0f, 0.0f,  0.0f, 0.0f, 
+        1.0f,  0.0f, 0.0f,  1.0f, 0.0f, 
 
         // Diagonal billboard faces
         0.0f,  0.0f, 0.0f,  0.0f, 1.0f, 

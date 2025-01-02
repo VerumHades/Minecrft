@@ -68,7 +68,7 @@ void main()
     TexCoords = aTexCoords * TextCoordList[int(aInstaceType)];
     TexIndex = aTextureIndex;
 
-    Occlusion = aOcclusion[(gl_VertexID + 1) % 4];
+    Occlusion = aOcclusion[gl_VertexID % 4];
 }
 
 // ================================================
