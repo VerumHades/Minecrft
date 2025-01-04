@@ -17,6 +17,7 @@
 using CompressedArray = std::vector<uint64_t>;
 
 struct TCacheMember;
+
 /*
   A tree dimensional array of bits (64 * 64 * 64), stored as and array of unsigned 64 bit integers
 */
@@ -95,6 +96,9 @@ class BitField3D{
         static CompressedArray compress(const std::array<uint64_t, 64 * 64>& source);
         static void decompress(std::array<uint64_t, 64 * 64>& destination, CompressedArray& source);
 
+        void resetID(){
+            id = last_id++;
+        }
         friend class BitFieldCache;
 };
 
@@ -134,9 +138,7 @@ class CompressedBitField3D{
         CCacheMember* cached_ptr = nullptr;
 
     public:
-        CompressedBitField3D(){
-            data_ptr = std::make_shared<CompressedArray>();
-        }
+        CompressedBitField3D();
         CompressedBitField3D(const BitField3D& source){
             data_ptr = std::make_shared<CompressedArray>(BitField3D::compress(source.data()));
         }

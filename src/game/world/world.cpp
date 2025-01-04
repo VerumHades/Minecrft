@@ -63,7 +63,6 @@ std::tuple<bool, Block*> World::checkForPointCollision(glm::vec3 position, bool 
                     if(!definition) continue;
                     if((definition->colliders.size() == 0 || blocki->id == BLOCK_AIR_INDEX) && !includeRectangularColliderLess) continue;
 
-
                     if(
                         position.x >= cx && position.x <= cx + blockWidth &&
                         position.y >= cy && position.y <= cy + blockWidth &&
@@ -79,11 +78,19 @@ std::tuple<bool, Block*> World::checkForPointCollision(glm::vec3 position, bool 
 
 bool World::collidesWith(glm::vec3 position, Entity* checked_entity, bool vertical_check) {
     int range = 1;
+
     const RectangularCollider* collider = &checked_entity->getCollider();
 
-    for(int i = -range;i <= range;i++){
-        for(int j = -range;j <= range;j++){
-            for(int g = -range;g <= range;g++){
+    glm::ivec3 ranges = {
+        glm::ceil(collider->width),
+        glm::ceil(collider->height),
+        glm::ceil(collider->depth)
+    }; 
+
+    for(int i = -ranges.x;i <= ranges.x;i++){
+        for(int j = -ranges.y;j <= ranges.y;j++){
+            for(int g = -ranges.z;g <= ranges.z;g++){
+
                 int cx = (int)floor(position.x + i);
                 int cy = (int)floor(position.y + j);
                 int cz = (int)floor(position.z + g);
@@ -94,7 +101,6 @@ bool World::collidesWith(glm::vec3 position, Entity* checked_entity, bool vertic
                     if(!definition) continue;
                     if(definition->colliders.size() == 0 || blocki->id == BLOCK_AIR_INDEX) continue;
 
-               
                     for(int colliderIndex = 0;colliderIndex < definition->colliders.size(); colliderIndex++){
                         RectangularCollider* blockCollider = &definition->colliders[colliderIndex];
       
@@ -207,16 +213,27 @@ static int rotation = 0;
 static float position = 0;
 static float position_mult = 1;
 
-
 void World::drawEntity(Entity& entity){
     if(!entity.getModel()) return;
-        
-    entity.getModel()->requestDraw(entity.getPosition() + glm::vec3{0,position,0}, {0.5,0.5,0.5}, {0,rotation,0}, entity.getModel()->getRotationCenterOffset());
+    
+    entity.getModel()->requestDraw(entity.getPosition() + glm::vec3{0,position,0}, {0.3,0.3,0.3}, {0,rotation,0}, entity.getModel()->getRotationCenterOffset());
 }
 
-void World::drawEntities(){
-    for(auto& entity: entities){
+void World::updateEntities(float deltatime){
+    int index = 0;
+
+    for(int index = 0;index < entities.size();){
+        Entity& entity = entities[index];
+
+        entity.update(this, blocks_altered, deltatime);
+        if(entity.shouldGetDestroyed()){
+            entities.erase(entities.begin() + index);
+            continue;
+        }
+
         drawEntity(entity);
+
+        index++;
     }
 
     const float position_addition = 0.002;
@@ -226,22 +243,7 @@ void World::drawEntities(){
     if(position >= 0.4) position_mult = -position_addition;
 
     rotation = (rotation + 1) % 360;
-}
 
-void World::updateEntities(){
-    int index = 0;
-
-    for(int index = 0;index < entities.size();){
-        Entity& entity = entities[index];
-
-        entity.update(this, blocks_altered);
-        if(entity.shouldGetDestroyed()){
-            entities.erase(entities.begin() + index);
-            continue;
-        }
-
-        index++;
-    }
     blocks_altered = false;
 }
 void World::drawEntityColliders(WireframeCubeRenderer& renderer, size_t start_index){

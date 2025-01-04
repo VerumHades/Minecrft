@@ -23,6 +23,17 @@ class ChunkMeshGenerator{
             int end = 64; // Zeroes to the bottom
         };
 
+        struct OcclusionPlane{
+            std::array<uint64_t, 66> rows{};
+            uint64_t left = 0;
+            uint64_t right = 0;
+
+            unsigned top_left_corner: 1 = 0;
+            unsigned top_right_corner: 1 = 0;
+            unsigned bottom_left_corner: 1 = 0;
+            unsigned bottom_right_corner: 1 = 0;
+        };
+
     private:
         std::vector<Face> greedyMeshPlane(BitPlane<64> rows, int size = 64);
         std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group);
@@ -44,21 +55,21 @@ class ChunkMeshGenerator{
         /*
             Creates separate planes from one plane with occlusion values
         */
-        std::vector<OccludedPlane> calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, BitPlane<64>& occlusion_plane);
+        std::vector<OccludedPlane> calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, OcclusionPlane& occlusion_plane);
 
         /*
             Returns two plains separated by the occlusion at the offset and information whether they are empty
         */
         std::tuple<OccludedPlane, bool, OccludedPlane, bool> segregatePlane(
             OccludedPlane& source_plane,
-            BitPlane<64>& occlusion_plane,
+            OcclusionPlane& occlusion_plane,
             std::array<bool,4> affects,
             glm::ivec2 lookup_offset
         );
 
         void proccessOccludedFaces(
             BitPlane<64>& source_plane,
-            BitPlane<64>& occlusion_plane,
+            OcclusionPlane& occlusion_plane,
             
             InstancedMesh::FaceType face_type,
             InstancedMesh::Direction direction,

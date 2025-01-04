@@ -72,8 +72,7 @@ class World: public virtual Collidable{
 
         RaycastResult raycast(glm::vec3 from, glm::vec3 direction, float maxDistance);
 
-        void drawEntities();
-        void updateEntities();
+        void updateEntities(float deltatime);
 
         void addEntity(Entity entity) {
             entities.push_back(entity);

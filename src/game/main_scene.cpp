@@ -273,7 +273,14 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
         auto* block_prototype = blockRegistry.getBlockPrototypeByIndex(blockUnderCursor->id);
         auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(block_prototype);
 
+        
+
         auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), glm::vec3(blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5));
+        entity.accelerate({
+            static_cast<float>(std::rand() % 200) / 100.0f - 1.0f,
+            0.6f,
+            static_cast<float>(std::rand() % 200) / 100.0f - 1.0f
+        }, 1.0f);
         world->addEntity(entity);
         //auto& selected_slot = hotbar->getSelectedSlot();
         //inventory->addItem();
@@ -353,7 +360,7 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
         if(!item_prototype) return;
         
         auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), camera.getPosition() + camera.getDirection() * 0.5f);
-        entity.accelerate(camera.getDirection());
+        entity.accelerate(camera.getDirection(),1.0f);
         world->addEntity(entity);
 
         slot.decreaseQuantity(1);
@@ -391,10 +398,17 @@ void MainScene::open(GLFWwindow* window){
 
     chunkMeshGenerator.setWorld(world.get());
 
+    int pregenDistance = renderDistance + 1; 
+
+    for(int x = -pregenDistance; x <= pregenDistance; x++) 
+    for(int y = -pregenDistance; y <= pregenDistance; y++) 
+    for(int z = -pregenDistance; z <= pregenDistance; z++){
+        glm::ivec3 chunkPosition = glm::ivec3(x,y,z);
+
+        world->generateChunk(chunkPosition);
+    }
     //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
     //generationThread.detach();
-
-    generateSurroundingChunks();
 
     player.setPosition({0,255,0});
     while(
@@ -450,24 +464,32 @@ void MainScene::render(){
     glm::vec3 camPosition = world->getPlayer().getPosition() + camOffset;
 
     camera.setPosition(camPosition);
-    //chunkMeshGenerator.loadMeshFromQueue(chunkMeshRegistry);
+    chunkMeshGenerator.loadMeshFromQueue(chunkMeshRegistry);
+
     if(update_hotbar){
         hotbar->update();
         update_hotbar = false;
     } 
+
+    if(!chunk_generation_queue.empty()){
+        auto& position = chunk_generation_queue.front();
+        world->generateChunk(position);
+        chunk_generation_queue.pop();
+    }
+
+    if(chunk_generation_queue.empty() && indexer.getCurrentDistance() < renderDistance){
+        auto position = indexer.next() + lastCamWorldPosition;
+        Chunk* chunk = world->getChunk(position);
+
+        if(!chunk) std::cerr << "Chunk not generated when generating meshes?" << std::endl;
+        else if(!chunkMeshRegistry.isChunkLoaded(position)) chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry); 
+    }
 
     processMouseMovement();
 
     if(updateVisibility > 0){
         chunkMeshRegistry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
         updateVisibility = 0;
-    }
-
-    if(indexer.getCurrentDistance() < renderDistance){
-        auto position = indexer.next();
-        Chunk* chunk = world->getChunk(position);
-        if(!chunk) std::cerr << "Chunk not generated when generating meshes?" << std::endl;
-        else chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry); 
     }
     
     int offsetX = ((int) camera.getPosition().x / 64) * 64;
@@ -578,17 +600,32 @@ void MainScene::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
 }
 #undef regenMesh
 
+void MainScene::enqueueChunkGeneration(glm::ivec3 position){
+    if(world->getChunk(position)) return;
+    chunk_generation_queue.push(position); 
+}
+
+void MainScene::updateLoadedLocations(glm::ivec3 old_location, glm::ivec3 new_location){
+    int pregenDistance = renderDistance + 1; 
+
+    for(int x = -pregenDistance; x <= pregenDistance; x++) 
+    for(int y = -pregenDistance; y <= pregenDistance; y++) 
+    for(int z = -pregenDistance; z <= pregenDistance; z++){
+        glm::ivec3 chunkPosition = new_location + glm::ivec3(x,y,z);
+
+        enqueueChunkGeneration(chunkPosition);
+    }
+
+    indexer = {};
+}
+
 void MainScene::physicsUpdate(){
     double last = glfwGetTime();
     double current = glfwGetTime();
     float deltatime;
 
-    float targetTPS = 60;
+    float targetTPS = 120;
     float tickTime = 1.0f / targetTPS;
-
-    world->updateEntities();
-    world->drawEntities();
-
 
     while(running){
         current = glfwGetTime();
@@ -596,37 +633,62 @@ void MainScene::physicsUpdate(){
 
         threadPool->deployPendingJobs();
 
-        if(!allGenerated) continue;
         if(deltatime < tickTime) continue;
         last = current;
 
-
         glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
+        if(glm::distance(glm::vec3(camWorldPosition),glm::vec3(lastCamWorldPosition)) >= 2){ // Crossed chunks
+            //std::cout << "New chunk position: " << camWorldPosition.x << " " << camWorldPosition.y << " " << camWorldPosition.z << std::endl;
+            updateLoadedLocations(lastCamWorldPosition, camWorldPosition);
+            lastCamWorldPosition = camWorldPosition;
+        }
+
 
         glm::vec3 camDir = glm::normalize(camera.getDirection());
         glm::vec3 horizontalDir = glm::normalize(glm::vec3(camDir.x, 0, camDir.z));
         glm::vec3 leftDir = glm::normalize(glm::cross(camera.getUp(), horizontalDir));
 
         auto& player = world->getPlayer();
+        
+        if(player.checkForCollision(world.get(), false)){
+            player.setPosition({0,255,0});
+            while(
+                !player.checkForCollision(world.get(), false, {0,-1,0}) && 
+                player.getPosition().y > 0
+            ) player.setPosition(player.getPosition() + glm::vec3{0,-1,0});
+        }
 
-        if(inputManager.isActive(STRAFE_RIGHT )) player.accelerate(-leftDir * camSpeed);
-        if(inputManager.isActive(STRAFE_LEFT  )) player.accelerate(leftDir * camSpeed);
-        if(inputManager.isActive(MOVE_BACKWARD)) player.accelerate(-horizontalDir * camSpeed);
-        if(inputManager.isActive(MOVE_FORWARD )) player.accelerate(horizontalDir * camSpeed);
+        bool moving = false;
+        if(inputManager.isActive(STRAFE_RIGHT )){
+            player.accelerate(-leftDir * camAcceleration, deltatime);
+            moving = true;
+        }
+        if(inputManager.isActive(STRAFE_LEFT  )){
+            player.accelerate( leftDir * camAcceleration, deltatime);
+            moving = true;
+        }
+        if(inputManager.isActive(MOVE_BACKWARD)){
+            player.accelerate(-horizontalDir * camAcceleration, deltatime);
+            moving = true;
+        }
+        if(inputManager.isActive(MOVE_FORWARD )){
+            player.accelerate( horizontalDir * camAcceleration, deltatime);
+            moving = true;
+        }
 
+        if(!moving) player.decellerate(camAcceleration,deltatime);
         //if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * 0.2f);
-        if(inputManager.isActive(MOVE_UP)) player.accelerate(camera.getUp() * 0.2f);
-        if(inputManager.isActive(MOVE_DOWN)) player.accelerate(-camera.getUp() * 0.2f);
-        /*if(
-            boundKeys[0].isDown 
-            && player.checkForCollision(world, false, {0,-0.1f,0}).collision
+        //if(inputManager.isActive(MOVE_UP)) player.accelerate(camera.getUp() * 0.2f);
+        if(inputManager.isActive(MOVE_DOWN)) player.accelerate(-camera.getUp() * 2.0f, deltatime);
+        if(
+            inputManager.isActive(MOVE_UP)
+            && player.checkForCollision(world.get(), false, {0,-0.1f,0})
             && player.getVelocity().y == 0
-        ) player.accelerate(camera.getUp() * 0.2f);*/
+        ) player.accelerate(camera.getUp() * 10.0f, 1.0);
 
         if(!world->getChunk(camWorldPosition)) continue;
 
-        world->updateEntities();
-        world->drawEntities();
+        world->updateEntities(deltatime);
 
         auto& in_hand_slot = hotbar->getSelectedSlot();
         if(in_hand_slot.hasItem()){
@@ -641,31 +703,6 @@ void MainScene::physicsUpdate(){
     }
 
     threadsStopped++;
-}
-
-void MainScene::generateSurroundingChunks(){
-    glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
-    int pregenDistance = renderDistance + 1; 
-
-    for(int x = -pregenDistance ; x <= pregenDistance; x++) for(int y = -pregenDistance; y <= pregenDistance; y++) for(int z = -pregenDistance; z <= pregenDistance; z++){
-        glm::ivec3 chunkPosition = camWorldPosition + glm::ivec3(x,y,z);
-
-        world->generateChunk(chunkPosition);
-    }
-
-    /*for(int x = -renderDistance ; x <= renderDistance; x++) for(int y = -renderDistance; y <= renderDistance; y++) for(int z = -renderDistance; z <= renderDistance; z++){
-        glm::ivec3 chunkPosition = camWorldPosition + glm::ivec3(x,y,z);
-        
-        Chunk* chunk = world->getChunk(chunkPosition);
-        if(!chunk){
-            std::cerr << "Chunk not generated when generating meshes?" << std::endl;
-            continue;
-        }
-        chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry);
-    }*/
-
-   
-    allGenerated = true;
 }
 
 void UICrosshair::getRenderingInformation(UIRenderBatch& batch){

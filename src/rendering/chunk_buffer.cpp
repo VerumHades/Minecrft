@@ -102,7 +102,7 @@ const int halfChunkSize = (CHUNK_SIZE / 2);
 void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* region){
     //if(region->draw_commands.size() == 0 && region->transform.level != 1) return; // No meshes are present, no point in searching
     
-   // int level_size_in_chunks = getRegionSizeForLevel(region->transform.level);
+    //int level_size_in_chunks = getRegionSizeForLevel(region->transform.level);
     //int level_size_in_blocks = level_size_in_chunks * CHUNK_SIZE; 
     
     //glm::ivec3 min = region->transform.position * level_size_in_blocks;

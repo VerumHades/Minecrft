@@ -91,7 +91,7 @@ class CoherentList{
                 regions.insert(regions.end(), {internal_data.size(), size});
 
 
-            internal_data.insert(internal_data.end(), data, data + size * sizeof(T));
+            internal_data.insert(internal_data.end(), data, data + size);
             
             return region_iter;
         }

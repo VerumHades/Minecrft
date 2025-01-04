@@ -41,6 +41,7 @@
 #include <memory>
 #include <random>
 #include <atomic>
+#include <queue>
 
 class UIHotbar;
 
@@ -75,6 +76,7 @@ class MainScene: public Scene{
         
         ChunkMeshRegistry chunkMeshRegistry;
         ChunkMeshGenerator chunkMeshGenerator = ChunkMeshGenerator(blockRegistry);
+        std::queue<glm::ivec3> chunk_generation_queue = {};
         
         std::shared_ptr<UILabel> fps_label;
 
@@ -101,11 +103,12 @@ class MainScene: public Scene{
         float sunAngle = 70.0f;
         Uniform<glm::vec3> sunDirUniform = Uniform<glm::vec3>("sun_direction");
 
-        float camSpeed = 0.01f;
+        float camAcceleration = 50.00f;
         float camFOV = 90.0f;
         float maxFOV = 90.0f; 
         float minFOV = 2.0f;
         glm::vec3 camOffset = {0.3f,1.6f,0.3f};
+        glm::ivec3 lastCamWorldPosition = {0,0,0};
 
         int lastMouseX = 0;
         int lastMouseY = 0;
@@ -137,8 +140,10 @@ class MainScene: public Scene{
         Font testFont = Font("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
 
         void physicsUpdate();
-        void generateSurroundingChunks();
         void processMouseMovement();
+
+        void enqueueChunkGeneration(glm::ivec3 position);
+        void updateLoadedLocations(glm::ivec3 old_location, glm::ivec3 new_location);
 
         double last = glfwGetTime();
         double current = glfwGetTime();

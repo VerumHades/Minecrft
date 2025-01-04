@@ -34,9 +34,9 @@ class Entity{
         std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> regionPositions = {};
         glm::vec3 lastPosition = glm::vec3(0);
 
-        float maxVelocityHorizontal = 0.5f;
-        float maxVelocityVertical = 0.5f;
-        float friction = 0.005f;
+        float maxVelocityHorizontal = 6.0f;
+        float maxVelocityVertical = 20.0f;
+        float friction = 4.0f;
         bool hasGravity = true;
         bool on_ground = false;
 
@@ -54,10 +54,11 @@ class Entity{
         std::function<void(Entity*, Entity*)> onCollision;
         bool destroy = false;
 
-        void update(Collidable* world, bool altered);
+        void update(Collidable* world, bool altered, float deltatime);
         bool checkForCollision(Collidable* collidable, bool withVelocity, glm::vec3 offset = {0,0,0}, bool vertical_check = false);
         
-        void accelerate(glm::vec3 direction);
+        void accelerate(glm::vec3 direction, float deltatime);
+        void decellerate(float strength, float deltatime);
         void setGravity(bool value){hasGravity = value;}
         void setModel(std::shared_ptr<Model> model) {this->model = model;}
         bool isSolid(){return solid;}

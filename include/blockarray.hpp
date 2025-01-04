@@ -41,7 +41,7 @@ class SparseBlockArray{
         }
 
         BitField3D& getSolidField(){
-            return solid_field;
+            return *solid_field.get();
         }
 
         std::vector<BlockID>& getPresentTypes() { return present_types; }
@@ -50,7 +50,7 @@ class SparseBlockArray{
     private:
         BlockRegistry& blockRegistry;
         Block airBlock = {BLOCK_AIR_INDEX};
-        BitField3D solid_field; // Registers solid blocks
+        CompressedBitField3D solid_field; // Registers solid blocks
 
         std::vector<Layer> layers;
         std::vector<BlockID> present_types;
@@ -68,7 +68,7 @@ class SparseBlockArray{
             }
 
             if(block.id == BLOCK_AIR_INDEX){
-                solid_field.reset(position.x,position.y,position.z);
+                solid_field.get()->reset(position.x,position.y,position.z);
                 return;
             }
 
@@ -82,8 +82,8 @@ class SparseBlockArray{
             auto* block_definition = blockRegistry.getBlockPrototypeByIndex(block.id);
             if(!block_definition) return;
 
-            if(!block_definition->transparent) solid_field.set(position.x,position.y,position.z);
-            else solid_field.reset(position.x,position.y,position.z);
+            if(!block_definition->transparent) solid_field.get()->set(position.x,position.y,position.z);
+            else solid_field.get()->reset(position.x,position.y,position.z);
         }
 
         /*

@@ -49,7 +49,7 @@ uint64_t BitField3D::getRow(uint x, uint y) const {
 
 static BitFieldCache transposed_cache = {};
 
-BitField3D* BitField3D::getTransposed(){
+BitField3D* BitField3D::getTransposed() {
     if(transposed_cache_version_pointer && transposed_cache_version_pointer->creator_id == id){
         return &transposed_cache_version_pointer->field;
     }
@@ -118,6 +118,8 @@ CompressedArray BitField3D::compress(const std::array<uint64_t, 64 * 64>& source
 }
 
 void BitField3D::decompress(std::array<uint64_t, 64 * 64>& destination, CompressedArray& source){
+    if(source.size() == 0) return;
+
     const uint64_t all_zeroes = 0ULL;
     const uint64_t all_ones = ~0ULL;
 
@@ -146,6 +148,7 @@ CCacheMember* CompressedBitFieldCache::next(std::shared_ptr<CompressedArray> new
     if(member.compressed_data) *member.compressed_data = BitField3D::compress(member.field.data());
 
     member.compressed_data = new_compressed_data;
+    member.field.resetID();
     BitField3D::decompress(member.field.data(), *new_compressed_data);
 
     return &member;
@@ -161,4 +164,9 @@ BitField3D* CompressedBitField3D::get(){
 void CompressedBitField3D::set(const BitField3D& source){
     cached_ptr = nullptr;
     *data_ptr = std::move(BitField3D::compress(source.data()));
+}
+
+
+CompressedBitField3D::CompressedBitField3D(){
+    data_ptr = std::make_shared<CompressedArray>();
 }
