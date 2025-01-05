@@ -41,7 +41,7 @@ void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegis
     Generate greedy meshed faces from a plane of bits
 */
 std::vector<ChunkMeshGenerator::Face> ChunkMeshGenerator::greedyMeshPlane(BitPlane<64> rows, int size){
-    std::vector<Face> out = {};
+    std::vector<Face> out{};
 
     /*
         Moves bits to from the right to the left
@@ -207,7 +207,7 @@ const static std::array<OcclusionOffset, 8> occlusion_offsets = {
 };
 
 std::vector<ChunkMeshGenerator::OccludedPlane> ChunkMeshGenerator::calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, OcclusionPlane& occlusion_plane){
-    std::vector<OccludedPlane> planes;
+    std::vector<OccludedPlane> planes{};
     planes.reserve(8);
     planes.push_back({{0,0,0,0}, source_plane});
     
@@ -320,6 +320,13 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
     Chunk* forwardX = world->getChunk(worldPosition + glm::ivec3{1,0,0});
     Chunk* forwardY = world->getChunk(worldPosition + glm::ivec3{0,1,0});
     Chunk* forwardZ = world->getChunk(worldPosition + glm::ivec3{0,0,1});
+
+    
+    if(!nextX || !nextY || !nextZ || !forwardX || !forwardY || !forwardZ){
+        std::cerr << "Mesh generating when chunks are missing?" << std::endl;
+        return solidMesh;
+    }
+    
     //this->solidMesh->setVertexFormat(VertexFormat({3,1,2,1,1}));  // Unused
 
     glm::vec3 world_position = worldPosition * CHUNK_SIZE;
@@ -345,7 +352,6 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         auto* right = forwardX->getSolidField().getTransposed();
         auto& back  = nextZ->getSolidField();
 
-        
         for(int y = 0;y < 64;y++){
 
         }
@@ -462,11 +468,6 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
     std::array<float,4> occlusion = {0,0,0,0};
     //std::cout << nextX << " " << nextY << " " << nextZ << std::endl;
 
-    if(!nextX || !nextY || !nextZ){
-        std::cerr << "Mesh generating when chunks are missing?" << std::endl;
-        return solidMesh;
-    }
-    
     AGREGATE_TYPES(X);
     AGREGATE_TYPES(Y);
     AGREGATE_TYPES(Z);

@@ -21,20 +21,20 @@ void BlockRegistry::addFullBlock(std::string name, std::string texture_name, boo
     Adds a full block, with the defined texture paths
 */
 void BlockRegistry::addFullBlock(std::string name, std::array<std::string,6> texture_names, bool transparent){
-    std::array<size_t, 6> textures;
-    std::array<std::string, 6> texture_paths;
+    std::array<size_t, 6> textures{};
+    std::array<std::string, 6> texture_paths{};
 
     int i = 0;
     for(auto& name: texture_names){
         auto* texture = texture_registry.getTextureByName(name);
         if(!texture) {
             std::cerr << "Invalid texture name: " << name << std::endl;
-            continue;
+            return;
         }
         texture_paths[i] = texture->path;
-        textures[i++] = texture_registry.getTextureIndex(name);
-
         std::cout << texture_paths[i] << " " << name << std::endl;
+
+        textures[i++] = texture_registry.getTextureIndex(name);
     }
 
     blocks.push_back({

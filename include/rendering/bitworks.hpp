@@ -106,7 +106,7 @@ inline uint8_t count_leading_zeros(T x) {
 template <int size>
 class BitPlane{
     private:
-        std::array<uint_t<size>, size> data = {0};
+        std::array<uint_t<size>, size> data{};
 
     public:
         void set(int x,int y){

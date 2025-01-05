@@ -23,7 +23,7 @@ class InstancedMesh{
         const static size_t instance_data_size = 12;
 
     private:
-        std::array<std::vector<float>, 4> instance_data;
+        std::array<std::vector<float>, 4> instance_data{};
     
     public:
         void addQuadFace(glm::vec3 position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion);

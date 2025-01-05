@@ -149,6 +149,8 @@ CCacheMember* CompressedBitFieldCache::next(std::shared_ptr<CompressedArray> new
 
     member.compressed_data = new_compressed_data;
     member.field.resetID();
+    member.field = {}; // Decompression expects a zeroed out field
+    
     BitField3D::decompress(member.field.data(), *new_compressed_data);
 
     return &member;
@@ -163,7 +165,7 @@ BitField3D* CompressedBitField3D::get(){
 
 void CompressedBitField3D::set(const BitField3D& source){
     cached_ptr = nullptr;
-    *data_ptr = std::move(BitField3D::compress(source.data()));
+    data_ptr = std::make_shared<CompressedArray>(BitField3D::compress(source.data()));
 }
 
 
