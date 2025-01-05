@@ -351,6 +351,14 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         auto* left  = nextX->getSolidField().getTransposed(); 
         auto* right = forwardX->getSolidField().getTransposed();
         auto& back  = nextZ->getSolidField();
+        auto& front = forwardZ->getSolidField();
+
+        /*for(int y = 0;y < 64;y++){
+            occlusionPlanesY[y].rows[0]  = back .getRow(63,y);
+            occlusionPlanesY[y].rows[65] = front.getRow(0 ,y);
+            occlusionPlanesY[y].left  = left->getRow(63, y);
+            occlusionPlanesY[y].right = right->getRow(0,y);
+        }*/
 
         for(int y = 0;y < 64;y++){
 
