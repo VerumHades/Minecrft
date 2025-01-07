@@ -1,6 +1,6 @@
 #include <game/world/world.hpp>
 
-World::World(std::string filepath, BlockRegistry& blockRegistry): blockRegistry(blockRegistry), generator(blockRegistry){  
+World::World(std::string filepath): generator(){  
     stream = std::make_unique<WorldStream>(filepath);
     generator.setSeed(stream->getSeed());
     addEntity(Entity(glm::vec3(0,60,0), glm::vec3(0.6, 1.8, 0.6))); // Player
@@ -15,13 +15,28 @@ Chunk* World::generateChunk(glm::ivec3 position){
         if (it != this->chunks.end()) return it->second.get(); 
     }
 
-    std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(position, blockRegistry);
+    std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(position);
     
     generator.generateTerrainChunkAccelerated(chunk.get(),position);
 
     std::unique_lock lock(chunkGenLock);
     this->chunks.emplace(position, std::move(chunk));
-    //this->stream->save(*chunks[key]);
+    this->stream->save(*chunks[position]);
+
+    return this->chunks[position].get();
+}
+
+Chunk* World::createEmptyChunk(glm::ivec3 position){
+    {
+        std::shared_lock lock(chunkGenLock);
+        auto it = this->chunks.find(position);
+        if (it != this->chunks.end()) return it->second.get(); 
+    }
+
+    std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(position);
+    std::unique_lock lock(chunkGenLock);
+    this->chunks.emplace(position, std::move(chunk));
+    this->stream->save(*chunks[position]);
 
     return this->chunks[position].get();
 }
@@ -40,10 +55,11 @@ Chunk* World::getChunk(glm::ivec3 position) const {
 bool World::isChunkLoadable(glm::ivec3 position){
     return stream->hasChunkAt(position);
 }
+
 void World::loadChunk(glm::ivec3 position){
     std::unique_lock lock(chunkGenLock);
-    chunks[position] = std::make_unique<Chunk>(position,  blockRegistry);
-    //stream->load(chunks[position].get());
+    chunks[position] = std::make_unique<Chunk>(position);
+    stream->load(chunks[position].get());
 }
 
 std::tuple<bool, Block*> World::checkForPointCollision(glm::vec3 position, bool includeRectangularColliderLess){
@@ -59,7 +75,7 @@ std::tuple<bool, Block*> World::checkForPointCollision(glm::vec3 position, bool 
 
                 Block* blocki = this->getBlock({cx, cy, cz});
                 if(blocki){
-                    auto* definition = blockRegistry.getBlockPrototypeByIndex(blocki->id);
+                    auto* definition = global_block_registry.getBlockPrototypeByIndex(blocki->id);
                     if(!definition) continue;
                     if((definition->colliders.size() == 0 || blocki->id == BLOCK_AIR_INDEX) && !includeRectangularColliderLess) continue;
 
@@ -97,7 +113,7 @@ bool World::collidesWith(glm::vec3 position, Entity* checked_entity, bool vertic
 
                 Block* blocki = this->getBlock({cx, cy, cz});
                 if(blocki){
-                    auto* definition = blockRegistry.getBlockPrototypeByIndex(blocki->id);
+                    auto* definition = global_block_registry.getBlockPrototypeByIndex(blocki->id);
                     if(!definition) continue;
                     if(definition->colliders.size() == 0 || blocki->id == BLOCK_AIR_INDEX) continue;
 

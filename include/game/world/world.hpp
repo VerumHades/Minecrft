@@ -44,7 +44,6 @@ class World: public virtual Collidable{
 
         std::unique_ptr<WorldStream> stream;
         WorldGenerator generator;
-        BlockRegistry&  blockRegistry;
 
         glm::ivec3 blockToChunkPosition(glm::ivec3 blockPosition) const;
 
@@ -53,12 +52,13 @@ class World: public virtual Collidable{
         std::atomic<bool> blocks_altered = false;
         
     public:
-        World(std::string filepath, BlockRegistry& blockRegistry);
+        World(std::string filepath);
 
         Block* getBlock(glm::ivec3 position) const;
         bool setBlock(glm::ivec3 position, Block index);
 
         Chunk* generateChunk(glm::ivec3 position);
+        Chunk* createEmptyChunk(glm::ivec3 position);
         
         bool isChunkLoadable(glm::ivec3 position);
         void loadChunk(glm::ivec3 position);
@@ -82,5 +82,7 @@ class World: public virtual Collidable{
         Entity& getPlayer(){return entities[0];}
 
         int chunksTotal() const {return chunks.size();}
+
+        WorldGenerator& getWorldGenerator() {return generator;}
 };
 #endif

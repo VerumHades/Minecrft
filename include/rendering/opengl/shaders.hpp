@@ -84,6 +84,8 @@ class ShaderProgram{
             compile();
         }
 
+        static std::string getSource(std::string path);
+
         void setSamplerSlot(std::string name, int slot){
             use();
             int location = getUniformLocation(name);

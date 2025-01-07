@@ -21,7 +21,7 @@ size_t TextureRegistry::getTextureIndex(std::string name){
     return &textures.at(name);
 }
 
-void TextureRegistry::load(){
+std::unique_ptr<GLTextureArray> TextureRegistry::load(){
     std::vector<std::string> ordered_paths;
     ordered_paths.resize(textures.size(), "");
 
@@ -29,7 +29,10 @@ void TextureRegistry::load(){
         ordered_paths[texture.index] = texture.path;
     }
 
-    opengl_loaded_textures.loadFromFiles(ordered_paths, texture_width, texture_height);
+    auto out = std::make_unique<GLTextureArray>();
+    out->loadFromFiles(ordered_paths, texture_width, texture_height);
+
+    return out;
 }
 
 void TextureRegistry::loadFromFolder(std::string path){

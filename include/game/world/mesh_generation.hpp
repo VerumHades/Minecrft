@@ -38,8 +38,6 @@ class ChunkMeshGenerator{
         std::vector<Face> greedyMeshPlane(BitPlane<64> rows, int size = 64);
         std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group);
 
-        BlockRegistry& blockRegistry;
-
         std::mutex meshLoadingMutex;
         
         struct MeshLoadingMember{
@@ -80,8 +78,6 @@ class ChunkMeshGenerator{
         );
     
     public:
-        ChunkMeshGenerator(BlockRegistry& blockRegistry): blockRegistry(blockRegistry) {}
-
         void loadMeshFromQueue(ChunkMeshRegistry&  buffer);
 
         /*

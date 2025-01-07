@@ -15,7 +15,7 @@
 using BlockID = size_t;
 #define BLOCK_AIR_INDEX 0
 
-class BlockRegistry{
+class BlockRegistry: public TextureRegistry{
     public:
         enum BlockRenderType{
             FULL_BLOCK,
@@ -37,11 +37,10 @@ class BlockRegistry{
         };
 
     private:
-        TextureRegistry& texture_registry;
         std::vector<BlockPrototype> blocks;
         
     public:
-        BlockRegistry(TextureRegistry& texture_registry): texture_registry(texture_registry) {
+        BlockRegistry(){
             blocks.push_back({
                 0,
                 "air",
@@ -75,6 +74,8 @@ class BlockRegistry{
         size_t registeredBlocksTotal(){return blocks.size();}
         const std::vector<BlockPrototype>& prototypes() {return blocks;};
 };
+
+extern BlockRegistry global_block_registry;
 
 struct Block{
     BlockID id = 0;

@@ -1,6 +1,6 @@
 #version 450
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 32) in;
+layout(local_size_x = [[size_x]], local_size_y = [[size_y]], local_size_z = [[size_z]]) in;
 
 layout(std430, binding = 0) buffer TerrainData {
     uint data[];
@@ -9,21 +9,27 @@ layout(std430, binding = 0) buffer TerrainData {
 uniform vec3 worldPosition;
 uniform sampler2D noiseTexture;
 
-void main() {
-    // Each work group handles 32 blocks
-    uint groupIndex = (1 - gl_WorkGroupID.z) + gl_WorkGroupID.x * 2 + gl_WorkGroupID.y * 64 * 2;
-    uint bitIndex = gl_LocalInvocationID.z; // Thread-specific bit position (0 to 31)
 
-    // Calculate the array index and bit mask for this work group's 32-bit uint
-    uint arrayIndex = groupIndex;
+uint position_to_index(vec3 position, vec3 size){
+    return uint(position.x + position.y * size.x + position.z * (size.x * size.y));
+}
+
+void main() {
+    vec3 blockPosition = gl_GlobalInvocationID.xyz;
+    vec3 blocksTotal = gl_WorkGroupSize * gl_NumWorkGroups;
+
+    uint blockIndex = position_to_index(blockPosition, blocksTotal);
+    uint arrayIndex = (blockIndex / 32) * 32;
+    uint bitIndex = blockIndex - arrayIndex;
     uint bitMask = 1u << (31 - bitIndex);
 
-    vec3 position = gl_GlobalInvocationID.xyz + worldPosition;
+    vec3 position =  blockPosition + worldPosition;
 
     //float current_height = ((sin(position.x / 64) + cos(position.z / 64)) * 10);
     float current_height = texture(noiseTexture, (position.xz + 512) / 1024.0f).r * 255;
+
     // Determine if this block (bit) should be set or cleared
-    bool isActive = int(position.y) == int(current_height);//position.y < 0.0;
+    bool isActive = true;//[[condition]];//position.y < 0.0;
 
     // Set or clear the bit within the uint
     if (isActive) {

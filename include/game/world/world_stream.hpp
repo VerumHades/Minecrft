@@ -47,6 +47,9 @@ class WorldStream{
         
         int getChunkCount() {return chunkTable.size();}
 
+        bool save(Chunk& chunk);
+        void load(Chunk* chunk);
+
         void setName(std::string name) {
             if(name.length() > 256) {
                 std::cerr << "Max world name length is 256 chars" << std::endl;

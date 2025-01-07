@@ -54,9 +54,6 @@ class MainScene: public Scene{
 
         GBuffer gBuffer = GBuffer(1920,1080);
         GLFullscreenQuad fullscreen_quad;
-        
-        GLSSAO ssao;
-        GLFramebuffer blured_ssao_framebuffer = GLFramebuffer(1920,1080,{{GL_RED,GL_RED,GL_FLOAT}});
 
         ShaderProgram modelProgram = ShaderProgram("shaders/graphical/model/model.vs","shaders/graphical/model/model.fs");
         ShaderProgram terrainProgram = ShaderProgram(ShaderProgramSource::fromFile("shaders/terrain.sp"));
@@ -70,13 +67,12 @@ class MainScene: public Scene{
         std::unique_ptr<World> world;
 
         WireframeCubeRenderer wireframeRenderer;
-
-        TextureRegistry blockTextureRegistry;
-        BlockRegistry blockRegistry = BlockRegistry(blockTextureRegistry);
         
         ChunkMeshRegistry chunkMeshRegistry;
-        ChunkMeshGenerator chunkMeshGenerator = ChunkMeshGenerator(blockRegistry);
+        ChunkMeshGenerator chunkMeshGenerator;
         std::queue<glm::ivec3> chunk_generation_queue = {};
+
+        std::unique_ptr<GLTextureArray> block_texture_array = nullptr;
         
         std::shared_ptr<UILabel> fps_label;
 

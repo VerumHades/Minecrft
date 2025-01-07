@@ -2,6 +2,7 @@
 
 #include <bitarray.hpp>
 #include <game/blocks.hpp>
+#include <rendering/bitworks.hpp>
 
 class SparseBlockArray{
     protected:
@@ -48,7 +49,6 @@ class SparseBlockArray{
         std::vector<Layer>& getLayers() { return layers; }
         
     private:
-        BlockRegistry& blockRegistry;
         Block airBlock = {BLOCK_AIR_INDEX};
         CompressedBitField3D solid_field; // Registers solid blocks
 
@@ -57,45 +57,16 @@ class SparseBlockArray{
         std::unordered_map<BlockID, size_t> type_indexes;
     
     public:
-        SparseBlockArray(BlockRegistry& blockRegistry): blockRegistry(blockRegistry){}
+        SparseBlockArray(){}
 
         bool isEmpty(){return layers.size() == 0;}
 
-        void setBlock(glm::ivec3 position, Block block){
-            auto* block_here = getBlock(position);
-            if(block_here != &airBlock){
-                getLayer(block_here->id).field().reset(position.x,position.y,position.z);
-            }
-
-            if(block.id == BLOCK_AIR_INDEX){
-                solid_field.get()->reset(position.x,position.y,position.z);
-                return;
-            }
-
-            if(!hasLayerOfType(block.id)){
-                createLayer(block.id, {});
-            }
-
-            auto& layer = getLayer(block.id);
-            layer.field().set(position.x,position.y,position.z);
-
-            auto* block_definition = blockRegistry.getBlockPrototypeByIndex(block.id);
-            if(!block_definition) return;
-
-            if(!block_definition->transparent) solid_field.get()->set(position.x,position.y,position.z);
-            else solid_field.get()->reset(position.x,position.y,position.z);
-        }
-
+        void setBlock(glm::ivec3 position, Block block);
         /*
             Returns a pointer to a block, if there is no block present returns an air block
         */
-        Block* getBlock(glm::ivec3 position){
-            for(auto& layer: layers){
-                if(!layer.field().get(position.x,position.y,position.z)) continue;
+        Block* getBlock(glm::ivec3 position);
 
-                return &layer.internal_block;
-            }
-
-            return &airBlock;
-        }
+        virtual ByteArray serialize();
+        static SparseBlockArray deserialize(ByteArray& array);
 };

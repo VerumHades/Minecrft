@@ -1,5 +1,7 @@
 #include <game/blocks.hpp>
 
+BlockRegistry global_block_registry{};
+
 /*
     Adds a full block, where texture path is the texture name for all sides
 */
@@ -10,10 +12,10 @@ void BlockRegistry::addFullBlock(std::string name, std::string texture_name, boo
         {{0, 0, 0, 1.0f, 1.0f, 1.0f}},
         true,
         transparent,
-        {texture_registry.getTextureIndex(texture_name)},
+        {getTextureIndex(texture_name)},
         FULL_BLOCK,
         {texture_name},
-        {texture_registry.getTextureByName(texture_name)->path}
+        {getTextureByName(texture_name)->path}
     });
 }
 
@@ -26,7 +28,7 @@ void BlockRegistry::addFullBlock(std::string name, std::array<std::string,6> tex
 
     int i = 0;
     for(auto& name: texture_names){
-        auto* texture = texture_registry.getTextureByName(name);
+        auto* texture = getTextureByName(name);
         if(!texture) {
             std::cerr << "Invalid texture name: " << name << std::endl;
             return;
@@ -34,7 +36,7 @@ void BlockRegistry::addFullBlock(std::string name, std::array<std::string,6> tex
         texture_paths[i] = texture->path;
         std::cout << texture_paths[i] << " " << name << std::endl;
 
-        textures[i++] = texture_registry.getTextureIndex(name);
+        textures[i++] = getTextureIndex(name);
     }
 
     blocks.push_back({
@@ -60,10 +62,10 @@ void BlockRegistry::addBillboardBlock(std::string name, std::string texture_name
         {},
         true,
         false,
-        {texture_registry.getTextureIndex(texture_name)},
+        {getTextureIndex(texture_name)},
         BILLBOARD,
         {texture_name},
-        {texture_registry.getTextureByName(texture_name)->path}
+        {getTextureByName(texture_name)->path}
     });
 }
 

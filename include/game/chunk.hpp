@@ -32,13 +32,18 @@ class Chunk: public SparseBlockArray{
     private:
         glm::ivec3 worldPosition;
 
+        friend class ChunkMeshGenerator;
+        friend class WorldGenerator;
+        friend class AcceleratedChunkGenerator;
+        friend class RegionChunkGenerator;
+
     public:
-        Chunk(glm::ivec3 worldPosition, BlockRegistry& blockRegistry): SparseBlockArray(blockRegistry), worldPosition(worldPosition) { }
+        Chunk(glm::ivec3 worldPosition): SparseBlockArray(), worldPosition(worldPosition) { }
 
         const glm::ivec3& getWorldPosition() const { return worldPosition; }
         
-        friend class ChunkMeshGenerator;
-        friend class WorldGenerator;
+        ByteArray serialize() override;
+        static Chunk deserialize(ByteArray& array);
         //std::optional<Mesh> transparentMesh;
 }; 
 

@@ -135,41 +135,10 @@ size_t WorldStream::moveChunk(size_t from, size_t to){
     return fromData.getFullSize();
 }
 
-/*
-    Saves a chunk mask in this format:
-
-    int type
-    size_t compressed_24bit_count, data...
-    size_t compressed_24bit_count_rotated, data...
-
-static inline void saveMask(ByteArray& out, DynamicChunkMask& mask, int type){
-    out.append<int>(type);
-    out.append(mask.getSegments().compress().data);
-}
-
-/*
-    Saved the chunk:
-    float x,y,z
-    size_t layerCount
-    saved masks using the above function..
-
 bool WorldStream::save(Chunk& chunk){
     if(hasChunkAt(chunk.getWorldPosition())) return false;
-    ByteArray out;
-
-    out.append(chunk.getWorldPosition().x);
-    out.append(chunk.getWorldPosition().y);
-    out.append(chunk.getWorldPosition().z);
     
-    // Get the 64 bit masks if they exist otherwise fail
-    if(!chunk.isMainGroupOfSize(64)) return false;
-    auto& group = chunk.getMainGroup();
-
-    size_t layer_count = group->getMasks().size();
-    out.append(layer_count);
-
-    saveMask(out, group->getSolidField(), -1);
-    for(auto& [key, mask]: group->getMasks()) saveMask(out, mask, static_cast<int>(mask.getBlock().type));
+    ByteArray out = chunk.serialize();
 
     file_stream.seekp(header.chunk_data_end, std::ios::beg);
     out.write(file_stream);
@@ -201,34 +170,11 @@ void WorldStream::load(Chunk* chunk){
 
     //std::cout << source << std::endl;
 
-    glm::vec3 position = {
-        source.read<float>(),
-        source.read<float>(),
-        source.read<float>()
-    };
-    size_t layerCount = source.read<size_t>();
-
-    //std::cout << "Found: " << position.x << " " << position.y << " " << position.z << std::endl;
-    //std::cout << "With total layers: " << layerCount << std::endl;
-
-    source.read<int>();
-
-    std::unique_ptr<DynamicChunkContents> outputDataGroup = std::make_unique<DynamicChunkContents>(64);
-
-    DynamicChunkMask solidMask = DynamicChunkMask(64, {source.vread<compressed_24bit>(), 64 * 64});
-    outputDataGroup->setSolidMask(solidMask);
-
-    for(int layerIndex = 0; layerIndex < layerCount; layerIndex++){
-        int type = source.read<int>();
-        DynamicChunkMask mask =  DynamicChunkMask(64, {source.vread<compressed_24bit>(), 64 * 64});
-        outputDataGroup->setMask(static_cast<BlockID>(type),mask);
-    }
-
-    chunk->setMainGroup(std::move(outputDataGroup));
+    *chunk = Chunk::deserialize(source);
     
     //std::cout << "Loaded: " << position.x << " " << position.y << " " << position.z << std::endl;
 }
-*/
+
 bool WorldStream::hasChunkAt(glm::vec3 position){
     return chunkTable.count(position) != 0;
 }

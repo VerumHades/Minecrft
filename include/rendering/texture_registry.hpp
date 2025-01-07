@@ -14,8 +14,6 @@ class TextureRegistry{
         int texture_width = 0;
         int texture_height = 0;
 
-        GLTextureArray opengl_loaded_textures;
-
         struct RegisteredTexture{
             std::string name;
             std::string path;
@@ -48,7 +46,5 @@ class TextureRegistry{
         /*
             Creates the actual opengl object that holds the textures
         */
-        void load();
-
-        GLTextureArray& getLoadedTextureArray() { return opengl_loaded_textures; };
+        std::unique_ptr<GLTextureArray> load();
 };

@@ -70,16 +70,16 @@ void MainScene::initialize(){
     
     terrainProgram.use();
     
-    blockTextureRegistry.loadFromFolder("textures");
-    blockTextureRegistry.setTextureSize(160,160);
-    blockTextureRegistry.load();
+    global_block_registry.loadFromFolder("textures");
+    global_block_registry.setTextureSize(160,160);
+    block_texture_array = global_block_registry.load();
 
-    blockRegistry.addFullBlock("dirt", "dirt");
-    blockRegistry.addFullBlock("stone", "stone");
-    blockRegistry.addFullBlock("grass", {"grass_top","dirt","grass_side","grass_side","grass_side","grass_side"});
-    blockRegistry.addFullBlock("oak_log", {"oak_log_top", "oak_log_top", "oak_log", "oak_log", "oak_log", "oak_log"});
-    blockRegistry.addFullBlock("oak_leaves", "oak_leaves", true);
-    blockRegistry.addFullBlock("crazed", "crazed");
+    global_block_registry.addFullBlock("dirt", "dirt");
+    global_block_registry.addFullBlock("stone", "stone");
+    global_block_registry.addFullBlock("grass", {"grass_top","dirt","grass_side","grass_side","grass_side","grass_side"});
+    global_block_registry.addFullBlock("oak_log", {"oak_log_top", "oak_log_top", "oak_log", "oak_log", "oak_log", "oak_log"});
+    global_block_registry.addFullBlock("oak_leaves", "oak_leaves", true);
+    global_block_registry.addFullBlock("crazed", "crazed");
 
     terrainProgram.setSamplerSlot("textureArray", 0);
     terrainProgram.setSamplerSlot("shadowMap", 1);
@@ -270,7 +270,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
     if (
         button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS 
     ){  
-        auto* block_prototype = blockRegistry.getBlockPrototypeByIndex(blockUnderCursor->id);
+        auto* block_prototype = global_block_registry.getBlockPrototypeByIndex(blockUnderCursor->id);
         auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(block_prototype);
 
         
@@ -380,7 +380,7 @@ void MainScene::open(GLFWwindow* window){
     running = true;
     allGenerated = false;
     
-    world = std::make_unique<World>(worldPath, blockRegistry);
+    world = std::make_unique<World>(worldPath);
 
     auto& player = world->getPlayer();
 
@@ -400,13 +400,16 @@ void MainScene::open(GLFWwindow* window){
 
     int pregenDistance = renderDistance + 1; 
 
+    //world->getWorldGenerator().generateChunkRegion(*world, {0,0,0});
     for(int x = -pregenDistance; x <= pregenDistance; x++) 
     for(int y = -pregenDistance; y <= pregenDistance; y++) 
     for(int z = -pregenDistance; z <= pregenDistance; z++){
         glm::ivec3 chunkPosition = glm::ivec3(x,y,z);
 
-        world->generateChunk(chunkPosition);
+        if(world->isChunkLoadable(chunkPosition)) world->loadChunk(chunkPosition);
+        else world->generateChunk(chunkPosition);
     }
+
     //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
     //generationThread.detach();
 
@@ -417,7 +420,7 @@ void MainScene::open(GLFWwindow* window){
     ) player.setPosition(player.getPosition() + glm::vec3{0,-1,0});
 
 
-    for(auto& prototype: blockRegistry.prototypes()){
+    for(auto& prototype: global_block_registry.prototypes()){
         if(prototype.id == 0) continue; // Dont make air
 
         auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(&prototype);
@@ -524,7 +527,7 @@ void MainScene::render(){
     gBuffer.bind();
         glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
 
-        blockTextureRegistry.getLoadedTextureArray().bind(0);
+        block_texture_array->bind(0);
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

@@ -28,11 +28,11 @@ uint compileShader(const char* source, int type, std::string filename = ""){
     return shader;
 }
 
-void ShaderProgram::addShader(std::string filename, int type){
-    std::ifstream file(filename);  // Open the file
+std::string ShaderProgram::getSource(std::string path){
+    std::ifstream file(path);  // Open the file
     if (!file.is_open()) {              // Check if the file is open
-        std::cerr << "Failed to open shader file: " << filename << std::endl;
-        return;
+        std::cerr << "Failed to open shader file: " << path << std::endl;
+        return "";
     }
 
     std::stringstream buffer;
@@ -42,7 +42,11 @@ void ShaderProgram::addShader(std::string filename, int type){
 
     file.close();  // Close the file
 
-    uint shader = compileShader(source.c_str(), type, filename);
+    return source;
+}
+
+void ShaderProgram::addShader(std::string filename, int type){
+    uint shader = compileShader(getSource(filename).c_str(), type, filename);
     this->shaders.push_back(shader);
 }
 

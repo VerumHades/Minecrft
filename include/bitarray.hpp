@@ -142,6 +142,9 @@ class CompressedBitField3D{
         CompressedBitField3D(const BitField3D& source){
             data_ptr = std::make_shared<CompressedArray>(BitField3D::compress(source.data()));
         }
+        CompressedBitField3D(const CompressedArray& array){
+            data_ptr = std::make_shared<CompressedArray>(array);
+        }
 
         void set(const BitField3D& source);
         BitField3D* get();
