@@ -34,7 +34,7 @@ class AcceleratedChunkGenerator{
     private:
         FastNoiseLite& noise;
 
-        SourceTemplate base_template = SourceTemplate::fromFile("shaders/compute/base.glsl_template");
+        SourceTemplate base_template = SourceTemplate::fromFile("resources/shaders/compute/base.glsl_template");
 
         std::vector<ComputeLayer> compute_layers = {};
         GLBuffer<uint, GL_SHADER_STORAGE_BUFFER> computeBuffer;
@@ -51,7 +51,7 @@ class RegionChunkGenerator{
     private:
         FastNoiseLite& noise;
 
-        SourceTemplate base_region_template  = SourceTemplate::fromFile("shaders/compute/region_base.glsl_template");
+        SourceTemplate base_region_template  = SourceTemplate::fromFile("resources/shaders/compute/region_base.glsl_template");
 
         GenerationProfile base_profile;
 

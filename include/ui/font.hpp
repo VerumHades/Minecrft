@@ -48,7 +48,7 @@ class Font{
 
 class FontManager{
     private:
-        ShaderProgram program = ShaderProgram("shaders/graphical/ui/text.vs","shaders/graphical/ui/text.fs");
+        ShaderProgram program = ShaderProgram("resources/shaders/graphical/ui/text.vs","resources/shaders/graphical/ui/text.fs");
         Uniform<glm::vec3> textColor = Uniform<glm::vec3>("textColor");
 
         unsigned int VAO, VBO;

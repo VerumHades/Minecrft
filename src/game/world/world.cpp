@@ -262,6 +262,14 @@ void World::updateEntities(float deltatime){
 
     blocks_altered = false;
 }
+
+void World::save(){
+    for(auto& [position,chunk]: chunks){
+        if(!chunk->wasAltered()) continue;
+        chunk->resetAlteredFlag();
+        stream->save(*chunk);
+    }
+}
 void World::drawEntityColliders(WireframeCubeRenderer& renderer, size_t start_index){
     /*for(auto& [region_position,entities]: entity_regions){
         renderer.setCube(

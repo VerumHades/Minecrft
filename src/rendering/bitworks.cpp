@@ -50,7 +50,8 @@ void ByteArray::write(std::fstream &file){
 }
 
 bool ByteArray::read(std::fstream &file){
-    if(bitworks::readValue<char>(file) != '|'){ // Check for magic start character
+    char value = bitworks::readValue<char>(file);
+    if(value != '|'){ // Check for magic start character
         return false;
     }
     size_t size = bitworks::readValue<size_t>(file);

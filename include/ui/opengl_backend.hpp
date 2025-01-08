@@ -13,12 +13,12 @@ class UIOpenglBackend: public UIBackend{
         const int vertex_size = 9;
 
         FontManager fontManager;
-        Font mainFont = Font("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 32);
+        Font mainFont = Font("resources/fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 32);
 
         GLVertexArray vao;
 
         Uniform<glm::mat4> projection_matrix = Uniform<glm::mat4>("ui_projection_matrix");
-        ShaderProgram shader_program = ShaderProgram("shaders/graphical/ui/opengl_backend.vs","shaders/graphical/ui/opengl_backend.fs");
+        ShaderProgram shader_program = ShaderProgram("resources/shaders/graphical/ui/opengl_backend.vs","resources/shaders/graphical/ui/opengl_backend.fs");
 
         AllocatedList<float> vertices = AllocatedList<float>(100 * vertex_size);
         AllocatedList<uint> indices = AllocatedList<uint>(100 * 6);

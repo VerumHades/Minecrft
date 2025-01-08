@@ -41,5 +41,7 @@ class Image{
         */
         static Image perfectPixelReduce(Image& input, int width, int height);
 
+        static Image pixelPerfectUpscale(Image& image, int ratio);
+
         const unsigned char* getData() const {return data.data();};
 };

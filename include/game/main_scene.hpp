@@ -18,6 +18,7 @@
 #include <rendering/ssao.hpp>
 
 #include <parsing/shader_parser.hpp>
+#include <parsing/block_loader.hpp>
 
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
@@ -55,11 +56,11 @@ class MainScene: public Scene{
         GBuffer gBuffer = GBuffer(1920,1080);
         GLFullscreenQuad fullscreen_quad;
 
-        ShaderProgram modelProgram = ShaderProgram("shaders/graphical/model/model.vs","shaders/graphical/model/model.fs");
-        ShaderProgram terrainProgram = ShaderProgram(ShaderProgramSource::fromFile("shaders/terrain.sp"));
-        ShaderProgram skyboxProgram  = ShaderProgram("shaders/graphical/skybox.vs", "shaders/graphical/skybox.fs");
-        ShaderProgram gBufferProgram = ShaderProgram("shaders/graphical/deffered_shading/gbuffer.vs","shaders/graphical/deffered_shading/gbuffer.fs");
-        ShaderProgram blur_program = ShaderProgram("shaders/graphical/quad.vs","shaders/graphical/blur.fs");
+        ShaderProgram modelProgram = ShaderProgram("resources/shaders/graphical/model/model.vs","resources/shaders/graphical/model/model.fs");
+        ShaderProgram terrainProgram = ShaderProgram(ShaderProgramSource::fromFile("resources/shaders/terrain.sp"));
+        ShaderProgram skyboxProgram  = ShaderProgram("resources/shaders/graphical/skybox.vs", "resources/shaders/graphical/skybox.fs");
+        ShaderProgram gBufferProgram = ShaderProgram("resources/shaders/graphical/deffered_shading/gbuffer.vs","resources/shaders/graphical/deffered_shading/gbuffer.fs");
+        ShaderProgram blur_program = ShaderProgram("resources/shaders/graphical/quad.vs","resources/shaders/graphical/blur.fs");
         
         std::unique_ptr<ThreadPool> threadPool;
 
@@ -133,7 +134,7 @@ class MainScene: public Scene{
 
         KeyInputManager<ControllActions> inputManager;
 
-        Font testFont = Font("fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
+        Font testFont = Font("resources/fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
 
         void physicsUpdate();
         void processMouseMovement();

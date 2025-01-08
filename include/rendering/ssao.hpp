@@ -15,7 +15,7 @@ class GLSSAO{
         GLTexture2D noiseTexture;
 
         GLFramebuffer framebuffer = GLFramebuffer(1920,1080,{{GL_RED,GL_RED,GL_FLOAT}});
-        ShaderProgram shader_program = ShaderProgram("shaders/graphical/ssao/ssao.vs","shaders/graphical/ssao/ssao.fs");
+        ShaderProgram shader_program = ShaderProgram("resources/shaders/graphical/ssao/ssao.vs","resources/shaders/graphical/ssao/ssao.fs");
         float lerp(float a, float b, float f);
 
     public:

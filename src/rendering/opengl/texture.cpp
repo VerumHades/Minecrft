@@ -172,13 +172,28 @@ void GLTextureArray::loadFromFiles(std::vector<std::string>& filenames, int laye
     {   
         std::cout << "Loaded texture: " << filenames[i] << "Channels: " << nrChannels << std::endl;
         data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 4);
-    
+
         if (!data) {
             std::cout << "Failed to load texture: " << filenames[i] << std::endl;
             throw std::runtime_error("Failed to load texture '%s'\n");
         }
 
-        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, std::min(width, layerWidth), std::min(height, layerHeight), 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        if(
+            width == height &&
+            layerWidth == layerHeight && 
+            width < layerWidth &&
+            layerWidth % width == 0
+        ){
+            auto image = Image(data, width, height, nrChannels);
+            std::cout << "Upscaling" << std::endl;
+            
+            glTexSubImage3D(
+                GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, std::min(width, layerWidth), std::min(height, layerHeight), 1, GL_RGBA, GL_UNSIGNED_BYTE, 
+                Image::pixelPerfectUpscale(image, layerWidth / width).getData()
+            );
+        }
+        else glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, std::min(width, layerWidth), std::min(height, layerHeight), 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
         stbi_image_free(data);
     }
 

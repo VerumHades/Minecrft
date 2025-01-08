@@ -52,6 +52,8 @@ class SparseBlockArray{
         Block airBlock = {BLOCK_AIR_INDEX};
         CompressedBitField3D solid_field; // Registers solid blocks
 
+        bool altered = false;
+
         std::vector<Layer> layers;
         std::vector<BlockID> present_types;
         std::unordered_map<BlockID, size_t> type_indexes;
@@ -66,6 +68,9 @@ class SparseBlockArray{
             Returns a pointer to a block, if there is no block present returns an air block
         */
         Block* getBlock(glm::ivec3 position);
+
+        void resetAlteredFlag() { altered = false; }
+        bool wasAltered() {return altered;}
 
         virtual ByteArray serialize();
         static SparseBlockArray deserialize(ByteArray& array);

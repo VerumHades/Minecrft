@@ -88,3 +88,20 @@ Image Image::perfectPixelReduce(Image& input, int width, int height){
 
     return output;
 }
+
+Image Image::pixelPerfectUpscale(Image& input, int ratio){
+    int new_width  = input.width * ratio;
+    int new_height =  input.height * ratio;
+    
+    Image output(new_width, new_height, input.nrChannels);
+
+    for(int x = 0;x < new_width;x++)
+    for(int y = 0;y < new_height;y++)
+    {
+        unsigned char* pixel = input.getPixel(x / ratio, y / ratio);
+
+        memcpy(output.getPixel(x,y), pixel, input.nrChannels);
+    }
+
+    return output;
+}

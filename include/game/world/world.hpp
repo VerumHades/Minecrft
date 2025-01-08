@@ -67,6 +67,11 @@ class World: public virtual Collidable{
         Chunk* getChunkFromBlockPosition(glm::ivec3 position) const;
         glm::ivec3 getGetChunkRelativeBlockPosition(glm::ivec3 position);
 
+        /*
+            Saves all unsaved changes to chunks
+        */
+        void save();
+
         std::tuple<bool, Block*> checkForPointCollision(glm::vec3 position, bool includeRectangularColliderLess);
         bool collidesWith(glm::vec3 position, Entity* collider, bool vertical_check = false) override;
 

@@ -189,7 +189,7 @@ int main() {
 
         Scene* menuScene = sceneManager.createScene<Scene>("menu");
         menuScene->setUILayer("default");
-        sceneManager.getUIManager().loadWindowFromXML(*menuScene->getWindow(), "templates/menu.xml");
+        sceneManager.getUIManager().loadWindowFromXML(*menuScene->getWindow(), "resources/templates/menu.xml");
 
         sceneManager.createScene<TestScene>("test_scene");
         

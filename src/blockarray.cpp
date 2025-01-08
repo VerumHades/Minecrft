@@ -1,6 +1,8 @@
 #include <blockarray.hpp>
 
 void SparseBlockArray::setBlock(glm::ivec3 position, Block block){
+    altered = true;
+
     auto* block_here = getBlock(position);
     if(block_here != &airBlock){
         getLayer(block_here->id).field().reset(position.x,position.y,position.z);

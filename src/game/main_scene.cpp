@@ -27,16 +27,16 @@ void MainScene::initialize(){
     getUILayer("default").addElement(crosshair);
 
     std::array<std::string,6> skyboxPaths = {
-        "skybox/stars/right.png",
-        "skybox/stars/left.png",
-        "skybox/stars/top.png",
-        "skybox/stars/bottom.png",
-        "skybox/stars/front.png",
-        "skybox/stars/back.png"
+        "resources/skybox/stars/right.png",
+        "resources/skybox/stars/left.png",
+        "resources/skybox/stars/top.png",
+        "resources/skybox/stars/bottom.png",
+        "resources/skybox/stars/front.png",
+        "resources/skybox/stars/back.png"
     };  
 
-    itemPrototypeRegistry.addPrototype(ItemPrototype("diamond","textures/diamond32.png"));
-    itemPrototypeRegistry.addPrototype(ItemPrototype("crazed","textures/crazed32.png"));
+    itemPrototypeRegistry.addPrototype(ItemPrototype("diamond","resources/textures/diamond32.png"));
+    itemPrototypeRegistry.addPrototype(ItemPrototype("crazed","resources/textures/crazed32.png"));
 
     held_item_slot = std::make_shared<ItemSlot>(itemTextureAtlas,*uiManager);
 
@@ -70,16 +70,11 @@ void MainScene::initialize(){
     
     terrainProgram.use();
     
-    global_block_registry.loadFromFolder("textures");
     global_block_registry.setTextureSize(160,160);
+    global_block_registry.loadFromFolder("resources/textures");
     block_texture_array = global_block_registry.load();
 
-    global_block_registry.addFullBlock("dirt", "dirt");
-    global_block_registry.addFullBlock("stone", "stone");
-    global_block_registry.addFullBlock("grass", {"grass_top","dirt","grass_side","grass_side","grass_side","grass_side"});
-    global_block_registry.addFullBlock("oak_log", {"oak_log_top", "oak_log_top", "oak_log", "oak_log", "oak_log", "oak_log"});
-    global_block_registry.addFullBlock("oak_leaves", "oak_leaves", true);
-    global_block_registry.addFullBlock("crazed", "crazed");
+    BlockLoader::loadFromFile("resources/blocks.config");
 
     terrainProgram.setSamplerSlot("textureArray", 0);
     terrainProgram.setSamplerSlot("shadowMap", 1);
@@ -442,6 +437,8 @@ void MainScene::open(GLFWwindow* window){
 void MainScene::close(GLFWwindow* window){
     threadsStopped = 0;
     running = false;
+
+    world->save();
 
     chunkMeshGenerator.setWorld(nullptr);
 

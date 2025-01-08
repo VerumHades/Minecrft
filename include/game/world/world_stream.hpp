@@ -10,7 +10,6 @@
 class WorldStream{
     private:
         std::fstream file_stream;
-        std::unordered_map<glm::vec3, size_t, Vec3Hash, Vec3Equal> chunkTable = {}; // Chunk locations in the file
         std::shared_mutex mutex;
 
         struct Header{
@@ -23,6 +22,18 @@ class WorldStream{
             size_t chunk_data_start;
             size_t chunk_data_end;
         };
+
+        struct TableRow{
+            struct{
+                int x;
+                int y;
+                int z;
+            } position;
+            size_t in_file_start;
+            size_t serialized_size;
+        };
+
+        std::unordered_map<glm::ivec3, TableRow, IVec3Hash, IVec3Equal> chunkTable = {}; // Chunk locations in the file
 
         Header header;
 
