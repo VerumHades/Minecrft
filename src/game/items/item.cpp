@@ -13,6 +13,8 @@ ItemPrototype* ItemPrototypeRegistry::getPrototype(std::string name){
 ItemPrototype::ItemPrototype(std::string name, const BlockRegistry::BlockPrototype* prototype): name(name){
     display_type = BLOCK;
 
+    if(prototype->render_type == BlockRegistry::BILLBOARD) display_type = SIMPLE;
+    
     if(prototype->single_texture){
         auto texture_path = prototype->texture_paths[0];
         texture_paths = {texture_path, texture_path, texture_path};

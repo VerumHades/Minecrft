@@ -50,7 +50,7 @@ void BlockLoader::loadFromSource(std::string source){
         else if(command.size() >= 3 && command[0] == "FULL_BLOCK_TRANSPARENT")
             global_block_registry.addFullBlock(command[1], command[2], true);
 
-        else if(command.size() >= 3 && command[0] == "BILLBOARD")
+        else if(command.size() >= 3 && command[0] == "BILBOARD")
             global_block_registry.addBillboardBlock(command[1], command[2]);
 
         else std::cerr << "Invalid block definition: " << line << std::endl;
