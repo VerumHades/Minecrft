@@ -56,12 +56,18 @@ class GLDepthTexture: public BindableTexture{
 };
 
 class GLTextureArray: public BindableTexture{
+    private:
+        int layer_width;
+        int layer_height;
+
     public:
         GLTextureArray();
         void setup(int width, int height, int layers){
             bind(0);
             glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, width, height,  layers);
         }
+        void putImage(int x, int y, int layer, Image& image);
+
         void loadFromFiles(std::vector<std::string>& filenames, int layerWidth, int layerHeight);
 };
 

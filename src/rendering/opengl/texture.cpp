@@ -161,6 +161,9 @@ void GLTextureArray::loadFromFiles(std::vector<std::string>& filenames, int laye
     TYPE = GL_TEXTURE_2D_ARRAY;
     glBindTexture(GL_TEXTURE_2D_ARRAY, this->texture);
 
+    layer_width  = layerWidth;
+    layer_height = layerHeight;
+
     int size = (int)filenames.size();
 
     int mipLevels = (int) floor(log2(fmax(layerWidth, layerHeight))) + 1;
@@ -170,31 +173,14 @@ void GLTextureArray::loadFromFiles(std::vector<std::string>& filenames, int laye
     unsigned char *data;  
     for(int i = 0; i < size; i++)
     {   
-        std::cout << "Loaded texture: " << filenames[i] << "Channels: " << nrChannels << std::endl;
-        data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 4);
+        Image texture_image = Image::LoadWithSize(filenames[i], layerWidth, layerHeight);
 
-        if (!data) {
+        if (!texture_image.isLoaded()) {
             std::cout << "Failed to load texture: " << filenames[i] << std::endl;
             throw std::runtime_error("Failed to load texture '%s'\n");
         }
 
-        if(
-            width == height &&
-            layerWidth == layerHeight && 
-            width < layerWidth &&
-            layerWidth % width == 0
-        ){
-            auto image = Image(data, width, height, nrChannels);
-            std::cout << "Upscaling" << std::endl;
-            
-            glTexSubImage3D(
-                GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, std::min(width, layerWidth), std::min(height, layerHeight), 1, GL_RGBA, GL_UNSIGNED_BYTE, 
-                Image::pixelPerfectUpscale(image, layerWidth / width).getData()
-            );
-        }
-        else glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, std::min(width, layerWidth), std::min(height, layerHeight), 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-        stbi_image_free(data);
+        putImage(0,0,i, texture_image);
     }
 
     //CHECK_GL_ERROR();;
@@ -213,6 +199,16 @@ void GLTextureArray::loadFromFiles(std::vector<std::string>& filenames, int laye
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
     //CHECK_GL_ERROR();;
+}
+
+void GLTextureArray::putImage(int x, int y, int layer, Image& image){
+    glTexSubImage3D(
+        GL_TEXTURE_2D_ARRAY, 0, 
+        x, y, layer, 
+        std::min(x + image.getWidth(), layer_width), std::min(y + image.getHeight(), layer_height), 1, 
+        GL_RGBA, GL_UNSIGNED_BYTE, 
+        image.getData()
+    );
 }
 
 float skyboxVertices[] = {

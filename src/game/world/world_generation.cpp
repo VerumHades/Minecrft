@@ -17,7 +17,6 @@ AcceleratedChunkGenerator::AcceleratedChunkGenerator(FastNoiseLite& noise): nois
         }
     }
 
-    noise_img.save("temp_noise.png");
     noiseTexture.configure(GL_R8, GL_RED, GL_UNSIGNED_BYTE, noise_width, noise_height, (void*) noise_img.getData(), 1);
     noiseTexture.parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     noiseTexture.parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -105,7 +104,6 @@ RegionChunkGenerator::RegionChunkGenerator(FastNoiseLite& noise): noise(noise){
         }
     }
 
-    noise_img.save("temp_noise.png");
     noiseTexture.configure(GL_R8, GL_RED, GL_UNSIGNED_BYTE, noise_width, noise_height, (void*) noise_img.getData(), 1);
     noiseTexture.parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     noiseTexture.parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);

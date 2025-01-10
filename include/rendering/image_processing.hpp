@@ -12,10 +12,12 @@ class Image{
         int width = 0;
         int height = 0;
         int nrChannels = 0;
+
+        bool loaded = true;
     
     public:
         Image(std::string path);
-        Image(){}
+        Image(){loaded = false;}
         Image(int width, int height, int nrChannels);
         Image(unsigned char* data, int width, int height, int nrChannels);
         Image(std::vector<unsigned char> data, int width, int height, int nrChannels);
@@ -41,7 +43,13 @@ class Image{
         */
         static Image perfectPixelReduce(Image& input, int width, int height);
 
-        static Image pixelPerfectUpscale(Image& image, int ratio);
+        static Image pixelPerfectUpscale(Image& image, int width, int height);
+
+        /*
+            Loads an image and automatically adjusts its size to the desired one
+        */
+        static Image LoadWithSize(std::string path, int width, int height);
 
         const unsigned char* getData() const {return data.data();};
+        bool isLoaded() {return loaded;}
 };

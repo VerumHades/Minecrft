@@ -171,9 +171,6 @@ int main() {
     //glEnable(GL_FRAMEBUFFER_SRGB);
     glEnable(GL_MULTISAMPLE);  // Redundant perhaps
     //glDepthMask(GL_FALSE);
-
-    
-
     /*
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

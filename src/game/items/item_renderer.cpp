@@ -1,7 +1,7 @@
 #include <game/items/item_renderer.hpp>
 
 
-ItemTextureAtlas::StoredTexture ItemTextureAtlas::storeImage(Image& image){
+ItemTextureAtlas::StoredTexture ItemTextureAtlas::storeImage(const Image& image){
     int width = image.getWidth();
     int height = image.getHeight();
     auto* image_data = image.getData();
@@ -42,15 +42,7 @@ ItemTextureAtlas::TextureSet* ItemTextureAtlas::getPrototypeTextureSet(ItemProto
         TextureSet set = {};
 
         for(int i = 0;i < (prototype->display_type == ItemPrototype::SIMPLE ? 1 : 3);i++){
-            Image original_image{prototype->texture_paths[i]};
-            Image reduced_image = Image::perfectPixelReduce(original_image, single_texture_size, single_texture_size);
-
-            if(reduced_image.getWidth() != reduced_image.getHeight() || reduced_image.getWidth() != single_texture_size){
-                std::cerr << "Item prototype texture has invalid size" << reduced_image.getWidth() << "x" << reduced_image.getHeight() << std::endl;
-                return nullptr;
-            }
-
-            set.textures[i] = storeImage(reduced_image);
+            set.textures[i] = storeImage(Image::LoadWithSize(prototype->texture_paths[i], single_texture_size, single_texture_size));
         }
         
         stored_textures[prototype] = set;
@@ -162,17 +154,6 @@ void ItemTextureAtlas::RenderItemIntoSlot(UIRenderBatch& batch, ItemPrototype* p
             texture_info->textures[2].uvs,
             {150,150,150}
         );
-
-        
-        /*batch.Texture(
-            transform,
-            texture_info->textures[0].uvs
-        );
-        /*
-        batch.Texture(
-            transform.x,transform.y,transform.width,transform.height,
-            texture_info->textures[0].uvs
-        );*/
     }
 }
 

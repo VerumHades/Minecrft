@@ -13,16 +13,14 @@ BlockModel::BlockModel(const BlockRegistry::BlockPrototype* prototype){
     texture = std::make_shared<GLTexture2D>();
 
     if(prototype->single_texture){
-        Image image_loaded{prototype->texture_paths[0]};
-        Image image = Image::perfectPixelReduce(image_loaded, 32, 32);
+        Image image = Image::LoadWithSize(prototype->texture_paths[0], 32, 32);
         texture->configure(GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, 32, 32);
         texture->putImage(0,0,image);
     }
     else{
         texture->configure(GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, 32 * 6, 32);
         for(int i = 0;i < 6;i++){
-            Image image_loaded{prototype->texture_paths[i]};
-            Image image = Image::perfectPixelReduce(image_loaded, 32, 32);
+            Image image = Image::LoadWithSize(prototype->texture_paths[i], 32, 32);
             texture->putImage(32 * i, 0, image);
         }
     }

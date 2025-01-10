@@ -30,7 +30,6 @@
 #include <game/commands.hpp>
 #include <game/threadpool.hpp>
 #include <game/input.hpp>
-#include <game/items/cube_model.hpp>
 #include <game/items/sprite_model.hpp>
 #include <game/items/item.hpp>
 #include <game/items/item_renderer.hpp>

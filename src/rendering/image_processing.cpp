@@ -6,10 +6,12 @@
 #include <stb_image.h>
 
 Image::Image(std::string path){
-    unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 4);
+    int channels_originaly = 0;
+    unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels_originaly, 4);
    
     if (!data) {
         std::cerr << "Failed to load image: " << path << std::endl;
+        loaded = false;
         return;
     }
 
@@ -38,7 +40,7 @@ Image::Image(int width, int height, int nrChannels): width(width), height(height
 }
 
 void Image::save(std::string path){
-    stbi_write_png(path.c_str(), width, height, nrChannels, data.data(), width);
+    stbi_write_png(path.c_str(), width, height, nrChannels, data.data(), width * nrChannels);
 }
 
 std::optional<Image> Image::reduceToPerfectPixelsAuto(Image& input){
@@ -55,8 +57,8 @@ std::optional<Image> Image::reduceToPerfectPixelsAuto(Image& input){
     int scaled_size = input.width / pixel_size;
     Image output(scaled_size, scaled_size, input.nrChannels);
 
-    for(int x = 0;x < scaled_size;x++)
     for(int y = 0;y < scaled_size;y++)
+    for(int x = 0;x < scaled_size;x++)
     {
         unsigned char* pixel = input.getPixel(x * pixel_size, y * pixel_size);
 
@@ -67,15 +69,13 @@ std::optional<Image> Image::reduceToPerfectPixelsAuto(Image& input){
 }
 
 Image Image::perfectPixelReduce(Image& input, int width, int height){
-    if(input.width == width && input.height == height) return input;
-    
     int pixel_width  = input.width /  width;
     int pixel_height = input.height / height;
 
     Image output(width, height, input.nrChannels);
 
-    for(int x = 0;x < width;x++)
     for(int y = 0;y < height;y++)
+    for(int x = 0;x < width;x++)
     {
         unsigned char* pixel = input.getPixel(x * pixel_width, y * pixel_height);
 
@@ -89,19 +89,59 @@ Image Image::perfectPixelReduce(Image& input, int width, int height){
     return output;
 }
 
-Image Image::pixelPerfectUpscale(Image& input, int ratio){
-    int new_width  = input.width * ratio;
-    int new_height =  input.height * ratio;
+Image Image::pixelPerfectUpscale(Image& input, int width, int height){
+    if(input.width > width || input.height > height) {
+        std::cerr << "Cannot upsale to a smaller size." << std::endl;
+        return {};
+    }
+    if(!input.isLoaded()){
+        std::cerr << "Cannot upsale to image that isnt loaded." << std::endl;
+        return {};
+    }
+    Image output{width, height, input.nrChannels};
+
+    int pixel_width_x = ceil((float)width  / (float)input.width);
+    int pixel_width_y = ceil((float)height / (float)input.height);
+
+    int x_counter = 0;
+    int y_counter = 0;
+
+    int source_x = 0;
+    int source_y = 0;
     
-    Image output(new_width, new_height, input.nrChannels);
+    //std::cout << input.width << "x" << input.height << " " << width << "x" << height << std::endl;
+    //std::cout << pixel_width_x << " " << pixel_width_y << " " << input.nrChannels << std::endl;
 
-    for(int x = 0;x < new_width;x++)
-    for(int y = 0;y < new_height;y++)
+    for(int y = 0;y < height;y++)
+    for(int x = 0;x < width;x++)
     {
-        unsigned char* pixel = input.getPixel(x / ratio, y / ratio);
+        if(x_counter >= pixel_width_x){
+            x_counter = 0;
 
+            source_x++;
+            if(source_x >= input.width){
+                source_x = 0;
+                y_counter++;
+            }
+        }
+        if(y_counter >= pixel_width_y){
+            y_counter = 0;
+            source_y++;
+        }
+        
+        unsigned char* pixel = input.getPixel(source_x, source_y);
         memcpy(output.getPixel(x,y), pixel, input.nrChannels);
+
+        x_counter++;
     }
 
     return output;
+}
+
+Image Image::LoadWithSize(std::string path, int width, int height){
+    Image image{path};
+
+    if(image.width == width && image.height == height) return image;
+    if(image.width > width) return perfectPixelReduce(image, width, height);
+    return pixelPerfectUpscale(image, width, height);
 }

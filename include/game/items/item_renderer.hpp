@@ -30,7 +30,7 @@ class ItemTextureAtlas{
 
         std::unordered_map<ItemPrototype*, TextureSet> stored_textures;
 
-        StoredTexture storeImage(Image& image);
+        StoredTexture storeImage(const Image& image);
 
     public:
         ItemTextureAtlas() {
