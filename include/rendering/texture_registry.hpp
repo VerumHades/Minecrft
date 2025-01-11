@@ -33,7 +33,7 @@ class TextureRegistry{
         /*
             Registers a texture from a path under a name
         */
-        void addTexture(std::string name, std::string path);
+        void addTexture(std::string name, const std::string& path);
         
         /*
             Returns the index of a registered texture
@@ -41,7 +41,7 @@ class TextureRegistry{
         size_t getTextureIndex(std::string name);
         RegisteredTexture* getTextureByName(std::string name);
 
-        void loadFromFolder(std::string path);
+        void loadFromFolder(const std::string& path);
 
         /*
             Creates the actual opengl object that holds the textures

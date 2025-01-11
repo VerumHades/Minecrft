@@ -77,7 +77,7 @@ std::tuple<bool, Block*> World::checkForPointCollision(glm::vec3 position, bool 
                 if(blocki){
                     auto* definition = global_block_registry.getBlockPrototypeByIndex(blocki->id);
                     if(!definition) continue;
-                    if((definition->colliders.size() == 0 || blocki->id == BLOCK_AIR_INDEX) && !includeRectangularColliderLess) continue;
+                    if((blocki->id == BLOCK_AIR_INDEX) && !includeRectangularColliderLess) continue;
 
                     if(
                         position.x >= cx && position.x <= cx + blockWidth &&
@@ -209,7 +209,7 @@ Chunk* World::getChunkFromBlockPosition(glm::ivec3 position) const{
     return this->getChunk(blockToChunkPosition(position));
 }
 
-bool World::setBlock(glm::ivec3 position, Block block){
+bool World::setBlock(const glm::ivec3& position, const Block& block){
     auto chunkPosition = blockToChunkPosition(position);
     auto blockPosition = glm::abs(position - chunkPosition * CHUNK_SIZE);
     //printf("Chunk coords: %ix%i Block coords: %ix%ix%i\n", chunkX, chunkZ, ix,y,iz);

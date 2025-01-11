@@ -1,6 +1,6 @@
 #include <blockarray.hpp>
 
-void SparseBlockArray::setBlock(glm::ivec3 position, Block block){
+void SparseBlockArray::setBlock(glm::ivec3 position, const Block& block){
     altered = true;
 
     auto* block_here = getBlock(position);

@@ -5,7 +5,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-Image::Image(std::string path){
+Image::Image(const std::string& path){
     int channels_originaly = 0;
     unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels_originaly, 4);
    
@@ -39,7 +39,7 @@ Image::Image(int width, int height, int nrChannels): width(width), height(height
     this->data = std::vector<unsigned char>(width * height * nrChannels, 255);
 }
 
-void Image::save(std::string path){
+void Image::save(const std::string& path){
     stbi_write_png(path.c_str(), width, height, nrChannels, data.data(), width * nrChannels);
 }
 
@@ -138,7 +138,7 @@ Image Image::pixelPerfectUpscale(Image& input, int width, int height){
     return output;
 }
 
-Image Image::LoadWithSize(std::string path, int width, int height){
+Image Image::LoadWithSize(const std::string& path, int width, int height){
     Image image{path};
 
     if(image.width == width && image.height == height) return image;

@@ -1,6 +1,6 @@
 #include <rendering/texture_registry.hpp>
 
-void TextureRegistry::addTexture(std::string name, std::string path){   
+void TextureRegistry::addTexture(std::string name, const std::string& path){   
     if(textures.contains(name)){
         std::cerr << "Duplicate texture name '" << name << "'" << std::endl;
         return;
@@ -35,7 +35,7 @@ std::unique_ptr<GLTextureArray> TextureRegistry::load(){
     return out;
 }
 
-void TextureRegistry::loadFromFolder(std::string path){
+void TextureRegistry::loadFromFolder(const std::string& path){
     for (const auto& entry : std::filesystem::directory_iterator(path)){
         auto& path = entry.path();
 

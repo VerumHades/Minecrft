@@ -55,7 +55,7 @@ class World: public virtual Collidable{
         World(std::string filepath);
 
         Block* getBlock(glm::ivec3 position) const;
-        bool setBlock(glm::ivec3 position, Block index);
+        bool setBlock(const glm::ivec3& position, const Block& index);
 
         Chunk* generateChunk(glm::ivec3 position);
         Chunk* createEmptyChunk(glm::ivec3 position);

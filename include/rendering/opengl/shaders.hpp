@@ -84,7 +84,7 @@ class ShaderProgram{
             compile();
         }
 
-        static std::string getSource(std::string path);
+        static std::string getSource(const std::string& path);
 
         void setSamplerSlot(std::string name, int slot){
             use();

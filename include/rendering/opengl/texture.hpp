@@ -99,9 +99,9 @@ class DynamicTextureArray: public BindableTexture{
         DynamicTextureArray() {TYPE = GL_TEXTURE_2D_ARRAY;}
         ~DynamicTextureArray();
 
-        void addTexture(std::string path);
-        std::vector<glm::vec2> getTextureUVs(std::string path);
-        int getTextureIndex(std::string path) {return textures[path].index; }
+        void addTexture(const std::string& path);
+        std::vector<glm::vec2> getTextureUVs(const std::string& path);
+        int getTextureIndex(const std::string& path) {return textures[path].index; }
 
 };
 

@@ -210,7 +210,7 @@ void UIStyle::parseQuery(std::string selectors, std::string source){
     }
 }
 
-void UIStyle::loadFromFile(std::string path){
+void UIStyle::loadFromFile(const std::string& path){
     std::ifstream f(path, std::ios::in | std::ios::binary);
 
     const auto sz = std::filesystem::file_size(path);

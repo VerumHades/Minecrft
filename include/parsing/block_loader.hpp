@@ -11,5 +11,5 @@
 class BlockLoader{
     public:
         static void loadFromSource(std::string source);
-        static void loadFromFile(std::string path);
+        static void loadFromFile(const std::string& path);
 };

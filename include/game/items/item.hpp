@@ -22,10 +22,11 @@ class ItemPrototype{
             SIMPLE,
             BLOCK
         } display_type = SIMPLE;
+        bool is_block = false;
 
         BlockID block_id = 0;
         
-        std::array<std::string,3> texture_paths = {};
+        std::array<std::string,3> texture_paths = {"","",""};
         
         std::shared_ptr<Model> model;
 
@@ -44,7 +45,7 @@ class ItemPrototype{
             model = std::make_shared<SpriteModel>(texture_path);
         }
 
-        bool isBlock(){return display_type == BLOCK;}
+        bool isBlock(){return is_block;}
         BlockID getBlockID(){return block_id;}
         std::shared_ptr<Model>& getModel() {return model;}
 };

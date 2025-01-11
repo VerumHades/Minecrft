@@ -193,7 +193,7 @@ std::shared_ptr<UIFrame> UILoader::processElement(XMLElement* source, UILayer& l
     return element;
 }
 
-bool UILoader::loadWindowFromXML(UIWindow& window, std::string path){
+bool UILoader::loadWindowFromXML(UIWindow& window, const std::string& path){
     XMLDocument doc;
 
     if (doc.LoadFile(path.c_str()) != XML_SUCCESS) {

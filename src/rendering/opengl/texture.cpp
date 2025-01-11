@@ -353,7 +353,7 @@ DynamicTextureArray::~DynamicTextureArray(){
     }
 }
 
-void DynamicTextureArray::addTexture(std::string path){
+void DynamicTextureArray::addTexture(const std::string& path){
     if(textures.count(path) != 0) return;
 
     glDeleteTextures(1,&this->texture);
@@ -414,7 +414,7 @@ void DynamicTextureArray::addTexture(std::string path){
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 }
 
-std::vector<glm::vec2> DynamicTextureArray::getTextureUVs(std::string path){
+std::vector<glm::vec2> DynamicTextureArray::getTextureUVs(const std::string& path){
     if(textures.count(path) == 0) {};
 
     DynamicTextureMember& tex = textures.at(path);

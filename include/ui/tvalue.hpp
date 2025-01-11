@@ -57,6 +57,19 @@ struct TValue{
         }
         return unit == PERCENT;
     }
+
+    TValue operator-(const TValue& other) const {
+        return {OPERATION_MINUS, *this, other};
+    }
+    TValue operator+(const TValue& other) const {
+        return {OPERATION_PLUS, *this, other};
+    }
+    TValue operator*(const TValue& other) const {
+        return {OPERATION_MULTIPLY, *this, other};
+    }
+    TValue operator/(const TValue& other) const {
+        return {OPERATION_DIVIDE, *this, other};
+    }
 };
 
 const static TValue TNONE = {NONE, 0};

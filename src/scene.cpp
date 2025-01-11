@@ -21,6 +21,10 @@ void Scene::setUILayer(std::string name){
     uiManager->updateAll();
 }
 
+bool Scene::isActiveLayer(std::string name){
+    return getCurrentUILayer().name == name;
+}
+
 UIWindow* Scene::getWindow(){
     return this->uiManager->getWindow(windowID);
 }

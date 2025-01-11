@@ -63,7 +63,7 @@ class SparseBlockArray{
 
         bool isEmpty(){return layers.size() == 0;}
 
-        void setBlock(glm::ivec3 position, Block block);
+        void setBlock(glm::ivec3 position, const Block& block);
         /*
             Returns a pointer to a block, if there is no block present returns an air block
         */

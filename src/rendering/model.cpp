@@ -13,7 +13,13 @@ Model::Model(){
     }
 }
 
-void Model::requestDraw(glm::vec3 position, glm::vec3 scale, glm::vec3 rotation, glm::vec3 rotation_center_offset, std::array<Rotation,3> rotation_order){
+void Model::requestDraw(
+    const glm::vec3& position,
+    const glm::vec3& scale,
+    const glm::vec3& rotation,
+    const glm::vec3& rotation_center_offset,
+    const std::array<Rotation,3>& rotation_order
+){
     std::array<glm::mat4,3> rotation_matrices = {
         glm::rotate(glm::mat4(1.0f), glm::radians(rotation.x), glm::vec3(1, 0, 0)),  // Rotation around X axis
         glm::rotate(glm::mat4(1.0f), glm::radians(rotation.y), glm::vec3(0, 1, 0)),  // Rotation around Y axis

@@ -19,7 +19,7 @@ class ShaderProgramSource{
         ShaderProgramSource(std::string source);
 
     public:
-        static ShaderProgramSource fromFile(std::string path);
+        static ShaderProgramSource fromFile(const std::string& path);
         static ShaderProgramSource fromSource(std::string source);
 
         std::vector<ShaderSource>& getSources() {return shader_sources;};

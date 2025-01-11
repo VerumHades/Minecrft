@@ -55,7 +55,7 @@ ShaderProgramSource::ShaderProgramSource(std::string source){
     
 }
 
-ShaderProgramSource ShaderProgramSource::fromFile(std::string path){
+ShaderProgramSource ShaderProgramSource::fromFile(const std::string& path){
     std::ifstream file(path);  // Open the file
     if (!file.is_open()) {              // Check if the file is open
         std::cerr << "Failed to open shader source file: " << path << std::endl;

@@ -24,6 +24,7 @@ class Scene{
         void setUILayer(std::string name);
         UILayer& getCurrentUILayer();
         UILayer& getUILayer(std::string name);
+        bool isActiveLayer(std::string name);
         void addElement(std::shared_ptr<UIFrame> element);
         UIWindow* getWindow();
         

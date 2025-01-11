@@ -61,7 +61,7 @@ void BlockRegistry::addBillboardBlock(std::string name, std::string texture_name
         name,
         {},
         true,
-        false,
+        true,
         {getTextureIndex(texture_name)},
         BILLBOARD,
         {texture_name},

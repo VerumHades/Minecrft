@@ -16,7 +16,7 @@ class Image{
         bool loaded = true;
     
     public:
-        Image(std::string path);
+        Image(const std::string& path);
         Image(){loaded = false;}
         Image(int width, int height, int nrChannels);
         Image(unsigned char* data, int width, int height, int nrChannels);
@@ -31,7 +31,7 @@ class Image{
         int getHeight() const {return height;}
         int getChannels() const {return nrChannels;}
 
-        void save(std::string path);
+        void save(const std::string& path);
 
         /*
             Reduces a scaled pixel art image down to its original size
@@ -48,7 +48,7 @@ class Image{
         /*
             Loads an image and automatically adjusts its size to the desired one
         */
-        static Image LoadWithSize(std::string path, int width, int height);
+        static Image LoadWithSize(const std::string& path, int width, int height);
 
         const unsigned char* getData() const {return data.data();};
         bool isLoaded() {return loaded;}

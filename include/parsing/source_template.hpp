@@ -24,7 +24,7 @@ class SourceTemplate{
 
     public:
         static SourceTemplate fromSource(std::string source);
-        static SourceTemplate fromFile(std::string path);
+        static SourceTemplate fromFile(const std::string& path);
 
         std::string fill(std::vector<TagValue> values);
 };

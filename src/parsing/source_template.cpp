@@ -41,7 +41,7 @@ SourceTemplate SourceTemplate::fromSource(std::string source){
     return output_template;
 }
 
-SourceTemplate SourceTemplate::fromFile(std::string path){
+SourceTemplate SourceTemplate::fromFile(const std::string& path){
     std::ifstream file(path);  // Open the file
     if (!file.is_open()) {              // Check if the file is open
         std::cerr << "Failed to open template file: " << path << std::endl;

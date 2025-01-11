@@ -75,6 +75,8 @@ class MainScene: public Scene{
         std::unique_ptr<GLTextureArray> block_texture_array = nullptr;
         
         std::shared_ptr<UILabel> fps_label;
+        std::shared_ptr<UILabel> structure_capture_start_label;
+        std::shared_ptr<UILabel> structure_capture_end_label;
 
         ItemTextureAtlas itemTextureAtlas;
         ItemPrototypeRegistry itemPrototypeRegistry;
@@ -150,10 +152,16 @@ class MainScene: public Scene{
         glm::ivec3 blockUnderCursorPosition = {0,0,0};
         glm::vec3 blockUnderCursorEmpty = {0,0,0}; // Block before the selected block, air where a block will be placed
         Block* blockUnderCursor = nullptr;
+
+        glm::ivec3 structureCaptureStart = {0,0,0};
+        glm::ivec3 structureCaptureEnd   = {0,0,0};
+        bool structureCaptured = false;
+
+        void updateStructureCaptureDisplay();
         
     public:
         void initialize() override;
-        void setWorldPath(std::string path) {worldPath = path;}
+        void setWorldPath(const std::string& path) {worldPath = path;}
 
         void render() override;
         void open(GLFWwindow* window)  override;

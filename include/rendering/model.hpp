@@ -51,8 +51,13 @@ class Model{
 
             Rotation is in degrees
         */
-        void requestDraw(glm::vec3 position, glm::vec3 scale = {1,1,1}, 
-            glm::vec3 rotation = {0,0,0}, glm::vec3 rotation_center_offset = {0,0,0}, std::array<Rotation,3> rotation_order = {Z,Y,X});
+        void requestDraw(
+            const glm::vec3& position, 
+            const glm::vec3& scale = {1,1,1}, 
+            const glm::vec3& rotation = {0,0,0}, 
+            const glm::vec3& rotation_center_offset = {0,0,0}, 
+            const std::array<Rotation,3>& rotation_order = {Z,Y,X}
+        );
 
         void drawAllRequests();
 

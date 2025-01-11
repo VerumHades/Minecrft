@@ -34,6 +34,8 @@ void BlockLoader::loadFromSource(std::string source){
         std::string line = source.substr(offset, size);
         trim(line);
 
+        if(line.starts_with("#")) continue; // Ignore comments
+
         auto command = split(line, " ");
 
         std::cout << line << std::endl;
@@ -59,6 +61,6 @@ void BlockLoader::loadFromSource(std::string source){
     }
 }
 
-void BlockLoader::loadFromFile(std::string path){
+void BlockLoader::loadFromFile(const std::string& path){
     loadFromSource(ShaderProgram::getSource(path));
 }

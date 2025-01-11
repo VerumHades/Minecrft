@@ -25,15 +25,15 @@ class BlockRegistry: public TextureRegistry{
         struct BlockPrototype{
             BlockID id;
             std::string name;
-            std::vector<RectangularCollider> colliders;
+            std::vector<RectangularCollider> colliders{};
             
             bool single_texture = false; // If the block is same from all directions
             bool transparent = false; // If faces around it should get culled
-            std::array<size_t,6> textures; // Top, bottom, left, rigth, front, back                     
-            BlockRenderType render_type;
+            std::array<size_t,6> textures{}; // Top, bottom, left, rigth, front, back                     
+            BlockRenderType render_type = FULL_BLOCK;
 
-            std::array<std::string,6> texture_names;
-            std::array<std::string,6> texture_paths;
+            std::array<std::string,6> texture_names{};
+            std::array<std::string,6> texture_paths{};
         };
 
     private:

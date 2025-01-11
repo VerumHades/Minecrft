@@ -28,7 +28,7 @@ uint compileShader(const char* source, int type, std::string filename = ""){
     return shader;
 }
 
-std::string ShaderProgram::getSource(std::string path){
+std::string ShaderProgram::getSource(const std::string& path){
     std::ifstream file(path);  // Open the file
     if (!file.is_open()) {              // Check if the file is open
         std::cerr << "Failed to open shader file: " << path << std::endl;

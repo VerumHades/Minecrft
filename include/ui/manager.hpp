@@ -311,6 +311,7 @@ class UILayer{
     public:
         uint cursorMode =  GLFW_CURSOR_NORMAL;
         UIEventLock eventLocks = {};
+        std::string name = "none";
 
         void clear(){elements.clear();}
         void addElement(std::shared_ptr<UIFrame> element){
@@ -340,7 +341,12 @@ class UIWindow{
         void setCurrentLayer(std::string name) {currentLayer = name;};
         std::string getCurrentLayerName(){return currentLayer;}
         UILayer& getCurrentLayer() {return layers[currentLayer];}
-        UILayer& getLayer(std::string name) {return layers[name];}
+        UILayer& getLayer(std::string name) {
+            if(layers.contains(name)) return layers.at(name);
+            UILayer& layer = layers[name];
+            layer.name = name;
+            return layer;
+        }
 };
 
 #include <ui/loader.hpp>

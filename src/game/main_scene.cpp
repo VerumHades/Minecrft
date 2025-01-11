@@ -9,6 +9,7 @@ void MainScene::initialize(){
     this->getUILayer("chat").eventLocks = {true, true, true, true};
     this->getUILayer("menu").eventLocks = {true, true, true, true};
     this->getUILayer("settings").eventLocks = {true, true, true, true};
+    this->getUILayer("structure_capture").cursorMode = GLFW_CURSOR_DISABLED;
 
     this->setUILayer("default");
 
@@ -57,6 +58,33 @@ void MainScene::initialize(){
         {OPERATION_MINUS,{OPERATION_MINUS, {PERCENT,100}, {MY_PERCENT,100}},20}
     );
 
+    auto structure_capture_frame = uiManager->createElement<UIFrame>();
+    structure_capture_frame->setPosition(
+        (TValue{PERCENT,100} - TValue{MY_PERCENT,100}) - 10,
+        10
+    );
+    structure_capture_frame->setSize(200,350);
+    structure_capture_frame->setAttribute(&UIFrame::Style::backgroundColor, {20,20,20});
+    
+    auto layout = std::make_shared<UIFlexLayout>();
+    layout->setDirection(UIFlexLayout::VERTICAL);
+    layout->setExpand(false);
+
+    structure_capture_frame->setLayout(layout);
+
+    structure_capture_start_label = uiManager->createElement<UILabel>();
+    structure_capture_start_label->setAttribute(&UILabel::Style::fontSize, {12});
+    structure_capture_start_label->setSize(180,30);
+
+    structure_capture_end_label = uiManager->createElement<UILabel>();
+    structure_capture_end_label->setAttribute(&UIFrame::Style::fontSize, {12});
+    structure_capture_end_label->setSize(180,30);
+
+    structure_capture_frame->appendChild(structure_capture_start_label);
+    structure_capture_frame->appendChild(structure_capture_end_label);
+
+    setUILayer("structure_capture");
+    addElement(structure_capture_frame);
     setUILayer("menu");
     addElement(inventory);
     addElement(hotbar);
@@ -249,26 +277,32 @@ void MainScene::updateCursor(){
     blockUnderCursorEmpty = hit.lastPosition;
 
     if(!blockUnderCursor || blockUnderCursor->id == BLOCK_AIR_INDEX) wireframeRenderer.removeCube(0);
-    else wireframeRenderer.setCube(0,glm::vec3(hit.position) - 0.005f, {1.01,01.01,1.01},{1.0,0,0});
+    else wireframeRenderer.setCube(0,glm::vec3(hit.position) - 0.005f, {1.01,01.01,1.01},{0,0,0});
     
+    if(isActiveLayer("structure_capture")){
+        if(!structureCaptured) structureCaptureEnd = blockUnderCursorPosition;
+        updateStructureCaptureDisplay();
+    }
     //wireframeRenderer.setCube(1,glm::vec3(hit.lastPosition) - 0.005f, {1.01,01.01,1.01},{1.0,0,0});
 }
 
 void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     if(!blockUnderCursor || blockUnderCursor->id == BLOCK_AIR_INDEX) return;
 
-    glm::vec3& camDirection = camera.getDirection();
-    glm::vec3 camPosition = camera.getPosition();
-
     auto& player = world->getPlayer();
 
     if (
         button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS 
     ){  
+        if(isActiveLayer("structure_capture")){
+            structureCaptured = false;
+            structureCaptureStart = blockUnderCursorPosition;
+            updateStructureCaptureDisplay();
+            return;
+        }
+        
         auto* block_prototype = global_block_registry.getBlockPrototypeByIndex(blockUnderCursor->id);
         auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(block_prototype);
-
-        
 
         auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), glm::vec3(blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5));
         entity.accelerate({
@@ -289,6 +323,13 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
     else if(
         button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS
     ){
+        if(isActiveLayer("structure_capture")){
+            structureCaptureEnd = blockUnderCursorPosition;
+            structureCaptured = true;
+            updateStructureCaptureDisplay();
+            return;
+        }
+
         glm::ivec3 blockPosition = glm::floor(blockUnderCursorEmpty);
 
         auto& selected_slot = hotbar->getSelectedSlot();
@@ -315,6 +356,34 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
     }
 
     updateCursor();
+}
+
+template <typename T>
+static inline void swapToOrder(T& a, T& b){
+    if(a > b){
+        T temp = a;
+        a = b;
+        b = temp;
+    }
+}
+
+void MainScene::updateStructureCaptureDisplay(){
+    //swapToOrder(structureCaptureStart.x, structureCaptureEnd.x);
+    //swapToOrder(structureCaptureStart.y, structureCaptureEnd.y);
+    //swapToOrder(structureCaptureStart.z, structureCaptureEnd.z);
+
+    structure_capture_start_label->setText(
+        "Capture start: " + std::to_string(structureCaptureStart.x) + " " + std::to_string(structureCaptureStart.y) + " " + std::to_string(structureCaptureStart.z)
+    );
+    structure_capture_end_label->setText(
+        "Capture end: " + std::to_string(structureCaptureEnd.x) + " " + std::to_string(structureCaptureEnd.y) + " " + std::to_string(structureCaptureEnd.z)
+    );
+    structure_capture_start_label->update();
+    structure_capture_end_label->update();
+
+    glm::ivec3 size = structureCaptureEnd - structureCaptureStart;
+
+    wireframeRenderer.setCube(1,glm::vec3(structureCaptureStart) - 0.005f, glm::vec3{0.01,0.01,0.01} + glm::vec3(size),{0,0.1,0.1});
 }
 
 void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
@@ -365,9 +434,12 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
 
 void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
-        menuOpen = !menuOpen;
-        if(menuOpen) this->setUILayer("menu");
-        else this->setUILayer("default");
+        if(this->getCurrentUILayer().name != "default") 
+            this->setUILayer("default");
+    }
+    else if(key == GLFW_KEY_N && action == GLFW_PRESS){
+        if(this->getCurrentUILayer().name != "structure_capture")
+            this->setUILayer("structure_capture");
     }
 }
 

@@ -67,7 +67,7 @@ class UIStyle{
     public:
         UIStyle(){};
         // Load style from file, new styles are addded to the registry nothing is erased
-        void loadFromFile(std::string path);
+        void loadFromFile(const std::string& path);
         void applyTo(std::shared_ptr<UIFrame> element);
         void applyToAndAllChildren(std::shared_ptr<UIFrame> element);
 };
@@ -84,7 +84,7 @@ class UILoader{
         /*
             Loads a window its layers and elements from an xml source file.
         */
-        bool loadWindowFromXML(UIWindow& window, std::string path);
+        bool loadWindowFromXML(UIWindow& window, const std::string& path);
         UIStyle& getCurrentStyle() {return style;};
 };
 

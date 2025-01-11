@@ -11,10 +11,9 @@ ItemPrototype* ItemPrototypeRegistry::getPrototype(std::string name){
 }
 
 ItemPrototype::ItemPrototype(std::string name, const BlockRegistry::BlockPrototype* prototype): name(name){
-    display_type = BLOCK;
+    if(prototype->render_type != BlockRegistry::BILLBOARD) display_type = BLOCK;
+    is_block = true;
 
-    if(prototype->render_type == BlockRegistry::BILLBOARD) display_type = SIMPLE;
-    
     if(prototype->single_texture){
         auto texture_path = prototype->texture_paths[0];
         texture_paths = {texture_path, texture_path, texture_path};
@@ -27,7 +26,8 @@ ItemPrototype::ItemPrototype(std::string name, const BlockRegistry::BlockPrototy
         };
     }
 
-    model = std::make_shared<BlockModel>(prototype);
+    if(prototype->render_type == BlockRegistry::BILLBOARD) model = std::make_shared<SpriteModel>(prototype->texture_paths[0]);
+    else model = std::make_shared<BlockModel>(prototype);
     this->block_id = prototype->id;
 }
 
