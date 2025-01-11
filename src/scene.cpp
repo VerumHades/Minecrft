@@ -103,7 +103,6 @@ void SceneManager::resize(GLFWwindow* window, int width, int height){
 void SceneManager::mouseMove(GLFWwindow* window, int x, int y){
     manager.mouseMove(x,y);
     if(!eventLocks.mouseMove) getCurrentScene()->mouseMove(window, x,y);
-    getCurrentScene()->unlockedMouseMove(window, x,y);
 }
 
 void SceneManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
@@ -118,7 +117,6 @@ void SceneManager::scrollEvent(GLFWwindow* window, double xoffset, double yoffse
 void SceneManager::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
     manager.keyEvent(window,key,scancode,action,mods);
     if(!eventLocks.keyEvent) getCurrentScene()->keyEvent(window,key,scancode,action,mods);
-    getCurrentScene()->unlockedKeyEvent(window,key,scancode,action,mods);
 }
 
 void SceneManager::render(){

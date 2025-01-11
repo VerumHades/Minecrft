@@ -8,7 +8,6 @@ class TestScene: public Scene{
 
     public:
         void initialize();
-        virtual void unlockedKeyEvent(GLFWwindow* /*window*/, int /*key*/, int /*scancode*/, int /*action*/, int /*mods*/) override;
 };
 
 class TestWidget: public UIFrame{

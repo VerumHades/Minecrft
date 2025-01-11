@@ -6,9 +6,9 @@ void MainScene::initialize(){
     Scene* menuScene = sceneManager->getScene("menu");
     
     this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
-    this->getUILayer("chat").eventLocks = {true, true, true, true};
-    this->getUILayer("menu").eventLocks = {true, true, true, true};
-    this->getUILayer("settings").eventLocks = {true, true, true, true};
+    //this->getUILayer("chat").eventLocks = {true, true, true, true};
+    //this->getUILayer("menu").eventLocks = {true, true, true, true};
+    //this->getUILayer("settings").eventLocks = {true, true, true, true};
     this->getUILayer("structure_capture").cursorMode = GLFW_CURSOR_DISABLED;
 
     this->setUILayer("default");
@@ -204,13 +204,7 @@ void MainScene::resize(GLFWwindow* window, int width, int height){
 }
 
 void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
-    this->mouseX = mouseX;
-    this->mouseY = mouseY;
-    mouseMoved = true;
-}
-
-void MainScene::unlockedMouseMove(GLFWwindow* window, int mouseX, int mouseY){
-    if(menuOpen){
+    if(isActiveLayer("menu")){
         if(held_item_slot){
             held_item_slot->setPosition(
                 mouseX,
@@ -220,7 +214,13 @@ void MainScene::unlockedMouseMove(GLFWwindow* window, int mouseX, int mouseY){
             held_item_slot->update();
         }
     }
+    else if(isActiveLayer("default") || isActiveLayer("structure_capture")){
+        this->mouseX = mouseX;
+        this->mouseY = mouseY;
+        mouseMoved = true;
+    }
 }
+
 void MainScene::processMouseMovement(){
     if(!mouseMoved) return;
     else mouseMoved = false;
@@ -291,68 +291,64 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
     auto& player = world->getPlayer();
 
-    if (
-        button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS 
-    ){  
-        if(isActiveLayer("structure_capture")){
+    if(isActiveLayer("default")){
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS ){  
+            auto* block_prototype = global_block_registry.getBlockPrototypeByIndex(blockUnderCursor->id);
+            auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(block_prototype);
+
+            auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), glm::vec3(blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5));
+            entity.accelerate({
+                static_cast<float>(std::rand() % 200) / 100.0f - 1.0f,
+                0.6f,
+                static_cast<float>(std::rand() % 200) / 100.0f - 1.0f
+            }, 1.0f);
+            world->addEntity(entity);
+            //auto& selected_slot = hotbar->getSelectedSlot();
+            //inventory->addItem();
+
+            world->setBlock(blockUnderCursorPosition, {BLOCK_AIR_INDEX});
+
+            auto chunk = world->getChunkFromBlockPosition(blockUnderCursorPosition);
+            if(!chunk) return;
+            regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(blockUnderCursorPosition));
+        }
+        else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
+            glm::ivec3 blockPosition = glm::floor(blockUnderCursorEmpty);
+
+            auto& selected_slot = hotbar->getSelectedSlot();
+            if(!selected_slot.hasItem()) return;
+
+            auto* prototype = selected_slot.getItem()->getPrototype();
+            if(!prototype || !prototype->isBlock()) return;
+
+            world->setBlock(blockPosition, {prototype->getBlockID()});
+            if(
+                player.checkForCollision(world.get(), false) ||
+                player.checkForCollision(world.get(), true)
+            ){
+                world->setBlock(blockPosition, {BLOCK_AIR_INDEX});
+                return;
+            }
+
+            selected_slot.decreaseQuantity(1);
+            hotbar->update();
+
+            auto* chunk = world->getChunkFromBlockPosition(blockPosition);
+            if(!chunk) return;
+            regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(blockPosition));
+        }
+    }
+    else if(isActiveLayer("structure_capture")){
+        if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
             structureCaptured = false;
             structureCaptureStart = blockUnderCursorPosition;
             updateStructureCaptureDisplay();
-            return;
         }
-        
-        auto* block_prototype = global_block_registry.getBlockPrototypeByIndex(blockUnderCursor->id);
-        auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(block_prototype);
-
-        auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), glm::vec3(blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5));
-        entity.accelerate({
-            static_cast<float>(std::rand() % 200) / 100.0f - 1.0f,
-            0.6f,
-            static_cast<float>(std::rand() % 200) / 100.0f - 1.0f
-        }, 1.0f);
-        world->addEntity(entity);
-        //auto& selected_slot = hotbar->getSelectedSlot();
-        //inventory->addItem();
-
-        world->setBlock(blockUnderCursorPosition, {BLOCK_AIR_INDEX});
-
-        auto chunk = world->getChunkFromBlockPosition(blockUnderCursorPosition);
-        if(!chunk) return;
-        regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(blockUnderCursorPosition));
-    }
-    else if(
-        button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS
-    ){
-        if(isActiveLayer("structure_capture")){
+        else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
             structureCaptureEnd = blockUnderCursorPosition;
             structureCaptured = true;
             updateStructureCaptureDisplay();
-            return;
         }
-
-        glm::ivec3 blockPosition = glm::floor(blockUnderCursorEmpty);
-
-        auto& selected_slot = hotbar->getSelectedSlot();
-        if(!selected_slot.hasItem()) return;
-
-        auto* prototype = selected_slot.getItem()->getPrototype();
-        if(!prototype || !prototype->isBlock()) return;
-
-        world->setBlock(blockPosition, {prototype->getBlockID()});
-        if(
-            player.checkForCollision(world.get(), false) ||
-            player.checkForCollision(world.get(), true)
-        ){
-            world->setBlock(blockPosition, {BLOCK_AIR_INDEX});
-            return;
-        }
-
-        selected_slot.decreaseQuantity(1);
-        hotbar->update();
-
-        auto* chunk = world->getChunkFromBlockPosition(blockPosition);
-        if(!chunk) return;
-        regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(blockPosition));
     }
 
     updateCursor();
@@ -387,6 +383,8 @@ void MainScene::updateStructureCaptureDisplay(){
 }
 
 void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
+    if(!isActiveLayer("default")) return;
+
     if(inputManager.isActive(SCROLL_ZOOM)){
         camFOV -= (float) yoffset * 5.0f;
 
@@ -404,35 +402,6 @@ void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
 }
 
 void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
-    inputManager.keyEvent(window,key,scancode,action,mods);
-
-    if(key == GLFW_KEY_M && action == GLFW_PRESS){
-        lineMode = !lineMode;
-        if(!lineMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
-
-    if(key == GLFW_KEY_K && action == GLFW_PRESS){
-        updateVisibility = 1;
-    }
-
-    if(key == GLFW_KEY_Q && action == GLFW_PRESS){
-        auto& slot = hotbar->getSelectedSlot();
-        if(!slot.hasItem()) return;
-        
-        auto* item_prototype = slot.getItem()->getPrototype();
-        if(!item_prototype) return;
-        
-        auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), camera.getPosition() + camera.getDirection() * 0.5f);
-        entity.accelerate(camera.getDirection(),1.0f);
-        world->addEntity(entity);
-
-        slot.decreaseQuantity(1);
-        hotbar->update();
-    }
-}
-
-void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
         if(this->getCurrentUILayer().name != "default") 
             this->setUILayer("default");
@@ -440,6 +409,38 @@ void MainScene::unlockedKeyEvent(GLFWwindow* window, int key, int scancode, int 
     else if(key == GLFW_KEY_N && action == GLFW_PRESS){
         if(this->getCurrentUILayer().name != "structure_capture")
             this->setUILayer("structure_capture");
+    }
+    
+    if(isActiveLayer("default")){
+        inputManager.keyEvent(window,key,scancode,action,mods);
+
+        if(key == GLFW_KEY_M && action == GLFW_PRESS){
+            lineMode = !lineMode;
+            if(!lineMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
+        if(key == GLFW_KEY_K && action == GLFW_PRESS){
+            updateVisibility = 1;
+        }
+
+        if(key == GLFW_KEY_Q && action == GLFW_PRESS){
+            auto& slot = hotbar->getSelectedSlot();
+            if(!slot.hasItem()) return;
+            
+            auto* item_prototype = slot.getItem()->getPrototype();
+            if(!item_prototype) return;
+            
+            auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), camera.getPosition() + camera.getDirection() * 0.5f);
+            entity.accelerate(camera.getDirection(),1.0f);
+            world->addEntity(entity);
+
+            slot.decreaseQuantity(1);
+            hotbar->update();
+        }
+    }
+    else if(isActiveLayer("structure_capture")){
+        inputManager.keyEvent(window,key,scancode,action,mods);
     }
 }
 
@@ -762,12 +763,14 @@ void MainScene::physicsUpdate(){
 
         world->updateEntities(deltatime);
 
-        auto& in_hand_slot = hotbar->getSelectedSlot();
-        if(in_hand_slot.hasItem()){
-            auto* prototype = in_hand_slot.getItem()->getPrototype();
-            if(prototype){
-                glm::vec3 item_offset = camera.getDirection() * 0.5f - camera.getLeft() + camera.getRelativeUp() * 0.4f;
-                prototype->getModel()->requestDraw(camera.getPosition() + item_offset, {1,1,1}, {0,-camera.getYaw(),camera.getPitch()}, {-0.5,-0.5,0}, {Model::Y,Model::Z,Model::X});
+        if(isActiveLayer("default")){
+            auto& in_hand_slot = hotbar->getSelectedSlot();
+            if(in_hand_slot.hasItem()){
+                auto* prototype = in_hand_slot.getItem()->getPrototype();
+                if(prototype){
+                    glm::vec3 item_offset = camera.getDirection() * 0.5f - camera.getLeft() + camera.getRelativeUp() * 0.4f;
+                    prototype->getModel()->requestDraw(camera.getPosition() + item_offset, {1,1,1}, {0,-camera.getYaw(),camera.getPitch()}, {-0.5,-0.5,0}, {Model::Y,Model::Z,Model::X});
+                }
             }
         }
         
