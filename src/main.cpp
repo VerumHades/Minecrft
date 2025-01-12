@@ -159,7 +159,7 @@ int main() {
     }
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
     
-    printOpenGLLimits();
+    //printOpenGLLimits();
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -187,8 +187,6 @@ int main() {
         Scene* menuScene = sceneManager.createScene<Scene>("menu");
         menuScene->setUILayer("default");
         sceneManager.getUIManager().loadWindowFromXML(*menuScene->getWindow(), "resources/templates/menu.xml");
-
-        sceneManager.createScene<TestScene>("test_scene");
         
         MainScene* mainScene = sceneManager.createScene<MainScene>("game");
 
@@ -267,6 +265,7 @@ int main() {
         auto newWorldButton = menuScene->getUILayer("world_menu").getElementById("create_new_world");
         newWorldButton->onClicked = newWorldFunc;
 
+        //sceneManager.createScene<TestScene>("test_scene");
         sceneManager.setScene("game");
         //menuScene->setUILayer("default");
 

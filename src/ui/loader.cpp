@@ -52,6 +52,7 @@ TValue parseTValue(std::string source){
     source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
     
     if(source == "fit-content") return TValue(Units::FIT_CONTENT, 0);
+    else if(source == "auto") return TValue(Units::AUTO, 0);
 
     auto [op_position,op_index] = findMostImportantOperator(source);
 

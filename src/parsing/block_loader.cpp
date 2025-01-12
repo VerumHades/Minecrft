@@ -37,8 +37,6 @@ void BlockLoader::loadFromSource(std::string source){
         if(line.starts_with("#")) continue; // Ignore comments
 
         auto command = split(line, " ");
-
-        std::cout << line << std::endl;
         
         if(command.size() >= 8 && command[0] == "FULL_BLOCK")
             global_block_registry.addFullBlock(command[1], {command[2],command[3],command[4],command[5],command[6],command[7]});

@@ -82,6 +82,10 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
     {
         case NONE: return 0;
         case PIXELS: return value.value;   
+        case AUTO:{
+            std::cout << prefferedSize.width << "x" << prefferedSize.height << std::endl;
+            return horizontal ? prefferedSize.width : prefferedSize.height;
+        }
 
         case WINDOW_WIDTH : return (manager.getScreenWidth()  / 100.0f) * value.value;
         case WINDOW_HEIGHT: return (manager.getScreenHeight() / 100.0f) * value.value;
@@ -411,18 +415,20 @@ void UIFrame::calculateTransforms(){
 
 void UILabel::getRenderingInformation(UIRenderBatch& batch) {
     auto t = getTextPosition(manager);
-    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(text, font_size);
-
-    //std::cout << "Label with text: " << text << " has width of unit: " << width.unit << " and height of unit: " << height.unit << 
-    //"That is" << width.value << " and " << height.value << std::endl;
-
-    //std::cout << textDimensions.x << " " << textDimensions.y << std::endl;
-
-    if(width .unit == NONE) width  = textDimensions.width + textPadding * 2;
-    if(height.unit == NONE) height = textDimensions.height + textPadding * 2;
 
     UIFrame::getRenderingInformation(batch);
     batch.Text(text, t.x, t.y, font_size, getAttribute(&Style::textColor));
+}
+
+void UILabel::calculateElementsTransforms(){
+    UIFrame::calculateElementsTransforms();
+
+    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(text, font_size);
+
+    prefferedSize = {
+        textDimensions.width + textPadding * 2,
+        textDimensions.height + textPadding * 2
+    };
 }
 
 UITransform UILabel::getTextPosition(UIManager& manager){

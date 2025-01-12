@@ -1,0 +1,23 @@
+<window>
+    <structure_capture>
+        <style src="resources/templates/game.css"></style>
+
+        <frame id="info_frame">
+            <label id="start_label">Capture start: </label>
+            <label id="end_label">Capture end: </label>
+            <label >Press 'N' to save structure.</label>
+        </frame>
+    </structure_capture>
+    <structure_saving>
+        <frame id="structure_save_frame">
+            <frame id="structure_save_internal">
+                <label>Save structure: </label>
+                <label id="save_size">Size: </label>
+                <label id="blocks_total">Blocks total: </label>
+                <label>Structure name: </label>
+                <input id="structure_name"></input>
+            </frame>
+            <label id="submit">Save</label>
+        </frame>
+    </structure_saving>
+</window>

@@ -4,7 +4,8 @@
 
 enum Units{
     NONE, // The default value always 0 pixels
-    PIXELS, 
+    PIXELS,
+    AUTO, // Some elements support automatic resize 
 
     WINDOW_WIDTH, // Percentage of the window width
     WINDOW_HEIGHT, // Percentage of the window height
@@ -24,13 +25,14 @@ enum Units{
 };
 
 struct TValue{
-    Units unit = NONE;
+    Units unit = AUTO;
     int value = 0; 
 
     std::vector<TValue> operands;
 
     TValue(Units unit, int value) : unit(unit), value(value){}
     TValue(int value) : unit(PIXELS), value(value){}
+    TValue(Units unit): unit(unit), value(10){}
 
     // Gets automatically resolved if the operands have the same types
     TValue(Units operation, TValue op1, TValue op2): unit(operation){
@@ -78,4 +80,9 @@ enum UIElementState{
     BASE,
     HOVER,
     FOCUS
+};
+
+struct UISize{
+    int width;
+    int height;
 };

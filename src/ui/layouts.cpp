@@ -52,6 +52,26 @@ void UIFlexLayout::arrangeChildren(UIFrame* frame) {
     int offset = 0;
 
     auto& content_transform = frame->getContentTransform();
+
+    if(fill){
+        int size = (direction == HORIZONTAL ? content_transform.width : content_transform.height) / frame->getChildren().size();
+
+        for(auto& child: frame->getChildren()){
+            child->setPosition(
+                direction == HORIZONTAL ? offset : 0,
+                direction == VERTICAL   ? offset : 0
+            );
+            child->setSize(
+                direction == HORIZONTAL ? size : content_transform.width,
+                direction == VERTICAL   ? size : content_transform.height
+            );
+
+            offset += size;
+        }
+
+        return;
+    }
+
     for(auto& child: frame->getChildren()){
         
         child->calculateElementsTransforms();

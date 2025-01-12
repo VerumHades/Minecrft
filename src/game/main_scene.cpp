@@ -4,6 +4,8 @@ void MainScene::initialize(){
     fpsLock = false;
 
     Scene* menuScene = sceneManager->getScene("menu");
+
+    uiManager->loadWindowFromXML(*getWindow(), "resources/templates/game.xml");
     
     this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
     //this->getUILayer("chat").eventLocks = {true, true, true, true};
@@ -58,33 +60,9 @@ void MainScene::initialize(){
         {OPERATION_MINUS,{OPERATION_MINUS, {PERCENT,100}, {MY_PERCENT,100}},20}
     );
 
-    auto structure_capture_frame = uiManager->createElement<UIFrame>();
-    structure_capture_frame->setPosition(
-        (TValue{PERCENT,100} - TValue{MY_PERCENT,100}) - 10,
-        10
-    );
-    structure_capture_frame->setSize(200,350);
-    structure_capture_frame->setAttribute(&UIFrame::Style::backgroundColor, {20,20,20});
-    
-    auto layout = std::make_shared<UIFlexLayout>();
-    layout->setDirection(UIFlexLayout::VERTICAL);
-    layout->setExpand(false);
+    structure_capture_start_label = dynamic_pointer_cast<UILabel>(getUILayer("structure_capture").getElementById("start_label"));
+    structure_capture_end_label   = dynamic_pointer_cast<UILabel>(getUILayer("structure_capture").getElementById("end_label"));
 
-    structure_capture_frame->setLayout(layout);
-
-    structure_capture_start_label = uiManager->createElement<UILabel>();
-    structure_capture_start_label->setAttribute(&UILabel::Style::fontSize, {12});
-    structure_capture_start_label->setSize(180,30);
-
-    structure_capture_end_label = uiManager->createElement<UILabel>();
-    structure_capture_end_label->setAttribute(&UIFrame::Style::fontSize, {12});
-    structure_capture_end_label->setSize(180,30);
-
-    structure_capture_frame->appendChild(structure_capture_start_label);
-    structure_capture_frame->appendChild(structure_capture_end_label);
-
-    setUILayer("structure_capture");
-    addElement(structure_capture_frame);
     setUILayer("menu");
     addElement(inventory);
     addElement(hotbar);
@@ -405,10 +383,13 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
         if(this->getCurrentUILayer().name != "default") 
             this->setUILayer("default");
+        else
+            this->setUILayer("menu");
     }
     else if(key == GLFW_KEY_N && action == GLFW_PRESS){
         if(this->getCurrentUILayer().name != "structure_capture")
             this->setUILayer("structure_capture");
+        else this->setUILayer("structure_saving");
     }
     
     if(isActiveLayer("default")){

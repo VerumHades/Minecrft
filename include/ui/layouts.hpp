@@ -27,11 +27,14 @@ class UIFlexLayout: public UILayout{
         };
 
     private:
-        FlexDirection direction;
+        FlexDirection direction = VERTICAL;
         bool expandToChildren = false;
+        bool fill = false;
 
     public:
+        UIFlexLayout(FlexDirection direction = VERTICAL, bool expand = false): direction(direction), expandToChildren(expand) {};
         void setExpand(bool value) {expandToChildren = value;}
+        void setFill(bool value) {fill = value;}
         void setDirection(FlexDirection direction) {this->direction = direction;}
         
         UITransform calculateContentTransform(UIFrame* frame) override;

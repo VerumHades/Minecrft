@@ -94,6 +94,7 @@ static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFram
     {"background-color", ATTRIBUTE_LAMBDA(backgroundColor, parseColor)},
     {"color",            ATTRIBUTE_LAMBDA(textColor, parseColor)},
     {"margin",           ATTRIBUTE_LAMBDA(margin, parseTValue)},
+    {"font-size",        ATTRIBUTE_LAMBDA(fontSize, parseTValue)},
 
     {
         "display", [](auto element, auto value, auto){
@@ -114,6 +115,8 @@ static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFram
 
     {"left",   [](auto element, auto value, auto) { element->setX(parseTValue(value)); }},
     {"top",    [](auto element, auto value, auto) { element->setY(parseTValue(value)); }},
+    {"right",  [](auto element, auto value, auto) { element->setX((TValue{PERCENT,100} - TValue{MY_PERCENT,100}) - parseTValue(value)); }},
+    {"bottom", [](auto element, auto value, auto) { element->setY((TValue{PERCENT,100} - TValue{MY_PERCENT,100}) - parseTValue(value)); }},
     {"width",  [](auto element, auto value, auto) { element->setWidth(parseTValue(value)); }},
     {"height", [](auto element, auto value, auto) { element->setHeight(parseTValue(value)); }},
     

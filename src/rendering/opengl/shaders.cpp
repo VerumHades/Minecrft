@@ -135,7 +135,7 @@ void ShaderUniformLinker::addUniform(UniformBase* uniform){
         std::cerr << "Cannot overwrite already existing uniform '" << uniform->getName() << "'." << std::endl;
         return;
     }
-    std::cout << "Added uniform '" << uniform->getName() << "' to linker." << std::endl;
+    //std::cout << "Added uniform '" << uniform->getName() << "' to linker." << std::endl;
     uniforms[uniform->getName()] = uniform;
 }
 

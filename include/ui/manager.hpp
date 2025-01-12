@@ -48,7 +48,7 @@ class UIFrame{
         Style baseStyle = {
             Style::TextPosition::LEFT,
             UIColor{255,255,255,255},
-            UIColor{0,0,0,0},
+            UIColor{0,0,0},
             std::array<TValue,4>{0,0,0,0},
             UIBorderColors{UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
             TValue(0),
@@ -117,6 +117,8 @@ class UIFrame{
         UIBorderSizes borderSizes     = {0,0,0,0};
         UIRegion clipRegion           = {{0,0},{0,0}};
         UIRegion contentClipRegion    = {{0,0},{0,0}};
+
+        UISize prefferedSize = {10,10};
         int margin_x = 0;
         int margin_y = 0;
         int font_size = 0;
@@ -225,6 +227,8 @@ class UILabel: public UIFrame{
     public:
         UILabel(UIManager& manager): UIFrame(manager) {identifiers.tag = "label";}
         virtual void getRenderingInformation(UIRenderBatch& batch);
+
+        void calculateElementsTransforms() override;
 
         void setText(std::string text) {this->text = text;}
         void setTextPadding(int padding) {this->textPadding = padding;}
@@ -340,7 +344,9 @@ class UIWindow{
     public:
         void setCurrentLayer(std::string name) {currentLayer = name;};
         std::string getCurrentLayerName(){return currentLayer;}
-        UILayer& getCurrentLayer() {return layers[currentLayer];}
+        UILayer& getCurrentLayer() {
+            return getLayer(currentLayer);
+        }
         UILayer& getLayer(std::string name) {
             if(layers.contains(name)) return layers.at(name);
             UILayer& layer = layers[name];

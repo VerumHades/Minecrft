@@ -34,7 +34,7 @@ void BlockRegistry::addFullBlock(std::string name, std::array<std::string,6> tex
             return;
         }
         texture_paths[i] = texture->path;
-        std::cout << texture_paths[i] << " " << name << std::endl;
+        //std::cout << texture_paths[i] << " " << name << std::endl;
 
         textures[i++] = getTextureIndex(name);
     }

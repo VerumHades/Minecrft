@@ -12,13 +12,21 @@
 //}
 
 void TestScene::initialize(){
+    auto form = std::make_shared<UIForm>(std::vector<UIForm::Field>{
+        UIForm::Field{"Text: ", UIForm::TEXT}
+    }, *uiManager);
+    
+    form->setPosition(10,10);
+    form->setAttribute(&UIFrame::Style::backgroundColor, {20,20,20});
+    form->setSize(200,200);
+
     setUILayer("first");
-    addElement(uiManager->createElement<TestWidget>());
-    setUILayer("second");
-    auto second = uiManager->createElement<TestWidget>();
-    second->setPosition(100,100);
-    addElement(second);
-    setUILayer("second");
+    addElement(form);
+    setUILayer("first");
+}
+
+void TestScene::open(GLFWwindow* window){
+    setUILayer("first");
 }
 
 void TestWidget::getRenderingInformation(UIRenderBatch& batch){

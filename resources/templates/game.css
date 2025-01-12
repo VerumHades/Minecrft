@@ -1,0 +1,56 @@
+#info_frame{
+    top: 10px;
+    right: 10px;
+
+    width:300px;
+    height:200px;
+    
+    display: flex;
+    flex-direction: column;
+
+    background-color: rgb(10,10,10);
+}
+
+#info_frame label{
+    font-size: 16px;
+    width: 100%;
+    height: 30px;
+}
+
+#structure_save_frame{
+    top: 50% - 50m;
+    left: 50% - 50m;
+
+    width: 300px;
+    height: 400px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+#structure_save_internal label, #structure_save_internal input{
+    font-size: 16px;
+    width: 100%;
+    height: 30px;
+}
+
+#structure_save_internal{
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    background-color: rgb(15,15,15);
+    height: 100% - 30px;
+}   
+
+#submit{
+    border-width: 1px;
+    border-color: rgb(105, 117, 101);
+    background-color: rgb(60, 61, 55);
+    height: 30px;
+    width: 100%;
+}
+#submit:hover{
+    background-color: rgb(105, 117, 101);
+    border-color: rgb(60, 61, 55);
+}

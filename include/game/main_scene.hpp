@@ -23,6 +23,7 @@
 #include <ui/manager.hpp>
 #include <ui/font.hpp>
 #include <ui/loader.hpp>
+#include <ui/form.hpp>
 
 #include <game/world/world.hpp>
 #include <game/world/mesh_generation.hpp>
