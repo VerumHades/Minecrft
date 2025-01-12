@@ -34,6 +34,7 @@
 #include <game/items/sprite_model.hpp>
 #include <game/items/item.hpp>
 #include <game/items/item_renderer.hpp>
+#include <game/structure.hpp>
 
 #include <indexing.hpp>
 
@@ -159,6 +160,7 @@ class MainScene: public Scene{
         bool structureCaptured = false;
 
         void updateStructureCaptureDisplay();
+        void updateStructureSavingDisplay();
         
     public:
         void initialize() override;

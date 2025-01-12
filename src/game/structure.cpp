@@ -53,4 +53,6 @@ Structure Structure::capture(const glm::ivec3& position, const glm::ivec3& size,
         if(!block) continue;
         output.setBlock(block_position, *block);
     }
+
+    return output;
 }

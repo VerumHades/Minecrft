@@ -40,7 +40,7 @@
 
     width: 100%;
     background-color: rgb(15,15,15);
-    height: 100% - 30px;
+    height: 100% - 50px;
 }   
 
 #submit{
@@ -49,6 +49,7 @@
     background-color: rgb(60, 61, 55);
     height: 30px;
     width: 100%;
+    margin: 10px;
 }
 #submit:hover{
     background-color: rgb(105, 117, 101);

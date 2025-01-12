@@ -1,5 +1,23 @@
 #include <game/main_scene.hpp>
 
+
+template <typename T>
+static inline void swapToOrder(T& a, T& b){
+    if(a > b){
+        T temp = a;
+        a = b;
+        b = temp;
+    }
+}
+
+static inline std::tuple<glm::ivec3, glm::ivec3> pointsToRegion(glm::ivec3 min, glm::ivec3 max){
+    swapToOrder(min.x,max.x);
+    swapToOrder(min.y,max.y);
+    swapToOrder(min.z,max.z);
+    
+    return {min,max};
+}
+
 void MainScene::initialize(){
     fpsLock = false;
 
@@ -62,6 +80,17 @@ void MainScene::initialize(){
 
     structure_capture_start_label = dynamic_pointer_cast<UILabel>(getUILayer("structure_capture").getElementById("start_label"));
     structure_capture_end_label   = dynamic_pointer_cast<UILabel>(getUILayer("structure_capture").getElementById("end_label"));
+
+    getUILayer("structure_saving").getElementById("submit")->onClicked = [this](){
+        auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
+        glm::ivec3 size = max - min;
+
+        Structure structure = Structure::capture(min, size, *world);
+
+        std::cout << "Structure saved!" << std::endl;
+
+        structure.place({0,120,0}, *world);
+    };
 
     setUILayer("menu");
     addElement(inventory);
@@ -333,24 +362,17 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 }
 
 template <typename T>
-static inline void swapToOrder(T& a, T& b){
-    if(a > b){
-        T temp = a;
-        a = b;
-        b = temp;
-    }
+static inline std::string vecToString(T vec, const std::string& separator = " "){
+    return std::to_string(vec.x) + separator + std::to_string(vec.y) + separator + std::to_string(vec.z);
 }
 
 void MainScene::updateStructureCaptureDisplay(){
-    //swapToOrder(structureCaptureStart.x, structureCaptureEnd.x);
-    //swapToOrder(structureCaptureStart.y, structureCaptureEnd.y);
-    //swapToOrder(structureCaptureStart.z, structureCaptureEnd.z);
 
     structure_capture_start_label->setText(
-        "Capture start: " + std::to_string(structureCaptureStart.x) + " " + std::to_string(structureCaptureStart.y) + " " + std::to_string(structureCaptureStart.z)
+        "Capture start: " + vecToString(structureCaptureStart)
     );
     structure_capture_end_label->setText(
-        "Capture end: " + std::to_string(structureCaptureEnd.x) + " " + std::to_string(structureCaptureEnd.y) + " " + std::to_string(structureCaptureEnd.z)
+        "Capture end: " + vecToString(structureCaptureEnd)
     );
     structure_capture_start_label->update();
     structure_capture_end_label->update();
@@ -358,6 +380,25 @@ void MainScene::updateStructureCaptureDisplay(){
     glm::ivec3 size = structureCaptureEnd - structureCaptureStart;
 
     wireframeRenderer.setCube(1,glm::vec3(structureCaptureStart) - 0.005f, glm::vec3{0.01,0.01,0.01} + glm::vec3(size),{0,0.1,0.1});
+}
+
+void MainScene::updateStructureSavingDisplay(){
+    auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
+    glm::ivec3 size = max - min;
+
+    auto save_size_label = dynamic_pointer_cast<UILabel>(getUILayer("structure_saving").getElementById("save_size"));
+    auto blocks_total_label = dynamic_pointer_cast<UILabel>(getUILayer("structure_saving").getElementById("blocks_total"));
+
+    save_size_label->setText(
+        "Size: " + vecToString(size, "x")
+    );
+
+    blocks_total_label->setText(
+        "Blocks total: " + std::to_string(size.x * size.y * size.z)
+    );
+
+    save_size_label->update();
+    blocks_total_label->update();
 }
 
 void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
@@ -389,7 +430,10 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
     else if(key == GLFW_KEY_N && action == GLFW_PRESS){
         if(this->getCurrentUILayer().name != "structure_capture")
             this->setUILayer("structure_capture");
-        else this->setUILayer("structure_saving");
+        else{
+            this->setUILayer("structure_saving");
+            updateStructureSavingDisplay();
+        }
     }
     
     if(isActiveLayer("default")){

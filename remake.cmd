@@ -1,7 +1,0 @@
-@echo off
- cls
-::rmdir build /s /q
-::mkdir build
-cd build
-cmake -DCMAKE_COLOR_MAKEFILE=ON -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
-cd ..

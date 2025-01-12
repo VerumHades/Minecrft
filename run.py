@@ -52,7 +52,7 @@ def os_command(linux,windows, prefix = ""):
 if args.remake:
     os_command(
         f"cmake ../.. -DCMAKE_BUILD_TYPE={build_type}",
-        f"cmake ../.. -DCMAKE_COLOR_MAKEFILE=ON -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE={build_type}"
+        f"cmake ../.. -DCMAKE_COLOR_MAKEFILE=ON -G \"Unix Makefiles\" -DCMAKE_BUILD_TYPE={build_type}"
     )
 
 os.chdir(root_director)
@@ -66,7 +66,7 @@ if build_exit_code != 0:
     
 os_command(
     f"./build/{build_type}/main",
-    f"run build/{build_type}/main.exe",
+    f"build\\{build_type}\\main.exe",
     prefix = prefix
 )
     
