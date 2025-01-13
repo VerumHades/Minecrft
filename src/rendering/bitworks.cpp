@@ -64,3 +64,26 @@ bool ByteArray::operator== (const ByteArray& array){
     if(data.size() != array.data.size()) return false;
     return std::memcmp(data.data(), array.data.data(), data.size()) == 0;
 }
+
+bool ByteArray::saveToFile(std::string path){
+    std::fstream file(path, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
+    if (!file) {
+        std::cerr << "Failed to open file '" << path << "'." << std::endl;
+        return false;
+    }
+
+    write(file);
+    return true;
+}
+ByteArray ByteArray::FromFile(std::string path){
+    std::fstream file(path, std::ios::in | std::ios::binary);
+    if (!file) {
+        std::cerr << "Failed to open file '" << path << "'." << std::endl;
+        return {};
+    }
+    
+    ByteArray output{};
+    output.read(file);
+
+    return output;
+}

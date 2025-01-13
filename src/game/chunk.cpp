@@ -1,13 +1,16 @@
 #include <game/chunk.hpp>
 
-ByteArray Chunk::serialize(){
-    auto block_array = SparseBlockArray::serialize();
-    
-    block_array.append<int>(worldPosition.x);
-    block_array.append<int>(worldPosition.y);
-    block_array.append<int>(worldPosition.z);
+void Chunk::serialize(ByteArray& output_array){
+    SparseBlockArray::serialize(output_array);
+    output_array.append<int>(worldPosition.x);
+    output_array.append<int>(worldPosition.y);
+    output_array.append<int>(worldPosition.z);
+}
 
-    return block_array;
+ByteArray Chunk::serialize(){
+    ByteArray output{};
+    serialize(output);
+    return output;
 }
 Chunk Chunk::deserialize(ByteArray& array){
     auto data = SparseBlockArray::deserialize(array);

@@ -137,20 +137,24 @@ class ByteArray{
     private:
         std::vector<byte> data = {};
         size_t cursor = 0;
-    public:      
+    public:    
+        void append(const ByteArray& array){
+            data.insert(data.end(), array.data.begin(), array.data.end());
+        }
+      
         template <typename T, typename = std::enable_if_t<std::is_trivially_copyable<T>::value>>
-        void append(T data){
-            byte* bytePtr = reinterpret_cast<byte*>(&data);
+        void append(const T& data){
+            auto* bytePtr = reinterpret_cast<const byte*>(&data);
             this->data.insert(this->data.end(), bytePtr, bytePtr + sizeof(T));
         }
-
+        
         template <typename T, typename = std::enable_if_t<std::is_trivially_copyable<T>::value>>
-        void append(std::vector<T> source){
+        void append(const std::vector<T>& source){
             size_t totalSize = source.size() * sizeof(T);
             append<size_t>(source.size()); 
 
             data.resize(data.size() + totalSize);
-            byte* sourceArray = reinterpret_cast<byte*>(source.data());
+            auto* sourceArray = reinterpret_cast<const byte*>(source.data());
             std::memcpy(data.data() + data.size() - totalSize, sourceArray, totalSize);
         }
         template <typename T, typename = std::enable_if_t<std::is_trivially_copyable<T>::value>>
@@ -187,6 +191,10 @@ class ByteArray{
         bool operator == (const ByteArray& array);
         void write(std::fstream &file);
         bool read(std::fstream &file);
+
+        bool saveToFile(std::string path);
+        static ByteArray FromFile(std::string path);
+
         size_t getFullSize() {return sizeof(char) + sizeof(size_t) + data.size() * sizeof(byte);};
 
         const std::vector<byte>& getData() const {return data;}

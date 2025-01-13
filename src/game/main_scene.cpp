@@ -81,15 +81,15 @@ void MainScene::initialize(){
     structure_capture_start_label = dynamic_pointer_cast<UILabel>(getUILayer("structure_capture").getElementById("start_label"));
     structure_capture_end_label   = dynamic_pointer_cast<UILabel>(getUILayer("structure_capture").getElementById("end_label"));
 
-    getUILayer("structure_saving").getElementById("submit")->onClicked = [this](){
+    auto structure_name_input = dynamic_pointer_cast<UIInput>(getUILayer("structure_capture").getElementById("structure_name"));
+
+    getUILayer("structure_saving").getElementById("submit")->onClicked = [this,structure_name_input](){
         auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
         glm::ivec3 size = max - min;
 
         Structure structure = Structure::capture(min, size, *world);
 
-        std::cout << "Structure saved!" << std::endl;
-
-        structure.place({0,120,0}, *world);
+        structure.serialize().saveToFile("saves/structures/" "name" ".structure"); 
     };
 
     setUILayer("menu");
@@ -502,6 +502,10 @@ void MainScene::open(GLFWwindow* window){
         if(world->isChunkLoadable(chunkPosition)) world->loadChunk(chunkPosition);
         else world->generateChunk(chunkPosition);
     }
+
+    auto bt = ByteArray::FromFile("saves/structures/name.structure");
+    Structure st = Structure::deserialize(bt);
+    st.place({0,80,0},*world);
 
     //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
     //generationThread.detach();

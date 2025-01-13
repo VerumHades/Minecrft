@@ -73,5 +73,7 @@ class SparseBlockArray{
         bool wasAltered() {return altered;}
 
         virtual ByteArray serialize();
+        virtual void serialize(ByteArray& output_array);
+        
         static SparseBlockArray deserialize(ByteArray& array);
 };
