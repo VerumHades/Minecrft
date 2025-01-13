@@ -55,3 +55,10 @@
     background-color: rgb(105, 117, 101);
     border-color: rgb(60, 61, 55);
 }
+
+#structure_place_selection{
+    top:10px;
+    left:10px;
+    width: 400px;
+    height: 400px;
+}

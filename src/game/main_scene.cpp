@@ -78,18 +78,17 @@ void MainScene::initialize(){
         {OPERATION_MINUS,{OPERATION_MINUS, {PERCENT,100}, {MY_PERCENT,100}},20}
     );
 
-    structure_capture_start_label = dynamic_pointer_cast<UILabel>(getUILayer("structure_capture").getElementById("start_label"));
-    structure_capture_end_label   = dynamic_pointer_cast<UILabel>(getUILayer("structure_capture").getElementById("end_label"));
+    structure_capture_start_label = getUILayer("structure_capture").getElementById<UILabel>("start_label");
+    structure_capture_end_label   = getUILayer("structure_capture").getElementById<UILabel>("end_label");
 
-    auto structure_name_input = dynamic_pointer_cast<UIInput>(getUILayer("structure_capture").getElementById("structure_name"));
-
-    getUILayer("structure_saving").getElementById("submit")->onClicked = [this,structure_name_input](){
+    getUILayer("structure_saving").getElementById<UIFrame>("submit")->onClicked = [this](){
         auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
-        glm::ivec3 size = max - min;
+        glm::ivec3 size = (max - min) + glm::ivec3(1,1,1);
 
         Structure structure = Structure::capture(min, size, *world);
 
-        structure.serialize().saveToFile("saves/structures/" "name" ".structure"); 
+        structure.serialize().saveToFile("saves/structures/" + getUILayer("structure_saving").getElementById<UIInput>("structure_name")->getText() + ".structure");
+        setUILayer("structure_capture"); 
     };
 
     setUILayer("menu");
@@ -150,7 +149,7 @@ void MainScene::initialize(){
     inputManager.bindKey(GLFW_KEY_LEFT_CONTROL, MOVE_DOWN, "Move down when flying");
     inputManager.bindKey(GLFW_KEY_LEFT_SHIFT, SCROLL_ZOOM, "Hold to zoom");
 
-    auto settingsFrame = menuScene->getUILayer("settings").getElementById("keybind_container");
+    auto settingsFrame = menuScene->getUILayer("settings").getElementById<UIFrame>("keybind_container");
 
     for(auto& [key,action]: inputManager.getBoundKeys()){
         std::string kename = getKeyName(key,0);
@@ -186,9 +185,9 @@ void MainScene::initialize(){
         settingsFrame->appendChild(frame);
     }
 
-    menuScene->getUILayer("settings").getElementById("settings_scrollable")->calculateTransforms();
+    menuScene->getUILayer("settings").getElementById<UIFrame>("settings_scrollable")->calculateTransforms();
 
-    auto mouse_settings = menuScene->getUILayer("settings").getElementById("mouse_sensitivity_container");
+    auto mouse_settings = menuScene->getUILayer("settings").getElementById<UIFrame>("mouse_sensitivity_container");
 
     auto sensitivity_slider = uiManager->createElement<UISlider>();
     sensitivity_slider->setValuePointer(&sensitivity);
@@ -377,17 +376,18 @@ void MainScene::updateStructureCaptureDisplay(){
     structure_capture_start_label->update();
     structure_capture_end_label->update();
 
-    glm::ivec3 size = structureCaptureEnd - structureCaptureStart;
+    auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
+    glm::ivec3 size = (max - min) + glm::ivec3(1,1,1);
 
-    wireframeRenderer.setCube(1,glm::vec3(structureCaptureStart) - 0.005f, glm::vec3{0.01,0.01,0.01} + glm::vec3(size),{0,0.1,0.1});
+    wireframeRenderer.setCube(1,glm::vec3(min) - 0.005f, glm::vec3{0.01,0.01,0.01} + glm::vec3(size),{0,0.1,0.1});
 }
 
 void MainScene::updateStructureSavingDisplay(){
     auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
     glm::ivec3 size = max - min;
 
-    auto save_size_label = dynamic_pointer_cast<UILabel>(getUILayer("structure_saving").getElementById("save_size"));
-    auto blocks_total_label = dynamic_pointer_cast<UILabel>(getUILayer("structure_saving").getElementById("blocks_total"));
+    auto save_size_label = getUILayer("structure_saving").getElementById<UILabel>("save_size");
+    auto blocks_total_label = getUILayer("structure_saving").getElementById<UILabel>("blocks_total");
 
     save_size_label->setText(
         "Size: " + vecToString(size, "x")
@@ -422,17 +422,22 @@ void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
 
 void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
-        if(this->getCurrentUILayer().name != "default") 
+        if(!isActiveLayer("default")) 
             this->setUILayer("default");
         else
             this->setUILayer("menu");
     }
     else if(key == GLFW_KEY_N && action == GLFW_PRESS){
-        if(this->getCurrentUILayer().name != "structure_capture")
+        if(!isActiveLayer("structure_capture") && !isActiveLayer("structure_saving"))
             this->setUILayer("structure_capture");
-        else{
+        else if(!isActiveLayer("structure_saving")){
             this->setUILayer("structure_saving");
             updateStructureSavingDisplay();
+        }
+    }
+    else if(key == GLFW_KEY_P && action == GLFW_PRESS){
+        if(isActiveLayer("structure_capture")){
+            this->setUILayer("structure_placement");
         }
     }
     

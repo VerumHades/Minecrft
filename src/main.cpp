@@ -190,8 +190,8 @@ int main() {
         
         MainScene* mainScene = sceneManager.createScene<MainScene>("game");
 
-        auto startButton = menuScene->getUILayer("default").getElementById("new_world");
-        auto scrollable = std::dynamic_pointer_cast<UIScrollableFrame>(menuScene->getUILayer("world_menu").getElementById("top_frame"));
+        auto startButton = menuScene->getUILayer("default").getElementById<UILabel>("new_world");
+        auto scrollable = menuScene->getUILayer("world_menu").getElementById<UIScrollableFrame>("top_frame");
         
         startButton->onClicked = [menuScene, mainScene, scrollable] {
             menuScene->setUILayer("world_menu");
@@ -232,22 +232,22 @@ int main() {
             scrollable->updateChildren();
         };
 
-        auto toSettings = menuScene->getUILayer("default").getElementById("setttings");
+        auto toSettings = menuScene->getUILayer("default").getElementById<UIFrame>("setttings");
         toSettings->onClicked = [menuScene]{
             menuScene->setUILayer("settings");
         };
 
-        auto backButton = menuScene->getUILayer("world_menu").getElementById("back_to_menu");
+        auto backButton = menuScene->getUILayer("world_menu").getElementById<UIFrame>("back_to_menu");
         backButton->onClicked = [menuScene, mainScene] {
             menuScene->setUILayer("default");
         };
 
-        auto settingsBackButton = menuScene->getUILayer("settings").getElementById("settings_back_button");
+        auto settingsBackButton = menuScene->getUILayer("settings").getElementById<UIFrame>("settings_back_button");
         settingsBackButton->onClicked = [menuScene, mainScene] {
             menuScene->setUILayer("default");
         };
 
-        auto newWorldNameInput = std::dynamic_pointer_cast<UIInput>(menuScene->getUILayer("world_menu").getElementById("new_world_name"));
+        auto newWorldNameInput = menuScene->getUILayer("world_menu").getElementById<UIInput>("new_world_name");
         
         auto newWorldFunc = [newWorldNameInput, startButton]{
             auto name = newWorldNameInput->getText();
@@ -262,7 +262,7 @@ int main() {
 
         newWorldNameInput->onSubmit = [newWorldFunc](std::string){newWorldFunc();};
 
-        auto newWorldButton = menuScene->getUILayer("world_menu").getElementById("create_new_world");
+        auto newWorldButton = menuScene->getUILayer("world_menu").getElementById<UIFrame>("create_new_world");
         newWorldButton->onClicked = newWorldFunc;
 
         //sceneManager.createScene<TestScene>("test_scene");

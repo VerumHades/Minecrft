@@ -325,12 +325,15 @@ class UILayer{
         void addElementWithID(std::string id, std::shared_ptr<UIFrame> element){
             idRegistry[id] = element;
         }
-        std::shared_ptr<UIFrame> getElementById(std::string id){
+        template <typename T>
+        std::shared_ptr<T> getElementById(std::string id){
             if(idRegistry.count(id) == 0) {
                 std::cerr << "No element under id: " << id << std::endl;
+                return nullptr;
             }
-            return idRegistry[id];
+            return dynamic_pointer_cast<T>(idRegistry[id]);
         }
+
         std::vector<std::shared_ptr<UIFrame>>& getElements() {return elements;}
 };
 
