@@ -5,7 +5,7 @@
 #include <rendering/opengl/shaders.hpp>
 #include <rendering/mesh.hpp>
 #include <ui/font.hpp>
-#include <ui/manager.hpp>
+#include <ui/core.hpp>
 #include <queue>
 #include <ui/opengl_backend.hpp>
 
@@ -14,7 +14,6 @@ class SceneManager;
 class Scene{
     protected:
         UIWindowIdentifier windowID;
-        UIManager* uiManager;
         SceneManager* sceneManager;
 
         bool fpsLock = true;
@@ -51,10 +50,8 @@ class SceneManager{
         Scene* getCurrentScene();
 
         UIOpenglBackend opengl_backend;
-        UIManager manager;
-        
-        GLFWwindow* window;
 
+        GLFWwindow* window;
         UIEventLock eventLocks;
 
     public:
@@ -88,8 +85,6 @@ class SceneManager{
         void setEventLocks(const UIEventLock& locks) {eventLocks = locks;};
         float getTickTime() {return 1.0f / getCurrentScene()->targetFPS;};
         bool isFPSLocked() {return getCurrentScene()->fpsLock;};
-
-        UIManager& getUIManager() { return manager; };
 };
 
 #endif

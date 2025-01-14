@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cmath>
 
-#include <ui/manager.hpp>
+#include <ui/core.hpp>
 #include <ui/loader.hpp>
 #include <scene.hpp>
 #include <game/main_scene.hpp>
@@ -15,16 +15,16 @@
 /*void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
         if(menuOpen){
-            uiManager.setScene("main");
+            UICore.setScene("main");
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
         else{
-            uiManager.setScene("internal_default");
+            UICore.setScene("internal_default");
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
         menuOpen = !menuOpen;
     }
-    uiManager.keyEvent(key,action);
+    UICore.keyEvent(key,action);
 }*/
 
 void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
@@ -186,7 +186,7 @@ int main() {
 
         Scene* menuScene = sceneManager.createScene<Scene>("menu");
         menuScene->setUILayer("default");
-        sceneManager.getUIManager().loadWindowFromXML(*menuScene->getWindow(), "resources/templates/menu.xml");
+        ui_core.loadWindowFromXML(*menuScene->getWindow(), "resources/templates/menu.xml");
         
         MainScene* mainScene = sceneManager.createScene<MainScene>("game");
 
@@ -201,16 +201,16 @@ int main() {
                 std::string filepath = dirEntry.path().string();
                 WorldStream stream(filepath);
                 
-                auto frame = s->getUIManager().createElement<UIFrame>();
+                auto frame = std::make_shared<UIFrame>();
                 frame->setSize({PERCENT,80}, 200);
                 
-                auto temp = s->getUIManager().createElement<UILabel>();
+                auto temp = std::make_shared<UILabel>();
                 temp->setText(stream.getName());
                 temp->setSize({PERCENT,100}, 40);
                 temp->setHoverable(false);
                 temp->setIdentifiers({"world_option_label"});
 
-                auto chunkCountLabel = s->getUIManager().createElement<UILabel>();
+                auto chunkCountLabel = std::make_shared<UILabel>();
                 chunkCountLabel->setText("Number of saved chunks: " + std::to_string(stream.getChunkCount()));
                 chunkCountLabel->setSize({PERCENT,100},40);
                 chunkCountLabel->setPosition(0,45);

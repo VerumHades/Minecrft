@@ -23,7 +23,7 @@ void MainScene::initialize(){
 
     Scene* menuScene = sceneManager->getScene("menu");
 
-    uiManager->loadWindowFromXML(*getWindow(), "resources/templates/game.xml");
+    ui_core.loadWindowFromXML(*getWindow(), "resources/templates/game.xml");
     
     this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
     //this->getUILayer("chat").eventLocks = {true, true, true, true};
@@ -33,11 +33,11 @@ void MainScene::initialize(){
 
     this->setUILayer("default");
 
-    fps_label = uiManager->createElement<UILabel>();
+    fps_label = std::make_shared<UILabel>();
     fps_label->setPosition(10,10);
     addElement(fps_label);
 
-    auto crosshair = uiManager->createElement<UICrosshair>();
+    auto crosshair = std::make_shared<UICrosshair>();
     crosshair->setSize(60,60);
     crosshair->setPosition(
         {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT, 50}},
@@ -59,9 +59,9 @@ void MainScene::initialize(){
     itemPrototypeRegistry.addPrototype(ItemPrototype("diamond","resources/textures/diamond32.png"));
     itemPrototypeRegistry.addPrototype(ItemPrototype("crazed","resources/textures/crazed32.png"));
 
-    held_item_slot = std::make_shared<ItemSlot>(itemTextureAtlas,*uiManager);
+    held_item_slot = std::make_shared<ItemSlot>(itemTextureAtlas);
 
-    inventory = std::make_shared<ItemInventory>(itemTextureAtlas,*uiManager, 10,5, held_item_slot);
+    inventory = std::make_shared<ItemInventory>(itemTextureAtlas, 10,5, held_item_slot);
     inventory->setPosition(
         {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}},
         {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}}
@@ -72,7 +72,7 @@ void MainScene::initialize(){
     inventory->setItem(1,0,item);
     inventory->setItem(0,4,item2);
 
-    hotbar = std::make_shared<UIHotbar>(itemTextureAtlas, *uiManager, held_item_slot);
+    hotbar = std::make_shared<UIHotbar>(itemTextureAtlas, held_item_slot);
     hotbar->setPosition(
         {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}},
         {OPERATION_MINUS,{OPERATION_MINUS, {PERCENT,100}, {MY_PERCENT,100}},20}
@@ -154,18 +154,18 @@ void MainScene::initialize(){
     for(auto& [key,action]: inputManager.getBoundKeys()){
         std::string kename = getKeyName(key,0);
 
-        auto frame = uiManager->createElement<UIFrame>();
+        auto frame = std::make_shared<UIFrame>();
         frame->setSize({OPERATION_MINUS,{PERCENT,100},{10}}, 40);
         frame->setIdentifiers({"controlls_member"});
 
-        auto name = uiManager->createElement<UILabel>();
+        auto name = std::make_shared<UILabel>();
         name->setText(action.name);
         name->setSize({PERCENT,80},40);
         name->setPosition(0,0);
         name->setHoverable(false);
         name->setIdentifiers({"controlls_member_name"});
         
-        auto keyname = uiManager->createElement<UILabel>();
+        auto keyname = std::make_shared<UILabel>();
         keyname->setText(kename);
         keyname->setSize({OPERATION_MINUS,{PERCENT,20},5},40);
         keyname->setPosition({PERCENT,80},0);
@@ -189,7 +189,7 @@ void MainScene::initialize(){
 
     auto mouse_settings = menuScene->getUILayer("settings").getElementById<UIFrame>("mouse_sensitivity_container");
 
-    auto sensitivity_slider = uiManager->createElement<UISlider>();
+    auto sensitivity_slider = std::make_shared<UISlider>();
     sensitivity_slider->setValuePointer(&sensitivity);
     sensitivity_slider->setSize({PERCENT,60},{PERCENT,100});
     sensitivity_slider->setPosition({PERCENT,20},0);

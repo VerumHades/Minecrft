@@ -1,10 +1,10 @@
 #pragma once
 
-#include <ui/manager.hpp>
+#include <ui/core.hpp>
 
 class UISelection: public UIFrame{
     private:
         
     public:
-        UISelection(UIManager& manager);
+        UISelection(UICore& manager);
 };

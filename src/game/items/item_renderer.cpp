@@ -179,7 +179,7 @@ void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
     int slot_height = slot_width;
 
     std::string quantity_number = std::to_string(item.getQuantity());
-    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(quantity_number, quantity_number_font_size);
+    UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(quantity_number, quantity_number_font_size);
     batch.Text(
         quantity_number, 
         slot_x + slot_width  - textDimensions.width,
@@ -189,8 +189,8 @@ void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
     );
 }
 
-ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, UIManager& manager, int slots_horizontaly, int slots_verticaly, std::shared_ptr<ItemSlot> held_item_ptr): 
-    UIFrame(manager), textureAtlas(textureAtlas), slots_horizontaly(slots_horizontaly),
+ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, int slots_horizontaly, int slots_verticaly, std::shared_ptr<ItemSlot> held_item_ptr): 
+    textureAtlas(textureAtlas), slots_horizontaly(slots_horizontaly),
     slots_verticaly(slots_verticaly), items(slots_horizontaly * slots_verticaly), held_item_ptr(held_item_ptr)
 {
     dedicated_texture_array = textureAtlas.getTextureArray();
@@ -200,11 +200,11 @@ ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, UIManager& manager,
     setAttribute(&UIFrame::Style::borderWidth, {3,3,3,3});
     setAttribute(&UIFrame::Style::borderColor, {UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}});
 
-    onMouseEvent = [this](UIManager& manager, int button, int action, int mods){
+    onMouseEvent = [this](int button, int action, int mods){
         if(!this->hover) return;
         if(!this->held_item_ptr) return;
 
-        auto mousePosition = manager.getMousePosition();
+        auto mousePosition = ui_core.getMousePosition();
         int relative_x = mousePosition.x - transform.x;
         int relative_y = mousePosition.y - transform.y;
 
@@ -318,7 +318,7 @@ void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
             });
 
             std::string quantity_number = std::to_string(item.getQuantity());
-            UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(quantity_number, quantity_number_font_size);
+            UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(quantity_number, quantity_number_font_size);
             batch.Text( 
                 quantity_number, 
                 slot_x + slot_width  - textDimensions.width,

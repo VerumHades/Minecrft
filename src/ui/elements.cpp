@@ -1,39 +1,5 @@
-#include <ui/manager.hpp>
 
-UIManager::UIManager(UIBackend* backend): loader(*this), backend(backend){
-
-}
-
-void UIManager::resize(int width, int height){
-    screenWidth = width;
-    screenHeight = height;
-
-    backend->resizeVieport(width,height);
-
-    if(!getCurrentWindow()) return;
-
-    updateAll();
-}
-
-void UIManager::updateAll(){
-    auto* window = getCurrentWindow();
-    if(!window) return;
-
-    for(auto& element: window->getCurrentLayer().getElements()){
-        element->calculateTransforms();
-        element->update();
-        element->updateChildren();
-    }
-}
-void UIManager::stopDrawingAll(){
-    auto* window = getCurrentWindow();
-    if(!window) return;
-
-    for(auto& element: window->getCurrentLayer().getElements()){
-        element->stopDrawing();
-        element->stopDrawingChildren();
-    }
-}
+#include <ui/elements.hpp>
 
 void UIFrame::update(){
     UIRenderBatch batch;
@@ -47,7 +13,7 @@ void UIFrame::update(){
     
     if(batch.commands.size() == 0) return;
     //std::cout << "Drawing: "  << std::endl;
-    draw_batch_iterator = manager.getBackend()->addRenderBatch(batch);
+    draw_batch_iterator = ui_core.getBackend().addRenderBatch(batch);
     has_draw_batch = true;
 
    // std::cout << "Update element hover: " << this->identifiers.tag << " #" << this->identifiers.id << " ";
@@ -59,7 +25,7 @@ void UIFrame::update(){
 void UIFrame::stopDrawing(){
     if(!has_draw_batch) return;
 
-    manager.getBackend()->removeBatch(draw_batch_iterator);
+    ui_core.getBackend().removeBatch(draw_batch_iterator);
     has_draw_batch = false;
 }
 
@@ -87,8 +53,8 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
             return horizontal ? prefferedSize.width : prefferedSize.height;
         }
 
-        case WINDOW_WIDTH : return (manager.getScreenWidth()  / 100.0f) * value.value;
-        case WINDOW_HEIGHT: return (manager.getScreenHeight() / 100.0f) * value.value;
+        case WINDOW_WIDTH : return (ui_core.getScreenWidth()  / 100.0f) * value.value;
+        case WINDOW_HEIGHT: return (ui_core.getScreenHeight() / 100.0f) * value.value;
         
         case OPERATION_PLUS    : return getValueInPixels(value.operands[0], horizontal) + getValueInPixels(value.operands[1], horizontal);
         case OPERATION_MINUS   : return getValueInPixels(value.operands[0], horizontal) - getValueInPixels(value.operands[1], horizontal);
@@ -113,189 +79,13 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
                     t.height - borderSizes.top  - borderSizes.bottom - margin_y * 2
                 ) / 100.0f * value.value;
             }
-            else return (( horizontal ? manager.getScreenWidth() : manager.getScreenHeight() )  / 100.0f) * value.value;
+            else return (( horizontal ? ui_core.getScreenWidth() : ui_core.getScreenHeight() )  / 100.0f) * value.value;
         default:
             std::cerr << "Invalid TValue?" << std::endl;
             return 0;
     }
 }
 
-void UIManager::renderElementAndChildren(std::shared_ptr<UIFrame>& element){
-    if(element->has_draw_batch){
-        backend->renderBatch(element->draw_batch_iterator);
-    }
-    
-    for(auto& child: element->children){
-        renderElementAndChildren(child);
-    }
-}
-
-void UIManager::render(){
-    auto* window = getCurrentWindow();
-    if(!window) return;
-
-    backend->setupRender();
-
-    for(auto& element: window->getCurrentLayer().getElements()){
-        renderElementAndChildren(element);
-    }
-
-    backend->cleanupRender();
-}
-
-void UIManager::mouseMove(int x, int y){
-    mousePosition.x = x;
-    mousePosition.y = y;
-
-    auto element = getElementUnder(x,y);
-    underScrollHover = getElementUnder(x,y,true);
-
-    if(element == underHover) return;
-
-    if(element != underHover && underHover != nullptr){
-        underHover->setHover(false);
-        underHover->update(); 
-        if(underHover->onMouseLeave) underHover->onMouseLeave(*this);
-    }
-
-    if(element != nullptr){
-        element->setHover(true);
-        element->update();
-
-        //std::cout << "Newly under hover: " << element->identifiers.tag << " #" << element->identifiers.id << " ";
-        //for(auto& classname: element->identifiers.classes) std::cout << "." << classname;
-        //std::cout << " Element has state: " << element->state << std::endl;
-
-        if(element->onMouseEnter) element->onMouseEnter(*this);
-    }
-
-    underHover = element;
-
-    if(underHover && underHover->onMouseMove) underHover->onMouseMove(*this,x,y);
-    if(inFocus && inFocus != underHover && inFocus->onMouseMove) inFocus->onMouseMove(*this,x,y);
-}
-
-void UIManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
-    if(button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS){
-        if(inFocus != underHover){
-            if(inFocus) inFocus->setFocus(false);
-            inFocus = underHover;
-            if(inFocus) inFocus->setFocus(true);
-        }
-        if(underHover && underHover->onClicked) underHover->onClicked();
-    }
-
-    if(underHover && underHover->onMouseEvent) underHover->onMouseEvent(*this,button,action,mods);
-    if(inFocus && inFocus != underHover && inFocus->onMouseEvent) inFocus->onMouseEvent(*this,button,action,mods);
-
-    if(underHover) underHover->update();
-    if(inFocus) inFocus->update();
-}
-
-void UIManager::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
-    if(!underScrollHover) return;
-    if(underScrollHover->onScroll) underScrollHover->onScroll(*this,xoffset,yoffset);
-    
-    if(underScrollHover){
-        underScrollHover->update();
-        underScrollHover->updateChildren();
-    }
-}
-
-void UIManager::keyTypedEvent(GLFWwindow* window, unsigned int codepoint){
-    if(!inFocus) return;
-    if(inFocus->onKeyTyped) inFocus->onKeyTyped(window,codepoint);
-    
-    if(inFocus) inFocus->update();
-}
-void UIManager::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
-    if(!inFocus) return;
-    if(inFocus->onKeyEvent) inFocus->onKeyEvent(window,key,scancode,action,mods);
-
-    if(inFocus) inFocus->update();
-}
-
-
-void UIManager::resetStates(){
-    if(underHover){
-        underHover->setHover(false);
-        //if(underHover->onMouseLeave) underHover->onMouseLeave(*this);
-    }
-    if(inFocus){
-        inFocus->setFocus(false);
-    }
-    inFocus = nullptr;
-    underHover = nullptr;
-    underScrollHover = nullptr;
-}
-
-void UIManager::setCurrentWindow(UIWindowIdentifier id){
-    resetStates();
-    stopDrawingAll();
-    currentWindow = id;
-    
-    if(!getCurrentWindow()) return;
-
-    updateAll();
-}
-UIWindow* UIManager::getCurrentWindow(){
-    if(currentWindow < 0 || currentWindow >= windows.size()) return nullptr;
-    return &windows[currentWindow];
-}
-UIWindow* UIManager::getWindow(UIWindowIdentifier id){
-    if(id < 0 || id >= windows.size()) return nullptr;
-    return &windows[id];
-}
-UIWindowIdentifier UIManager::createWindow(){
-    int id = windows.size();
-    windows.push_back({});
-    return id;
-}
-
-void UIManager::loadWindowFromXML(UIWindow& window, std::string load_path){
-    loader.loadWindowFromXML(window, load_path);
-}
-
-void UIFrame::appendChild(std::shared_ptr<UIFrame> child){
-    child->parent = this;
-    child->zIndex = this->zIndex + 1;
-    children.push_back(child);
-
-    manager.getLoader().getCurrentStyle().applyTo(child);
-
-    child->calculateTransforms();
-}
-void UIFrame::clearChildren(){
-    children.clear();
-}
-std::shared_ptr<UIFrame> UIManager::getElementUnder(int x, int y, bool onlyScrollable){
-    auto* current_window = getCurrentWindow();
-    if(!current_window) return nullptr;
-
-    std::queue<std::tuple<int, std::shared_ptr<UIFrame>, std::shared_ptr<UIFrame>>> elements;
-
-    for(auto& window: current_window->getCurrentLayer().getElements()) elements.push({0,window, nullptr});
-    
-    std::shared_ptr<UIFrame> current = nullptr;
-    int cdepth = -1;
-
-    while(!elements.empty()){
-        auto [depth,element,parent] = elements.front();
-        elements.pop();
-
-        if(!element->pointWithin({x,y})) continue;
-
-        for(auto& child: element->children) elements.push({depth + 1, child, element});
-
-        if(onlyScrollable && !element->isScrollable()) continue;
-        if(!element->isHoverable()) continue;
-        if(cdepth >= depth) continue;
-        
-        current = element;
-    }
-
-    return current;
-}
 
 bool UIFrame::pointWithinBounds(glm::vec2 point, UITransform t, int padding){
     return  point.x > t.x - padding && point.x < t.x + t.width  + padding &&
@@ -414,7 +204,7 @@ void UIFrame::calculateTransforms(){
 }
 
 void UILabel::getRenderingInformation(UIRenderBatch& batch) {
-    auto t = getTextPosition(manager);
+    auto t = getTextPosition();
 
     UIFrame::getRenderingInformation(batch);
     batch.Text(text, t.x, t.y, font_size, getAttribute(&Style::textColor));
@@ -423,7 +213,7 @@ void UILabel::getRenderingInformation(UIRenderBatch& batch) {
 void UILabel::calculateElementsTransforms(){
     UIFrame::calculateElementsTransforms();
 
-    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(text, font_size);
+    UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(text, font_size);
 
     prefferedSize = {
         textDimensions.width + textPadding * 2,
@@ -431,8 +221,8 @@ void UILabel::calculateElementsTransforms(){
     };
 }
 
-UITransform UILabel::getTextPosition(UIManager& manager){
-    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(text, font_size);
+UITransform UILabel::getTextPosition(){
+    UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(text, font_size);
 
     auto textPosition = getAttribute(&Style::textPosition);
 
@@ -449,7 +239,7 @@ UITransform UILabel::getTextPosition(UIManager& manager){
     };
 }
 
-UIInput::UIInput(UIManager& manager): UILabel(manager) {
+UIInput::UIInput(){
     identifiers.tag = "input";
 
     this->focusable = true;
@@ -474,9 +264,9 @@ UIInput::UIInput(UIManager& manager): UILabel(manager) {
 }
 
 void UIInput::getRenderingInformation(UIRenderBatch& batch){
-    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(text, font_size);
+    UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(text, font_size);
 
-    auto tpos = getTextPosition(manager);
+    auto tpos = getTextPosition();
     auto textColor = getAttribute(&UIFrame::Style::textColor);
     
     UILabel::getRenderingInformation(batch);
@@ -493,39 +283,39 @@ void UIInput::getRenderingInformation(UIRenderBatch& batch){
     //out.insert(out.end(), temp.begin(), temp.end());
 }
 
-UISlider::UISlider(UIManager& manager): UIFrame(manager) {
+UISlider::UISlider() {
     this->focusable = true;
     
-    onMouseEvent = [this](UIManager& manager, int button, int action, int mods){
+    onMouseEvent = [this](int button, int action, int mods){
         if(!this->hover) return;
         if(button != GLFW_MOUSE_BUTTON_1) return;
 
-        auto t = this->getHandleTransform(manager);
+        auto t = this->getHandleTransform();
         if(action == GLFW_RELEASE){
             grabbed = false;
         }
-        else if(pointWithinBounds(manager.getMousePosition(), t, 5) && action == GLFW_PRESS){
+        else if(pointWithinBounds(ui_core.getMousePosition(), t, 5) && action == GLFW_PRESS){
             grabbed = true;
         }
         else if(action == GLFW_PRESS){
-            moveTo(manager,manager.getMousePosition());
+            moveTo(ui_core.getMousePosition());
         }
         update();
     };
     
-    onMouseMove = [this](UIManager& manager, int x, int y){
+    onMouseMove = [this](int x, int y){
         if(!grabbed) return;
     
-        moveTo(manager,{x,y});
+        moveTo({x,y});
         update();
     };
 
-    //onMouseLeave = [this](UIManager& manager){
+    //onMouseLeave = [this](){
     //    grabbed = false;
     //};
 }
 
-UITransform UISlider::getHandleTransform(UIManager& manager){
+UITransform UISlider::getHandleTransform(){
     int range = this->max - this->min;
 
     float percentage = 0.0f;
@@ -545,7 +335,7 @@ UITransform UISlider::getHandleTransform(UIManager& manager){
     };
 }
 
-void  UISlider::moveTo(UIManager& manager, glm::vec2 pos){
+void  UISlider::moveTo(glm::vec2 pos){
     float percentage = 0.0f;
 
     if     (orientation == HORIZONTAL) percentage = static_cast<float>(pos.x - transform.x) / static_cast<float>(transform.width );
@@ -566,13 +356,13 @@ void UISlider::getRenderingInformation(UIRenderBatch& batch){
         getAttribute(&Style::borderColor)
     );
 
-    //auto ht = getHandleTransform(manager);
+    //auto ht = getHandleTransform(ui_core);
     //std::cout << ht.x << " " << ht.y << " " << ht.width << " " << ht.height << std::endl;
 
-    batch.Rectangle(getHandleTransform(manager), handleColor);
+    batch.Rectangle(getHandleTransform(), handleColor);
     
     std::string text = std::to_string(*value);
-    UITextDimensions textDimensions = manager.getBackend()->getTextDimensions(text, font_size);
+    UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(text, font_size);
 
     if(displayValue){
         int tx = transform.x + valueDisplayOffset;
@@ -582,12 +372,12 @@ void UISlider::getRenderingInformation(UIRenderBatch& batch){
     }
 }
 
-UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
+UIScrollableFrame::UIScrollableFrame(){
     identifiers.tag = "scrollable";
     
     scrollable = true;
 
-    onScroll = [this](UIManager& manager, double xoffset, double yoffset){
+    onScroll = [this](double xoffset, double yoffset){
         this->scroll += yoffset * 30 * -1;
         this->scroll = glm::clamp(this->scroll, 0, this->scrollMax);
 
@@ -596,7 +386,7 @@ UIScrollableFrame::UIScrollableFrame(UIManager& manager): UIFrame(manager) {
         updateChildren();
     };
 
-    /*slider = std::make_shared<UISlider>(manager);
+    /*slider = std::make_shared<UISlider>(ui_core);
     slider->setOrientation(UISlider::VERTICAL);
     slider->setDisplayValue(false);
     slider->setHandleWidth(60);
@@ -620,4 +410,17 @@ void UIScrollableFrame::calculateElementsTransforms(){
     /*slider->setPosition(viewportTransform.width - sliderWidth,0);
     slider->setSize(sliderWidth, viewportTransform.height);
     slider->setMax(scrollMax);*/
+}
+
+void UIFrame::appendChild(std::shared_ptr<UIFrame> child){
+    child->parent = this;
+    child->zIndex = this->zIndex + 1;
+    children.push_back(child);
+
+    ui_core.getLoader().getCurrentStyle().applyTo(child);
+
+    child->calculateTransforms();
+}
+void UIFrame::clearChildren(){
+    children.clear();
 }

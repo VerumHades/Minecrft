@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <memory>
 
-#include <ui/manager.hpp>
+#include <ui/core.hpp>
 
 struct CommandArgument{
     enum CommandArgumentType {
@@ -49,7 +49,7 @@ class UICommandInput: public UIInput{
     private:
         CommandProcessor* commandProcessor;
     public:
-        UICommandInput(UIManager& manager);
+        UICommandInput(UICore& manager);
         void setCommandProcessor(CommandProcessor* commandProcessor) {this->commandProcessor = commandProcessor;}
         virtual void getRenderingInformation(UIRenderBatch& batch);
 

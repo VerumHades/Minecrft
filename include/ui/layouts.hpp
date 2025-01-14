@@ -41,4 +41,4 @@ class UIFlexLayout: public UILayout{
         void arrangeChildren(UIFrame* frame) override;
 };
 
-#include <ui/manager.hpp>
+#include <ui/core.hpp>

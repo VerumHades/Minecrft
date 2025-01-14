@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ui/manager.hpp>
+#include <ui/core.hpp>
 
 class UIForm: public UIFrame{
     public:
@@ -28,5 +28,5 @@ class UIForm: public UIFrame{
         std::shared_ptr<UILabel> submit_button;
         
     public:
-        UIForm(const std::vector<Field>& fields, UIManager& manager);        
+        UIForm(const std::vector<Field>& fields);        
 };

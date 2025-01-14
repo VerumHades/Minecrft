@@ -4,21 +4,21 @@
     Adds an element to the current selected ui layer
 */
 void Scene::addElement(std::shared_ptr<UIFrame> element){
-    this->uiManager->getWindow(windowID)->getCurrentLayer().addElement(element);
+    ui_core.getWindow(windowID)->getCurrentLayer().addElement(element);
 }
 /*
     Sets the current selected ui layer
 */
 void Scene::setUILayer(std::string name){
-    this->uiManager->stopDrawingAll();
-    this->uiManager->getWindow(windowID)->setCurrentLayer(name);
+    ui_core.stopDrawingAll();
+    ui_core.getWindow(windowID)->setCurrentLayer(name);
 
     auto& layer = getCurrentUILayer();
     glfwSetInputMode(sceneManager->getGLFWWindow(), GLFW_CURSOR, layer.cursorMode);
     sceneManager->setEventLocks(layer.eventLocks);
-    uiManager->resetStates();
     
-    uiManager->updateAll();
+    ui_core.resetStates();
+    ui_core.updateAll();
 }
 
 bool Scene::isActiveLayer(std::string name){
@@ -26,22 +26,24 @@ bool Scene::isActiveLayer(std::string name){
 }
 
 UIWindow* Scene::getWindow(){
-    return this->uiManager->getWindow(windowID);
+    return ui_core.getWindow(windowID);
 }
 
 UILayer& Scene::getCurrentUILayer(){
-    return this->uiManager->getWindow(windowID)->getCurrentLayer();
+    return ui_core.getWindow(windowID)->getCurrentLayer();
 }
 UILayer& Scene::getUILayer(std::string name){
-    return this->uiManager->getWindow(windowID)->getLayer(name);
+    return ui_core.getWindow(windowID)->getLayer(name);
 }
 
-SceneManager::SceneManager(GLFWwindow* window): window(window), manager(&opengl_backend){
+SceneManager::SceneManager(GLFWwindow* window): window(window){
+    ui_core.setBackend(&opengl_backend);
+
     std::unique_ptr<Scene> defaultScene = std::make_unique<Scene>();
     addScene("internal_default", std::move(defaultScene));
     setScene("internal_default");
 
-    auto label = manager.createElement<UILabel>();
+    auto label = std::make_shared<UILabel>();
     label->setPosition(
         TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50}),
         TValue(OPERATION_MINUS,{WINDOW_WIDTH, 50}, {MY_PERCENT, 50})
@@ -79,9 +81,8 @@ void SceneManager::addScene(std::string name, std::unique_ptr<Scene> scene){
     }
 
     scenes[name] = std::move(scene);
-    scenes[name]->uiManager = &manager;
     scenes[name]->sceneManager = this;
-    scenes[name]->windowID = manager.createWindow();
+    scenes[name]->windowID = ui_core.createWindow();
 }
 
 void SceneManager::setScene(std::string name){
@@ -91,39 +92,39 @@ void SceneManager::setScene(std::string name){
     else return;
     currentScene = name;
     getCurrentScene()->open(window);
-    manager.setCurrentWindow(getCurrentScene()->windowID);
+    ui_core.setCurrentWindow(getCurrentScene()->windowID);
     getCurrentScene()->setUILayer("default");
 }
 
 void SceneManager::resize(GLFWwindow* window, int width, int height){
     glViewport(0,0,width,height);
     getCurrentScene()->resize(window,width,height);
-    manager.resize(width,height);
+    ui_core.resize(width,height);
 }
 void SceneManager::mouseMove(GLFWwindow* window, int x, int y){
-    manager.mouseMove(x,y);
+    ui_core.mouseMove(x,y);
     if(!eventLocks.mouseMove) getCurrentScene()->mouseMove(window, x,y);
 }
 
 void SceneManager::mouseEvent(GLFWwindow* window, int button, int action, int mods){
-    manager.mouseEvent(window,button,action,mods);
+    ui_core.mouseEvent(window,button,action,mods);
     if(!eventLocks.mouseEvent) getCurrentScene()->mouseEvent(window,button,action,mods);
 }
 void SceneManager::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
-    manager.scrollEvent(window, xoffset, yoffset);
+    ui_core.scrollEvent(window, xoffset, yoffset);
     if(!eventLocks.scrollEvent) getCurrentScene()->scrollEvent(window, xoffset, yoffset);
 }
 
 void SceneManager::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
-    manager.keyEvent(window,key,scancode,action,mods);
+    ui_core.keyEvent(window,key,scancode,action,mods);
     if(!eventLocks.keyEvent) getCurrentScene()->keyEvent(window,key,scancode,action,mods);
 }
 
 void SceneManager::render(){
     getCurrentScene()->render();
-    manager.render();
+    ui_core.render();
 }
 
 void SceneManager::keyTypedEvent(GLFWwindow* window, unsigned int codepoint){
-    manager.keyTypedEvent(window, codepoint);
+    ui_core.keyTypedEvent(window, codepoint);
 }

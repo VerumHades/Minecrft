@@ -14,7 +14,7 @@
 void TestScene::initialize(){
     auto form = std::make_shared<UIForm>(std::vector<UIForm::Field>{
         UIForm::Field{"Text: ", UIForm::TEXT}
-    }, *uiManager);
+    });
     
     form->setPosition(10,10);
     form->setAttribute(&UIFrame::Style::backgroundColor, {20,20,20});
@@ -27,9 +27,4 @@ void TestScene::initialize(){
 
 void TestScene::open(GLFWwindow* window){
     setUILayer("first");
-}
-
-void TestWidget::getRenderingInformation(UIRenderBatch& batch){
-    batch.Rectangle(transform.x,transform.y,100,100,{255,0,0});
-    batch.Text("aoiwndakijbndwkja,cfklmasdnfviqauejhfnbakjfbn,zxmcplnkcqWA I EDquf", transform.x, transform.y, 20,  {255,255,255});
 }

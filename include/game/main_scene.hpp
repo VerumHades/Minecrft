@@ -20,7 +20,7 @@
 #include <parsing/shader_parser.hpp>
 #include <parsing/block_loader.hpp>
 
-#include <ui/manager.hpp>
+#include <ui/core.hpp>
 #include <ui/font.hpp>
 #include <ui/loader.hpp>
 #include <ui/form.hpp>
@@ -186,7 +186,7 @@ class UICrosshair: public UIFrame{
         int part_margin = 5;
         int thickness = 5;
     public:
-        UICrosshair(UIManager& manager): UIFrame(manager){setFocusable(false);setHoverable(false);}
+        UICrosshair(){setFocusable(false);setHoverable(false);}
         void getRenderingInformation(UIRenderBatch& batch) override;
 };
 
@@ -196,8 +196,8 @@ class UIHotbar: public ItemInventory{
         const int slots_total = 9;
 
     public:
-        UIHotbar(ItemTextureAtlas& textureAtlas, UIManager& manager, std::shared_ptr<ItemSlot> held_item_ptr): 
-        ItemInventory(textureAtlas, manager, 9, 1, held_item_ptr){}
+        UIHotbar(ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr): 
+        ItemInventory(textureAtlas, 9, 1, held_item_ptr){}
 
         void getRenderingInformation(UIRenderBatch& batch) override;
         void selectSlot(int slot){

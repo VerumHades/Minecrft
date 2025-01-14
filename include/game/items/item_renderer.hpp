@@ -3,7 +3,7 @@
 #include <optional>
 #include <memory>
 #include <stb_image.h>
-#include <ui/manager.hpp>
+#include <ui/core.hpp>
 #include <game/items/item.hpp>
 #include <vector>
 
@@ -79,7 +79,7 @@ class ItemSlot: public UIFrame{
         ItemTextureAtlas& textureAtlas;
 
     public:
-        ItemSlot(ItemTextureAtlas& textureAtlas, UIManager& manager): UIFrame(manager), textureAtlas(textureAtlas){
+        ItemSlot(ItemTextureAtlas& textureAtlas): textureAtlas(textureAtlas){
             dedicated_texture_array = textureAtlas.getTextureArray();
             setSize(slot_size,slot_size);
         }
@@ -108,7 +108,7 @@ class ItemInventory: public UIFrame{
         }
 
     public:
-        ItemInventory(ItemTextureAtlas& textureAtlas, UIManager& manager, int slots_horizontaly, int slots_verticaly, std::shared_ptr<ItemSlot> held_item_ptr);
+        ItemInventory(ItemTextureAtlas& textureAtlas, int slots_horizontaly, int slots_verticaly, std::shared_ptr<ItemSlot> held_item_ptr);
 
         void setItem(int x, int y, Item item) {
             items[getIndex(x,y)].addItem(item);

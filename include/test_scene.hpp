@@ -2,7 +2,7 @@
 
 #include <scene.hpp>
 
-#include <ui/manager.hpp>
+#include <ui/core.hpp>
 #include <ui/form.hpp>
 
 class TestScene: public Scene{
@@ -12,10 +12,4 @@ class TestScene: public Scene{
     public:
         void initialize() override;
         void open(GLFWwindow* window) override;
-};
-
-class TestWidget: public UIFrame{
-    public:
-        TestWidget(UIManager& manager): UIFrame(manager){}
-        void getRenderingInformation(UIRenderBatch& batch) override;
 };

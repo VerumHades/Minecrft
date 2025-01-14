@@ -7,7 +7,7 @@
 #include <ui/color.hpp>
 
 class UIFrame;
-class UIManager;
+class UICore;
 class UIWindow;
 class UILayer;
 
@@ -78,9 +78,7 @@ class UILoader{
         std::shared_ptr<UIFrame> createElement(tinyxml2::XMLElement* source, UILayer& layer);
         std::shared_ptr<UIFrame> processElement(tinyxml2::XMLElement* source, UILayer& layer);
 
-        UIManager& manager;
     public:
-        UILoader(UIManager& manager): manager(manager){}
         /*
             Loads a window its layers and elements from an xml source file.
         */
@@ -90,4 +88,4 @@ class UILoader{
 
 TValue parseTValue(std::string source);
 
-#include <ui/manager.hpp>
+#include <ui/core.hpp>

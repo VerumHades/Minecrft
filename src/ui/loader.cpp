@@ -109,7 +109,7 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
     std::unordered_map<std::string, std::function<std::shared_ptr<UIFrame>()>> elements = {
         {   
             "frame", 
-            [source, this]() {return this->manager.createElement<UIFrame>(); }
+            [source, this]() {return std::make_shared<UIFrame>(); }
         },
         {
             "label", 
@@ -118,7 +118,7 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
                 std::string text = "";
                 if(content) text = std::string(content);
 
-                auto label = this->manager.createElement<UILabel>();
+                auto label = std::make_shared<UILabel>();
                 label->setText(text);
                 return label; 
             }
@@ -126,13 +126,13 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
         {
             "input",
             [source, this]() {
-                return this->manager.createElement<UIInput>(); 
+                return std::make_shared<UIInput>(); 
             }
         },
         {
             "scrollable",
             [source, this]() {
-                return this->manager.createElement<UIScrollableFrame>(); 
+                return std::make_shared<UIScrollableFrame>(); 
             }
         }
     };
