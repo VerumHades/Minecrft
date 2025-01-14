@@ -24,6 +24,7 @@
 #include <ui/font.hpp>
 #include <ui/loader.hpp>
 #include <ui/form.hpp>
+#include <ui/elements/selection.hpp>
 
 #include <game/world/world.hpp>
 #include <game/world/mesh_generation.hpp>
@@ -158,6 +159,8 @@ class MainScene: public Scene{
         glm::ivec3 structureCaptureStart = {0,0,0};
         glm::ivec3 structureCaptureEnd   = {0,0,0};
         bool structureCaptured = false;
+
+        std::shared_ptr<UISelection> structure_selection;
 
         void updateStructureCaptureDisplay();
         void updateStructureSavingDisplay();

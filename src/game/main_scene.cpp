@@ -89,8 +89,24 @@ void MainScene::initialize(){
 
         structure.serialize().saveToFile("saves/structures/" + getUILayer("structure_saving").getElementById<UIInput>("structure_name")->getText() + ".structure");
         setUILayer("structure_capture"); 
+
     };
 
+    structure_selection = std::make_shared<UISelection>();
+    structure_selection->setPosition(10,10);
+    structure_selection->setSize(200,300);
+    structure_selection->setAttribute(&UIFrame::Style::backgroundColor, {10,10,10});
+    structure_selection->setAttribute(&UIFrame::Style::textColor, {220,220,220});
+    structure_selection->setAttribute(&UIFrame::Style::fontSize, TValue{16});
+
+    for (const auto& entry : std::filesystem::directory_iterator("saves/structures")){
+        auto& path = entry.path();
+
+        structure_selection->addOption(path.filename().string());
+    }
+
+    setUILayer("structure_capture");
+    addElement(structure_selection);
     setUILayer("menu");
     addElement(inventory);
     addElement(hotbar);
@@ -366,7 +382,6 @@ static inline std::string vecToString(T vec, const std::string& separator = " ")
 }
 
 void MainScene::updateStructureCaptureDisplay(){
-
     structure_capture_start_label->setText(
         "Capture start: " + vecToString(structureCaptureStart)
     );
@@ -420,22 +435,7 @@ void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
     }
 }
 
-void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
-    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
-        if(!isActiveLayer("default")) 
-            this->setUILayer("default");
-        else
-            this->setUILayer("menu");
-    }
-    else if(key == GLFW_KEY_N && action == GLFW_PRESS){
-        if(!isActiveLayer("structure_capture") && !isActiveLayer("structure_saving"))
-            this->setUILayer("structure_capture");
-        else if(!isActiveLayer("structure_saving")){
-            this->setUILayer("structure_saving");
-            updateStructureSavingDisplay();
-        }
-    }
-    
+void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){    
     if(isActiveLayer("default")){
         inputManager.keyEvent(window,key,scancode,action,mods);
 
@@ -466,6 +466,31 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
     }
     else if(isActiveLayer("structure_capture")){
         inputManager.keyEvent(window,key,scancode,action,mods);
+
+        if(key == GLFW_KEY_UP && action == GLFW_PRESS){
+            structure_selection->selectNext();
+            structure_selection->update();
+        }
+        else if(key == GLFW_KEY_DOWN && action == GLFW_PRESS){
+            structure_selection->selectPrevious();
+            structure_selection->update();
+        }
+    }
+
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
+        if(!isActiveLayer("default")) 
+            this->setUILayer("default");
+        else
+            this->setUILayer("menu");
+    }
+    else if(key == GLFW_KEY_N && action == GLFW_PRESS){
+        if(!isActiveLayer("structure_capture") && !isActiveLayer("structure_saving"))
+            this->setUILayer("structure_capture");
+        else if(!isActiveLayer("structure_saving")){
+            this->setUILayer("structure_saving");
+            ui_core.setFocus(getUILayer("structure_saving").getElementById<UIFrame>("structure_name"));
+            updateStructureSavingDisplay();
+        }
     }
 }
 
