@@ -435,11 +435,6 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
             updateStructureSavingDisplay();
         }
     }
-    else if(key == GLFW_KEY_P && action == GLFW_PRESS){
-        if(isActiveLayer("structure_capture")){
-            this->setUILayer("structure_placement");
-        }
-    }
     
     if(isActiveLayer("default")){
         inputManager.keyEvent(window,key,scancode,action,mods);

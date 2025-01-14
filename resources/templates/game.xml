@@ -6,7 +6,6 @@
             <label id="start_label">Capture start: </label>
             <label id="end_label">Capture end: </label>
             <label >Press 'N' to save structure.</label>
-            <label >Press 'P' to select and place a structure.</label>
         </frame>
     </structure_capture>
     <structure_saving>
@@ -21,10 +20,4 @@
             <label id="submit">Save</label>
         </frame>
     </structure_saving>
-    <structure_placement>
-        <label>Selected structure: </label>
-        <scrollable id="structure_place_selection">
-
-        </scrollable>
-    </structure_placement>
 </window>

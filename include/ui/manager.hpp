@@ -82,8 +82,7 @@ class UIFrame{
         TValue height = TNONE;
 
         int zIndex = 0;
-        std::vector<size_t> renderDataLocations;
-
+        
         bool hover = false;
         bool focus = false;
         bool focusable = false;
@@ -412,9 +411,9 @@ class UIManager{
         int getScreenHeight() {return screenHeight;}
 
         // Creates an element that belongs to the UIManager
-        template <typename T>
-        std::shared_ptr<T> createElement(){
-            return std::make_shared<T>(*this);
+        template <typename T, typename... Types>
+        std::shared_ptr<T> createElement(Types... args){
+            return std::make_shared<T>(*this, args...);
         }
 };
 
