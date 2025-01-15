@@ -99,6 +99,17 @@ void MainScene::initialize(){
     structure_selection->setAttribute(&UIFrame::Style::textColor, {220,220,220});
     structure_selection->setAttribute(&UIFrame::Style::fontSize, TValue{16});
 
+    structure_selection->onSelected = [this](const std::string& name){
+        auto bt = ByteArray::FromFile("saves/structures/"  + name);
+
+        auto structure_name_label = getUILayer("structure_capture").getElementById<UILabel>("selected_structure");
+        structure_name_label->setText("Selected structure:" + name);
+        structure_name_label->update();
+
+        selected_structure = std::make_shared<Structure>(Structure::deserialize(bt));
+        this->updateStructureDisplay();
+    };
+
     for (const auto& entry : std::filesystem::directory_iterator("saves/structures")){
         auto& path = entry.path();
 
@@ -188,7 +199,7 @@ void MainScene::initialize(){
         keyname->setFocusable(true);
         keyname->setIdentifiers({"controlls_member_keyname"});
 
-        keyname->onKeyEvent = [this, key, action, keyname](GLFWwindow* window, int new_key, int /*scancode*/, int /*action*/, int /*mods*/){
+        keyname->onKeyEvent = [this, key, action, keyname](int new_key, int /*scancode*/, int /*action*/, int /*mods*/){
             inputManager.unbindKey(key);
             inputManager.bindKey(new_key, action.action, action.name);
 
@@ -303,7 +314,7 @@ void MainScene::updateCursor(){
     
     if(isActiveLayer("structure_capture")){
         if(!structureCaptured) structureCaptureEnd = blockUnderCursorPosition;
-        updateStructureCaptureDisplay();
+        updateStructureDisplay();
     }
     //wireframeRenderer.setCube(1,glm::vec3(hit.lastPosition) - 0.005f, {1.01,01.01,1.01},{1.0,0,0});
 }
@@ -361,15 +372,26 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
         }
     }
     else if(isActiveLayer("structure_capture")){
-        if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
-            structureCaptured = false;
-            structureCaptureStart = blockUnderCursorPosition;
-            updateStructureCaptureDisplay();
+        if(structure_menu_mode == CAPTURE){
+            if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
+                structureCaptured = false;
+                structureCaptureStart = blockUnderCursorPosition;
+                updateStructureDisplay();
+            }
+            else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
+                structureCaptureEnd = blockUnderCursorPosition;
+                structureCaptured = true;
+                updateStructureDisplay();
+            }
         }
-        else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
-            structureCaptureEnd = blockUnderCursorPosition;
-            structureCaptured = true;
-            updateStructureCaptureDisplay();
+        else{
+            if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
+                if(selected_structure){
+                    auto positions = selected_structure->place(blockUnderCursorPosition, *world);
+                    for(auto& position: positions)
+                        regenerateChunkMesh(world->getChunk(position), {1,1,1});
+                }
+            }
         }
     }
 
@@ -381,7 +403,11 @@ static inline std::string vecToString(T vec, const std::string& separator = " ")
     return std::to_string(vec.x) + separator + std::to_string(vec.y) + separator + std::to_string(vec.z);
 }
 
-void MainScene::updateStructureCaptureDisplay(){
+void MainScene::updateStructureDisplay(){
+    auto mode_label = getUILayer("structure_capture").getElementById<UILabel>("mode");
+    mode_label->setText(
+        "Current mode: " + std::string(structure_menu_mode == CAPTURE ? "Capture" : "Place")
+    );
     structure_capture_start_label->setText(
         "Capture start: " + vecToString(structureCaptureStart)
     );
@@ -390,11 +416,23 @@ void MainScene::updateStructureCaptureDisplay(){
     );
     structure_capture_start_label->update();
     structure_capture_end_label->update();
+    mode_label->update();
 
-    auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
-    glm::ivec3 size = (max - min) + glm::ivec3(1,1,1);
+    if(structure_menu_mode == CAPTURE){
+        auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
+        glm::ivec3 size = (max - min) + glm::ivec3(1,1,1);
 
-    wireframeRenderer.setCube(1,glm::vec3(min) - 0.005f, glm::vec3{0.01,0.01,0.01} + glm::vec3(size),{0,0.1,0.1});
+        wireframeRenderer.setCube(1,glm::vec3(min) - 0.005f, glm::vec3{0.01,0.01,0.01} + glm::vec3(size),{0,0.1,0.1});
+    }
+    else{
+        if(!selected_structure) return;
+        wireframeRenderer.setCube(
+            1,
+            glm::vec3(blockUnderCursorPosition) - 0.005f, 
+            glm::vec3{0.01,0.01,0.01} + glm::vec3(selected_structure->getSize()),
+            {0,0.3,0.2}
+        );
+    }
 }
 
 void MainScene::updateStructureSavingDisplay(){
@@ -475,6 +513,11 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
             structure_selection->selectPrevious();
             structure_selection->update();
         }
+
+        if(key == GLFW_KEY_M && action == GLFW_PRESS){
+            structure_menu_mode = structure_menu_mode == CAPTURE ? PLACE : CAPTURE;
+            updateStructureDisplay();
+        }
     }
 
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
@@ -484,8 +527,10 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
             this->setUILayer("menu");
     }
     else if(key == GLFW_KEY_N && action == GLFW_PRESS){
-        if(!isActiveLayer("structure_capture") && !isActiveLayer("structure_saving"))
+        if(!isActiveLayer("structure_capture") && !isActiveLayer("structure_saving")){
             this->setUILayer("structure_capture");
+            ui_core.setFocus(structure_selection);
+        }
         else if(!isActiveLayer("structure_saving")){
             this->setUILayer("structure_saving");
             ui_core.setFocus(getUILayer("structure_saving").getElementById<UIFrame>("structure_name"));
@@ -527,10 +572,6 @@ void MainScene::open(GLFWwindow* window){
         if(world->isChunkLoadable(chunkPosition)) world->loadChunk(chunkPosition);
         else world->generateChunk(chunkPosition);
     }
-
-    auto bt = ByteArray::FromFile("saves/structures/name.structure");
-    Structure st = Structure::deserialize(bt);
-    st.place({0,80,0},*world);
 
     //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
     //generationThread.detach();

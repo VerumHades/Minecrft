@@ -3,6 +3,8 @@
         <style src="resources/templates/game.css"></style>
 
         <frame id="info_frame">
+            <label id="mode">Current mode:</label>
+            <label id="selected_structure">Selected structure:</label>
             <label id="start_label">Capture start: </label>
             <label id="end_label">Capture end: </label>
             <label >Press 'N' to save structure.</label>

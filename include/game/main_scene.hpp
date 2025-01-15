@@ -159,10 +159,17 @@ class MainScene: public Scene{
         glm::ivec3 structureCaptureStart = {0,0,0};
         glm::ivec3 structureCaptureEnd   = {0,0,0};
         bool structureCaptured = false;
+        
+        enum StructureMenuMode{
+            CAPTURE,
+            PLACE
+        } structure_menu_mode;
+
+        std::shared_ptr<Structure> selected_structure = nullptr;
 
         std::shared_ptr<UISelection> structure_selection;
 
-        void updateStructureCaptureDisplay();
+        void updateStructureDisplay();
         void updateStructureSavingDisplay();
         
     public:

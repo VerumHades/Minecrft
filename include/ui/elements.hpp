@@ -140,8 +140,8 @@ class UIFrame{
         */
         std::function<void(int, int, int)> onMouseEvent;
         std::function<void(int, int)> onMouseMove;
-        std::function<void(GLFWwindow*, unsigned int)> onKeyTyped;
-        std::function<void(GLFWwindow*, int key, int scancode, int action, int mods)> onKeyEvent;
+        std::function<void(unsigned int)> onKeyTyped;
+        std::function<void(int key, int scancode, int action, int mods)> onKeyEvent;
         std::function<void(void)> onClicked;
 
         std::function<void()> onMouseLeave;

@@ -123,13 +123,13 @@ void UICore::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
 
 void UICore::keyTypedEvent(GLFWwindow* window, unsigned int codepoint){
     if(!inFocus) return;
-    if(inFocus->onKeyTyped) inFocus->onKeyTyped(window,codepoint);
+    if(inFocus->onKeyTyped) inFocus->onKeyTyped(codepoint);
     
     if(inFocus) inFocus->update();
 }
 void UICore::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(!inFocus) return;
-    if(inFocus->onKeyEvent) inFocus->onKeyEvent(window,key,scancode,action,mods);
+    if(inFocus->onKeyEvent) inFocus->onKeyEvent(key,scancode,action,mods);
 
     if(inFocus) inFocus->update();
 }

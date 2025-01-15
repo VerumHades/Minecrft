@@ -11,7 +11,8 @@ class UISelection: public UIFrame{
         void getRenderingInformation(UIRenderBatch& batch) override;
 
     public:
-        std::function<void(std::string)> onSelected;
+        UISelection();
+        std::function<void(const std::string&)> onSelected;
 
         void addOption(const std::string& option);
         void selectNext();

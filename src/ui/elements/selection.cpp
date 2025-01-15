@@ -1,5 +1,13 @@
 #include <ui/elements/selection.hpp>
 
+UISelection::UISelection(){
+    onKeyEvent = [this](int key, int scancode, int action, int mods){
+        if(action == GLFW_PRESS && key == GLFW_KEY_ENTER && onSelected) onSelected(options[selected]);
+    };
+
+    setFocusable(true);
+}
+
 void UISelection::addOption(const std::string& option){
     options.push_back(option);
 }

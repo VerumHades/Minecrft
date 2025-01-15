@@ -244,7 +244,7 @@ UIInput::UIInput(){
 
     this->focusable = true;
 
-    onKeyTyped = [this](GLFWwindow* window, unsigned int codepoint){
+    onKeyTyped = [this](unsigned int codepoint){
         char typedChar = static_cast<char>(codepoint);
 
         if (typedChar >= 32 && typedChar <= 126) {
@@ -252,7 +252,7 @@ UIInput::UIInput(){
         }
     };
 
-    onKeyEvent = [this](GLFWwindow* window, int key, int scancode, int action, int mods){
+    onKeyEvent = [this](int key, int scancode, int action, int mods){
         if(key == GLFW_KEY_BACKSPACE && action == GLFW_PRESS){
             this->text = this->text.substr(0, this->text.size() - 1);
         }
