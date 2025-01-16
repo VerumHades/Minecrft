@@ -417,7 +417,7 @@ void UIFrame::appendChild(std::shared_ptr<UIFrame> child){
     child->zIndex = this->zIndex + 1;
     children.push_back(child);
 
-    ui_core.getLoader().getCurrentStyle().applyTo(child);
+    ui_core.loader().getCurrentStyle().applyTo(child);
 
     child->calculateTransforms();
 }

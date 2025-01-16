@@ -11,10 +11,8 @@
 #include <ui/tvalue.hpp>
 #include <ui/layouts.hpp>
 #include <ui/backend.hpp>
+#include <ui/core.hpp>
 
-class UICore;
-class UILoader;
-class UIStyle;
 /*
     Core element that every other element inherits from
 */
@@ -216,7 +214,9 @@ class UILabel: public UIFrame{
         UITransform getTextPosition();
 
     public:
-        UILabel(){identifiers.tag = "label";}
+        UILabel(){
+            identifiers.tag = "label";
+        }
         virtual void getRenderingInformation(UIRenderBatch& batch);
 
         void calculateElementsTransforms() override;
@@ -285,6 +285,7 @@ class UIScrollableFrame: public UIFrame{
 
         int scroll = 0;
         int scrollMax = 1000;
+
     public:
         UIScrollableFrame();
         void calculateElementsTransforms() override;

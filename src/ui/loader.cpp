@@ -104,42 +104,10 @@ static inline std::string optGetAttribute(XMLElement* source, std::string name, 
     return attr;
 }
 
-std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& layer) {
-    // Map each tag name to a specific constructor
-    std::unordered_map<std::string, std::function<std::shared_ptr<UIFrame>()>> elements = {
-        {   
-            "frame", 
-            [source, this]() {return std::make_shared<UIFrame>(); }
-        },
-        {
-            "label", 
-            [source, this]() {
-                const char* content = source->GetText();
-                std::string text = "";
-                if(content) text = std::string(content);
-
-                auto label = std::make_shared<UILabel>();
-                label->setText(text);
-                return label; 
-            }
-        },
-        {
-            "input",
-            [source, this]() {
-                return std::make_shared<UIInput>(); 
-            }
-        },
-        {
-            "scrollable",
-            [source, this]() {
-                return std::make_shared<UIScrollableFrame>(); 
-            }
-        }
-    };
-
+std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source) {
     auto it = elements.find(source->Name());
     if (it != elements.end()) {
-        auto el = it->second();
+        auto el = it->second(source);
         if(!el) return nullptr;
 
         el->setPosition(
@@ -158,7 +126,8 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
         el->identifiers.tag = source->Name();
 
         auto id = source->Attribute("id");
-        if(id) layer.addElementWithID(id, el);
+        if(id) elements_with_ids[id] = el;
+        
 
         return el; 
     }
@@ -166,7 +135,11 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source, UILayer& la
     return nullptr; 
 }
 
-std::shared_ptr<UIFrame> UILoader::processElement(XMLElement* source, UILayer& layer){
+void UILoader::registerElement(const std::string& name, XMLElementCreationFunction creation_function){
+    elements[name] = creation_function;
+}
+
+std::shared_ptr<UIFrame> UILoader::processElement(XMLElement* source){
     if(source->Name() && std::string(source->Name()) == "style"){
         auto path = source->Attribute("src");
         if(!path){
@@ -179,14 +152,14 @@ std::shared_ptr<UIFrame> UILoader::processElement(XMLElement* source, UILayer& l
         return nullptr;
     }
 
-    std::shared_ptr<UIFrame> element = createElement(source, layer);
+    std::shared_ptr<UIFrame> element = createElement(source);
     
     for (
         XMLElement* child = source->FirstChildElement(); 
         child != nullptr; 
         child = child->NextSiblingElement()
     ) {
-        auto proccessed = processElement(child, layer);
+        auto proccessed = processElement(child);
         if(!proccessed) continue;
         element->appendChild(proccessed);
     }
@@ -222,7 +195,7 @@ bool UILoader::loadWindowFromXML(UIWindow& window, const std::string& path){
             layer_child = layer_child->NextSiblingElement()
         ) {
             //std::cout << layer_child->Name() << std::endl;
-            auto processed = processElement(layer_child, window.getLayer(name));
+            auto processed = processElement(layer_child);
             if(!processed) continue;
             window.getLayer(name).addElement(processed);
 

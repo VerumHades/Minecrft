@@ -15,6 +15,7 @@ class UISelection: public UIFrame{
         std::function<void(const std::string&)> onSelected;
 
         void addOption(const std::string& option);
+        bool hasOption(const std::string& option);
         void selectNext();
         void selectPrevious();
 

@@ -78,18 +78,20 @@ void MainScene::initialize(){
         {OPERATION_MINUS,{OPERATION_MINUS, {PERCENT,100}, {MY_PERCENT,100}},20}
     );
 
-    structure_capture_start_label = getUILayer("structure_capture").getElementById<UILabel>("start_label");
-    structure_capture_end_label   = getUILayer("structure_capture").getElementById<UILabel>("end_label");
-
-    getUILayer("structure_saving").getElementById<UIFrame>("submit")->onClicked = [this](){
+    structure_capture_start_label = getElementById<UILabel>("start_label");
+    structure_capture_end_label   = getElementById<UILabel>("end_label");
+    
+    getElementById<UIFrame>("submit")->onClicked = [this](){
         auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
         glm::ivec3 size = (max - min) + glm::ivec3(1,1,1);
 
         Structure structure = Structure::capture(min, size, *world);
 
-        structure.serialize().saveToFile("saves/structures/" + getUILayer("structure_saving").getElementById<UIInput>("structure_name")->getText() + ".structure");
+        const std::string& name = getElementById<UIInput>("structure_name")->getText();
+        structure.serialize().saveToFile("saves/structures/" + name + ".structure");
         setUILayer("structure_capture"); 
 
+        if(!this->structure_selection->hasOption(name)) this->structure_selection->addOption(name);
     };
 
     structure_selection = std::make_shared<UISelection>();
@@ -102,7 +104,7 @@ void MainScene::initialize(){
     structure_selection->onSelected = [this](const std::string& name){
         auto bt = ByteArray::FromFile("saves/structures/"  + name);
 
-        auto structure_name_label = getUILayer("structure_capture").getElementById<UILabel>("selected_structure");
+        auto structure_name_label = getElementById<UILabel>("selected_structure");
         structure_name_label->setText("Selected structure:" + name);
         structure_name_label->update();
 
@@ -112,8 +114,9 @@ void MainScene::initialize(){
 
     for (const auto& entry : std::filesystem::directory_iterator("saves/structures")){
         auto& path = entry.path();
+        if(!entry.is_regular_file()) continue;
 
-        structure_selection->addOption(path.filename().string());
+        structure_selection->addOption(path.stem().string());
     }
 
     setUILayer("structure_capture");
@@ -176,7 +179,7 @@ void MainScene::initialize(){
     inputManager.bindKey(GLFW_KEY_LEFT_CONTROL, MOVE_DOWN, "Move down when flying");
     inputManager.bindKey(GLFW_KEY_LEFT_SHIFT, SCROLL_ZOOM, "Hold to zoom");
 
-    auto settingsFrame = menuScene->getUILayer("settings").getElementById<UIFrame>("keybind_container");
+    auto settingsFrame = getElementById<UIFrame>("keybind_container");
 
     for(auto& [key,action]: inputManager.getBoundKeys()){
         std::string kename = getKeyName(key,0);
@@ -212,9 +215,9 @@ void MainScene::initialize(){
         settingsFrame->appendChild(frame);
     }
 
-    menuScene->getUILayer("settings").getElementById<UIFrame>("settings_scrollable")->calculateTransforms();
+    getElementById<UIFrame>("settings_scrollable")->calculateTransforms();
 
-    auto mouse_settings = menuScene->getUILayer("settings").getElementById<UIFrame>("mouse_sensitivity_container");
+    auto mouse_settings = getElementById<UIFrame>("mouse_sensitivity_container");
 
     auto sensitivity_slider = std::make_shared<UISlider>();
     sensitivity_slider->setValuePointer(&sensitivity);
@@ -404,7 +407,7 @@ static inline std::string vecToString(T vec, const std::string& separator = " ")
 }
 
 void MainScene::updateStructureDisplay(){
-    auto mode_label = getUILayer("structure_capture").getElementById<UILabel>("mode");
+    auto mode_label = getElementById<UILabel>("mode");
     mode_label->setText(
         "Current mode: " + std::string(structure_menu_mode == CAPTURE ? "Capture" : "Place")
     );
@@ -439,8 +442,8 @@ void MainScene::updateStructureSavingDisplay(){
     auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
     glm::ivec3 size = max - min;
 
-    auto save_size_label = getUILayer("structure_saving").getElementById<UILabel>("save_size");
-    auto blocks_total_label = getUILayer("structure_saving").getElementById<UILabel>("blocks_total");
+    auto save_size_label = getElementById<UILabel>("save_size");
+    auto blocks_total_label = getElementById<UILabel>("blocks_total");
 
     save_size_label->setText(
         "Size: " + vecToString(size, "x")
@@ -533,7 +536,7 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
         }
         else if(!isActiveLayer("structure_saving")){
             this->setUILayer("structure_saving");
-            ui_core.setFocus(getUILayer("structure_saving").getElementById<UIFrame>("structure_name"));
+            ui_core.setFocus(getElementById<UIFrame>("structure_name"));
             updateStructureSavingDisplay();
         }
     }

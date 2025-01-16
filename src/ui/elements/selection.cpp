@@ -8,6 +8,10 @@ UISelection::UISelection(){
     setFocusable(true);
 }
 
+bool UISelection::hasOption(const std::string& option){
+    return std::find(options.begin(), options.end(), option) != options.end();
+}
+
 void UISelection::addOption(const std::string& option){
     options.push_back(option);
 }
@@ -27,13 +31,13 @@ void UISelection::getRenderingInformation(UIRenderBatch& batch) {
     auto text_size = ui_core.getBackend().getTextDimensions(options[0], font_size);
 
     int line_height = text_size.height + 10;
-    int origin_x = transform.x;
+    int origin_x = transform.x + 10;
     int origin_y = transform.y + transform.height / 2 - line_height / 2;
     int text_origin_y = transform.y + transform.height / 2 - text_size.height / 2;
 
     int i = 0;
 
-    batch.Rectangle(origin_x, origin_y, transform.width, line_height, getAttribute(&Style::backgroundColor).shifted(0.1));
+    batch.Rectangle(transform.x, origin_y, transform.width, line_height, getAttribute(&Style::backgroundColor).shifted(0.1));
     for(const auto& option: options){
         int offset = ((i++) - selected) * line_height; 
         batch.Text(option, origin_x, text_origin_y - offset, font_size, getAttribute(&Style::textColor));

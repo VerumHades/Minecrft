@@ -46,14 +46,6 @@ class UILayer{
         void addElementWithID(std::string id, std::shared_ptr<UIFrame> element){
             idRegistry[id] = element;
         }
-        template <typename T>
-        std::shared_ptr<T> getElementById(std::string id){
-            if(idRegistry.count(id) == 0) {
-                std::cerr << "No element under id: " << id << std::endl;
-                return nullptr;
-            }
-            return dynamic_pointer_cast<T>(idRegistry[id]);
-        }
 
         std::vector<std::shared_ptr<UIFrame>>& getElements() {return elements;}
 };
@@ -97,10 +89,12 @@ class UICore{
 
         void renderElementAndChildren(std::shared_ptr<UIFrame>& element);
 
-        UILoader loader;
+        UILoader loader_;
         UIBackend* backend = nullptr;
 
     public:
+        UICore();
+
         void setBackend(UIBackend* backend);
         void resize(int width, int height);
         void setFocus(std::shared_ptr<UIFrame> ptr){inFocus = ptr;}
@@ -122,7 +116,7 @@ class UICore{
         UIWindowIdentifier createWindow();
         void loadWindowFromXML(UIWindow& window, std::string load_path);
 
-        UILoader& getLoader() {return loader;}
+        UILoader& loader() {return loader_;}
         UIBackend& getBackend();
 
         std::shared_ptr<UIFrame> getElementUnder(int x, int y, bool onlyScrollable = false);   
@@ -134,6 +128,11 @@ class UICore{
 };
 
 extern UICore ui_core;
+
+template<typename T>
+static inline auto getElementById(const std::string& id){
+    return ui_core.loader().getElementById<T>(id);
+}
 
 #include <ui/elements.hpp>
 

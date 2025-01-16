@@ -1,6 +1,21 @@
 #include <ui/core.hpp>
 
-UICore ui_core;
+UICore ui_core{};
+
+UICore::UICore(){
+    loader().registerElement("frame", XML_ELEMENT_LAMBDA_LOAD(UIFrame));
+    loader().registerElement("label", [](auto* source) {
+        const char* content = source->GetText();
+        std::string text = "";
+        if(content) text = std::string(content);
+                
+        auto label = std::make_shared<UILabel>();
+        label->setText(text);
+        return label; 
+    });
+    loader().registerElement("input", XML_ELEMENT_LAMBDA_LOAD(UIInput));
+    loader().registerElement("scrollable", XML_ELEMENT_LAMBDA_LOAD(UIScrollableFrame));
+}
 
 void UICore::resize(int width, int height){
     screenWidth = width;
@@ -177,7 +192,7 @@ UIBackend& UICore::getBackend(){
 }
 
 void UICore::loadWindowFromXML(UIWindow& window, std::string load_path){
-    loader.loadWindowFromXML(window, load_path);
+    loader().loadWindowFromXML(window, load_path);
 }
 
 std::shared_ptr<UIFrame> UICore::getElementUnder(int x, int y, bool onlyScrollable){
