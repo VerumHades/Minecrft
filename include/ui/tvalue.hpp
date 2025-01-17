@@ -3,9 +3,8 @@
 #include <vector>
 
 enum Units{
-    NONE, // The default value always 0 pixels
-    PIXELS,
     AUTO, // Some elements support automatic resize 
+    PIXELS,
 
     WINDOW_WIDTH, // Percentage of the window width
     WINDOW_HEIGHT, // Percentage of the window height
@@ -31,7 +30,7 @@ struct TValue{
     std::vector<TValue> operands;
 
     TValue(Units unit, int value) : unit(unit), value(value){}
-    TValue(int value) : unit(PIXELS), value(value){}
+    //TValue(int value) : unit(PIXELS), value(value){}
     TValue(Units unit): unit(unit), value(10){}
 
     // Gets automatically resolved if the operands have the same types
@@ -72,10 +71,22 @@ struct TValue{
     TValue operator/(const TValue& other) const {
         return {OPERATION_DIVIDE, *this, other};
     }
+
+    static TValue Center(){
+        return TValue{PERCENT,50} - TValue{MY_PERCENT,50};
+    }
+    static TValue Bottom(TValue offset){
+        return (TValue{PERCENT,100} - TValue{MY_PERCENT,50}) - offset;
+    }
+
+    static TValue Pixels(int pixels){
+        return {PIXELS, pixels};
+    }
 };
 
-const static TValue TNONE = {NONE, 0};
+TValue operator"" _px(unsigned long long value);
 
+const static TValue TNONE = {PIXELS, 0};
 enum UIElementState{
     BASE,
     HOVER,
@@ -85,4 +96,11 @@ enum UIElementState{
 struct UISize{
     int width;
     int height;
+};
+
+struct UISideSizesT{
+    TValue top;
+    TValue right;
+    TValue bottom;
+    TValue left;
 };

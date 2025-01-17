@@ -14,7 +14,7 @@ WorldStream::WorldStream(std::string filepath){
         newlyCreated = true;
         std::cout << "Created missing world file." << std::endl;
     }
-
+    
     file_stream = std::fstream(filepath, std::ios::in | std::ios::out | std::ios::binary);
 
     if(!file_stream.is_open()){

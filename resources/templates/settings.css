@@ -26,7 +26,19 @@
 }
 
 .controlls_member{
+    width: 100% - 10px;
+    height: 40px;
+
     margin: 5px;
+}
+.controlls_member_name{
+    width: 80%;
+    height: 40px;
+}
+.controlls_member_keyname{
+    width: 20% - 5px;
+    height: 40px;
+    left: 80%;
 }
 
 .mouse_sensitivity_slider{

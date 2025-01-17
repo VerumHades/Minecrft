@@ -17,7 +17,7 @@ Chunk* World::generateChunk(glm::ivec3 position){
 
     std::unique_ptr<Chunk> chunk = std::make_unique<Chunk>(position);
     
-    generator.generateTerrainChunkAccelerated(chunk.get(),position);
+    generator.generateTerrainChunk(chunk.get(),position);
 
     std::unique_lock lock(chunkGenLock);
     this->chunks.emplace(position, std::move(chunk));

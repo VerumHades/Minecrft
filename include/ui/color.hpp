@@ -56,14 +56,18 @@ struct UITransform{
     std::string to_string(){return "Transform(" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(width) + "," + std::to_string(height) + ")";}
 };
 
-struct UIBorderSizes{
+struct UISideSizes{
     int top;
     int right;
     int bottom;
     int left;
 
-    UIBorderSizes(int top, int right, int bottom, int left): top(top), right(right), bottom(bottom), left(left) {}
-    UIBorderSizes(int size): top(size), right(size), bottom(size), left(size) {}
+    UISideSizes(int top, int right, int bottom, int left): top(top), right(right), bottom(bottom), left(left) {}
+    UISideSizes(int size): top(size), right(size), bottom(size), left(size) {}
+
+    public:
+        int horizontal(){return left + right;}
+        int vertical(){return top + bottom;}
 };
 
 struct UIBorderColors{

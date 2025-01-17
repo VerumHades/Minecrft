@@ -20,11 +20,11 @@ void UILayout::arrangeChildren(UIFrame* frame){
             offsetY += greatestY;
             greatestY = 0;
 
-            child->setPosition(offsetX,offsetY);
+            child->setPosition(TValue::Pixels(offsetX),TValue::Pixels(offsetY));
             continue;
         }
 
-        child->setPosition(offsetX,offsetY);
+        child->setPosition(TValue::Pixels(offsetX),TValue::Pixels(offsetY));
         
         offsetX += child->getBoundingTransform().width;
     }
@@ -58,12 +58,12 @@ void UIFlexLayout::arrangeChildren(UIFrame* frame) {
 
         for(auto& child: frame->getChildren()){
             child->setPosition(
-                direction == HORIZONTAL ? offset : 0,
-                direction == VERTICAL   ? offset : 0
+                TValue::Pixels(direction == HORIZONTAL ? offset : 0),
+                TValue::Pixels(direction == VERTICAL   ? offset : 0)
             );
             child->setSize(
-                direction == HORIZONTAL ? size : content_transform.width,
-                direction == VERTICAL   ? size : content_transform.height
+                TValue::Pixels(direction == HORIZONTAL ? size : content_transform.width),
+                TValue::Pixels(direction == VERTICAL   ? size : content_transform.height)
             );
 
             offset += size;
@@ -78,8 +78,8 @@ void UIFlexLayout::arrangeChildren(UIFrame* frame) {
         auto ct = child->getBoundingTransform();
 
         child->setPosition(
-            direction == HORIZONTAL ? TValue(PIXELS,offset) : static_cast<float>(content_transform.width ) / 2.0f - static_cast<float>(ct.width ) / 2.0f,
-            direction == VERTICAL   ? TValue(PIXELS,offset) : static_cast<float>(content_transform.height) / 2.0f - static_cast<float>(ct.height) / 2.0f
+            TValue::Pixels(direction == HORIZONTAL ? offset : static_cast<float>(content_transform.width ) / 2.0f - static_cast<float>(ct.width ) / 2.0f),
+            TValue::Pixels(direction == VERTICAL   ? offset : static_cast<float>(content_transform.height) / 2.0f - static_cast<float>(ct.height) / 2.0f)
         );
         offset += 
             direction == HORIZONTAL ?

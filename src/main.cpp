@@ -197,23 +197,25 @@ int main() {
             menuScene->setUILayer("world_menu");
             scrollable->clearChildren();
 
-            for (const auto& dirEntry : std::filesystem::recursive_directory_iterator("saves")){
+            for (const auto& dirEntry : std::filesystem::directory_iterator("saves")){
+                if(!dirEntry.is_regular_file()) continue;
+
                 std::string filepath = dirEntry.path().string();
                 WorldStream stream(filepath);
                 
                 auto frame = std::make_shared<UIFrame>();
-                frame->setSize({PERCENT,80}, 200);
+                frame->setSize({PERCENT,80}, 200_px);
                 
                 auto temp = std::make_shared<UILabel>();
                 temp->setText(stream.getName());
-                temp->setSize({PERCENT,100}, 40);
+                temp->setSize({PERCENT,100}, 40_px);
                 temp->setHoverable(false);
                 temp->setIdentifiers({"world_option_label"});
 
                 auto chunkCountLabel = std::make_shared<UILabel>();
                 chunkCountLabel->setText("Number of saved chunks: " + std::to_string(stream.getChunkCount()));
-                chunkCountLabel->setSize({PERCENT,100},40);
-                chunkCountLabel->setPosition(0,45);
+                chunkCountLabel->setSize({PERCENT,100},40_px);
+                chunkCountLabel->setPosition(0_px,45_px);
                 chunkCountLabel->setHoverable(false);
                 chunkCountLabel->setIdentifiers({"world_option_chunk_count_label"});
 
@@ -266,7 +268,7 @@ int main() {
         newWorldButton->onClicked = newWorldFunc;
 
         //sceneManager.createScene<TestScene>("test_scene");
-        sceneManager.setScene("game");
+        sceneManager.setScene("menu");
         //menuScene->setUILayer("default");
 
         double last = glfwGetTime();

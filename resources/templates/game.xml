@@ -22,4 +22,11 @@
             <label id="submit">Save</label>
         </frame>
     </structure_saving>
+    <menu>
+        <frame id="menu_frame">
+            <label id="continue_button">Continue</label>
+            <label id="settings_button">Settings</label>
+            <label id=""></label>
+        </frame>
+    </menu>
 </window>

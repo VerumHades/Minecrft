@@ -195,9 +195,9 @@ ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, int slots_horizonta
 {
     dedicated_texture_array = textureAtlas.getTextureArray();
 
-    setSize(slots_horizontaly * slot_size, slots_verticaly * slot_size);
+    setSize(TValue::Pixels(slots_horizontaly * slot_size), TValue::Pixels(slots_verticaly * slot_size));
     setAttribute(&UIFrame::Style::backgroundColor, {20,20,20,200});
-    setAttribute(&UIFrame::Style::borderWidth, {3,3,3,3});
+    setAttribute(&UIFrame::Style::borderWidth, {3_px,3_px,3_px,3_px});
     setAttribute(&UIFrame::Style::borderColor, {UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}});
 
     onMouseEvent = [this](int button, int action, int mods){

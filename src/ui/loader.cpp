@@ -81,7 +81,7 @@ TValue parseTValue(std::string source){
         } else if (unitType == "m") {
             unit = Units::MY_PERCENT;
         } else {
-            unit = Units::PIXELS;
+            unit = Units::AUTO;
         }
 
         return TValue(unit, value);  
@@ -92,7 +92,7 @@ TValue parseTValue(std::string source){
 
 using namespace tinyxml2;
 
-static inline TValue getAttributeValue(XMLElement* source, std::string name, TValue def = TNONE){
+static inline TValue getAttributeValue(XMLElement* source, std::string name, TValue def = {AUTO,0}){
     const char* attr = source->Attribute(name.c_str());
     if(!attr) return def;
     return parseTValue(attr);

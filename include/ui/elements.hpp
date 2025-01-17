@@ -25,13 +25,14 @@ class UIFrame{
                 CENTER
             };
 
-            std::optional<TextPosition>          textPosition;
-            std::optional<UIColor>               textColor;
-            std::optional<UIColor>               backgroundColor;
-            std::optional<std::array<TValue,4>>  borderWidth;
-            std::optional<UIBorderColors>        borderColor;
-            std::optional<TValue>                margin;
-            std::optional<TValue>                fontSize;
+            std::optional<TextPosition>   textPosition;
+            std::optional<UIColor>        textColor;
+            std::optional<UIColor>        backgroundColor;
+            std::optional<UISideSizesT>       borderWidth;
+            std::optional<UIBorderColors> borderColor;
+            std::optional<UISideSizesT>       margin;
+            std::optional<UISideSizesT>       padding;
+            std::optional<TValue>         fontSize;
         };
 
     protected:
@@ -39,10 +40,11 @@ class UIFrame{
             Style::TextPosition::LEFT,
             UIColor{255,255,255,255},
             UIColor{0,0,0},
-            std::array<TValue,4>{0,0,0,0},
+            UISideSizesT{0_px,0_px,0_px,0_px},
             UIBorderColors{UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
-            TValue(0),
-            24
+            UISideSizesT{0_px,0_px,0_px,0_px},
+            UISideSizesT{0_px,0_px,0_px,0_px},
+            24_px,
         };
         Style hoverStyle;
         Style focusStyle;
@@ -68,8 +70,8 @@ class UIFrame{
 
         TValue x = TNONE;
         TValue y = TNONE;
-        TValue width = TNONE;
-        TValue height = TNONE;
+        TValue width  = {AUTO,0};
+        TValue height = {AUTO,0};
 
         int zIndex = 0;
         
@@ -103,13 +105,14 @@ class UIFrame{
         UITransform viewportTransform = {0,0,0,0}; // Transform for only visible content
         UITransform contentTransform  = {0,0,0,0}; // Whole tranform for content
         UITransform boundingTransform = {0,0,0,0}; // Transform that includes margin
-        UIBorderSizes borderSizes     = {0,0,0,0};
+        UISideSizes borderSizes       = {0,0,0,0};
         UIRegion clipRegion           = {{0,0},{0,0}};
         UIRegion contentClipRegion    = {{0,0},{0,0}};
 
-        UISize prefferedSize = {10,10};
-        int margin_x = 0;
-        int margin_y = 0;
+        UISize prefferedSize = {100,40};
+        UISideSizes margin  = 0;
+        UISideSizes padding = 0;
+
         int font_size = 0;
 
         virtual void getRenderingInformation(UIRenderBatch& batch);

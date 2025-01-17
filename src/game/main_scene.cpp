@@ -20,8 +20,9 @@ static inline std::tuple<glm::ivec3, glm::ivec3> pointsToRegion(glm::ivec3 min, 
 
 void MainScene::initialize(){
     fpsLock = false;
-
-    Scene* menuScene = sceneManager->getScene("menu");
+ 
+    this->setUILayer("settings");
+    addElement(getElementById<UIScrollableFrame>("settings_scrollable"));
 
     ui_core.loadWindowFromXML(*getWindow(), "resources/templates/game.xml");
     
@@ -34,15 +35,12 @@ void MainScene::initialize(){
     this->setUILayer("default");
 
     fps_label = std::make_shared<UILabel>();
-    fps_label->setPosition(10,10);
+    fps_label->setPosition(10_px,10_px);
     addElement(fps_label);
 
     auto crosshair = std::make_shared<UICrosshair>();
-    crosshair->setSize(60,60);
-    crosshair->setPosition(
-        {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT, 50}},
-        {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT, 50}}
-    );
+    crosshair->setSize(60_px,60_px);
+    crosshair->setPosition(TValue::Center(), TValue::Center());
     crosshair->setAttribute(&UIFrame::Style::textColor, {255,255,255});
 
     getUILayer("default").addElement(crosshair);
@@ -74,8 +72,8 @@ void MainScene::initialize(){
 
     hotbar = std::make_shared<UIHotbar>(itemTextureAtlas, held_item_slot);
     hotbar->setPosition(
-        {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}},
-        {OPERATION_MINUS,{OPERATION_MINUS, {PERCENT,100}, {MY_PERCENT,100}},20}
+        TValue::Center(),
+        TValue::Bottom(20_px)
     );
 
     structure_capture_start_label = getElementById<UILabel>("start_label");
@@ -95,11 +93,11 @@ void MainScene::initialize(){
     };
 
     structure_selection = std::make_shared<UISelection>();
-    structure_selection->setPosition(10,10);
-    structure_selection->setSize(200,300);
+    structure_selection->setPosition(10_px,10_px);
+    structure_selection->setSize(200_px,300_px);
     structure_selection->setAttribute(&UIFrame::Style::backgroundColor, {10,10,10});
     structure_selection->setAttribute(&UIFrame::Style::textColor, {220,220,220});
-    structure_selection->setAttribute(&UIFrame::Style::fontSize, TValue{16});
+    structure_selection->setAttribute(&UIFrame::Style::fontSize, 16_px);
 
     structure_selection->onSelected = [this](const std::string& name){
         auto bt = ByteArray::FromFile("saves/structures/"  + name);
@@ -121,7 +119,7 @@ void MainScene::initialize(){
 
     setUILayer("structure_capture");
     addElement(structure_selection);
-    setUILayer("menu");
+    setUILayer("inventory");
     addElement(inventory);
     addElement(hotbar);
     addElement(held_item_slot);
@@ -185,20 +183,15 @@ void MainScene::initialize(){
         std::string kename = getKeyName(key,0);
 
         auto frame = std::make_shared<UIFrame>();
-        frame->setSize({OPERATION_MINUS,{PERCENT,100},{10}}, 40);
         frame->setIdentifiers({"controlls_member"});
 
         auto name = std::make_shared<UILabel>();
         name->setText(action.name);
-        name->setSize({PERCENT,80},40);
-        name->setPosition(0,0);
         name->setHoverable(false);
         name->setIdentifiers({"controlls_member_name"});
         
         auto keyname = std::make_shared<UILabel>();
         keyname->setText(kename);
-        keyname->setSize({OPERATION_MINUS,{PERCENT,20},5},40);
-        keyname->setPosition({PERCENT,80},0);
         keyname->setFocusable(true);
         keyname->setIdentifiers({"controlls_member_keyname"});
 
@@ -222,7 +215,7 @@ void MainScene::initialize(){
     auto sensitivity_slider = std::make_shared<UISlider>();
     sensitivity_slider->setValuePointer(&sensitivity);
     sensitivity_slider->setSize({PERCENT,60},{PERCENT,100});
-    sensitivity_slider->setPosition({PERCENT,20},0);
+    sensitivity_slider->setPosition({PERCENT,20},0_px);
     sensitivity_slider->setMin(1);
     sensitivity_slider->setMax(100);
     sensitivity_slider->setDisplayValue(true);
@@ -240,11 +233,11 @@ void MainScene::resize(GLFWwindow* window, int width, int height){
 }
 
 void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
-    if(isActiveLayer("menu")){
+    if(isActiveLayer("inventory")){
         if(held_item_slot){
             held_item_slot->setPosition(
-                mouseX,
-                mouseY
+                TValue::Pixels(mouseX),
+                TValue::Pixels(mouseY)
             );
             held_item_slot->calculateTransforms();
             held_item_slot->update();
@@ -529,6 +522,10 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
         else
             this->setUILayer("menu");
     }
+    else if(key == GLFW_KEY_TAB && action == GLFW_PRESS){
+        if(!isActiveLayer("inventory")) setUILayer("inventory");
+        else setUILayer("default");
+    }
     else if(key == GLFW_KEY_N && action == GLFW_PRESS){
         if(!isActiveLayer("structure_capture") && !isActiveLayer("structure_saving")){
             this->setUILayer("structure_capture");
@@ -566,6 +563,7 @@ void MainScene::open(GLFWwindow* window){
 
     int pregenDistance = renderDistance + 1; 
 
+    int i = 0;
     //world->getWorldGenerator().generateChunkRegion(*world, {0,0,0});
     for(int x = -pregenDistance; x <= pregenDistance; x++) 
     for(int y = -pregenDistance; y <= pregenDistance; y++) 
@@ -773,6 +771,10 @@ void MainScene::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
 
 void MainScene::enqueueChunkGeneration(glm::ivec3 position){
     if(world->getChunk(position)) return;
+    if(world->isChunkLoadable(position)){
+        world->loadChunk(position);
+        return;
+    }
     chunk_generation_queue.push(position); 
 }
 
@@ -926,7 +928,7 @@ void UIHotbar::getRenderingInformation(UIRenderBatch& batch){
         slot_size,
         slot_size,
         UIColor{0,0,0,0},
-        UIBorderSizes{3,3,3,3},
+        UISideSizes{3,3,3,3},
         UIColor{180,180,180}
     );
 }

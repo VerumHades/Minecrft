@@ -12,16 +12,6 @@
 //}
 
 void TestScene::initialize(){
-    auto form = std::make_shared<UIForm>(std::vector<UIForm::Field>{
-        UIForm::Field{"Text: ", UIForm::TEXT}
-    });
-    
-    form->setPosition(10,10);
-    form->setAttribute(&UIFrame::Style::backgroundColor, {20,20,20});
-    form->setSize(200,200);
-
-    setUILayer("first");
-    addElement(form);
     setUILayer("first");
 }
 

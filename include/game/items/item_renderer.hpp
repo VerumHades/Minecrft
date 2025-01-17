@@ -81,7 +81,7 @@ class ItemSlot: public UIFrame{
     public:
         ItemSlot(ItemTextureAtlas& textureAtlas): textureAtlas(textureAtlas){
             dedicated_texture_array = textureAtlas.getTextureArray();
-            setSize(slot_size,slot_size);
+            setSize(TValue::Pixels(slot_size),TValue::Pixels(slot_size));
         }
 
         LogicalItemSlot& getSlot() {return item_slot;}

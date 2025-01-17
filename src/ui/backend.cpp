@@ -23,7 +23,7 @@ void UIRenderBatch::Rectangle(UITransform transform, UIColor fill_color){
     Rectangle(transform.x, transform.y, transform.width, transform.height, fill_color);
 }
 
-void UIRenderBatch::BorderedRectangle(int x, int y, int width, int height, UIColor fill_color, UIBorderSizes border_sizes, UIBorderColors border_colors){
+void UIRenderBatch::BorderedRectangle(int x, int y, int width, int height, UIColor fill_color, UISideSizes border_sizes, UIBorderColors border_colors){
     Rectangle(
         x + border_sizes.left,
         y + border_sizes.top,
@@ -60,7 +60,7 @@ void UIRenderBatch::BorderedRectangle(int x, int y, int width, int height, UICol
         border_colors.left
     );
 }
-void UIRenderBatch::BorderedRectangle(UITransform transform, UIColor fill_color, UIBorderSizes border_sizes, UIBorderColors border_colors){
+void UIRenderBatch::BorderedRectangle(UITransform transform, UIColor fill_color, UISideSizes border_sizes, UIBorderColors border_colors){
     BorderedRectangle(transform.x, transform.y, transform.width, transform.height, fill_color, border_sizes, border_colors);
 }
 

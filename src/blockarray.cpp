@@ -1,11 +1,13 @@
 #include <blockarray.hpp>
 
-void SparseBlockArray::setBlock(glm::ivec3 position, const Block& block){
+void SparseBlockArray::setBlock(glm::ivec3 position, const Block& block, bool dont_check){
     altered = true;
 
-    auto* block_here = getBlock(position);
-    if(block_here != &airBlock){
-        getLayer(block_here->id).field().reset(position.x,position.y,position.z);
+    if(!dont_check){
+        auto* block_here = getBlock(position);
+        if(block_here != &airBlock){
+            getLayer(block_here->id).field().reset(position.x,position.y,position.z);
+        }
     }
 
     if(block.id == BLOCK_AIR_INDEX){

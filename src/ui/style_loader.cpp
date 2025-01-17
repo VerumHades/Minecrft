@@ -94,6 +94,7 @@ static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFram
     {"background-color", ATTRIBUTE_LAMBDA(backgroundColor, parseColor)},
     {"color",            ATTRIBUTE_LAMBDA(textColor, parseColor)},
     {"margin",           ATTRIBUTE_LAMBDA(margin, parseTValue)},
+    {"padding",          ATTRIBUTE_LAMBDA(padding, parseTValue)},
     {"font-size",        ATTRIBUTE_LAMBDA(fontSize, parseTValue)},
 
     {

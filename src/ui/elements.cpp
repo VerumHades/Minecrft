@@ -46,12 +46,8 @@ void UIFrame::stopDrawingChildren(){
 int UIFrame::getValueInPixels(TValue value, bool horizontal){
     switch (value.unit)
     {
-        case NONE: return 0;
+        case AUTO: return horizontal ? prefferedSize.width : prefferedSize.height;
         case PIXELS: return value.value;   
-        case AUTO:{
-            std::cout << prefferedSize.width << "x" << prefferedSize.height << std::endl;
-            return horizontal ? prefferedSize.width : prefferedSize.height;
-        }
 
         case WINDOW_WIDTH : return (ui_core.getScreenWidth()  / 100.0f) * value.value;
         case WINDOW_HEIGHT: return (ui_core.getScreenHeight() / 100.0f) * value.value;
@@ -116,7 +112,8 @@ static inline void reduceRegionTo(UIRegion& target, UIRegion& to){
 }
 
 void UIFrame::calculateElementsTransforms(){
-    auto margin = getAttribute(&UIFrame::Style::margin);
+    auto margin_t = getAttribute(&UIFrame::Style::margin);
+    auto padding_t = getAttribute(&UIFrame::Style::padding);
     auto borderWidth = getAttribute(&Style::borderWidth);
 
     font_size = getValueInPixels(getAttribute(&UIFrame::Style::fontSize), true);
@@ -124,14 +121,26 @@ void UIFrame::calculateElementsTransforms(){
     if(layout) contentTransform = layout->calculateContentTransform(this);
 
     borderSizes = {
-        getValueInPixels(borderWidth[0], false),
-        getValueInPixels(borderWidth[1], true ),
-        getValueInPixels(borderWidth[2], false),
-        getValueInPixels(borderWidth[3], true )
+        getValueInPixels(borderWidth.top   , false),
+        getValueInPixels(borderWidth.right , true ),
+        getValueInPixels(borderWidth.bottom, false),
+        getValueInPixels(borderWidth.left  , true )
     };
 
-    margin_x = getValueInPixels(margin, true );
-    margin_y = getValueInPixels(margin, false);
+    margin = {
+        getValueInPixels(margin_t.top   , false),
+        getValueInPixels(margin_t.right , true ),
+        getValueInPixels(margin_t.bottom, false),
+        getValueInPixels(margin_t.left  , true )
+    };
+
+    padding = {
+        getValueInPixels(padding_t.top   , false),
+        getValueInPixels(padding_t.right , true ),
+        getValueInPixels(padding_t.bottom, false),
+        getValueInPixels(padding_t.left  , true )
+    };
+
 
     UITransform internalTransform = {
         getValueInPixels(x     , true ),
@@ -155,20 +164,20 @@ void UIFrame::calculateElementsTransforms(){
     boundingTransform = {
         internalTransform.x + offset_x,
         internalTransform.y + offset_y,
-        internalTransform.width  + borderSizes.right  + borderSizes.left + margin_x * 2,
-        internalTransform.height + borderSizes.bottom + borderSizes.top  + margin_y * 2
+        internalTransform.width  + borderSizes.horizontal() + margin.horizontal() + padding.horizontal(),
+        internalTransform.height + borderSizes.vertical()   + margin.vertical()   + padding.vertical()
     };
 
     transform = {
-        internalTransform.x + offset_x + margin_x,
-        internalTransform.y + offset_y + margin_y,
-        internalTransform.width  + borderSizes.right  + borderSizes.left,
-        internalTransform.height + borderSizes.bottom + borderSizes.top
+        internalTransform.x + offset_x + margin.left,
+        internalTransform.y + offset_y + margin.top,
+        internalTransform.width  + borderSizes.horizontal() + padding.horizontal(),
+        internalTransform.height + borderSizes.vertical()   + padding.vertical()
     };
 
     viewportTransform = {
-        internalTransform.x + offset_x + margin_x + borderSizes.left,
-        internalTransform.y + offset_y + margin_y + borderSizes.top,
+        internalTransform.x + offset_x + padding.left + margin.left + borderSizes.left,
+        internalTransform.y + offset_y + padding.top  + margin.top + borderSizes.top,
         internalTransform.width,
         internalTransform.height
     };
@@ -211,14 +220,14 @@ void UILabel::getRenderingInformation(UIRenderBatch& batch) {
 }
 
 void UILabel::calculateElementsTransforms(){
-    UIFrame::calculateElementsTransforms();
-
     UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(text, font_size);
 
     prefferedSize = {
         textDimensions.width + textPadding * 2,
         textDimensions.height + textPadding * 2
     };
+
+    UIFrame::calculateElementsTransforms();
 }
 
 UITransform UILabel::getTextPosition(){
