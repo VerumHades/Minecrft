@@ -71,8 +71,8 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
                 auto t = parent->viewportTransform;
                 return static_cast<float>(
                     horizontal ? 
-                    t.width  - borderSizes.left - borderSizes.right  - margin_x * 2: 
-                    t.height - borderSizes.top  - borderSizes.bottom - margin_y * 2
+                    t.width  - borderSizes.left - borderSizes.right  - margin.horizontal() :
+                    t.height - borderSizes.top  - borderSizes.bottom - margin.vertical()
                 ) / 100.0f * value.value;
             }
             else return (( horizontal ? ui_core.getScreenWidth() : ui_core.getScreenHeight() )  / 100.0f) * value.value;

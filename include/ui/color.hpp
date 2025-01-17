@@ -65,9 +65,31 @@ struct UISideSizes{
     UISideSizes(int top, int right, int bottom, int left): top(top), right(right), bottom(bottom), left(left) {}
     UISideSizes(int size): top(size), right(size), bottom(size), left(size) {}
 
-    public:
-        int horizontal(){return left + right;}
-        int vertical(){return top + bottom;}
+    int operator[](const int& key) const {
+        switch (key)
+        {
+            case 0: return this->top;
+            case 1: return this->right;
+            case 2: return this->bottom;
+            case 3: return this->left;
+            default: return this->top;
+        }
+    }
+
+    // Overload for non-const access
+    int& operator[](const int& key) {
+        switch (key)
+        {
+            case 0: return this->top;
+            case 1: return this->right;
+            case 2: return this->bottom;
+            case 3: return this->left;
+            default: return this->top;
+        }
+    }
+
+    int horizontal(){return left + right;}
+    int vertical(){return top + bottom;}
 };
 
 struct UIBorderColors{

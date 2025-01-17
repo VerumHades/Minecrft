@@ -60,6 +60,8 @@ class UIStyle{
         */
         std::vector<UIStyleQuery> queries;
 
+        std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFrame>, std::string, UIElementState)>> attributeApplyFunctions;
+
         std::vector<UIStyleQueryAttribute> parseQueryAttributes(std::string source);
         UIStyleSelector parseQuerySelector(std::string source);
         void parseQuery(std::string selectors, std::string source);
@@ -67,7 +69,7 @@ class UIStyle{
         friend struct UIStyleQuery;
 
     public:
-        UIStyle(){};
+        UIStyle();
         // Load style from file, new styles are addded to the registry nothing is erased
         void loadFromFile(const std::string& path);
         void applyTo(std::shared_ptr<UIFrame> element);

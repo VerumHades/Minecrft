@@ -6,7 +6,7 @@ UIForm::UIForm(const std::vector<Field>& fields){
         auto row_frame = std::make_shared<UIFrame>();
         row_frame->setLayout(std::make_shared<UIFlexLayout>(UIFlexLayout::HORIZONTAL, false));
         row_frame->setSize({PERCENT, 100}, 30_px);
-        row_frame->setAttribute(&UIFrame::Style::margin, 5_px);
+        row_frame->setAttribute(&UIFrame::Style::margin, UISideSizesT{5_px});
 
         auto label = std::make_shared<UILabel>();
         label->setText(name);
@@ -23,7 +23,7 @@ UIForm::UIForm(const std::vector<Field>& fields){
     submit_button = std::make_shared<UILabel>();
     submit_button->setAttribute(&UIFrame::Style::borderColor, {UIColor{0,0,0}});
     submit_button->setText("Submit");
-    submit_button->setAttribute(&UIFrame::Style::margin, 5_px);
+    submit_button->setAttribute(&UIFrame::Style::margin, UISideSizesT{5_px});
     submit_button->setSize(100_px,30_px);
 
     appendChild(submit_button);

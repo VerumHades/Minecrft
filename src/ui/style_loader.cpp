@@ -11,6 +11,12 @@ std::vector<std::string> split(std::string s, const std::string& delimiter) {
     }
     tokens.push_back(s);
 
+    std::vector<std::string> filtered_tokens{};
+    for(auto& token: tokens){
+        if(token == "") continue;
+        filtered_tokens.push_back(token); 
+    }
+
     return tokens;
 }
 
@@ -90,50 +96,81 @@ UIColor parseColor(std::string source) {
         element->setAttribute(&UIFrame::Style::attr, attrVec, state); \
     }
 
-static std::unordered_map<std::string, std::function<void(std::shared_ptr<UIFrame>, std::string, UIElementState)>> attributeApplyFunctions = {
-    {"background-color", ATTRIBUTE_LAMBDA(backgroundColor, parseColor)},
-    {"color",            ATTRIBUTE_LAMBDA(textColor, parseColor)},
-    {"margin",           ATTRIBUTE_LAMBDA(margin, parseTValue)},
-    {"padding",          ATTRIBUTE_LAMBDA(padding, parseTValue)},
-    {"font-size",        ATTRIBUTE_LAMBDA(fontSize, parseTValue)},
+UISideSizesT parseSideSizes(std::string source){
+    auto split_source = split(source, " ");
 
-    {
-        "display", [](auto element, auto value, auto){
-            if(value == "flex") element->setLayout(std::make_shared<UIFlexLayout>());
-            else element->setLayout(std::make_shared<UILayout>());
-        }
-    },
-    {
-        "flex-direction", [](auto element, auto value, auto){
-            if(auto flex_frame = std::dynamic_pointer_cast<UIFlexLayout>(element->getLayout())){
-                if     (value == "column") flex_frame->setDirection(UIFlexLayout::VERTICAL);
-                else if(value == "row")    flex_frame->setDirection(UIFlexLayout::HORIZONTAL);
-                else std::cerr << value << " is not a valid flex direction. Use 'column' or 'row'." << std::endl;
+    UISideSizesT output{0_px,0_px,0_px,0_px};
+
+    if(
+        split_source.size() != 4 &&
+        split_source.size() != 2 &&
+        split_source.size() != 1
+    ){  
+        std::cerr << "Invalid arguments for size parsing: " << source << std::endl;
+        return output;
+    }
+
+    if(split_source.size() == 4)
+        output = {
+            parseTValue(split_source[0]),
+            parseTValue(split_source[1]),
+            parseTValue(split_source[2]),
+            parseTValue(split_source[3])
+        };
+    else if(split_source.size() == 2)
+        output = {
+            parseTValue(split_source[0]),
+            parseTValue(split_source[1]),
+            parseTValue(split_source[0]),
+            parseTValue(split_source[1])
+        };
+    else if(split_source.size() == 1)
+        output = {
+            parseTValue(split_source[0]),
+            parseTValue(split_source[0]),
+            parseTValue(split_source[0]),
+            parseTValue(split_source[0])
+        };
+    
+    return output;
+}
+
+UIStyle::UIStyle(){
+    attributeApplyFunctions = {
+        {"background-color", ATTRIBUTE_LAMBDA(backgroundColor, parseColor)},
+        {"color",            ATTRIBUTE_LAMBDA(textColor, parseColor)},
+        {"margin",           ATTRIBUTE_LAMBDA(margin, parseSideSizes)},
+        {"padding",          ATTRIBUTE_LAMBDA(padding, parseSideSizes)},
+        {"font-size",        ATTRIBUTE_LAMBDA(fontSize, parseTValue)},
+
+        {
+            "display", [](auto element, auto value, auto){
+                if(value == "flex") element->setLayout(std::make_shared<UIFlexLayout>());
+                else element->setLayout(std::make_shared<UILayout>());
             }
-            else std::cerr << "Settings flex properties for an element that doesnt use a flex layout?" << std::endl;
-        }
-    },
+        },
+        {
+            "flex-direction", [](auto element, auto value, auto){
+                if(auto flex_frame = std::dynamic_pointer_cast<UIFlexLayout>(element->getLayout())){
+                    if     (value == "column") flex_frame->setDirection(UIFlexLayout::VERTICAL);
+                    else if(value == "row")    flex_frame->setDirection(UIFlexLayout::HORIZONTAL);
+                    else std::cerr << value << " is not a valid flex direction. Use 'column' or 'row'." << std::endl;
+                }
+                else std::cerr << "Settings flex properties for an element that doesnt use a flex layout?" << std::endl;
+            }
+        },
 
-    {"left",   [](auto element, auto value, auto) { element->setX(parseTValue(value)); }},
-    {"top",    [](auto element, auto value, auto) { element->setY(parseTValue(value)); }},
-    {"right",  [](auto element, auto value, auto) { element->setX((TValue{PERCENT,100} - TValue{MY_PERCENT,100}) - parseTValue(value)); }},
-    {"bottom", [](auto element, auto value, auto) { element->setY((TValue{PERCENT,100} - TValue{MY_PERCENT,100}) - parseTValue(value)); }},
-    {"width",  [](auto element, auto value, auto) { element->setWidth(parseTValue(value)); }},
-    {"height", [](auto element, auto value, auto) { element->setHeight(parseTValue(value)); }},
-    
-    {"border-width",        BORDER_LAMBDA(borderWidth, parseTValue, -1)},
-    {"border-color",        BORDER_LAMBDA(borderColor, parseColor, -1)},
-    
-    {"border-top-width",    BORDER_LAMBDA(borderWidth, parseTValue, 0)},
-    {"border-right-width",  BORDER_LAMBDA(borderWidth, parseTValue, 1)},
-    {"border-bottom-width", BORDER_LAMBDA(borderWidth, parseTValue, 2)},
-    {"border-left-width",   BORDER_LAMBDA(borderWidth, parseTValue, 3)},
-    
-    {"border-top-color",    BORDER_LAMBDA(borderColor, parseColor, 0)},
-    {"border-right-color",  BORDER_LAMBDA(borderColor, parseColor, 1)},
-    {"border-bottom-color", BORDER_LAMBDA(borderColor, parseColor, 2)},
-    {"border-left-color",   BORDER_LAMBDA(borderColor, parseColor, 3)},
-};
+        {"left",   [](auto element, auto value, auto) { element->setX(parseTValue(value)); }},
+        {"top",    [](auto element, auto value, auto) { element->setY(parseTValue(value)); }},
+        {"right",  [](auto element, auto value, auto) { element->setX((TValue{PERCENT,100} - TValue{MY_PERCENT,100}) - parseTValue(value)); }},
+        {"bottom", [](auto element, auto value, auto) { element->setY((TValue{PERCENT,100} - TValue{MY_PERCENT,100}) - parseTValue(value)); }},
+        {"width",  [](auto element, auto value, auto) { element->setWidth(parseTValue(value)); }},
+        {"height", [](auto element, auto value, auto) { element->setHeight(parseTValue(value)); }},
+        
+        {"border-width",        ATTRIBUTE_LAMBDA(borderWidth, parseSideSizes)},
+        {"border-color",        BORDER_LAMBDA(borderColor, parseColor, -1)},
+    };
+}
 
 std::vector<UIStyle::UIStyleQueryAttribute> UIStyle::parseQueryAttributes(std::string source){
     std::vector<UIStyleQueryAttribute> attributes;
