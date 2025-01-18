@@ -126,6 +126,13 @@ void MainScene::initialize(){
     setUILayer("default");
     addElement(hotbar);
 
+    getElementById<UILabel>("game_menu_continue_button")->onClicked = [this](){
+        setUILayer("default");
+    };
+    getElementById<UILabel>("game_menu_settings_button")->onClicked = [this](){
+        setUILayer("settings");
+    };
+
     skyboxProgram.use();
 
     skybox.load(skyboxPaths);

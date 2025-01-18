@@ -1,6 +1,7 @@
 <window>
     <structure_capture>
-        <style src="resources/templates/game.css"></style>
+        <style src="resources/templates/style/general.css"></style>
+        <style src="resources/templates/style/game.css"></style>
 
         <frame id="info_frame">
             <label id="mode">Current mode:</label>
@@ -24,9 +25,12 @@
     </structure_saving>
     <menu>
         <frame id="menu_frame">
-            <label id="continue_button">Continue</label>
-            <label id="settings_button">Settings</label>
+            <label id="game_menu_continue_button" class="interactable menu_button">Continue</label>
+            <label id="game_menu_settings_button" class="interactable menu_button">Settings</label>
             <label id=""></label>
         </frame>
     </menu>
+    <settings>
+        
+    </settings>
 </window>

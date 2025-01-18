@@ -64,7 +64,7 @@
 }
 
 #menu_frame{
-    width: 200px;
+    width: 300px;
     height: 500px;
 
     top: 50% - 50m;
@@ -75,7 +75,5 @@
 }
 
 #menu_frame label{
-    margin: 10px;
-    padding: 10px 5px;
     background-color: rgb(60, 61, 55);
 }

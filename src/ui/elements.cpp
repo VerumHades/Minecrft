@@ -141,7 +141,6 @@ void UIFrame::calculateElementsTransforms(){
         getValueInPixels(padding_t.left  , true )
     };
 
-
     UITransform internalTransform = {
         getValueInPixels(x     , true ),
         getValueInPixels(y     , false),

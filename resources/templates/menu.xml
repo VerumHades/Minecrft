@@ -1,11 +1,12 @@
 <window>
     <default>
-        <style src="resources/templates/main.css"></style>
-        <style src="resources/templates/settings.css"></style>
+        <style src="resources/templates/style/general.css"></style>
+        <style src="resources/templates/style/main.css"></style>
+        <style src="resources/templates/style/settings.css"></style>
         
         <frame class = "vertical_flex center" width="300px" height="500px" id="main_menu_selection">
-            <label width="100%" height="40px" id="new_world" class="interactable">New World</label>
-            <label width="100%" height="40px" id="setttings" class="interactable">Settings</label>
+            <label id="new_world" class="interactable menu_button">New World</label>
+            <label id="setttings" class="interactable menu_button">Settings</label>
         </frame>
     </default>
     <world_menu>

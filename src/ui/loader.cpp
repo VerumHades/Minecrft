@@ -1,13 +1,12 @@
 #include <ui/loader.hpp>
 
-static const std::vector<std::tuple<std::string, int, Units>> operators = {
+/*static const std::vector<std::tuple<std::string, int, Units>> operators = {
     {"-", 0, OPERATION_MINUS},
     {"+", 0, OPERATION_PLUS }
 };
 
-/*
-    Return a tuple of [operator position in the string, operator index in registry]
-*/
+// Return a tuple of [operator position in the string, operator index in registry]
+
 std::tuple<size_t, size_t> findMostImportantOperator(std::string source){    
     size_t selectedOperatorPosition = std::string::npos;
     size_t selectedOperatorIndex = std::string::npos;
@@ -46,7 +45,7 @@ std::tuple<size_t, size_t> findMostImportantOperator(std::string source){
     }
 
     return {selectedOperatorPosition, selectedOperatorIndex};
-}
+}*/
 
 TValue parseTValue(std::string source){
     source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
@@ -54,19 +53,7 @@ TValue parseTValue(std::string source){
     if(source == "fit-content") return TValue(Units::FIT_CONTENT, 0);
     else if(source == "auto") return TValue(Units::AUTO, 0);
 
-    auto [op_position,op_index] = findMostImportantOperator(source);
-
-    if(op_position != std::string::npos){
-        Units unit = std::get<2>(operators[op_index]);
-        std::string name = std::get<0>(operators[op_index]);
-        return TValue(
-            unit,
-            parseTValue(source.substr(0, op_position).c_str()),
-            parseTValue(source.substr(op_position + name.length()).c_str())
-        );
-    }
-
-    std::regex pattern(R"((\d+)(%|px|m))");
+    std::regex pattern(R"((\d+)(%|px))");
     std::smatch matches;
 
     if (std::regex_match(source, matches, pattern)) {
@@ -78,15 +65,13 @@ TValue parseTValue(std::string source){
             unit = Units::PERCENT;
         } else if (unitType == "px") {
             unit = Units::PIXELS;
-        } else if (unitType == "m") {
-            unit = Units::MY_PERCENT;
         } else {
             unit = Units::AUTO;
         }
 
         return TValue(unit, value);  
     }
-    std::cerr << "Failed to parse value: " << source << std::endl;
+    std::cerr << "Failed to parse value '" << source << "'"<< std::endl;
     return TNONE;
 }
 

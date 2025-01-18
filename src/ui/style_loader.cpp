@@ -17,11 +17,15 @@ std::vector<std::string> split(std::string s, const std::string& delimiter) {
         filtered_tokens.push_back(token); 
     }
 
-    return tokens;
+    return filtered_tokens;
+}
+
+static inline void remove_spaces(std::string& source){
+    source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
 }
 
 UIColor parseColor(std::string source) {
-    source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
+    remove_spaces(source);
 
     // Regex for RGB and RGBA formats
     std::regex RGBpattern(R"(rgb\((\d+),(\d+),(\d+)\))");
@@ -145,12 +149,16 @@ UIStyle::UIStyle(){
 
         {
             "display", [](auto element, auto value, auto){
+                remove_spaces(value);
+
                 if(value == "flex") element->setLayout(std::make_shared<UIFlexLayout>());
                 else element->setLayout(std::make_shared<UILayout>());
             }
         },
         {
             "flex-direction", [](auto element, auto value, auto){
+                remove_spaces(value);
+
                 if(auto flex_frame = std::dynamic_pointer_cast<UIFlexLayout>(element->getLayout())){
                     if     (value == "column") flex_frame->setDirection(UIFlexLayout::VERTICAL);
                     else if(value == "row")    flex_frame->setDirection(UIFlexLayout::HORIZONTAL);
@@ -166,6 +174,21 @@ UIStyle::UIStyle(){
         {"bottom", [](auto element, auto value, auto) { element->setY((TValue{PERCENT,100} - TValue{MY_PERCENT,100}) - parseTValue(value)); }},
         {"width",  [](auto element, auto value, auto) { element->setWidth(parseTValue(value)); }},
         {"height", [](auto element, auto value, auto) { element->setHeight(parseTValue(value)); }},
+        {"translate", [](auto element, auto value, auto) { 
+            auto split_source = split(value, " ");
+
+            if(split_source.size() != 2){
+                std::cerr << "Invalid values for 'translate'." << std::endl;
+                return;
+            }
+
+            auto value1 = parseTValue(split_source[0]);
+            auto value2 = parseTValue(split_source[1]);
+
+            if(value1.unit == PERCENT) value1.unit = MY_PERCENT;
+            if(value2.unit == PERCENT) value2.unit = MY_PERCENT;
+        }}
+    1 }}
         
         {"border-width",        ATTRIBUTE_LAMBDA(borderWidth, parseSideSizes)},
         {"border-color",        BORDER_LAMBDA(borderColor, parseColor, -1)},
@@ -174,7 +197,7 @@ UIStyle::UIStyle(){
 
 std::vector<UIStyle::UIStyleQueryAttribute> UIStyle::parseQueryAttributes(std::string source){
     std::vector<UIStyleQueryAttribute> attributes;
-    source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
+    //source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
 
     std::regex pattern(R"(([a-zA-Z\-]+):([a-zA-Z0-9,()\- %#]+);)"); 
 
@@ -188,6 +211,7 @@ std::vector<UIStyle::UIStyleQueryAttribute> UIStyle::parseQueryAttributes(std::s
             std::cerr << "Unsuported attribute in css file: " << match[1] << std::endl;
             continue;
         }
+
         attributes.push_back({match[1],match[2]});
     }
 
@@ -320,4 +344,6 @@ void UIStyle::applyTo(
             attributeApplyFunctions[attr.name](element, attr.value, query.selector[0].state);
         }   
     }
+
+    element->calculateTransforms();
 }

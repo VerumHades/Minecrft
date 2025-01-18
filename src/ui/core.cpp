@@ -114,7 +114,7 @@ void UICore::mouseEvent(GLFWwindow* window, int button, int action, int mods){
         if(inFocus != underHover){
             if(inFocus) inFocus->setFocus(false);
             inFocus = underHover;
-            if(inFocus) inFocus->setFocus(true);
+            if(inFocus && inFocus->focusable) inFocus->setFocus(true);
         }
         if(underHover && underHover->onClicked) underHover->onClicked();
     }

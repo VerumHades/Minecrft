@@ -76,7 +76,7 @@ struct TValue{
         return TValue{PERCENT,50} - TValue{MY_PERCENT,50};
     }
     static TValue Bottom(TValue offset){
-        return (TValue{PERCENT,100} - TValue{MY_PERCENT,50}) - offset;
+        return (TValue{PERCENT,100} - TValue{MY_PERCENT,100}) - offset;
     }
 
     static TValue Pixels(int pixels){
@@ -99,10 +99,10 @@ struct UISize{
 };
 
 struct UISideSizesT{
-    TValue top;
-    TValue right;
-    TValue bottom;
-    TValue left;
+    TValue top{AUTO,0};
+    TValue right{AUTO,0};
+    TValue bottom{AUTO,0};
+    TValue left{AUTO,0};
 
     UISideSizesT(
         TValue top,

@@ -25,14 +25,15 @@ class UIFrame{
                 CENTER
             };
 
-            std::optional<TextPosition>   textPosition;
-            std::optional<UIColor>        textColor;
-            std::optional<UIColor>        backgroundColor;
-            std::optional<UISideSizesT>       borderWidth;
-            std::optional<UIBorderColors> borderColor;
-            std::optional<UISideSizesT>       margin;
-            std::optional<UISideSizesT>       padding;
-            std::optional<TValue>         fontSize;
+            std::optional<TextPosition>         textPosition;
+            std::optional<UIColor>              textColor;
+            std::optional<UIColor>              backgroundColor;
+            std::optional<UISideSizesT>         borderWidth;
+            std::optional<UIBorderColors>       borderColor;
+            std::optional<UISideSizesT>         margin;
+            std::optional<UISideSizesT>         padding;
+            std::optional<TValue>               fontSize;
+            std::optional<std::array<TValue,2>> translate;
         };
 
     protected:
@@ -45,6 +46,7 @@ class UIFrame{
             UISideSizesT{0_px,0_px,0_px,0_px},
             UISideSizesT{0_px,0_px,0_px,0_px},
             24_px,
+            std::array<TValue,2>{0_px,0_px}
         };
         Style hoverStyle;
         Style focusStyle;
@@ -161,6 +163,8 @@ class UIFrame{
         void setIdentifiers(std::unordered_set<std::string> classes = {}, std::string id = "") {identifiers = {identifiers.tag,classes,id};}
         Identifiers& getIdentifiers() {return identifiers;}
 
+        TValue& getX(){return x;}
+        TValue& getY(){return y;}
         TValue& getWidth(){return width;}
         TValue& getHeight(){return height;}
 
