@@ -88,7 +88,8 @@ file(GLOB_RECURSE SOURCES
 # Add executable target
 add_executable(main ${SOURCES})
 
+find_package(Lua 5.4 REQUIRED)
 # Link libraries
-target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad freetype tinyxml2)
+target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad freetype tinyxml2 lua5.4)
 
 target_compile_options(main PRIVATE -Wall)

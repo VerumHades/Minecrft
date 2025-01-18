@@ -15,6 +15,11 @@ UICore::UICore(){
     });
     loader().registerElement("input", XML_ELEMENT_LAMBDA_LOAD(UIInput));
     loader().registerElement("scrollable", XML_ELEMENT_LAMBDA_LOAD(UIScrollableFrame));
+
+    lua().addFunction("setUILayer", [this](std::string name){
+        if(this->getCurrentWindow())
+            this->getCurrentWindow()->setCurrentLayer(name);
+    });
 }
 
 void UICore::resize(int width, int height){
@@ -89,7 +94,7 @@ void UICore::mouseMove(int x, int y){
     if(element != underHover && underHover != nullptr){
         underHover->setHover(false);
         underHover->update(); 
-        if(underHover->onMouseLeave) underHover->onMouseLeave();
+        underHover->onMouseLeave.trigger();
     }
 
     if(element != nullptr){
@@ -100,13 +105,13 @@ void UICore::mouseMove(int x, int y){
         //for(auto& classname: element->identifiers.classes) std::cout << "." << classname;
         //std::cout << " Element has state: " << element->state << std::endl;
 
-        if(element->onMouseEnter) element->onMouseEnter();
+        element->onMouseEnter.trigger();
     }
 
     underHover = element;
 
-    if(underHover && underHover->onMouseMove) underHover->onMouseMove(x,y);
-    if(inFocus && inFocus != underHover && inFocus->onMouseMove) inFocus->onMouseMove(x,y);
+    if(underHover) underHover->onMouseMove.trigger(x,y);
+    if(inFocus && inFocus != underHover) inFocus->onMouseMove.trigger(x,y);
 }
 
 void UICore::mouseEvent(GLFWwindow* window, int button, int action, int mods){
@@ -116,11 +121,11 @@ void UICore::mouseEvent(GLFWwindow* window, int button, int action, int mods){
             inFocus = underHover;
             if(inFocus && inFocus->focusable) inFocus->setFocus(true);
         }
-        if(underHover && underHover->onClicked) underHover->onClicked();
+        if(underHover) underHover->onClicked.trigger();
     }
 
-    if(underHover && underHover->onMouseEvent) underHover->onMouseEvent(button,action,mods);
-    if(inFocus && inFocus != underHover && inFocus->onMouseEvent) inFocus->onMouseEvent(button,action,mods);
+    if(underHover) underHover->onMouseEvent.trigger(button,action,mods);
+    if(inFocus && inFocus != underHover) inFocus->onMouseEvent.trigger(button,action,mods);
 
     if(underHover) underHover->update();
     if(inFocus) inFocus->update();
@@ -128,7 +133,7 @@ void UICore::mouseEvent(GLFWwindow* window, int button, int action, int mods){
 
 void UICore::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
     if(!underScrollHover) return;
-    if(underScrollHover->onScroll) underScrollHover->onScroll(xoffset,yoffset);
+    underScrollHover->onScroll.trigger(xoffset,yoffset);
     
     if(underScrollHover){
         underScrollHover->update();
@@ -138,13 +143,13 @@ void UICore::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
 
 void UICore::keyTypedEvent(GLFWwindow* window, unsigned int codepoint){
     if(!inFocus) return;
-    if(inFocus->onKeyTyped) inFocus->onKeyTyped(codepoint);
+    inFocus->onKeyTyped.trigger(codepoint);
     
     if(inFocus) inFocus->update();
 }
 void UICore::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(!inFocus) return;
-    if(inFocus->onKeyEvent) inFocus->onKeyEvent(key,scancode,action,mods);
+    inFocus->onKeyEvent.trigger(key,scancode,action,mods);
 
     if(inFocus) inFocus->update();
 }

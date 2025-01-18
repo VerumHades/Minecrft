@@ -13,6 +13,40 @@
 #include <ui/backend.hpp>
 #include <ui/core.hpp>
 
+
+
+template <typename T>
+class UIEventHandler{
+    private:
+        std::function<T> function;
+        std::string lua_source = "";
+    public:
+        template <typename... Args>
+        void trigger(Args&&... args) {
+            if (function) {
+                function(std::forward<Args>(args)...);
+            }
+            else if(lua_source != "") ui_core.lua().run(lua_source);
+        }
+
+        UIEventHandler& operator=(const std::string& other) {
+            lua_source = other; // Set the function to the new function
+            return *this;
+        }
+
+        UIEventHandler& operator=(const std::function<T>& other) {
+            function = other; // Set the function to the new function
+            return *this;
+        }
+
+        // Move assignment operator
+        UIEventHandler& operator=(std::function<T>&& other) {
+            function = std::move(other); // Move the function to the current object
+            return *this;
+        }
+};
+
+
 /*
     Core element that every other element inherits from
 */
@@ -142,16 +176,16 @@ class UIFrame{
         /*
             Event lambdas
         */
-        std::function<void(int, int, int)> onMouseEvent;
-        std::function<void(int, int)> onMouseMove;
-        std::function<void(unsigned int)> onKeyTyped;
-        std::function<void(int key, int scancode, int action, int mods)> onKeyEvent;
-        std::function<void(void)> onClicked;
+        UIEventHandler<void(int, int, int)> onMouseEvent;
+        UIEventHandler<void(int, int)> onMouseMove;
+        UIEventHandler<void(unsigned int)> onKeyTyped;
+        UIEventHandler<void(int key, int scancode, int action, int mods)> onKeyEvent;
+        UIEventHandler<void(void)> onClicked;
 
-        std::function<void()> onMouseLeave;
-        std::function<void()> onMouseEnter;
+        UIEventHandler<void()> onMouseLeave;
+        UIEventHandler<void()> onMouseEnter;
 
-        std::function<void(int offsetX, int offsetY)> onScroll;
+        UIEventHandler<void(int offsetX, int offsetY)> onScroll;
 
         void setPosition(TValue x, TValue y){this->x = x; this->y = y;}
         void setX(TValue x) {this->x = x;}

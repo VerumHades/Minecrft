@@ -7,6 +7,7 @@
         <frame class = "vertical_flex center" width="300px" height="500px" id="main_menu_selection">
             <label id="new_world" class="interactable menu_button">New World</label>
             <label id="setttings" class="interactable menu_button">Settings</label>
+            <label class="interactable menu_button" onclick="setScene('game')">Lua!</label>
         </frame>
     </default>
     <world_menu>
@@ -26,6 +27,9 @@
             </frame>
         </frame>
     </world_menu>
+    <new_world_menu>
+        
+    </new_world_menu>
     <settings>
         <label width="8%" height="40px" class="interactable" id="settings_back_button">Back</label>
         <scrollable id="settings_scrollable">

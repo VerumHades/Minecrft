@@ -15,6 +15,7 @@
 #include <ui/loader.hpp>
 #include <ui/layouts.hpp>
 #include <ui/backend.hpp>
+#include <ui/lua_integration.hpp>
 
 class UICore;
 class UIFrame;
@@ -70,7 +71,6 @@ class UIWindow{
             return layer;
         }
 };
-
 #include <ui/loader.hpp>
 
 class UICore{
@@ -91,6 +91,8 @@ class UICore{
 
         UILoader loader_;
         UIBackend* backend = nullptr;
+
+        LuaEngine lua_engine;
 
     public:
         UICore();
@@ -117,6 +119,7 @@ class UICore{
         void loadWindowFromXML(UIWindow& window, std::string load_path);
 
         UILoader& loader() {return loader_;}
+        LuaEngine& lua(){return lua_engine;}
         UIBackend& getBackend();
 
         std::shared_ptr<UIFrame> getElementUnder(int x, int y, bool onlyScrollable = false);   

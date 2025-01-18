@@ -184,6 +184,10 @@ int main() {
 
         s = &sceneManager;
 
+        ui_core.lua().addFunction("setScene", [](std::string name){
+            s->setScene(name);
+        });
+
         Scene* menuScene = sceneManager.createScene<Scene>("menu");
         menuScene->setUILayer("default");
         ui_core.loadWindowFromXML(*menuScene->getWindow(), "resources/templates/menu.xml");
@@ -259,7 +263,7 @@ int main() {
             WorldStream stream("saves/" + name + ".bin");
             stream.setName(name);
 
-            startButton->onClicked();
+            startButton->onClicked.trigger();
         };
 
         newWorldNameInput->onSubmit = [newWorldFunc](std::string){newWorldFunc();};

@@ -133,6 +133,10 @@ void MainScene::initialize(){
         setUILayer("settings");
     };
 
+    getElementById<UILabel>("game_menu_exit_button")->onClicked = [this](){
+        this->sceneManager->setScene("menu");
+    };
+
     skyboxProgram.use();
 
     skybox.load(skyboxPaths);
@@ -548,6 +552,7 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
 void MainScene::open(GLFWwindow* window){
     running = true;
     allGenerated = false;
+    indexer = {};
     
     world = std::make_unique<World>(worldPath);
 

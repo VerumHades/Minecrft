@@ -105,6 +105,11 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source) {
             getAttributeValue(source,"height")
         );
 
+        auto on_click = source->Attribute("onclick");
+        if(on_click){
+            el->onClicked = on_click;
+        }
+
         auto split_classes_array = split(optGetAttribute(source,"class"), " ");
         el->identifiers.classes.insert(split_classes_array.begin(), split_classes_array.end());
         el->identifiers.id = optGetAttribute(source,"id");
