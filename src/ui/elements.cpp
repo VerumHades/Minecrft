@@ -114,6 +114,7 @@ static inline void reduceRegionTo(UIRegion& target, UIRegion& to){
 void UIFrame::calculateElementsTransforms(){
     auto margin_t = getAttribute(&UIFrame::Style::margin);
     auto padding_t = getAttribute(&UIFrame::Style::padding);
+    auto translation_t = getAttribute(&UIFrame::Style::translation);
     auto borderWidth = getAttribute(&Style::borderWidth);
 
     font_size = getValueInPixels(getAttribute(&UIFrame::Style::fontSize), true);
@@ -121,29 +122,34 @@ void UIFrame::calculateElementsTransforms(){
     if(layout) contentTransform = layout->calculateContentTransform(this);
 
     borderSizes = {
-        getValueInPixels(borderWidth.top   , false),
-        getValueInPixels(borderWidth.right , true ),
-        getValueInPixels(borderWidth.bottom, false),
-        getValueInPixels(borderWidth.left  , true )
+        getValueInPixels(borderWidth.top   , true ),
+        getValueInPixels(borderWidth.right , false),
+        getValueInPixels(borderWidth.bottom, true ),
+        getValueInPixels(borderWidth.left  , false)
     };
 
     margin = {
-        getValueInPixels(margin_t.top   , false),
-        getValueInPixels(margin_t.right , true ),
-        getValueInPixels(margin_t.bottom, false),
-        getValueInPixels(margin_t.left  , true )
+        getValueInPixels(margin_t.top   , true ),
+        getValueInPixels(margin_t.right , false),
+        getValueInPixels(margin_t.bottom, true ),
+        getValueInPixels(margin_t.left  , false)
     };
 
     padding = {
-        getValueInPixels(padding_t.top   , false),
-        getValueInPixels(padding_t.right , true ),
-        getValueInPixels(padding_t.bottom, false),
-        getValueInPixels(padding_t.left  , true )
+        getValueInPixels(padding_t.top   , true ),
+        getValueInPixels(padding_t.right , false),
+        getValueInPixels(padding_t.bottom, true ),
+        getValueInPixels(padding_t.left  , false)
+    };
+
+    translation = {
+        getValueInPixels(translation_t[0], true),
+        getValueInPixels(translation_t[1], false)
     };
 
     UITransform internalTransform = {
-        getValueInPixels(x     , true ),
-        getValueInPixels(y     , false),
+        getValueInPixels(x     , true ) + translation.x,
+        getValueInPixels(y     , false) + translation.y,
         getValueInPixels(width , true ),
         getValueInPixels(height, false)
     };

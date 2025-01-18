@@ -117,3 +117,13 @@ struct UITextDimensions{
     int width;
     int height;
 };
+
+struct UISize{
+    int width;
+    int height;
+};
+
+struct UITranslation{
+    int x;
+    int y;
+};

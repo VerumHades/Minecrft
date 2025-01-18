@@ -93,11 +93,6 @@ enum UIElementState{
     FOCUS
 };
 
-struct UISize{
-    int width;
-    int height;
-};
-
 struct UISideSizesT{
     TValue top{AUTO,0};
     TValue right{AUTO,0};

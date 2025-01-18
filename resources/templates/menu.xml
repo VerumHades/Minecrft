@@ -10,12 +10,12 @@
         </frame>
     </default>
     <world_menu>
-        <frame class = "vertical_flex" x="50% - 50m" y="0px" width="70%" height="100%" id="world_selection_frame">
-            <scrollable id="top_frame" width="100%" height="80%">
+        <frame class = "vertical_flex" id="world_selection_frame">
+            <scrollable id="top_frame">
                 
             </scrollable>
-            <frame id="bottom_frame" width="100%" height="20%">
-                <label id="back_to_menu" width="140px" height="40px" class="interactable">Back</label>
+            <frame id="bottom_frame">
+                <label id="back_to_menu" class="interactable">Back</label>
                 <frame class = "vertical_flex" x="25%" width="50%" height="100%">
                     <frame class = "vertical_flex" width="100%" height="100px">
                         <label width="100%" height="40px" id="new_world_name_label">New world name:</label>
@@ -28,16 +28,21 @@
     </world_menu>
     <settings>
         <label width="8%" height="40px" class="interactable" id="settings_back_button">Back</label>
-        <scrollable x="50% - 50m" width="80%" height="100%" id="settings_scrollable">
-            <label width="100%" height="40px" class="settings_section_title">Keybinds</label>
-            <frame class = "settings_section" width="100%" id="keybind_container">
+        <scrollable id="settings_scrollable">
+            <frame class = "settings_section">
+                <label class="settings_section_title">Keybinds</label>
+                <frame class = "settings_section_content" width="100%" id="keybind_container">
 
+                </frame>
             </frame>
-            <label width="100%" height="40px" class="settings_section_title">Mouse</label>
-            <frame class = "settings_section" width="100%" >
-                <frame id="mouse_sensitivity_container" width="100%" height="40px">
-                    <label width="20%" height="100%">Sensitivity:</label>
-                    
+            
+            <frame class = "settings_section">
+                <label class="settings_section_title">Mouse</label>
+                <frame class = "settings_section_content" width="100%">
+                    <frame id="mouse_sensitivity_container" width="100%" height="40px">
+                        <label>Sensitivity:</label>
+                        
+                    </frame>
                 </frame>
             </frame>
         </scrollable>

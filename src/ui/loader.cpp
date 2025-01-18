@@ -53,7 +53,7 @@ TValue parseTValue(std::string source){
     if(source == "fit-content") return TValue(Units::FIT_CONTENT, 0);
     else if(source == "auto") return TValue(Units::AUTO, 0);
 
-    std::regex pattern(R"((\d+)(%|px))");
+    std::regex pattern(R"((-?\d+)(%|px))");
     std::smatch matches;
 
     if (std::regex_match(source, matches, pattern)) {

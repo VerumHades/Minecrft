@@ -33,7 +33,7 @@ class UIFrame{
             std::optional<UISideSizesT>         margin;
             std::optional<UISideSizesT>         padding;
             std::optional<TValue>               fontSize;
-            std::optional<std::array<TValue,2>> translate;
+            std::optional<std::array<TValue,2>> translation;
         };
 
     protected:
@@ -112,6 +112,7 @@ class UIFrame{
         UIRegion contentClipRegion    = {{0,0},{0,0}};
 
         UISize prefferedSize = {100,40};
+        UITranslation translation = {0,0};
         UISideSizes margin  = 0;
         UISideSizes padding = 0;
 

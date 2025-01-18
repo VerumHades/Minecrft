@@ -146,7 +146,16 @@ UIStyle::UIStyle(){
         {"margin",           ATTRIBUTE_LAMBDA(margin, parseSideSizes)},
         {"padding",          ATTRIBUTE_LAMBDA(padding, parseSideSizes)},
         {"font-size",        ATTRIBUTE_LAMBDA(fontSize, parseTValue)},
+        {
+            "text-align", [](auto element, auto value, auto){
+                remove_spaces(value);
 
+                if     (value == "center") element->setAttribute(&UIFrame::Style::textPosition, UIFrame::Style::CENTER);
+                else if(value == "left"  ) element->setAttribute(&UIFrame::Style::textPosition, UIFrame::Style::LEFT  );
+                else if(value == "right" ) element->setAttribute(&UIFrame::Style::textPosition, UIFrame::Style::RIGHT );
+                else std::cerr << "Invalid text-align: " << value << std::endl;
+            }
+        },
         {
             "display", [](auto element, auto value, auto){
                 remove_spaces(value);
@@ -187,8 +196,12 @@ UIStyle::UIStyle(){
 
             if(value1.unit == PERCENT) value1.unit = MY_PERCENT;
             if(value2.unit == PERCENT) value2.unit = MY_PERCENT;
-        }}
-    1 }}
+
+            //std::cout << "'" << split_source[0]  << "' " << value1.unit << " " << value1.value << std::endl;
+            //std::cout << "'" << split_source[1]  << "' " << value2.unit << " " << value2.value << std::endl;
+
+            element->setAttribute(&UIFrame::Style::translation, {value1, value2});
+        }},
         
         {"border-width",        ATTRIBUTE_LAMBDA(borderWidth, parseSideSizes)},
         {"border-color",        BORDER_LAMBDA(borderColor, parseColor, -1)},

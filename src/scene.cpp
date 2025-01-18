@@ -94,6 +94,7 @@ void SceneManager::setScene(std::string name){
     getCurrentScene()->open(window);
     ui_core.setCurrentWindow(getCurrentScene()->windowID);
     getCurrentScene()->setUILayer("default");
+    ui_core.updateAll();
 }
 
 void SceneManager::resize(GLFWwindow* window, int width, int height){

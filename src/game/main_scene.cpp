@@ -222,7 +222,6 @@ void MainScene::initialize(){
     auto sensitivity_slider = std::make_shared<UISlider>();
     sensitivity_slider->setValuePointer(&sensitivity);
     sensitivity_slider->setSize({PERCENT,60},{PERCENT,100});
-    sensitivity_slider->setPosition({PERCENT,20},0_px);
     sensitivity_slider->setMin(1);
     sensitivity_slider->setMax(100);
     sensitivity_slider->setDisplayValue(true);
