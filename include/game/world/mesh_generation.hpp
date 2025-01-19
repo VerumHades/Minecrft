@@ -1,7 +1,7 @@
 #pragma once
 
 #include <mutex>
-#include <game/world/world.hpp>
+#include <game/world/terrain.hpp>
 #include <rendering/instanced_mesh.hpp>
 #include <rendering/chunk_buffer.hpp>
 #include <blockarray.hpp>
@@ -47,7 +47,7 @@ class ChunkMeshGenerator{
 
         std::queue<MeshLoadingMember> meshLoadingQueue;
 
-        World* world = nullptr; // Points to the world relative to which you generate meshes, doesnt need to be set
+        Terrain* world = nullptr; // Points to the world relative to which you generate meshes, doesnt need to be set
 
         void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<InstancedMesh> mesh);
         /*
@@ -99,5 +99,5 @@ class ChunkMeshGenerator{
         */
         void syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegistry& buffer);
 
-        void setWorld(World* world){this->world = world;}
+        void setWorld(Terrain* world){this->world = world;}
 };

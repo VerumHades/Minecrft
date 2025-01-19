@@ -122,7 +122,7 @@ int main() {
     
     ///glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(1920, 1080, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(1920, 1080, "Hello Terrain", NULL, NULL);
 
     if (!window) {
         std::cout << "Failed to initialize glfw window!" << std::endl;

@@ -13,7 +13,7 @@
 #include <FastNoiseLite.h> 
 
 class Chunk;
-class World;
+class Terrain;
 
 struct ComputeLayer{
     std::shared_ptr<ShaderProgram> program;
@@ -70,4 +70,4 @@ class WorldGenerator{
 };
 
 #include <game/chunk.hpp>
-#include <game/world/world.hpp>
+#include <game/world/terrain.hpp>

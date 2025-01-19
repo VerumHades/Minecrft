@@ -27,39 +27,21 @@
 #include <game/world/world_stream.hpp>
 
 struct RaycastResult{
-    Block* hitBlock;
-    bool hit;
     glm::ivec3 position; // Position of the hit block
     glm::vec3 lastPosition; // Position before the hit
 };
 
-class ExternalModelManager;
-
-class World: public virtual Collidable{
+class Terrain{
     private:
         std::mutex mutex;
         std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>, IVec3Hash, IVec3Equal> chunks;
-
-        std::vector<Entity> entities;
-
-        std::unique_ptr<WorldStream> stream;
-        WorldGenerator generator;
-
-        void drawEntity(Entity& entity);
-
-        std::atomic<bool> blocks_altered = false;
         
     public:
-        World(std::string filepath);
-
         Block* getBlock(glm::ivec3 position) const;
         bool setBlock(const glm::ivec3& position, const Block& index);
 
-        Chunk* generateChunk(glm::ivec3 position);
         Chunk* createEmptyChunk(glm::ivec3 position);
-        
-        bool isChunkLoadable(glm::ivec3 position);
-        void loadChunk(glm::ivec3 position);
+        void removeChunk(const glm::ivec3& position);
 
         Chunk* getChunk(glm::ivec3 position) const;
         Chunk* getChunkFromBlockPosition(glm::ivec3 position) const;
@@ -67,27 +49,10 @@ class World: public virtual Collidable{
         glm::ivec3 blockToChunkPosition(glm::ivec3 blockPosition) const;
         glm::ivec3 getGetChunkRelativeBlockPosition(glm::ivec3 position);
 
-        /*
-            Saves all unsaved changes to chunks
-        */
-        void save();
+        bool collision(glm::vec3 position, const RectangularCollider* collider);
 
-        std::tuple<bool, Block*> checkForPointCollision(glm::vec3 position, bool includeRectangularColliderLess);
-        bool collidesWith(glm::vec3 position, Entity* collider, bool vertical_check = false) override;
-
-        RaycastResult raycast(glm::vec3 from, glm::vec3 direction, float maxDistance);
-
-        void updateEntities(float deltatime);
-
-        void addEntity(Entity entity) {
-            entities.push_back(entity);
-        }
-        void drawEntityColliders(WireframeCubeRenderer& renderer, size_t start_index = 50);
-
-        Entity& getPlayer(){return entities[0];}
+        RaycastResult raycast(const glm::vec3& from, const glm::vec3& direction, float maxDistance);
 
         int chunksTotal() const {return chunks.size();}
-
-        WorldGenerator& getWorldGenerator() {return generator;}
 };
 #endif

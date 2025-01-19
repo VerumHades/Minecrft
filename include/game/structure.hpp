@@ -5,7 +5,7 @@
 #include <vec_hash.hpp>
 #include <unordered_set>
 
-class World;
+class Terrain;
 
 class Structure{
     private:
@@ -31,13 +31,13 @@ class Structure{
         /*
             Places structure and returns all chunk positions that need updating
         */
-        PositionSet place(const glm::ivec3& position, World& world);   
+        PositionSet place(const glm::ivec3& position, Terrain& world);   
         
-        static Structure capture(const glm::ivec3& position, const glm::ivec3& size, const World& world);
+        static Structure capture(const glm::ivec3& position, const glm::ivec3& size, const Terrain& world);
         glm::ivec3 getSize(){return {width,height,depth};}
 
         ByteArray serialize();
         static Structure deserialize(ByteArray& source_array);
 };
 
-#include <game/world/world.hpp>
+#include <game/world/terrain.hpp>

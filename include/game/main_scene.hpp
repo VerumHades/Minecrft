@@ -26,7 +26,7 @@
 #include <ui/form.hpp>
 #include <ui/elements/selection.hpp>
 
-#include <game/world/world.hpp>
+#include <game/world/terrain.hpp>
 #include <game/world/mesh_generation.hpp>
 #include <game/entity.hpp>
 #include <game/commands.hpp>
@@ -36,6 +36,7 @@
 #include <game/items/item.hpp>
 #include <game/items/item_renderer.hpp>
 #include <game/structure.hpp>
+#include <game/game_state.hpp>
 
 #include <indexing.hpp>
 
@@ -67,7 +68,7 @@ class MainScene: public Scene{
         std::unique_ptr<ThreadPool> threadPool;
 
         GLSkybox skybox;
-        std::unique_ptr<World> world;
+        std::unique_ptr<GameState> game_state;
 
         WireframeCubeRenderer wireframeRenderer;
         

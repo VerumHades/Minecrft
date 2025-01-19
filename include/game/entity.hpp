@@ -13,17 +13,13 @@
 
 #include <vec_hash.hpp>
 
-class World;
+class Terrain;
 
 
 class Entity;
 
-class Collidable{
-    public:
-        virtual bool collidesWith(glm::vec3 position, Entity* collider, bool vertical_check = false) = 0;
-};
-
 class DroppedItem;
+class GameState;
 
 #define VALID_ENTITY_DATA(t) static_assert(sizeof(t) <= 128, "Entity data too large!");
 
@@ -54,9 +50,6 @@ class Entity{
         std::function<void(Entity*, Entity*)> onCollision;
         bool destroy = false;
 
-        void update(Collidable* world, bool altered, float deltatime);
-        bool checkForCollision(Collidable* collidable, bool withVelocity, glm::vec3 offset = {0,0,0}, bool vertical_check = false);
-        
         void accelerate(glm::vec3 direction, float deltatime);
         void decellerate(float strength, float deltatime);
         void setGravity(bool value){hasGravity = value;}
@@ -77,6 +70,8 @@ class Entity{
 
         bool shouldGetDestroyed(){return destroy;}
         const unsigned char* getData() {return entity_data; }
+
+        friend class GameState;
 };
 
 

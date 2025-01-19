@@ -28,7 +28,7 @@ Block* Structure::getBlock(glm::ivec3 position){
     return block_arrays.at(chunk_position).getBlock(block_position);
 }   
 
-Structure::PositionSet Structure::place(const glm::ivec3& position ,World& world){
+Structure::PositionSet Structure::place(const glm::ivec3& position ,Terrain& world){
     PositionSet visited{};
 
     int i = 0;
@@ -52,7 +52,7 @@ Structure::PositionSet Structure::place(const glm::ivec3& position ,World& world
     return visited;
 }
 
-Structure Structure::capture(const glm::ivec3& position, const glm::ivec3& size, const World& world){
+Structure Structure::capture(const glm::ivec3& position, const glm::ivec3& size, const Terrain& world){
     Structure output{size.x,size.y,size.z};
 
     int i = -1;

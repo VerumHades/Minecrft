@@ -5,7 +5,7 @@
         <style src="resources/templates/style/settings.css"></style>
         
         <frame class = "vertical_flex center" width="300px" height="500px" id="main_menu_selection">
-            <label id="new_world" class="interactable menu_button">New World</label>
+            <label id="new_world" class="interactable menu_button">New Terrain</label>
             <label onclick="setLayer('settings')"   class="interactable menu_button">Settings</label>
         </frame>
     </default>
@@ -17,11 +17,12 @@
             </scrollable>
             <frame id="bottom_frame">
                 <label onclick="setLayer('default')">Back</label>
-                <label onclick="setLayer('new_world_menu')">New World</label>
+                <label onclick="setLayer('new_world_menu')">New Terrain</label>
             </frame>
         </frame>
     </world_menu>
     <new_world_menu>
+        <label onclick="setLayer('world_menu')" class="interactable">Go back</label>
         <frame class="middle_frame">
 
         </frame>

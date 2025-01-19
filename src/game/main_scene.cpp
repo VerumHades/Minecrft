@@ -83,7 +83,7 @@ void MainScene::initialize(){
         auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
         glm::ivec3 size = (max - min) + glm::ivec3(1,1,1);
 
-        Structure structure = Structure::capture(min, size, *world);
+        Structure structure = Structure::capture(min, size, game_state->getTerrain());
 
         const std::string& name = getElementById<UIInput>("structure_name")->getText();
         structure.serialize().saveToFile("saves/structures/" + name + ".structure");
@@ -298,9 +298,9 @@ void MainScene::updateCursor(){
     glm::vec3& camDirection = camera.getDirection();
     glm::vec3 camPosition = camera.getPosition();
 
-    RaycastResult hit = world->raycast(camPosition,camDirection,10);
-
-    blockUnderCursor = hit.hitBlock;
+    RaycastResult hit = game_state->getTerrain().raycast(camPosition,camDirection,10);
+ 
+    blockUnderCursor = game_state->getTerrain().getBlock(hit.position);
     blockUnderCursorPosition = hit.position;
     blockUnderCursorEmpty = hit.lastPosition;
 
@@ -317,7 +317,7 @@ void MainScene::updateCursor(){
 void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     if(!blockUnderCursor || blockUnderCursor->id == BLOCK_AIR_INDEX) return;
 
-    auto& player = world->getPlayer();
+    auto& player = game_state->getPlayer();
 
     if(isActiveLayer("default")){
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS ){  
@@ -330,15 +330,15 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
                 0.6f,
                 static_cast<float>(std::rand() % 200) / 100.0f - 1.0f
             }, 1.0f);
-            world->addEntity(entity);
+            game_state->addEntity(entity);
             //auto& selected_slot = hotbar->getSelectedSlot();
             //inventory->addItem();
 
-            world->setBlock(blockUnderCursorPosition, {BLOCK_AIR_INDEX});
+            game_state->getTerrain().setBlock(blockUnderCursorPosition, {BLOCK_AIR_INDEX});
 
-            auto chunk = world->getChunkFromBlockPosition(blockUnderCursorPosition);
+            auto chunk = game_state->getTerrain().getChunkFromBlockPosition(blockUnderCursorPosition);
             if(!chunk) return;
-            regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(blockUnderCursorPosition));
+            regenerateChunkMesh(chunk,game_state->getTerrain().getGetChunkRelativeBlockPosition(blockUnderCursorPosition));
         }
         else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
             glm::ivec3 blockPosition = glm::floor(blockUnderCursorEmpty);
@@ -349,21 +349,21 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
             auto* prototype = selected_slot.getItem()->getPrototype();
             if(!prototype || !prototype->isBlock()) return;
 
-            world->setBlock(blockPosition, {prototype->getBlockID()});
+            game_state->getTerrain().setBlock(blockPosition, {prototype->getBlockID()});
             if(
-                player.checkForCollision(world.get(), false) ||
-                player.checkForCollision(world.get(), true)
+                game_state->entityCollision(player, player.getVelocity()) ||
+                game_state->entityCollision(player)
             ){
-                world->setBlock(blockPosition, {BLOCK_AIR_INDEX});
+                game_state->getTerrain().setBlock(blockPosition, {BLOCK_AIR_INDEX});
                 return;
             }
 
             selected_slot.decreaseQuantity(1);
             hotbar->update();
 
-            auto* chunk = world->getChunkFromBlockPosition(blockPosition);
+            auto* chunk = game_state->getTerrain().getChunkFromBlockPosition(blockPosition);
             if(!chunk) return;
-            regenerateChunkMesh(chunk,world->getGetChunkRelativeBlockPosition(blockPosition));
+            regenerateChunkMesh(chunk,game_state->getTerrain().getGetChunkRelativeBlockPosition(blockPosition));
         }
     }
     else if(isActiveLayer("structure_capture")){
@@ -382,9 +382,9 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
         else{
             if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
                 if(selected_structure){
-                    auto positions = selected_structure->place(blockUnderCursorPosition, *world);
+                    auto positions = selected_structure->place(blockUnderCursorPosition, game_state->getTerrain());
                     for(auto& position: positions)
-                        regenerateChunkMesh(world->getChunk(position), {1,1,1});
+                        regenerateChunkMesh(game_state->getTerrain().getChunk(position), {1,1,1});
                 }
             }
         }
@@ -491,7 +491,7 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
             
             auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), camera.getPosition() + camera.getDirection() * 0.5f);
             entity.accelerate(camera.getDirection(),1.0f);
-            world->addEntity(entity);
+            game_state->addEntity(entity);
 
             slot.decreaseQuantity(1);
             hotbar->update();
@@ -543,9 +543,9 @@ void MainScene::open(GLFWwindow* window){
     allGenerated = false;
     indexer = {};
     
-    world = std::make_unique<World>(worldPath);
+    game_state = std::make_unique<GameState>();
 
-    auto& player = world->getPlayer();
+    auto& player = game_state->getPlayer();
 
     player.onCollision = [this](Entity* self, Entity* collided_with){
         if(collided_with->getTypename() != "dropped_item") return;
@@ -559,7 +559,7 @@ void MainScene::open(GLFWwindow* window){
         //else this->hotbar->update();
     };
 
-    chunkMeshGenerator.setWorld(world.get());
+    chunkMeshGenerator.setWorld(&game_state->getTerrain());
 
     int pregenDistance = renderDistance + 1; 
 
@@ -570,19 +570,14 @@ void MainScene::open(GLFWwindow* window){
     for(int z = -pregenDistance; z <= pregenDistance; z++){
         glm::ivec3 chunkPosition = glm::ivec3(x,y,z);
 
-        if(world->isChunkLoadable(chunkPosition)) world->loadChunk(chunkPosition);
-        else world->generateChunk(chunkPosition);
+        //if(world->isChunkLoadable(chunkPosition)) world->loadChunk(chunkPosition);
+        game_state->loadChunk(chunkPosition);
     }
 
     //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
     //generationThread.detach();
 
-    player.setPosition({0,255,0});
-    while(
-        !player.checkForCollision(world.get(), false, {0,-1,0}) && 
-        player.getPosition().y > 0
-    ) player.setPosition(player.getPosition() + glm::vec3{0,-1,0});
-
+    player.setPosition({0,100,0});
 
     for(auto& prototype: global_block_registry.prototypes()){
         if(prototype.id == 0) continue; // Dont make air
@@ -607,15 +602,13 @@ void MainScene::close(GLFWwindow* window){
     threadsStopped = 0;
     running = false;
 
-    world->save();
-
     chunkMeshGenerator.setWorld(nullptr);
 
     while(threadsStopped < 1){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     } 
 
-    world = nullptr;
+    game_state = nullptr;
     chunkMeshRegistry.clear();
 }
 
@@ -630,7 +623,7 @@ void MainScene::render(){
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 
-    glm::vec3 camPosition = world->getPlayer().getPosition() + camOffset;
+    glm::vec3 camPosition = game_state->getPlayer().getPosition() + camOffset;
 
     camera.setPosition(camPosition);
     chunkMeshGenerator.loadMeshFromQueue(chunkMeshRegistry);
@@ -642,13 +635,13 @@ void MainScene::render(){
 
     if(!chunk_generation_queue.empty()){
         auto& position = chunk_generation_queue.front();
-        world->generateChunk(position);
+        game_state->loadChunk(position);
         chunk_generation_queue.pop();
     }
 
     if(chunk_generation_queue.empty() && indexer.getCurrentDistance() < renderDistance){
         auto position = indexer.next() + lastCamWorldPosition;
-        Chunk* chunk = world->getChunk(position);
+        Chunk* chunk = game_state->getTerrain().getChunk(position);
 
         if(!chunk) std::cerr << "Chunk not generated when generating meshes?" << std::endl;
         else if(!chunkMeshRegistry.isChunkLoaded(position)) chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry); 
@@ -753,7 +746,7 @@ void MainScene::regenerateChunkMesh(Chunk* chunk){
 
 
 #define regenMesh(position) { \
-    Chunk* temp = this->world->getChunk(position);\
+    Chunk* temp = game_state->getTerrain().getChunk(position);\
     if(temp) regenerateChunkMesh(temp);\
 }
 void MainScene::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
@@ -770,11 +763,6 @@ void MainScene::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
 #undef regenMesh
 
 void MainScene::enqueueChunkGeneration(glm::ivec3 position){
-    if(world->getChunk(position)) return;
-    if(world->isChunkLoadable(position)){
-        world->loadChunk(position);
-        return;
-    }
     chunk_generation_queue.push(position); 
 }
 
@@ -821,15 +809,7 @@ void MainScene::physicsUpdate(){
         glm::vec3 horizontalDir = glm::normalize(glm::vec3(camDir.x, 0, camDir.z));
         glm::vec3 leftDir = glm::normalize(glm::cross(camera.getUp(), horizontalDir));
 
-        auto& player = world->getPlayer();
-        
-        if(player.checkForCollision(world.get(), false)){
-            player.setPosition({0,255,0});
-            while(
-                !player.checkForCollision(world.get(), false, {0,-1,0}) && 
-                player.getPosition().y > 0
-            ) player.setPosition(player.getPosition() + glm::vec3{0,-1,0});
-        }
+        auto& player = game_state->getPlayer();
 
         bool moving = false;
         if(inputManager.isActive(STRAFE_RIGHT )){
@@ -855,13 +835,13 @@ void MainScene::physicsUpdate(){
         if(inputManager.isActive(MOVE_DOWN)) player.accelerate(-camera.getUp() * 2.0f, deltatime);
         if(
             inputManager.isActive(MOVE_UP)
-            && player.checkForCollision(world.get(), false, {0,-0.1f,0})
+            && game_state->entityCollision(player, {0,-0.1f,0})
             && player.getVelocity().y == 0
         ) player.accelerate(camera.getUp() * 10.0f, 1.0);
 
-        if(!world->getChunk(camWorldPosition)) continue;
+        if(!game_state->getTerrain().getChunk(camWorldPosition)) continue;
 
-        world->updateEntities(deltatime);
+        game_state->updateEntities(deltatime);
 
         if(isActiveLayer("default")){
             auto& in_hand_slot = hotbar->getSelectedSlot();

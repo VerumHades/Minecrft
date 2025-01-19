@@ -7,7 +7,7 @@ WorldStream::WorldStream(std::string filepath){
     if(!std::filesystem::exists(filepath)){
         std::ofstream file(filepath, std::ios::binary);
         if(!file.is_open()){
-            std::cout << "World stream opening failed, cannot create file: " << filepath << std::endl;
+            std::cout << "Terrain stream opening failed, cannot create file: " << filepath << std::endl;
             std::terminate();
         }
         file.close();
@@ -23,7 +23,7 @@ WorldStream::WorldStream(std::string filepath){
     }
 
     if(newlyCreated){
-        std::strcpy(header.name,"World");
+        std::strcpy(header.name,"Terrain");
 
         std::random_device rd;
         header.seed = rd(); 
@@ -63,7 +63,7 @@ void WorldStream::loadTable(){
 
     ByteArray tableData;
     if(!tableData.read(file_stream)){
-        std::cout << "World file table corrupted, repairing" << std::endl;
+        std::cout << "Terrain file table corrupted, repairing" << std::endl;
         saveTable();
         return;
     }
