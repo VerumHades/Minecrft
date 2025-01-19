@@ -13,13 +13,25 @@ UICore::UICore(){
         label->setText(text);
         return label; 
     });
+    loader().registerElement("image", [](auto* source) -> std::shared_ptr<UIFrame> {
+        const char* content = source->Attribute("src");
+        if(!content){
+            std::cerr << "Image element requires a 'src'." << std::endl;
+            return std::make_shared<UIFrame>();
+        }
+        return std::make_shared<UIImage>(content); 
+    });
     loader().registerElement("input", XML_ELEMENT_LAMBDA_LOAD(UIInput));
     loader().registerElement("scrollable", XML_ELEMENT_LAMBDA_LOAD(UIScrollableFrame));
+}
 
-    lua().addFunction("setUILayer", [this](std::string name){
-        if(this->getCurrentWindow())
-            this->getCurrentWindow()->setCurrentLayer(name);
-    });
+void UICore::cleanup(){
+    underHover = nullptr;
+    inFocus = nullptr;
+    underScrollHover = nullptr;
+
+    windows.clear();
+    loader_ = {};
 }
 
 void UICore::resize(int width, int height){

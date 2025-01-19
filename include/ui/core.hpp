@@ -97,6 +97,8 @@ class UICore{
     public:
         UICore();
 
+        void cleanup();
+
         void setBackend(UIBackend* backend);
         void resize(int width, int height);
         void setFocus(std::shared_ptr<UIFrame> ptr){inFocus = ptr;}

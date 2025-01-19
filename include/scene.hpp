@@ -47,7 +47,6 @@ class SceneManager{
     private:
         std::string currentScene = "internal_default";
         std::unordered_map<std::string, std::unique_ptr<Scene>> scenes;
-        Scene* getCurrentScene();
 
         UIOpenglBackend opengl_backend;
 
@@ -69,6 +68,7 @@ class SceneManager{
         void addScene(std::string name, std::unique_ptr<Scene> scene);
         void setScene(std::string name);
         Scene* getScene(std::string name);
+        Scene* getCurrentScene();
         void setWindow(GLFWwindow* window) {this->window = window;}
 
         void resize(GLFWwindow* window, int width, int height);

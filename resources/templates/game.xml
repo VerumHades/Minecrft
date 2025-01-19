@@ -25,9 +25,9 @@
     </structure_saving>
     <menu>
         <frame id="menu_frame" class="center">
-            <label id="game_menu_continue_button" class="interactable menu_button">Continue</label>
-            <label id="game_menu_settings_button" class="interactable menu_button">Settings</label>
-            <label id="game_menu_exit_button" class="interactable menu_button">Exit</label>
+            <label onclick="setLayer('default')"  class="interactable menu_button">Continue</label>
+            <label onclick="setLayer('settings')" class="interactable menu_button">Settings</label>
+            <label onclick="setScene('menu')"     class="interactable menu_button">Exit</label>
         </frame>
     </menu>
     <settings>

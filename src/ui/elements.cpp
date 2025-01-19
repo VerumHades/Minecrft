@@ -438,3 +438,21 @@ void UIFrame::appendChild(std::shared_ptr<UIFrame> child){
 void UIFrame::clearChildren(){
     children.clear();
 }
+
+UIImage::UIImage(std::string path){
+    dedicated_texture_array = std::make_shared<GLTextureArray>();
+
+    Image image{path};
+
+    if(!image.isLoaded()){
+        std::cerr << "Failed to load image '" << path << "'" << std::endl;
+        return;
+    }
+
+    dedicated_texture_array->setup(image.getWidth(),image.getHeight(),1);
+    dedicated_texture_array->putImage(0,0,0,image);
+}
+
+void UIImage::getRenderingInformation(UIRenderBatch& batch){
+    batch.Texture(transform, {{0,0},{1,1}});
+}

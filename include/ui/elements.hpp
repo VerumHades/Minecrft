@@ -315,7 +315,7 @@ class UISlider: public UIFrame{
 
         std::function<void(void)> onMove;
 
-        virtual void getRenderingInformation(UIRenderBatch& batch);
+        void getRenderingInformation(UIRenderBatch& batch) override;
 };
 
 
@@ -332,6 +332,13 @@ class UIScrollableFrame: public UIFrame{
         UIScrollableFrame();
         void calculateElementsTransforms() override;
 
+};
+
+class UIImage: public UIFrame{
+    public:
+        UIImage(std::string path);
+
+        void getRenderingInformation(UIRenderBatch& batch) override;
 };
 
 #include <ui/core.hpp>

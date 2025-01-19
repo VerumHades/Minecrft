@@ -188,6 +188,10 @@ int main() {
             s->setScene(name);
         });
 
+        ui_core.lua().addFunction("setLayer", [](std::string name){
+            s->getCurrentScene()->setUILayer(name);
+        });
+
         Scene* menuScene = sceneManager.createScene<Scene>("menu");
         menuScene->setUILayer("default");
         ui_core.loadWindowFromXML(*menuScene->getWindow(), "resources/templates/menu.xml");
@@ -238,22 +242,7 @@ int main() {
             scrollable->updateChildren();
         };
 
-        auto toSettings = getElementById<UIFrame>("setttings");
-        toSettings->onClicked = [menuScene]{
-            menuScene->setUILayer("settings");
-        };
-
-        auto backButton = getElementById<UIFrame>("back_to_menu");
-        backButton->onClicked = [menuScene, mainScene] {
-            menuScene->setUILayer("default");
-        };
-
-        auto settingsBackButton = getElementById<UIFrame>("settings_back_button");
-        settingsBackButton->onClicked = [menuScene, mainScene] {
-            menuScene->setUILayer("default");
-        };
-
-        auto newWorldNameInput = getElementById<UIInput>("new_world_name");
+        /*auto newWorldNameInput = getElementById<UIInput>("new_world_name");
         
         auto newWorldFunc = [newWorldNameInput, startButton]{
             auto name = newWorldNameInput->getText();
@@ -269,7 +258,7 @@ int main() {
         newWorldNameInput->onSubmit = [newWorldFunc](std::string){newWorldFunc();};
 
         auto newWorldButton = getElementById<UIFrame>("create_new_world");
-        newWorldButton->onClicked = newWorldFunc;
+        newWorldButton->onClicked = newWorldFunc;*/
 
         //sceneManager.createScene<TestScene>("test_scene");
         sceneManager.setScene("menu");
@@ -291,7 +280,7 @@ int main() {
             }
             last = current;
 
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             sceneManager.render();
@@ -301,6 +290,7 @@ int main() {
         }
 
         sceneManager.setScene("menu"); // Wait for game threads to stop if running
+        ui_core.cleanup();
     }
 
     glfwDestroyWindow(window);

@@ -6,33 +6,29 @@
         
         <frame class = "vertical_flex center" width="300px" height="500px" id="main_menu_selection">
             <label id="new_world" class="interactable menu_button">New World</label>
-            <label id="setttings" class="interactable menu_button">Settings</label>
-            <label class="interactable menu_button" onclick="setScene('game')">Lua!</label>
+            <label onclick="setLayer('settings')"   class="interactable menu_button">Settings</label>
         </frame>
     </default>
     <world_menu>
-        <frame class = "vertical_flex" id="world_selection_frame">
+        <image class="background_image" src="resources/textures/background.png"></image>
+        <frame class = "middle_frame">
             <scrollable id="top_frame">
                 
             </scrollable>
             <frame id="bottom_frame">
-                <label id="back_to_menu" class="interactable">Back</label>
-                <frame class = "vertical_flex" x="25%" width="50%" height="100%">
-                    <frame class = "vertical_flex" width="100%" height="100px">
-                        <label width="100%" height="40px" id="new_world_name_label">New world name:</label>
-                        <input width="100%" height="40px" id="new_world_name"></input>
-                    </frame>
-                    <label width="100%" height="40px" class="interactable" id="create_new_world">Create</label>
-                </frame>
+                <label onclick="setLayer('default')">Back</label>
+                <label onclick="setLayer('new_world_menu')">New World</label>
             </frame>
         </frame>
     </world_menu>
     <new_world_menu>
-        
+        <frame class="middle_frame">
+
+        </frame>
     </new_world_menu>
     <settings>
-        <label width="8%" height="40px" class="interactable" id="settings_back_button">Back</label>
-        <scrollable id="settings_scrollable">
+        <label class="interactable" id="settings_back_button" onclick="setLayer('default')">Back</label>
+        <scrollable class="middle_frame" id="settings_scrollable">
             <frame class = "settings_section">
                 <label class="settings_section_title">Keybinds</label>
                 <frame class = "settings_section_content" width="100%" id="keybind_container">

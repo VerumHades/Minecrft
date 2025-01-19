@@ -126,17 +126,6 @@ void MainScene::initialize(){
     setUILayer("default");
     addElement(hotbar);
 
-    getElementById<UILabel>("game_menu_continue_button")->onClicked = [this](){
-        setUILayer("default");
-    };
-    getElementById<UILabel>("game_menu_settings_button")->onClicked = [this](){
-        setUILayer("settings");
-    };
-
-    getElementById<UILabel>("game_menu_exit_button")->onClicked = [this](){
-        this->sceneManager->setScene("menu");
-    };
-
     skyboxProgram.use();
 
     skybox.load(skyboxPaths);
