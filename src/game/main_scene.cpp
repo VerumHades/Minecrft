@@ -54,8 +54,8 @@ void MainScene::initialize(){
         "resources/skybox/stars/back.png"
     };  
 
-    itemPrototypeRegistry.addPrototype(ItemPrototype("diamond","resources/textures/diamond32.png"));
-    itemPrototypeRegistry.addPrototype(ItemPrototype("crazed","resources/textures/crazed32.png"));
+    itemPrototypeRegistry.addPrototype(ItemPrototype("diamond","resources/textures/diamond.png"));
+    itemPrototypeRegistry.addPrototype(ItemPrototype("crazed","resources/textures/crazed.png"));
 
     held_item_slot = std::make_shared<ItemSlot>(itemTextureAtlas);
 

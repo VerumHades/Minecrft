@@ -57,13 +57,15 @@ class GLDepthTexture: public BindableTexture{
 
 class GLTextureArray: public BindableTexture{
     private:
-        int layer_width;
-        int layer_height;
+        int layer_width = 0;
+        int layer_height = 0;
 
     public:
         GLTextureArray();
         void setup(int width, int height, int layers){
             bind(0);
+            layer_width = width;
+            layer_height = height;
             glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, width, height,  layers);
         }
         void putImage(int x, int y, int layer, Image& image);

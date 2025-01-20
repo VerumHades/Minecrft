@@ -117,6 +117,8 @@ class UIFrame{
         bool hoverable = true;
         bool scrollable = false;
 
+        bool render_background_image = false;
+
         std::vector<std::shared_ptr<UIFrame>> children;
         UIFrame* parent = nullptr;
         
@@ -190,6 +192,7 @@ class UIFrame{
         void setPosition(TValue x, TValue y){this->x = x; this->y = y;}
         void setX(TValue x) {this->x = x;}
         void setY(TValue y) {this->y = y;}
+        void setBackgroundImage(const std::string& image);
 
         void setSize(TValue width, TValue height) {this->width = width; this->height = height;}
         void setWidth(TValue width) {this->width = width;}

@@ -3,6 +3,9 @@
     border-color: rgb(105, 117, 101);
     background-color: rgb(60, 61, 55);
     margin: 10px;
+
+
+    background-image: "resources/textures/button_border.png";
 }
 
 .interactable:hover{
@@ -45,6 +48,8 @@
     translate: -50% 0px;
 
     background-color: rgba(10,10,10,100);
+
+    background-image: "resources/textures/background.png";
 }
 
 .background_image{

@@ -202,6 +202,9 @@ void GLTextureArray::loadFromFiles(std::vector<std::string>& filenames, int laye
 }
 
 void GLTextureArray::putImage(int x, int y, int layer, Image& image){
+    bind(0);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, image.getChannels());
     glTexSubImage3D(
         GL_TEXTURE_2D_ARRAY, 0, 
         x, y, layer, 

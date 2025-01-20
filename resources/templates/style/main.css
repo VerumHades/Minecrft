@@ -1,7 +1,5 @@
 #main_menu_selection{
-    border-width: 1px;
-    border-color: rgb(105, 117, 101);
-    background-color: rgb(24, 28, 20);
+    background-color: rgba(0,0,0,0);
 }
 #top_frame frame{
     margin: 10px;

@@ -147,6 +147,19 @@ UIStyle::UIStyle(){
         {"padding",          ATTRIBUTE_LAMBDA(padding, parseSideSizes)},
         {"font-size",        ATTRIBUTE_LAMBDA(fontSize, parseTValue)},
         {
+            "background-image", [](auto element, auto value, auto){
+                remove_spaces(value);
+                if(value.size() < 2){
+                    std::cerr << "Invalid value for background image: " << value << std::endl;
+                    return;
+                }
+
+                value = value.substr(1,value.size() - 2); // Remove string ""
+                std::cout << "Settings background image: " << value << std::endl;
+                element->setBackgroundImage(value);
+            }
+        },
+        {
             "text-align", [](auto element, auto value, auto){
                 remove_spaces(value);
 
@@ -212,7 +225,7 @@ std::vector<UIStyle::UIStyleQueryAttribute> UIStyle::parseQueryAttributes(std::s
     std::vector<UIStyleQueryAttribute> attributes;
     //source.erase(std::remove_if(source.begin(), source.end(), isspace), source.end());
 
-    std::regex pattern(R"(([a-zA-Z\-]+):([a-zA-Z0-9,()\- %#]+);)"); 
+    std::regex pattern(R"(([a-zA-Z\-]+):([^;]+);)"); 
 
     auto matches_begin = std::sregex_iterator(source.begin(), source.end(), pattern);
     auto matches_end = std::sregex_iterator();

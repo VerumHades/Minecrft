@@ -6,7 +6,8 @@ void UIFrame::update(){
 
     getRenderingInformation(batch);
     
-    batch.texture = dedicated_texture_array.get();        
+    batch.texture = dedicated_texture_array.get();
+
     batch.clipRegion = clipRegion;
     
     stopDrawing();
@@ -93,15 +94,18 @@ bool UIFrame::pointWithin(glm::vec2 point, int padding){
 }
 
 void UIFrame::getRenderingInformation(UIRenderBatch& batch){
-    auto bg = getAttribute(&Style::backgroundColor);
-    if(bg == UIColor{0,0,0,0}) return;
+    if(!render_background_image){
+        auto bg = getAttribute(&Style::backgroundColor);
+        if(bg == UIColor{0,0,0,0}) return;
 
-    batch.BorderedRectangle(
-        transform.x,transform.y,transform.width,transform.height,
-        bg,
-        borderSizes,
-        getAttribute(&Style::borderColor)
-    );
+        batch.BorderedRectangle(
+            transform,
+            bg,
+            borderSizes,
+            getAttribute(&Style::borderColor)
+        );
+    }
+    else batch.Texture(transform, {{0,0},{1,1}});
 };
 
 static inline void reduceRegionTo(UIRegion& target, UIRegion& to){
@@ -363,13 +367,7 @@ void  UISlider::moveTo(glm::vec2 pos){
 }
 
 void UISlider::getRenderingInformation(UIRenderBatch& batch){
-    batch.BorderedRectangle(
-        transform,
-        getAttribute(&Style::backgroundColor),
-        borderSizes,
-        getAttribute(&Style::borderColor)
-    );
-
+    UIFrame::getRenderingInformation(batch);
     //auto ht = getHandleTransform(ui_core);
     //std::cout << ht.x << " " << ht.y << " " << ht.width << " " << ht.height << std::endl;
 
@@ -439,18 +437,34 @@ void UIFrame::clearChildren(){
     children.clear();
 }
 
-UIImage::UIImage(std::string path){
-    dedicated_texture_array = std::make_shared<GLTextureArray>();
+
+static std::unordered_map<std::string, std::shared_ptr<GLTextureArray>> loaded_images{};
+
+std::shared_ptr<GLTextureArray> loadImage(const std::string& path){
+    if(loaded_images.contains(path))
+        return loaded_images[path];
 
     Image image{path};
+    if(!image.isLoaded()) return nullptr;
+    
+    auto texture_array = std::make_shared<GLTextureArray>();
 
-    if(!image.isLoaded()){
-        std::cerr << "Failed to load image '" << path << "'" << std::endl;
-        return;
-    }
+    texture_array->setup(image.getWidth(), image.getHeight(),1);
+    texture_array->putImage(0,0,0,image);
 
-    dedicated_texture_array->setup(image.getWidth(),image.getHeight(),1);
-    dedicated_texture_array->putImage(0,0,0,image);
+    loaded_images[path] = texture_array;
+
+    return texture_array;
+}
+
+void UIFrame::setBackgroundImage(const std::string& path){
+    dedicated_texture_array = loadImage(path);
+    if(!dedicated_texture_array) std::cerr << "Failed to load image '" << path << "'" << std::endl;
+    render_background_image = true;
+}
+UIImage::UIImage(std::string path){
+    dedicated_texture_array = loadImage(path);
+    if(!dedicated_texture_array) std::cerr << "Failed to load image '" << path << "'" << std::endl;
 }
 
 void UIImage::getRenderingInformation(UIRenderBatch& batch){
