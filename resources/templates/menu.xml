@@ -4,32 +4,32 @@
         <style src="resources/templates/style/main.css"></style>
         <style src="resources/templates/style/settings.css"></style>
         
-        <image class="background_image" src="resources/textures/background.png"></image>
-        <frame class = "vertical_flex center" width="300px" height="500px" id="main_menu_selection">
+        <image class="background_image" src="resources/textures/ui/background.png"></image>
+        <frame class = "vertical_flex center" width="500px" height="500px" id="main_menu_selection">
             <label id="new_world" class="interactable menu_button">New Terrain</label>
             <label onclick="setLayer('settings')"   class="interactable menu_button">Settings</label>
         </frame>
     </default>
     <world_menu>
-        <image class="background_image" src="resources/textures/background.png"></image>
+        <image class="background_image" src="resources/textures/ui/background.png"></image>
         <frame class = "middle_frame">
             <scrollable id="top_frame">
                 
             </scrollable>
             <frame id="bottom_frame">
-                <label onclick="setLayer('default')">Back</label>
                 <label onclick="setLayer('new_world_menu')">New Terrain</label>
             </frame>
         </frame>
+        <label onclick="setLayer('default')" class="back_button interactable">Back</label>
     </world_menu>
     <new_world_menu>
-        <label onclick="setLayer('world_menu')" class="interactable">Go back</label>
+        <label onclick="setLayer('world_menu')" class="back_button interactable">Go back</label>
         <frame class="middle_frame">
 
         </frame>
     </new_world_menu>
     <settings>
-        <image class="background_image" src="resources/textures/background.png"></image>
+        <image class="background_image" src="resources/textures/ui/background.png"></image>
         <scrollable class="middle_frame" id="settings_scrollable">
             <frame class = "settings_section">
                 <label class="settings_section_title">Keybinds</label>
@@ -48,6 +48,6 @@
                 </frame>
             </frame>
         </scrollable>
-        <label class="interactable" id="settings_back_button" onclick="setLayer('default')">Back</label>
+        <label class="back_button interactable" id="settings_back_button" onclick="setLayer('default')">Back</label>
     </settings>
 </window>

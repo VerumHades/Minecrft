@@ -147,7 +147,7 @@ UIStyle::UIStyle(){
         {"padding",          ATTRIBUTE_LAMBDA(padding, parseSideSizes)},
         {"font-size",        ATTRIBUTE_LAMBDA(fontSize, parseTValue)},
         {
-            "background-image", [](auto element, auto value, auto){
+            "background-image", [](auto element, auto value, auto state){
                 remove_spaces(value);
                 if(value.size() < 2){
                     std::cerr << "Invalid value for background image: " << value << std::endl;
@@ -155,17 +155,22 @@ UIStyle::UIStyle(){
                 }
 
                 value = value.substr(1,value.size() - 2); // Remove string ""
-                std::cout << "Settings background image: " << value << std::endl;
-                element->setBackgroundImage(value);
+                auto image = GLTextureArray::LoadImage(value);
+                if(!image){
+                    std::cerr << "Failed to load image: " << value << std::endl;
+                    return;
+                }
+
+                element->setAttribute(&UIFrame::Style::backgroundImage, {image}, state);
             }
         },
         {
-            "text-align", [](auto element, auto value, auto){
+            "text-align", [](auto element, auto value, auto state){
                 remove_spaces(value);
 
-                if     (value == "center") element->setAttribute(&UIFrame::Style::textPosition, UIFrame::Style::CENTER);
-                else if(value == "left"  ) element->setAttribute(&UIFrame::Style::textPosition, UIFrame::Style::LEFT  );
-                else if(value == "right" ) element->setAttribute(&UIFrame::Style::textPosition, UIFrame::Style::RIGHT );
+                if     (value == "center") element->setAttribute(&UIFrame::Style::textPosition, UIFrame::Style::CENTER, state);
+                else if(value == "left"  ) element->setAttribute(&UIFrame::Style::textPosition, UIFrame::Style::LEFT  , state);
+                else if(value == "right" ) element->setAttribute(&UIFrame::Style::textPosition, UIFrame::Style::RIGHT , state);
                 else std::cerr << "Invalid text-align: " << value << std::endl;
             }
         },
@@ -196,7 +201,7 @@ UIStyle::UIStyle(){
         {"bottom", [](auto element, auto value, auto) { element->setY((TValue{PERCENT,100} - TValue{MY_PERCENT,100}) - parseTValue(value)); }},
         {"width",  [](auto element, auto value, auto) { element->setWidth(parseTValue(value)); }},
         {"height", [](auto element, auto value, auto) { element->setHeight(parseTValue(value)); }},
-        {"translate", [](auto element, auto value, auto) { 
+        {"translate", [](auto element, auto value, auto state) { 
             auto split_source = split(value, " ");
 
             if(split_source.size() != 2){
@@ -213,7 +218,7 @@ UIStyle::UIStyle(){
             //std::cout << "'" << split_source[0]  << "' " << value1.unit << " " << value1.value << std::endl;
             //std::cout << "'" << split_source[1]  << "' " << value2.unit << " " << value2.value << std::endl;
 
-            element->setAttribute(&UIFrame::Style::translation, {value1, value2});
+            element->setAttribute(&UIFrame::Style::translation, {value1, value2}, state);
         }},
         
         {"border-width",        ATTRIBUTE_LAMBDA(borderWidth, parseSideSizes)},

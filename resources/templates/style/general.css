@@ -4,13 +4,12 @@
     background-color: rgb(60, 61, 55);
     margin: 10px;
 
-
-    background-image: "resources/textures/button_border.png";
+    background-image: "resources/textures/ui/button_border.png";
 }
 
 .interactable:hover{
-    background-color: rgb(105, 117, 101);
-    border-color: rgb(60, 61, 55);
+    translate: 10px 0px;
+    background-image: "resources/textures/ui/button_border_hover.png";
 }
 
 .vertical_flex{
@@ -24,8 +23,19 @@
 }
 
 .menu_button{
-    width: 100%;
+    width: 500px;
+    height: 80px;
+    margin: 0px 0px 20px 0px;
+
+    text-align: center;
+}
+
+.back_button{
+    width: 250px;
     height: 40px;
+    margin: 0px 0px 20px 0px;
+
+    text-align: center;
 }
 
 
@@ -47,9 +57,7 @@
 
     translate: -50% 0px;
 
-    background-color: rgba(10,10,10,100);
-
-    background-image: "resources/textures/background.png";
+    background-color: rgba(10,10,10,180);
 }
 
 .background_image{

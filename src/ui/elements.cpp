@@ -6,8 +6,8 @@ void UIFrame::update(){
 
     getRenderingInformation(batch);
     
-    batch.texture = dedicated_texture_array.get();
-
+    auto background_image = getAttribute(&Style::backgroundImage);
+    batch.texture = background_image.texture ? background_image.texture.get() : dedicated_texture_array.get();
     batch.clipRegion = clipRegion;
     
     stopDrawing();
@@ -94,7 +94,9 @@ bool UIFrame::pointWithin(glm::vec2 point, int padding){
 }
 
 void UIFrame::getRenderingInformation(UIRenderBatch& batch){
-    if(!render_background_image){
+    auto background_image = getAttribute(&Style::backgroundImage);
+
+    if(!background_image.texture){
         auto bg = getAttribute(&Style::backgroundColor);
         if(bg == UIColor{0,0,0,0}) return;
 
@@ -437,33 +439,8 @@ void UIFrame::clearChildren(){
     children.clear();
 }
 
-
-static std::unordered_map<std::string, std::shared_ptr<GLTextureArray>> loaded_images{};
-
-std::shared_ptr<GLTextureArray> loadImage(const std::string& path){
-    if(loaded_images.contains(path))
-        return loaded_images[path];
-
-    Image image{path};
-    if(!image.isLoaded()) return nullptr;
-    
-    auto texture_array = std::make_shared<GLTextureArray>();
-
-    texture_array->setup(image.getWidth(), image.getHeight(),1);
-    texture_array->putImage(0,0,0,image);
-
-    loaded_images[path] = texture_array;
-
-    return texture_array;
-}
-
-void UIFrame::setBackgroundImage(const std::string& path){
-    dedicated_texture_array = loadImage(path);
-    if(!dedicated_texture_array) std::cerr << "Failed to load image '" << path << "'" << std::endl;
-    render_background_image = true;
-}
 UIImage::UIImage(std::string path){
-    dedicated_texture_array = loadImage(path);
+    dedicated_texture_array = GLTextureArray::LoadImage(path);
     if(!dedicated_texture_array) std::cerr << "Failed to load image '" << path << "'" << std::endl;
 }
 

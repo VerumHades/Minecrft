@@ -58,6 +58,9 @@ class UIFrame{
                 RIGHT,
                 CENTER
             };
+            struct BackgroundImage{
+                std::shared_ptr<GLTextureArray> texture;  
+            };
 
             std::optional<TextPosition>         textPosition;
             std::optional<UIColor>              textColor;
@@ -68,6 +71,7 @@ class UIFrame{
             std::optional<UISideSizesT>         padding;
             std::optional<TValue>               fontSize;
             std::optional<std::array<TValue,2>> translation;
+            std::optional<BackgroundImage>      backgroundImage;
         };
 
     protected:
@@ -80,7 +84,8 @@ class UIFrame{
             UISideSizesT{0_px,0_px,0_px,0_px},
             UISideSizesT{0_px,0_px,0_px,0_px},
             24_px,
-            std::array<TValue,2>{0_px,0_px}
+            std::array<TValue,2>{0_px,0_px},
+            Style::BackgroundImage{nullptr}
         };
         Style hoverStyle;
         Style focusStyle;
@@ -116,8 +121,6 @@ class UIFrame{
         bool focusable = false;
         bool hoverable = true;
         bool scrollable = false;
-
-        bool render_background_image = false;
 
         std::vector<std::shared_ptr<UIFrame>> children;
         UIFrame* parent = nullptr;
