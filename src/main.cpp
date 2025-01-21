@@ -199,7 +199,7 @@ int main() {
         MainScene* mainScene = sceneManager.createScene<MainScene>("game");
 
         auto startButton = getElementById<UILabel>("new_world");
-        auto scrollable = getElementById<UIScrollableFrame>("top_frame");
+        auto scrollable = getElementById<UIScrollableFrame>("world_selection");
         
         startButton->onClicked = [menuScene, mainScene, scrollable] {
             menuScene->setUILayer("world_menu");
@@ -212,7 +212,7 @@ int main() {
                 WorldStream stream(filepath);
                 
                 auto frame = std::make_shared<UIFrame>();
-                frame->setSize({PERCENT,80}, 200_px);
+                frame->setIdentifiers({"world_option_frame"});
                 
                 auto temp = std::make_shared<UILabel>();
                 temp->setText(stream.getName());

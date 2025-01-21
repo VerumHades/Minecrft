@@ -434,6 +434,8 @@ void UIFrame::appendChild(std::shared_ptr<UIFrame> child){
     ui_core.loader().getCurrentStyle().applyTo(child);
 
     child->calculateTransforms();
+
+        //ui_core.loader().getCurrentStyle().applyTo(child);
 }
 void UIFrame::clearChildren(){
     children.clear();

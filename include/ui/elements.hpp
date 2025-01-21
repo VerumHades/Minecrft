@@ -78,7 +78,7 @@ class UIFrame{
         Style baseStyle = {
             Style::TextPosition::LEFT,
             UIColor{255,255,255,255},
-            UIColor{0,0,0},
+            UIColor{0,0,0,0},
             UISideSizesT{0_px,0_px,0_px,0_px},
             UIBorderColors{UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
             UISideSizesT{0_px,0_px,0_px,0_px},

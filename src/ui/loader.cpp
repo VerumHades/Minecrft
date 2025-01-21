@@ -117,7 +117,6 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source) {
 
         auto id = source->Attribute("id");
         if(id) elements_with_ids[id] = el;
-        
 
         return el; 
     }
