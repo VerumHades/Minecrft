@@ -156,11 +156,11 @@ int main() {
         //InstancedMesh mesh{};
         //mesh.addQuadFace({0,0,0}, 10,10, 0, InstancedMesh::BILLBOARD,InstancedMesh::Forward,{0.0f,0.0f,0.0f,0.0f});
         
-        GLDrawCallBuffer d_buffer{};
+        //GLDrawCallBuffer d_buffer{};
 
         
         InstancedMeshBuffer buffer{};
-        //GLVertexArray vao{};
+        //std::array<GLVertexArray,4> vao{};
 
         //buffer.loadMesh(mesh);
         //Terrain terrain{};
