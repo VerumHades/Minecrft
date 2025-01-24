@@ -1,7 +1,5 @@
 #include <ui/core.hpp>
 
-UICore ui_core{};
-
 UICore::UICore(){
     loader().registerElement("frame", XML_ELEMENT_LAMBDA_LOAD(UIFrame));
     loader().registerElement("label", [](auto* source) {
@@ -23,6 +21,15 @@ UICore::UICore(){
     });
     loader().registerElement("input", XML_ELEMENT_LAMBDA_LOAD(UIInput));
     loader().registerElement("scrollable", XML_ELEMENT_LAMBDA_LOAD(UIScrollableFrame));
+}
+
+
+
+UICore& UICore::get(){
+    static std::mutex singleton_mutex;
+    std::lock_guard lock(singleton_mutex);
+    static UICore core;
+    return core;
 }
 
 void UICore::cleanup(){

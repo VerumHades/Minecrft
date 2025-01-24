@@ -179,7 +179,7 @@ void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
     int slot_height = slot_width;
 
     std::string quantity_number = std::to_string(item.getQuantity());
-    UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(quantity_number, quantity_number_font_size);
+    UITextDimensions textDimensions = UICore::get().getBackend().getTextDimensions(quantity_number, quantity_number_font_size);
     batch.Text(
         quantity_number, 
         slot_x + slot_width  - textDimensions.width,
@@ -204,7 +204,7 @@ ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, int slots_horizonta
         if(!this->hover) return;
         if(!this->held_item_ptr) return;
 
-        auto mousePosition = ui_core.getMousePosition();
+        auto mousePosition = UICore::get().getMousePosition();
         int relative_x = mousePosition.x - transform.x;
         int relative_y = mousePosition.y - transform.y;
 
@@ -318,7 +318,7 @@ void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
             });
 
             std::string quantity_number = std::to_string(item.getQuantity());
-            UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(quantity_number, quantity_number_font_size);
+            UITextDimensions textDimensions = UICore::get().getBackend().getTextDimensions(quantity_number, quantity_number_font_size);
             batch.Text( 
                 quantity_number, 
                 slot_x + slot_width  - textDimensions.width,

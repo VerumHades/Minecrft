@@ -39,19 +39,19 @@ void BlockLoader::loadFromSource(std::string source){
         auto command = split(line, " ");
         
         if(command.size() >= 8 && command[0] == "FULL_BLOCK")
-            global_block_registry.addFullBlock(command[1], {command[2],command[3],command[4],command[5],command[6],command[7]});
+            BlockRegistry::get().addFullBlock(command[1], {command[2],command[3],command[4],command[5],command[6],command[7]});
 
         else if(command.size() >= 8 && command[0] == "FULL_BLOCK_TRANSPARENT")
-            global_block_registry.addFullBlock(command[1], {command[2],command[3],command[4],command[5],command[6],command[7]}, true);
+            BlockRegistry::get().addFullBlock(command[1], {command[2],command[3],command[4],command[5],command[6],command[7]}, true);
 
         else if(command.size() >= 3 && command[0] == "FULL_BLOCK")
-            global_block_registry.addFullBlock(command[1], command[2]);
+            BlockRegistry::get().addFullBlock(command[1], command[2]);
 
         else if(command.size() >= 3 && command[0] == "FULL_BLOCK_TRANSPARENT")
-            global_block_registry.addFullBlock(command[1], command[2], true);
+            BlockRegistry::get().addFullBlock(command[1], command[2], true);
 
         else if(command.size() >= 3 && command[0] == "BILBOARD")
-            global_block_registry.addBillboardBlock(command[1], command[2]);
+            BlockRegistry::get().addBillboardBlock(command[1], command[2]);
 
         else std::cerr << "Invalid block definition: " << line << std::endl;
         

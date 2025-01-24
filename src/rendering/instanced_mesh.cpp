@@ -122,18 +122,18 @@ void InstancedMeshBuffer::renderMesh(LoadedMesh& mesh){
     vaos[0].unbind();
 }
 
-InstancedMeshBuffer::LoadedMesh InstancedMeshBuffer::loadMesh(InstancedMesh& mesh){
-    LoadedMesh loaded_mesh = {*this};
+std::unique_ptr<InstancedMeshBuffer::LoadedMesh> InstancedMeshBuffer::loadMesh(InstancedMesh& mesh){
+    auto loaded_mesh = std::make_unique<InstancedMeshBuffer::LoadedMesh>(*this);
 
     for(int i = 0;i < distinct_face_count;i++){
         auto& component_data = mesh.getInstanceData(static_cast<InstancedMesh::FaceType>(i));
         if(component_data.size() == 0){
-            loaded_mesh.has_region[i] = false;
+            loaded_mesh->has_region[i] = false;
             continue;
         }
 
-        loaded_mesh.loaded_regions[i] = instance_data[i].append(component_data.data(), component_data.size());
-        loaded_mesh.has_region[i] = true;
+        loaded_mesh->loaded_regions[i] = instance_data[i].append(component_data.data(), component_data.size());
+        loaded_mesh->has_region[i] = true;
 
         instance_data[i].flush();
     }

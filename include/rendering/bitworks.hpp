@@ -109,6 +109,7 @@ class BitPlane{
         std::array<uint_t<size>, size> data{};
 
     public:
+        BitPlane(){}
         void set(int x,int y){
             data[y] |= 1 << (63 - x);
         }
@@ -138,6 +139,7 @@ class ByteArray{
         std::vector<byte> data = {};
         size_t cursor = 0;
     public:    
+        ByteArray(){}
         void append(const ByteArray& array){
             data.insert(data.end(), array.data.begin(), array.data.end());
         }

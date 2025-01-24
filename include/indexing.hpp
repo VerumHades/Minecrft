@@ -17,6 +17,8 @@ class SpiralIndexer{
 
         glm::ivec2 current_position = {0,0};
     public:
+        SpiralIndexer(){}
+
         glm::ivec2 next();
         size_t getTotal(){return total;}
 };
@@ -33,6 +35,7 @@ class SpiralIndexer3D{
         std::array<std::vector<SpiralIndexer>, 2> layers{};
 
     public:
+        SpiralIndexer3D(){}
         glm::ivec3 next();
         int getCurrentDistance() { return current_distance; }
 };

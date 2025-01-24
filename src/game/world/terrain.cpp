@@ -53,7 +53,7 @@ bool Terrain::collision(glm::vec3 position, const RectangularCollider* collider)
                 Block* blocki = getBlock(real_position);
                 if(!blocki) continue;
 
-                auto* definition = global_block_registry.getBlockPrototypeByIndex(blocki->id);
+                auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(blocki->id);
                 if(!definition) continue;
                 
                 if(definition->colliders.size() == 0 || blocki->id == BLOCK_AIR_INDEX) continue;

@@ -78,7 +78,7 @@ void AcceleratedChunkGenerator::generateChunk(Chunk* chunk, glm::ivec3 chunkPosi
         //std::cout << "Compressed size: " << compressed.size() * 8 << "bytes" << std::endl;
         //std::cout << "Compression percent for: " << layer.name << " " << ((float) compressed.size() / (float) data.size()) * 100 << "%" << std::endl;
 
-        BlockID block_id = global_block_registry.getIndexByName(layer.name);
+        BlockID block_id = BlockRegistry::get().getIndexByName(layer.name);
 
         if(!chunk->hasLayerOfType(block_id)) chunk->createLayer(block_id, {});
 

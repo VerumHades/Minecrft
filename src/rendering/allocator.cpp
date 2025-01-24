@@ -1,5 +1,9 @@
 #include <rendering/allocator.hpp>
 
+
+Allocator::Allocator(size_t memsize, std::function<bool(size_t)>&& requestMemory) :  memsize(memsize), requestMemory(requestMemory) {
+    reset(memsize);
+};
 /*
     Allocates memory to the block of closest size, resizes blocks to be exactly the size of the allocation.
 */

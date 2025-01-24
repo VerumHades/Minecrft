@@ -386,7 +386,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
                 auto& [type,block,_field] = field_layer;
                 auto& field = field_layer.field();
 
-                auto* definition = global_block_registry.getBlockPrototypeByIndex(type);
+                auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
                 if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
                 auto* rotatedField = field.getTransposed();
@@ -422,7 +422,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         }
 
         for(auto& type: group->getPresentTypes()){
-            auto* definition = global_block_registry.getBlockPrototypeByIndex(type);
+            auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
             //std::cout << "Solving plane: " << getBlockTypeName(type) << std::endl;
             //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
@@ -448,7 +448,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         auto& [type,block,_field] = field_layer;
         auto& field = field_layer.field();
         
-        auto* definition = global_block_registry.getBlockPrototypeByIndex(type);
+        auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
         if(!definition || definition->render_type != BlockRegistry::BILLBOARD) continue;
 
         for(int x = 0;x < size;x++) for(int y = 0;y < size;y++) for(int z = 0;z < size;z++){
@@ -486,7 +486,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
 
     for(int row = 0;row < size;row++){
         for(auto& type: agregateTypesX){
-            auto* definition = global_block_registry.getBlockPrototypeByIndex(type);
+            auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
             
             BitField3D& nextXSolid = nextX->getSolidField();
@@ -509,7 +509,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         }
         
         for(auto& type: agregateTypesY){
-            auto* definition = global_block_registry.getBlockPrototypeByIndex(type);
+            auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
             BitField3D& nextYSolid = nextY->getSolidField();
@@ -532,7 +532,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         }
 
         for(auto& type: agregateTypesZ){
-            auto* definition = global_block_registry.getBlockPrototypeByIndex(type);
+            auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
             auto* nextZSolidRotated = nextZ->getSolidField().getTransposed();
@@ -561,7 +561,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
     }
 
     for(auto& type: fullAgregate){
-        auto* definition = global_block_registry.getBlockPrototypeByIndex(type);
+        auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
         if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
         processFaces(greedyMeshPlane(planesXforward [static_cast<size_t>(type)], size), InstancedMesh::X_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, occlusion);

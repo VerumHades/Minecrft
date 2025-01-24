@@ -21,3 +21,5 @@ SIGKILL happenes sometimes when they dont
 # Not unbinding a VAO can result in some wokny shit
 
 Unbind them pretty please
+
+# For the love of god, explicitly write constructors even when they are empty, weird shit happens otherwise

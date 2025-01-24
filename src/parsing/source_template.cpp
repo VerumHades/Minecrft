@@ -42,19 +42,7 @@ SourceTemplate SourceTemplate::fromSource(std::string source){
 }
 
 SourceTemplate SourceTemplate::fromFile(const std::string& path){
-    std::ifstream file(path);  // Open the file
-    if (!file.is_open()) {              // Check if the file is open
-        std::cerr << "Failed to open template file: " << path << std::endl;
-        return {};
-    }
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();             
-
-    std::string source = buffer.str();
-
-    file.close();  // Close the file
-
+    std::string source = ShaderProgram::getSource(path);
     return SourceTemplate::fromSource(source);
 }
 

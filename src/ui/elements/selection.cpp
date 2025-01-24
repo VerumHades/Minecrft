@@ -28,7 +28,7 @@ void UISelection::getRenderingInformation(UIRenderBatch& batch) {
     if(options.size() == 0) return;
 
     auto font_size = getValueInPixels(getAttribute(&Style::fontSize), true);
-    auto text_size = ui_core.getBackend().getTextDimensions(options[0], font_size);
+    auto text_size = UICore::get().getBackend().getTextDimensions(options[0], font_size);
 
     int line_height = text_size.height + 10;
     int origin_x = transform.x + 10;

@@ -17,7 +17,6 @@
 #include <rendering/opengl/quad.hpp>
 #include <rendering/ssao.hpp>
 
-#include <parsing/shader_parser.hpp>
 #include <parsing/block_loader.hpp>
 
 #include <ui/core.hpp>
@@ -60,7 +59,7 @@ class MainScene: public Scene{
         GLFullscreenQuad fullscreen_quad;
 
         ShaderProgram modelProgram = ShaderProgram("resources/shaders/graphical/model/model.vs","resources/shaders/graphical/model/model.fs");
-        ShaderProgram terrainProgram = ShaderProgram(ShaderProgramSource::fromFile("resources/shaders/terrain.sp"));
+        ShaderProgram terrainProgram = ShaderProgram("resources/shaders/terrain.vs","resources/shaders/terrain.fs");
         ShaderProgram skyboxProgram  = ShaderProgram("resources/shaders/graphical/skybox.vs", "resources/shaders/graphical/skybox.fs");
         ShaderProgram gBufferProgram = ShaderProgram("resources/shaders/graphical/deffered_shading/gbuffer.vs","resources/shaders/graphical/deffered_shading/gbuffer.fs");
         ShaderProgram blur_program = ShaderProgram("resources/shaders/graphical/quad.vs","resources/shaders/graphical/blur.fs");
@@ -72,7 +71,7 @@ class MainScene: public Scene{
 
         WireframeCubeRenderer wireframeRenderer;
         
-        ChunkMeshRegistry chunkMeshRegistry;
+        ChunkMeshRegistry chunkMeshRegistry{renderDistance};
         ChunkMeshGenerator chunkMeshGenerator;
         std::queue<glm::ivec3> chunk_generation_queue = {};
 
@@ -174,6 +173,7 @@ class MainScene: public Scene{
         void updateStructureSavingDisplay();
         
     public:
+        MainScene(){}
         void initialize() override;
         void setWorldPath(const std::string& path) {worldPath = path;}
 

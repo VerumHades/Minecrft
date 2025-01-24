@@ -24,7 +24,7 @@ void MainScene::initialize(){
     this->setUILayer("settings");
     addElement(getElementById<UIScrollableFrame>("settings_scrollable"));
 
-    ui_core.loadWindowFromXML(*getWindow(), "resources/templates/game.xml");
+    UICore::get().loadWindowFromXML(*getWindow(), "resources/templates/game.xml");
     
     this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
     //this->getUILayer("chat").eventLocks = {true, true, true, true};
@@ -132,9 +132,9 @@ void MainScene::initialize(){
     
     terrainProgram.use();
     
-    global_block_registry.setTextureSize(160,160);
-    global_block_registry.loadFromFolder("resources/textures");
-    block_texture_array = global_block_registry.load();
+    BlockRegistry::get().setTextureSize(160,160);
+    BlockRegistry::get().loadFromFolder("resources/textures");
+    block_texture_array = BlockRegistry::get().load();
 
     BlockLoader::loadFromFile("resources/blocks.config");
 
@@ -160,8 +160,6 @@ void MainScene::initialize(){
 
     terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
-
-    chunkMeshRegistry.initialize(renderDistance);
 
     camera.setModelPosition({0,0,0});
     suncam.setCaptureSize(renderDistance * 2 * CHUNK_SIZE);
@@ -321,7 +319,8 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
     if(isActiveLayer("default")){
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS ){  
-            auto* block_prototype = global_block_registry.getBlockPrototypeByIndex(blockUnderCursor->id);
+            auto* block_prototype = BlockRegistry::get().getBlockPrototypeByIndex(blockUnderCursor->id);
+            if(!block_prototype) return;
             auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(block_prototype);
 
             auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), glm::vec3(blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5));
@@ -528,22 +527,23 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
     else if(key == GLFW_KEY_N && action == GLFW_PRESS){
         if(!isActiveLayer("structure_capture") && !isActiveLayer("structure_saving")){
             this->setUILayer("structure_capture");
-            ui_core.setFocus(structure_selection);
+            UICore::get().setFocus(structure_selection);
         }
         else if(!isActiveLayer("structure_saving")){
             this->setUILayer("structure_saving");
-            ui_core.setFocus(getElementById<UIFrame>("structure_name"));
+            UICore::get().setFocus(getElementById<UIFrame>("structure_name"));
             updateStructureSavingDisplay();
         }
     }
 }
 
 void MainScene::open(GLFWwindow* window){
+    game_state = nullptr;
+    chunkMeshRegistry.clear();
     running = true;
-    allGenerated = false;
     indexer = {};
     
-    game_state = std::make_unique<GameState>();
+    game_state = std::make_unique<GameState>(worldPath);
 
     auto& player = game_state->getPlayer();
 
@@ -577,9 +577,9 @@ void MainScene::open(GLFWwindow* window){
     //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
     //generationThread.detach();
 
-    player.setPosition({0,100,0});
+    player.setPosition({0,60,0});
 
-    for(auto& prototype: global_block_registry.prototypes()){
+    for(auto& prototype: BlockRegistry::get().prototypes()){
         if(prototype.id == 0) continue; // Dont make air
 
         auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(&prototype);
@@ -607,9 +607,6 @@ void MainScene::close(GLFWwindow* window){
     while(threadsStopped < 1){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     } 
-
-    game_state = nullptr;
-    chunkMeshRegistry.clear();
 }
 
 void MainScene::render(){
@@ -643,8 +640,8 @@ void MainScene::render(){
         auto position = indexer.next() + lastCamWorldPosition;
         Chunk* chunk = game_state->getTerrain().getChunk(position);
 
-        if(!chunk) std::cerr << "Chunk not generated when generating meshes?" << std::endl;
-        else if(!chunkMeshRegistry.isChunkLoaded(position)) chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry); 
+        //if(!chunk) std::cerr << "Chunk not generated when generating meshes?" << std::endl;
+        //else if(!chunkMeshRegistry.isChunkLoaded(position)) chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry); 
     }
 
     processMouseMovement();

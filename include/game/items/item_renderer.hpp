@@ -52,6 +52,7 @@ class LogicalItemSlot{
         std::optional<Item> item_option;
 
     public:
+        LogicalItemSlot(){}
         bool takeItemFrom(LogicalItemSlot& source, int quantity = -1);
         bool moveItemTo(LogicalItemSlot& destination, int quantity = -1);
 

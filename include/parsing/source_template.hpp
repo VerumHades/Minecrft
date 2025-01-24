@@ -28,3 +28,5 @@ class SourceTemplate{
 
         std::string fill(std::vector<TagValue> values);
 };
+
+#include <rendering/opengl/shaders.hpp>

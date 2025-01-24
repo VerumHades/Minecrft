@@ -30,6 +30,7 @@ class Token{
         Token(Type type, size_t start, size_t end, std::string* source): _type(type),_start(start),_end(end),source(source) { }
     
     public:
+        Token(){}
         static Token from(std::string& source, size_t start);
 
         Token next();

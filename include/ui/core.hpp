@@ -15,7 +15,6 @@
 #include <ui/loader.hpp>
 #include <ui/layouts.hpp>
 #include <ui/backend.hpp>
-#include <ui/lua_integration.hpp>
 
 class UICore;
 class UIFrame;
@@ -92,11 +91,10 @@ class UICore{
         UILoader loader_;
         UIBackend* backend = nullptr;
 
-        LuaEngine lua_engine;
-
-    public:
+        //LuaEngine lua_engine;
         UICore();
 
+    public:
         void cleanup();
 
         void setBackend(UIBackend* backend);
@@ -121,7 +119,7 @@ class UICore{
         void loadWindowFromXML(UIWindow& window, std::string load_path);
 
         UILoader& loader() {return loader_;}
-        LuaEngine& lua(){return lua_engine;}
+        //LuaEngine& lua(){return lua_engine;}
         UIBackend& getBackend();
 
         std::shared_ptr<UIFrame> getElementUnder(int x, int y, bool onlyScrollable = false);   
@@ -130,13 +128,13 @@ class UICore{
 
         int getScreenWidth() {return screenWidth;}
         int getScreenHeight() {return screenHeight;}
-};
 
-extern UICore ui_core;
+        static UICore& get();
+};
 
 template<typename T>
 static inline auto getElementById(const std::string& id){
-    return ui_core.loader().getElementById<T>(id);
+    return UICore::get().loader().getElementById<T>(id);
 }
 
 #include <ui/elements.hpp>

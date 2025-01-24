@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.14)  # FetchContent is fully supported from CMa
 # Project name
 project(main LANGUAGES C CXX)
 
+#add_compile_options(-fsanitize=address)
 
 #set(CMAKE_C_COMPILER gcc) 
 #set(CMAKE_CXX_COMPILER g++)  # Set g++ as the C++ compiler
@@ -51,22 +52,22 @@ FetchContent_MakeAvailable(glm)
 
 #FetchContent_MakeAvailable(assimp)
 
-FetchContent_Declare(
-  lua
-  URL https://www.lua.org/ftp/lua-5.4.7.tar.gz
-  URL_HASH SHA256=9fbf5e28ef86c69858f6d3d34eccc32e911c1a28b4120ff3e84aaa70cfbf1e30
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-FetchContent_MakeAvailable(lua)
+#FetchContent_Declare(
+  #lua
+  #URL https://www.lua.org/ftp/lua-5.4.7.tar.gz
+  #URL_HASH SHA256=9fbf5e28ef86c69858f6d3d34eccc32e911c1a28b4120ff3e84aaa70cfbf1e30
+ # DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+#)
+#FetchContent_MakeAvailable(lua)
 
 # Locate all .c files in the Lua source directory
-file(GLOB LUA_SOURCES ${lua_SOURCE_DIR}/src/*.c)
+#file(GLOB LUA_SOURCES ${lua_SOURCE_DIR}/src/*.c)
 
 # Create the library target
-add_library(lua STATIC ${LUA_SOURCES})
+#add_library(lua STATIC ${LUA_SOURCES})
 
 # Include the Lua headers
-target_include_directories(lua PUBLIC ${lua_SOURCE_DIR}/src)
+#target_include_directories(lua PUBLIC ${lua_SOURCE_DIR}/src)
 
 # Suppress all warnings for GLFW
 target_compile_options(glfw PRIVATE
@@ -105,6 +106,6 @@ file(GLOB_RECURSE SOURCES
 # Add executable target
 add_executable(main ${SOURCES})
 # Link libraries
-target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad freetype tinyxml2 lua)
+target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad freetype tinyxml2)
 
 target_compile_options(main PRIVATE -Wall)

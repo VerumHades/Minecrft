@@ -35,7 +35,7 @@ class MeshRegion{
         ChunkMeshRegistry& registry;
         MeshRegion(Transform& transform, ChunkMeshRegistry& registry): transform(transform), registry(registry) {}
 
-        std::unique_ptr<InstancedMeshBuffer::LoadedMesh> loaded_mesh;
+        std::unique_ptr<InstancedMeshBuffer::LoadedMesh> loaded_mesh = nullptr;
 
         /*
             Returns a pointer to the regions parent, if the region has no parents return nullptr
@@ -108,7 +108,7 @@ class ChunkMeshRegistry{
         void processRegionForDrawing(Frustum& frustum, MeshRegion* region);
 
     public:
-        void initialize(uint renderDistance);
+        ChunkMeshRegistry(uint renderDistance);
 
         void clear();
         bool isChunkLoaded(const glm::ivec3& pos){

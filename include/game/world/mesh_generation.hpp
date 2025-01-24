@@ -78,6 +78,7 @@ class ChunkMeshGenerator{
         );
     
     public:
+        ChunkMeshGenerator(){}
         void loadMeshFromQueue(ChunkMeshRegistry&  buffer);
 
         /*

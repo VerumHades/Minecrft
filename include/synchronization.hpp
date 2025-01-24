@@ -23,6 +23,7 @@ class PassTroughBuffer{
         std::vector<T> back;
 
     public:
+        PassTroughBuffer(){}
         void clear(){
             std::lock_guard<std::mutex> pass_lock(pass_mutex);
             std::lock_guard<std::mutex> write_lock(write_mutex);

@@ -39,7 +39,6 @@ class BlockRegistry: public TextureRegistry{
     private:
         std::vector<BlockPrototype> blocks;
         
-    public:
         BlockRegistry(){
             blocks.push_back({
                 0,
@@ -52,6 +51,8 @@ class BlockRegistry: public TextureRegistry{
                 {}
             });
         }
+
+    public:
 
         /*
             Adds a full block with a collider, where texture path is the texture name for all sides
@@ -73,9 +74,9 @@ class BlockRegistry: public TextureRegistry{
 
         size_t registeredBlocksTotal(){return blocks.size();}
         const std::vector<BlockPrototype>& prototypes() {return blocks;};
-};
 
-extern BlockRegistry global_block_registry;
+        static BlockRegistry& get();
+};
 
 struct Block{
     BlockID id = 0;

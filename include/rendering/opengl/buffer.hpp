@@ -359,6 +359,7 @@ class GLVertexFormat{
         bool per_instance = false;
     public:
         GLVertexFormat(std::initializer_list<GLVertexValueType> bindings, bool per_instance = false);
+        GLVertexFormat(){}
         void apply(uint& slot);
         uint getVertexSize(){return totalSize;}
 };
@@ -368,14 +369,18 @@ class GLVertexFormat{
 */
 class GLVertexArray{
     private:
-        uint vao_id;
+        uint vao_id = 0;
 
         struct BoundBuffer{
-            GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer;
-            GLVertexFormat format;
+            GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer = nullptr;
+            GLVertexFormat format{};
+
+            BoundBuffer(){}
+            BoundBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, const GLVertexFormat& format) :
+                format(format), buffer_pointer(buffer_pointer){}
         };
 
-        std::vector<BoundBuffer> buffers;
+        std::vector<BoundBuffer> buffers{};
     public:
         GLVertexArray(){
             glGenVertexArrays(1,  &vao_id);

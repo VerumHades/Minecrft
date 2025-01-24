@@ -86,6 +86,7 @@ class CoherentList{
         std::vector<T> internal_data = {};
 
     public:
+        CoherentList(){}
         const RegionIterator append(const T* data, const size_t size){
             RegionIterator region_iter = 
                 regions.insert(regions.end(), {internal_data.size(), size});

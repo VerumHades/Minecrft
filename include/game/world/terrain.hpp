@@ -18,7 +18,6 @@
 #include <rendering/chunk_buffer.hpp>
 
 #include <game/entity.hpp>
-#include <game/world_saving.hpp>
 #include <game/chunk.hpp>
 #include <game/world/world_generation.hpp>
 #include <vec_hash.hpp>
@@ -37,6 +36,7 @@ class Terrain{
         std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>, IVec3Hash, IVec3Equal> chunks;
         
     public:
+        Terrain(){}
         Block* getBlock(glm::ivec3 position) const;
         bool setBlock(const glm::ivec3& position, const Block& index);
 

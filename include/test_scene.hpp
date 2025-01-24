@@ -10,6 +10,7 @@ class TestScene: public Scene{
         bool stage = 0;
 
     public:
+        TestScene(){}
         void initialize() override;
         void open(GLFWwindow* window) override;
 };

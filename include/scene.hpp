@@ -20,6 +20,7 @@ class Scene{
         int targetFPS = 120;
 
     public:
+        Scene(){}
         void setUILayer(std::string name);
         UILayer& getCurrentUILayer();
         UILayer& getUILayer(std::string name);

@@ -26,8 +26,10 @@ class UIEventHandler{
             if (function) {
                 function(std::forward<Args>(args)...);
             }
-            else if(lua_source != "") ui_core.lua().run(lua_source);
+            else if(lua_source != "") std::cout <<  "Lua unsuported!" <<  std::endl;
         }
+
+        UIEventHandler(){}
 
         UIEventHandler& operator=(const std::string& other) {
             lua_source = other; // Set the function to the new function

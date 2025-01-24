@@ -12,7 +12,6 @@
 #include <fstream>
 #include <sstream>
 #include <unordered_set>
-#include <parsing/shader_parser.hpp>
 
 #define MAX_SHADERS 16
 
@@ -52,9 +51,9 @@ class ShaderUniformLinker{
         void ignore(std::string name){
             ignored_uniforms.emplace(name);
         }
-};
 
-extern ShaderUniformLinker uniformLinker;
+        static ShaderUniformLinker& get();
+};
 
 static int programInUse = -1;
 class ShaderProgram{
@@ -68,7 +67,7 @@ class ShaderProgram{
         }
         ~ShaderProgram(){
             glDeleteProgram(this->program);
-            uniformLinker.removeProgram(this);
+            ShaderUniformLinker::get().removeProgram(this);
         }
         ShaderProgram(std::string vertex_shader_path, std::string fragment_shader_path): ShaderProgram() {
             addShader(vertex_shader_path, GL_VERTEX_SHADER);
@@ -77,10 +76,6 @@ class ShaderProgram{
         }
         ShaderProgram(std::string compute_shader_path): ShaderProgram() {
             addShader(compute_shader_path, GL_COMPUTE_SHADER);
-            compile();
-        }
-        ShaderProgram(ShaderProgramSource shader_source): ShaderProgram() {
-            for(auto& source: shader_source.getSources()) addShaderSource(source.source, source.shader_type);
             compile();
         }
 
@@ -93,7 +88,7 @@ class ShaderProgram{
                 std::cerr << "No sample under name '" << name << "' found." << std::endl;
                 return;
             }
-            uniformLinker.ignore(name);
+            ShaderUniformLinker::get().ignore(name);
             glUniform1i(location,slot);
         }
         void addShader(std::string filename, int type);
@@ -121,10 +116,10 @@ class Uniform: public UniformBase{
     public:
         Uniform(const std::string& uniformName){
             this->name = uniformName;
-            uniformLinker.addUniform(reinterpret_cast<UniformBase*>(this));
+            ShaderUniformLinker::get().addUniform(reinterpret_cast<UniformBase*>(this));
         };
         ~Uniform(){
-            uniformLinker.removeUniform(reinterpret_cast<UniformBase*>(this));
+            ShaderUniformLinker::get().removeUniform(reinterpret_cast<UniformBase*>(this));
         }
 
         T& operator=(T newValue) {

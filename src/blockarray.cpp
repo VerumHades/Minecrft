@@ -22,7 +22,7 @@ void SparseBlockArray::setBlock(glm::ivec3 position, const Block& block, bool do
     auto& layer = getLayer(block.id);
     layer.field().set(position.x,position.y,position.z);
 
-    auto* block_definition = global_block_registry.getBlockPrototypeByIndex(block.id);
+    auto* block_definition = BlockRegistry::get().getBlockPrototypeByIndex(block.id);
     if(!block_definition) return;
 
     if(!block_definition->transparent) solid_field.get()->set(position.x,position.y,position.z);

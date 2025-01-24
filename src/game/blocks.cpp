@@ -1,6 +1,12 @@
 #include <game/blocks.hpp>
 
-BlockRegistry global_block_registry{};
+BlockRegistry& BlockRegistry::get(){
+    static std::mutex singleton_mutex;
+    std::lock_guard lock(singleton_mutex);
+    
+    static BlockRegistry registry{};
+    return registry;
+}
 
 /*
     Adds a full block, where texture path is the texture name for all sides

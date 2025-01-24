@@ -37,9 +37,7 @@ class Allocator{
         }
 
     public:
-        Allocator(size_t memsize, std::function<bool(size_t)> requestMemory):  memsize(memsize), requestMemory(requestMemory) {
-            reset(memsize);
-        };
+        Allocator(size_t memsize, std::function<bool(size_t)>&& requestMemory);
         Allocator(){
             memsize = 0;
         }

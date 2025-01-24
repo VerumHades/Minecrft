@@ -34,14 +34,9 @@ std::string ShaderProgram::getSource(const std::string& path){
         std::cerr << "Failed to open shader file: " << path << std::endl;
         return "";
     }
+         
 
-    std::stringstream buffer;
-    buffer << file.rdbuf();             
-
-    std::string source = buffer.str();
-
-    file.close();  // Close the file
-
+    std::string source((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     return source;
 }
 
@@ -72,14 +67,17 @@ void ShaderProgram::compile(){
         glDeleteShader(this->shaders[i]);
     }
 
-    uniformLinker.addProgram(this);
+    ShaderUniformLinker::get().addProgram(this);
 }
 
 void ShaderProgram::updateUniforms(){
-    uniformLinker.updateUniforms(this);
+    ShaderUniformLinker::get().updateUniforms(this);
 }
 
-ShaderUniformLinker uniformLinker = ShaderUniformLinker();
+ShaderUniformLinker& ShaderUniformLinker::get(){
+    static ShaderUniformLinker linker;
+    return linker;
+}
 
 void ShaderUniformLinker::updateUniforms(ShaderProgram* program){
     if(!shaderPrograms.contains(program)) return;

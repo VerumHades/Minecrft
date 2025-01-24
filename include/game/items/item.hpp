@@ -56,6 +56,7 @@ class ItemPrototypeRegistry{
         std::list<ItemPrototype> prototypes = {};
 
     public:
+        ItemPrototypeRegistry(){}
         ItemPrototype* addPrototype(ItemPrototype prototype);
         ItemPrototype* getPrototype(std::string name);
 

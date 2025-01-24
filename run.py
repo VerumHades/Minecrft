@@ -58,6 +58,7 @@ if args.remake:
 os.chdir(root_director)
 
 prefix = "gdb -ex run " if args.debug or args.with_debuger else "" 
+#prefix =  ""
 
 build_exit_code = os.system(f"cmake --build build/{build_type} -j 8")
 if build_exit_code != 0:

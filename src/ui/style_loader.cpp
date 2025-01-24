@@ -307,11 +307,7 @@ void UIStyle::parseQuery(std::string selectors, std::string source){
 }
 
 void UIStyle::loadFromFile(const std::string& path){
-    std::ifstream f(path, std::ios::in | std::ios::binary);
-
-    const auto sz = std::filesystem::file_size(path);
-    std::string source(sz, '\0');
-    f.read(source.data(), sz);   
+    const auto source = ShaderProgram::getSource(path);
     // Regex for individual queries
     std::regex pattern(R"(([^{]+)?\{([\s\S]*?)\})"); 
     

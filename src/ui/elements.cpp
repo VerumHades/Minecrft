@@ -14,7 +14,7 @@ void UIFrame::update(){
     
     if(batch.commands.size() == 0) return;
     //std::cout << "Drawing: "  << std::endl;
-    draw_batch_iterator = ui_core.getBackend().addRenderBatch(batch);
+    draw_batch_iterator = UICore::get().getBackend().addRenderBatch(batch);
     has_draw_batch = true;
 
    // std::cout << "Update element hover: " << this->identifiers.tag << " #" << this->identifiers.id << " ";
@@ -26,7 +26,7 @@ void UIFrame::update(){
 void UIFrame::stopDrawing(){
     if(!has_draw_batch) return;
 
-    ui_core.getBackend().removeBatch(draw_batch_iterator);
+    UICore::get().getBackend().removeBatch(draw_batch_iterator);
     has_draw_batch = false;
 }
 
@@ -50,8 +50,8 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
         case AUTO: return horizontal ? prefferedSize.width : prefferedSize.height;
         case PIXELS: return value.value;   
 
-        case WINDOW_WIDTH : return (ui_core.getScreenWidth()  / 100.0f) * value.value;
-        case WINDOW_HEIGHT: return (ui_core.getScreenHeight() / 100.0f) * value.value;
+        case WINDOW_WIDTH : return (UICore::get().getScreenWidth()  / 100.0f) * value.value;
+        case WINDOW_HEIGHT: return (UICore::get().getScreenHeight() / 100.0f) * value.value;
         
         case OPERATION_PLUS    : return getValueInPixels(value.operands[0], horizontal) + getValueInPixels(value.operands[1], horizontal);
         case OPERATION_MINUS   : return getValueInPixels(value.operands[0], horizontal) - getValueInPixels(value.operands[1], horizontal);
@@ -76,7 +76,7 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
                     t.height - borderSizes.top  - borderSizes.bottom - margin.vertical()
                 ) / 100.0f * value.value;
             }
-            else return (( horizontal ? ui_core.getScreenWidth() : ui_core.getScreenHeight() )  / 100.0f) * value.value;
+            else return (( horizontal ? UICore::get().getScreenWidth() : UICore::get().getScreenHeight() )  / 100.0f) * value.value;
         default:
             std::cerr << "Invalid TValue?" << std::endl;
             return 0;
@@ -231,7 +231,7 @@ void UILabel::getRenderingInformation(UIRenderBatch& batch) {
 }
 
 void UILabel::calculateElementsTransforms(){
-    UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(text, font_size);
+    UITextDimensions textDimensions = UICore::get().getBackend().getTextDimensions(text, font_size);
 
     prefferedSize = {
         textDimensions.width + textPadding * 2,
@@ -242,7 +242,7 @@ void UILabel::calculateElementsTransforms(){
 }
 
 UITransform UILabel::getTextPosition(){
-    UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(text, font_size);
+    UITextDimensions textDimensions = UICore::get().getBackend().getTextDimensions(text, font_size);
 
     auto textPosition = getAttribute(&Style::textPosition);
 
@@ -284,7 +284,7 @@ UIInput::UIInput(){
 }
 
 void UIInput::getRenderingInformation(UIRenderBatch& batch){
-    UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(text, font_size);
+    UITextDimensions textDimensions = UICore::get().getBackend().getTextDimensions(text, font_size);
 
     auto tpos = getTextPosition();
     auto textColor = getAttribute(&UIFrame::Style::textColor);
@@ -314,11 +314,11 @@ UISlider::UISlider() {
         if(action == GLFW_RELEASE){
             grabbed = false;
         }
-        else if(pointWithinBounds(ui_core.getMousePosition(), t, 5) && action == GLFW_PRESS){
+        else if(pointWithinBounds(UICore::get().getMousePosition(), t, 5) && action == GLFW_PRESS){
             grabbed = true;
         }
         else if(action == GLFW_PRESS){
-            moveTo(ui_core.getMousePosition());
+            moveTo(UICore::get().getMousePosition());
         }
         update();
     };
@@ -370,13 +370,13 @@ void  UISlider::moveTo(glm::vec2 pos){
 
 void UISlider::getRenderingInformation(UIRenderBatch& batch){
     UIFrame::getRenderingInformation(batch);
-    //auto ht = getHandleTransform(ui_core);
+    //auto ht = getHandleTransform(UICore::get());
     //std::cout << ht.x << " " << ht.y << " " << ht.width << " " << ht.height << std::endl;
 
     batch.Rectangle(getHandleTransform(), handleColor);
     
     std::string text = std::to_string(*value);
-    UITextDimensions textDimensions = ui_core.getBackend().getTextDimensions(text, font_size);
+    UITextDimensions textDimensions = UICore::get().getBackend().getTextDimensions(text, font_size);
 
     if(displayValue){
         int tx = transform.x + valueDisplayOffset;
@@ -400,7 +400,7 @@ UIScrollableFrame::UIScrollableFrame(){
         updateChildren();
     };
 
-    /*slider = std::make_shared<UISlider>(ui_core);
+    /*slider = std::make_shared<UISlider>(UICore::get());
     slider->setOrientation(UISlider::VERTICAL);
     slider->setDisplayValue(false);
     slider->setHandleWidth(60);
@@ -431,11 +431,11 @@ void UIFrame::appendChild(std::shared_ptr<UIFrame> child){
     child->zIndex = this->zIndex + 1;
     children.push_back(child);
 
-    ui_core.loader().getCurrentStyle().applyTo(child);
+    UICore::get().loader().getCurrentStyle().applyTo(child);
 
     child->calculateTransforms();
 
-        //ui_core.loader().getCurrentStyle().applyTo(child);
+        //UICore::get().loader().getCurrentStyle().applyTo(child);
 }
 void UIFrame::clearChildren(){
     children.clear();

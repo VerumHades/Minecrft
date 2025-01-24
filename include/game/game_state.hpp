@@ -1,18 +1,20 @@
 #pragma once
 
 #include <game/world/terrain.hpp>
+#include <list>
 
 class GameState{
     private:
         Terrain terrain;
-        std::vector<Entity> entities;
+        std::list<Entity> entities;
 
         WorldGenerator world_generator;
+        WorldStream world_stream;
 
         void drawEntity(Entity& entity);
         
     public:
-        GameState();
+        GameState(const std::string& filename);
         void loadChunk(const glm::ivec3& position);
         void unloadChunk(const glm::ivec3& position);
 
@@ -26,6 +28,6 @@ class GameState{
         
         bool entityCollision(Entity& entity, const glm::vec3& offset = {0,0,0});
 
-        Entity& getPlayer(){return entities[0];}
+        Entity& getPlayer(){return entities.front();}
         Terrain& getTerrain(){return terrain;}
 };

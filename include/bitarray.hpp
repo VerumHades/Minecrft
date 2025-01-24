@@ -116,6 +116,7 @@ class BitFieldCache{
         std::array<TCacheMember, max_cached> cached_fields{};
         size_t next_spot = 0;
     public:
+        BitFieldCache(){}
         TCacheMember* next(size_t id){
             next_spot = (next_spot + 1) % (max_cached - 1);
             auto& member = cached_fields[next_spot];
@@ -157,5 +158,6 @@ class CompressedBitFieldCache{
 
         size_t next_spot = 0;
     public:
+        CompressedBitFieldCache(){}
         CCacheMember* next(std::shared_ptr<CompressedArray> compressed_data);
 };     

@@ -38,6 +38,7 @@ class CommandProcessor{
         CommandArgument processArgument(std::string raw);
 
     public:
+        CommandProcessor(){}
         void addCommand(std::vector<std::string> names, std::unique_ptr<Command> command);
         void processCommand(std::string);
 

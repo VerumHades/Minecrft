@@ -47,7 +47,7 @@ std::string formatSize(size_t bytes) {
 }
 
 
-void ChunkMeshRegistry::initialize(uint renderDistance){
+ChunkMeshRegistry::ChunkMeshRegistry(uint renderDistance){
     actualRegionSizes.push_back(1);
     for(int i = 1;i < maxRegionLevel;i++){
         actualRegionSizes.push_back(pow(i, 2));
@@ -62,12 +62,8 @@ bool ChunkMeshRegistry::addMesh(InstancedMesh* mesh, const glm::ivec3& pos){
     
     MeshRegion* region = createRegion(transform);
    
-    region->loaded_mesh = 
-        std::make_unique<InstancedMeshBuffer::LoadedMesh>(
-            std::move(mesh_buffer.loadMesh(*mesh))
-        );
-
-
+    region->loaded_mesh = mesh_buffer.loadMesh(*mesh);
+    
     return true;
 }
 
@@ -171,5 +167,6 @@ void ChunkMeshRegistry::draw(){
 }
 
 void ChunkMeshRegistry::clear(){
+    mesh_buffer.clearDrawCalls();
     regions.clear();
 }

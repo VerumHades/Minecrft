@@ -1,6 +1,6 @@
 #include <game/game_state.hpp>
 
-GameState::GameState(){
+GameState::GameState(const std::string& filename): world_stream(filename){
     entities.push_back(Entity(glm::vec3(0,60,0), glm::vec3(0.6, 1.8, 0.6)));
 }
 static int rotation = 0;
@@ -77,18 +77,17 @@ void GameState::updateEntity(Entity& entity, float deltatime){
 void GameState::updateEntities(float deltatime){
     int index = 0;
 
-    for(int index = 0;index < entities.size();){
-        Entity& entity = entities[index];
-
-        updateEntity(entity, deltatime);
-        if(entity.shouldGetDestroyed()){
-            entities.erase(entities.begin() + index);
+    std::list<Entity>::iterator i = entities.begin();
+    while (i != entities.end())
+    {
+        updateEntity(*i, deltatime);
+        if(i->shouldGetDestroyed()){
+            i = entities.erase(i);
             continue;
         }
 
-        drawEntity(entity);
-
-        index++;
+        drawEntity(*i);
+        ++i;
     }
 
     const float position_addition = 0.002;
