@@ -2,6 +2,7 @@
 
 void SpriteModel::setupMesh(){
     std::unique_ptr<Mesh> mesh = generateFaces();
+    if(!mesh) return;
 
     float thickness = (scale / 32.0f) * 2.0f;
     float texture_size = scale;
@@ -37,8 +38,8 @@ void SpriteModel::setupMesh(){
     texture = std::make_shared<GLTexture2D>(sprite_path.c_str());
 }
 std::unique_ptr<Mesh> SpriteModel::generateFaces(){
-    int width, height, original_channels;
-    unsigned char* image_data;
+    int width = 0, height = 0, original_channels = 0;
+    unsigned char* image_data = nullptr;
     // Load the image with 4 channels (RGBA)
     image_data = stbi_load(sprite_path.c_str(), &width, &height, &original_channels, 4);
 

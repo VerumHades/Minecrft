@@ -38,7 +38,7 @@ void checkGLError(const char *file, int line);
 template <typename T, int type>
 class GLBuffer{
     private:
-        uint opengl_buffer_id;
+        uint opengl_buffer_id = 0;
         
         size_t buffer_size = 0;
 
@@ -148,6 +148,7 @@ class GLAllocatedBuffer: public GLBuffer<T,type>{
         }
 
     public:
+        GLAllocatedBuffer(){}
         /*
             Creates the actual buffer of some size
         */
@@ -265,10 +266,11 @@ class GLDrawCallBuffer{
         };*/
 
     private:
-        std::vector<DrawCommand> draw_commands;
-        GLBuffer<DrawCommand, GL_DRAW_INDIRECT_BUFFER> buffer;
+        std::vector<DrawCommand> draw_commands{};
+        GLBuffer<DrawCommand, GL_DRAW_INDIRECT_BUFFER> buffer{};
 
     public:
+        GLDrawCallBuffer(){}
         void clear();
         void push(DrawCommand& command);
         void push(DrawCommand* commands, size_t size);
@@ -285,9 +287,10 @@ class GLDrawCallBuffer{
 template <typename T, int type>
 class GLCoherentBuffer: public CoherentList<T> {
     private:
-        GLBuffer<T, type> buffer;
+        GLBuffer<T, type> buffer{};
 
     public:
+        GLCoherentBuffer(){}
         auto& getBuffer() { return buffer; };
         void flush(){
             if(CoherentList<T>::size() > buffer.size()) buffer.initialize(CoherentList<T>::size(), CoherentList<T>::data());
@@ -382,46 +385,16 @@ class GLVertexArray{
 
         std::vector<BoundBuffer> buffers{};
     public:
-        GLVertexArray(){
-            glGenVertexArrays(1,  &vao_id);
-        }
-        ~GLVertexArray(){
-            glDeleteVertexArrays(1,  &vao_id);
-        }
+        GLVertexArray();
+        ~GLVertexArray();
+        size_t attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format);
 
-        size_t attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format){
-            buffers.push_back({buffer_pointer, format});
-
-            update();
-            
-            return format.getVertexSize();
-        }
-
-        void attachBuffer(GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>* buffer){
-            bind();
-            buffer->bind();
-            unbind();
-        }
+        void attachBuffer(GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>* buffer);
 
         /*
             Updates buffers, bindings locations are based on how the buffers were attached sequentialy
         */
-        void update(){
-            bind();
-
-            uint slot = 0;
-
-            for(auto& [buffer_pointer, format]: buffers){
-                buffer_pointer->bind();
-                format.apply(slot);
-            }
-
-            unbind();
-        }
-        void bind() const {
-            glBindVertexArray(vao_id);
-        }
-        void unbind() const {
-            glBindVertexArray(0);
-        }
+        void update();
+        void bind() const;
+        void unbind() const;
 };

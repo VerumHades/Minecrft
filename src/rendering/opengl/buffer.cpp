@@ -59,3 +59,48 @@ void GLDrawCallBuffer::flush(){
 void GLDrawCallBuffer::bind(){
     buffer.bind();
 }
+
+
+GLVertexArray::GLVertexArray(){
+    glGenVertexArrays(1,  &vao_id);
+}
+GLVertexArray::~GLVertexArray(){
+    glDeleteVertexArrays(1,  &vao_id);
+}
+
+size_t GLVertexArray::attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format){
+    buffers.push_back({buffer_pointer, format});
+
+    update();
+    
+    return format.getVertexSize();
+}
+
+void GLVertexArray::attachBuffer(GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>* buffer){
+    bind();
+    buffer->bind();
+    unbind();
+}
+
+/*
+    Updates buffers, bindings locations are based on how the buffers were attached sequentialy
+*/
+void GLVertexArray::update(){
+    bind();
+
+    uint slot = 0;
+
+    for(auto& [buffer_pointer, format]: buffers){
+        buffer_pointer->bind();
+        format.apply(slot);
+    }
+
+    unbind();
+}
+void GLVertexArray::bind() const {
+    glBindVertexArray(vao_id);
+}
+void GLVertexArray::unbind() const {
+    glBindVertexArray(0);
+}
+

@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 #include <general.hpp>
 #include <stb_image.h>
+#include <memory>
 
 #include <rendering/image_processing.hpp>
 

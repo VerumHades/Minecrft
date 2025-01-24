@@ -49,7 +49,7 @@ class ItemTextureAtlas{
 
 class LogicalItemSlot{
     private:
-        std::optional<Item> item_option;
+        std::optional<Item> item_option{};
 
     public:
         LogicalItemSlot(){}
@@ -76,7 +76,7 @@ class ItemSlot: public UIFrame{
         const int slot_padding = 4;
         const int quantity_number_font_size = 12;
 
-        LogicalItemSlot item_slot;
+        LogicalItemSlot item_slot{};
         ItemTextureAtlas& textureAtlas;
 
     public:
@@ -96,11 +96,11 @@ class ItemInventory: public UIFrame{
         const int slot_padding = 4;
         const int quantity_number_font_size = 12;
     private:
-        std::vector<LogicalItemSlot> items;
+        std::vector<LogicalItemSlot> items{};
         ItemTextureAtlas& textureAtlas;
-        int slots_horizontaly;
-        int slots_verticaly;
-        std::shared_ptr<ItemSlot> held_item_ptr;
+        int slots_horizontaly = 0;
+        int slots_verticaly = 0;
+        std::shared_ptr<ItemSlot> held_item_ptr = nullptr;
 
         size_t getIndex(int x, int y){
             size_t index = x + y * slots_horizontaly;

@@ -33,7 +33,7 @@ ItemPrototype::ItemPrototype(std::string name, const BlockRegistry::BlockPrototy
 
 ItemPrototype* ItemPrototypeRegistry::createPrototypeForBlock(const BlockRegistry::BlockPrototype* prototype){
     std::string prototype_name = "block_" + prototype->name;
-    
+
     auto* existing_prototype = getPrototype(prototype_name);
     if(existing_prototype) return existing_prototype;
 

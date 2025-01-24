@@ -1,11 +1,15 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#define _GLIBCXX_DEBUG 1
 #include <iostream>
 #include <cmath>
 
-#include <rendering/instanced_mesh.hpp>
+#include <ui/core.hpp>
+#include <ui/loader.hpp>
+#include <scene.hpp>
+#include <game/main_scene.hpp>
+#include <rendering/allocator.hpp>
+#include <test_scene.hpp>
 
 
 /*void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
@@ -99,6 +103,8 @@ void printOpenGLLimits() {
     std::cout << "GL_MAX_COMPUTE_SHARED_MEMORY_SIZE: " << maxSharedMemorySize << " bytes" << std::endl;
 }
 
+
+SceneManager* s;
 int main() {
     GLFWwindow* window;
 
@@ -153,16 +159,7 @@ int main() {
     */
 
     {
-        //InstancedMesh mesh{};
-        //mesh.addQuadFace({0,0,0}, 10,10, 0, InstancedMesh::BILLBOARD,InstancedMesh::Forward,{0.0f,0.0f,0.0f,0.0f});
-        
-        //GLDrawCallBuffer d_buffer{};
-
-        
         InstancedMeshBuffer buffer{};
-        //std::array<GLVertexArray,4> vao{};
-
-        //buffer.loadMesh(mesh);
         //Terrain terrain{};
         //WorldGenerator generator{};
         //ChunkMeshGenerator mesh_generator{};
@@ -172,6 +169,141 @@ int main() {
         
         //generator.generateTerrainChunkAccelerated(terrain.createEmptyChunk({0,0,0}),{0,0,0});
         //mesh_generator.syncGenerateSyncUploadMesh(terrain.getChunk({0,0,0}), registry);
+    }
+
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
+        s->resize(window, width, height); // Call resize on the instance
+    });
+    glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y) {
+        s->mouseMove(window, static_cast<int>(x), static_cast<int>(y));
+    });
+    glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
+        s->mouseEvent(window, button, action, mods);
+    });
+    glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
+        s->scrollEvent(window, xoffset, yoffset);
+    });
+    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+        s->keyEvent(window, key, scancode, action, mods);
+    });
+    glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int codepoint) {
+        s->keyTypedEvent(window, codepoint);
+    });
+
+    glLineWidth(2.0f);
+    
+    {
+        SceneManager sceneManager{window};
+
+        s = &sceneManager;
+
+        /*UICore::get().lua().addFunction("setScene", [](std::string name){
+            s->setScene(name);
+        });
+
+        UICore::get().lua().addFunction("setLayer", [](std::string name){
+            s->getCurrentScene()->setUILayer(name);
+        });*/
+
+        Scene* menuScene = sceneManager.createScene<Scene>("menu");
+        menuScene->setUILayer("default");
+        UICore::get().loadWindowFromXML(*menuScene->getWindow(), "resources/templates/menu.xml");
+        
+        MainScene* mainScene = sceneManager.createScene<MainScene>("game");
+
+        auto startButton = getElementById<UILabel>("new_world");
+        auto scrollable = getElementById<UIScrollableFrame>("world_selection");
+        
+        startButton->onClicked = [menuScene, mainScene, scrollable] {
+            menuScene->setUILayer("world_menu");
+            scrollable->clearChildren();
+
+            for (const auto& dirEntry : std::filesystem::directory_iterator("saves")){
+                if(!dirEntry.is_regular_file()) continue;
+
+                std::string filepath = dirEntry.path().string();
+                WorldStream stream(filepath);
+                
+                auto frame = std::make_shared<UIFrame>();
+                frame->setIdentifiers({"world_option_frame"});
+                
+                auto temp = std::make_shared<UILabel>();
+                temp->setText(stream.getName());
+                temp->setSize({PERCENT,100}, 40_px);
+                temp->setHoverable(false);
+                temp->setIdentifiers({"world_option_label"});
+
+                auto chunkCountLabel = std::make_shared<UILabel>();
+                chunkCountLabel->setText("Number of saved chunks: " + std::to_string(stream.getChunkCount()));
+                chunkCountLabel->setSize({PERCENT,100},40_px);
+                chunkCountLabel->setPosition(0_px,45_px);
+                chunkCountLabel->setHoverable(false);
+                chunkCountLabel->setIdentifiers({"world_option_chunk_count_label"});
+
+                frame->onClicked = [menuScene, mainScene, filepath] {
+                    mainScene->setWorldPath(filepath);
+                    s->setScene("game");
+                };
+
+                frame->appendChild(temp);
+                frame->appendChild(chunkCountLabel);
+                scrollable->appendChild(frame);
+            }
+            
+            scrollable->calculateTransforms();
+            scrollable->update();
+            scrollable->updateChildren();
+        };
+
+        /*auto newWorldNameInput = getElementById<UIInput>("new_world_name");
+        
+        auto newWorldFunc = [newWorldNameInput, startButton]{
+            auto name = newWorldNameInput->getText();
+            newWorldNameInput->setText("");
+            if(name == "") return;
+
+            WorldStream stream("saves/" + name + ".bin");
+            stream.setName(name);
+
+            startButton->onClicked.trigger();
+        };
+
+        newWorldNameInput->onSubmit = [newWorldFunc](std::string){newWorldFunc();};
+
+        auto newWorldButton = getElementById<UIFrame>("create_new_world");
+        newWorldButton->onClicked = newWorldFunc;*/
+
+        //sceneManager.createScene<TestScene>("test_scene");
+        sceneManager.setScene("game");
+        //menuScene->setUILayer("default");
+
+        double last = glfwGetTime();
+        double current = glfwGetTime();
+        float deltatime;
+
+        sceneManager.resize(window, 1920, 1080);
+
+        while (!glfwWindowShouldClose(window)) {
+            current = glfwGetTime();
+            deltatime = (float)(current - last);
+
+            if(sceneManager.isFPSLocked() && deltatime < sceneManager.getTickTime()){
+                std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<size_t>((sceneManager.getTickTime() - deltatime) * 1000)));
+                continue;
+            }
+            last = current;
+
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            sceneManager.render();
+
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+        }
+
+        sceneManager.setScene("menu"); // Wait for game threads to stop if running
+        UICore::get().cleanup();
     }
 
     glfwDestroyWindow(window);

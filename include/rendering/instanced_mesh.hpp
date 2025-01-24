@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <coherency.hpp>
 #include <rendering/opengl/buffer.hpp>
+#include <memory>
 
 class InstancedMesh{
     public:
@@ -52,7 +53,7 @@ class InstancedMeshBuffer{
                 void addDrawCall();
                 void render();
                 void update(InstancedMesh& mesh);
-                void destroy();
+            void destroy();
                 bool isValid(){return valid;}
         };
         

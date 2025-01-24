@@ -640,8 +640,9 @@ void MainScene::render(){
         auto position = indexer.next() + lastCamWorldPosition;
         Chunk* chunk = game_state->getTerrain().getChunk(position);
 
-        //if(!chunk) std::cerr << "Chunk not generated when generating meshes?" << std::endl;
-        //else if(!chunkMeshRegistry.isChunkLoaded(position)) chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry); 
+        if(!chunk) std::cerr << "Chunk not generated when generating meshes?" << std::endl;
+        else if(!chunkMeshRegistry.isChunkLoaded(position)) chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry); 
+        
     }
 
     processMouseMovement();
@@ -760,6 +761,7 @@ void MainScene::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
 #undef regenMesh
 
 void MainScene::enqueueChunkGeneration(glm::ivec3 position){
+    if(game_state->getTerrain().getChunk(position)) return;
     chunk_generation_queue.push(position); 
 }
 
@@ -844,7 +846,7 @@ void MainScene::physicsUpdate(){
             auto& in_hand_slot = hotbar->getSelectedSlot();
             if(in_hand_slot.hasItem()){
                 auto* prototype = in_hand_slot.getItem()->getPrototype();
-                if(prototype){
+                if(prototype && prototype->getModel()){
                     glm::vec3 item_offset = camera.getDirection() * 0.5f - camera.getLeft() + camera.getRelativeUp() * 0.4f;
                     prototype->getModel()->requestDraw(camera.getPosition() + item_offset, {1,1,1}, {0,-camera.getYaw(),camera.getPitch()}, {-0.5,-0.5,0}, {Model::Y,Model::Z,Model::X});
                 }
