@@ -35,7 +35,7 @@ class ChunkMeshGenerator{
         };
 
     private:
-        std::vector<Face> greedyMeshPlane(BitPlane<64> rows, int size = 64);
+        std::vector<Face>& greedyMeshPlane(BitPlane<64> rows, int size = 64);
         std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group);
 
         std::mutex meshLoadingMutex;
@@ -53,7 +53,7 @@ class ChunkMeshGenerator{
         /*
             Creates separate planes from one plane with occlusion values
         */
-        std::vector<OccludedPlane> calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, OcclusionPlane& occlusion_plane);
+        std::vector<OccludedPlane>& calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, OcclusionPlane& occlusion_plane);
 
         /*
             Returns two plains separated by the occlusion at the offset and information whether they are empty

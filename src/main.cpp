@@ -11,7 +11,8 @@
 #include <rendering/allocator.hpp>
 #include <test_scene.hpp>
 
-
+#define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
 /*void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
         if(menuOpen){
@@ -106,6 +107,8 @@ void printOpenGLLimits() {
 
 SceneManager* s;
 int main() {
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
     GLFWwindow* window;
 
     /* Initialize the library */
@@ -274,7 +277,7 @@ int main() {
         newWorldButton->onClicked = newWorldFunc;*/
 
         //sceneManager.createScene<TestScene>("test_scene");
-        sceneManager.setScene("menu");
+        sceneManager.setScene("game");
         //menuScene->setUILayer("default");
 
         double last = glfwGetTime();

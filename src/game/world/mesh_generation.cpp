@@ -40,8 +40,9 @@ void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegis
 /*
     Generate greedy meshed faces from a plane of bits
 */
-std::vector<ChunkMeshGenerator::Face> ChunkMeshGenerator::greedyMeshPlane(BitPlane<64> rows, int size){
-    std::vector<Face> out{};
+std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPlane<64> rows, int size){
+    static std::vector<Face> out;
+    out.resize(0);
 
     /*
         Moves bits to from the right to the left
@@ -206,9 +207,10 @@ const static std::array<OcclusionOffset, 8> occlusion_offsets = {
     OcclusionOffset{{-1,-1}, {1,0,0,0}}
 };
 
-std::vector<ChunkMeshGenerator::OccludedPlane> ChunkMeshGenerator::calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, OcclusionPlane& occlusion_plane){
-    std::vector<OccludedPlane> planes{};
-    planes.reserve(8);
+std::vector<ChunkMeshGenerator::OccludedPlane>& ChunkMeshGenerator::calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, OcclusionPlane& occlusion_plane){
+    static std::vector<OccludedPlane> planes;
+    planes.resize(0);
+
     planes.push_back({{0,0,0,0}, source_plane});
     
     for(auto& [offset, affects]: occlusion_offsets){
@@ -250,6 +252,7 @@ static inline void processFaces(
 
     bool texture_index = direction == InstancedMesh::Backward;
 
+    mesh->preallocate(faces.size(), face_type);
     for(auto& face: faces){
         int faceWidth  = face.width;
         int faceHeight = face.height;
@@ -291,7 +294,7 @@ void ChunkMeshGenerator::proccessOccludedFaces(
     glm::vec3 world_position,
     int layer
 ){
-    auto processed_planes = calculatePlaneAmbientOcclusion(source_plane, occlusion_plane);
+    auto& processed_planes = calculatePlaneAmbientOcclusion(source_plane, occlusion_plane);
 
     for(auto& plane: processed_planes){
         processFaces(greedyMeshPlane(plane.plane), face_type, direction, type, mesh, world_position, layer, plane.occlusion);
