@@ -15,6 +15,7 @@
 #include <ui/loader.hpp>
 #include <ui/layouts.hpp>
 #include <ui/backend.hpp>
+#include <sol/sol.hpp>
 
 class UICore;
 class UIFrame;
@@ -91,7 +92,7 @@ class UICore{
         UILoader loader_;
         UIBackend* backend = nullptr;
 
-        //LuaEngine lua_engine;
+        sol::state _lua;
         UICore();
 
     public:
@@ -119,7 +120,7 @@ class UICore{
         void loadWindowFromXML(UIWindow& window, std::string load_path);
 
         UILoader& loader() {return loader_;}
-        //LuaEngine& lua(){return lua_engine;}
+        sol::state& lua(){return _lua;}
         UIBackend& getBackend();
 
         std::shared_ptr<UIFrame> getElementUnder(int x, int y, bool onlyScrollable = false);   

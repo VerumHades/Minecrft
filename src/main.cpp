@@ -197,13 +197,13 @@ int main() {
 
         s = &sceneManager;
 
-        /*UICore::get().lua().addFunction("setScene", [](std::string name){
+        UICore::get().lua().set_function("setScene", [](std::string name){
             s->setScene(name);
         });
 
-        UICore::get().lua().addFunction("setLayer", [](std::string name){
+        UICore::get().lua().set_function("setLayer", [](std::string name){
             s->getCurrentScene()->setUILayer(name);
-        });*/
+        });
 
         Scene* menuScene = sceneManager.createScene<Scene>("menu");
         menuScene->setUILayer("default");
@@ -274,7 +274,7 @@ int main() {
         newWorldButton->onClicked = newWorldFunc;*/
 
         //sceneManager.createScene<TestScene>("test_scene");
-        sceneManager.setScene("game");
+        sceneManager.setScene("menu");
         //menuScene->setUILayer("default");
 
         double last = glfwGetTime();
