@@ -15,6 +15,9 @@ class GameState{
         
     public:
         GameState(const std::string& filename);
+
+        void unload();
+
         void loadChunk(const glm::ivec3& position);
         void unloadChunk(const glm::ivec3& position);
 

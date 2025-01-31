@@ -214,25 +214,6 @@ void GLTextureArray::putImage(int x, int y, int layer, Image& image){
     );
 }
 
-static std::unordered_map<std::string, std::shared_ptr<GLTextureArray>> loaded_images{};
-
-std::shared_ptr<GLTextureArray> GLTextureArray::LoadImage(const std::string& path){
-    if(loaded_images.contains(path))
-        return loaded_images[path];
-
-    Image image{path};
-    if(!image.isLoaded()) return nullptr;
-    
-    auto texture_array = std::make_shared<GLTextureArray>();
-
-    texture_array->setup(image.getWidth(), image.getHeight(),1);
-    texture_array->putImage(0,0,0,image);
-
-    loaded_images[path] = texture_array;
-
-    return texture_array;
-}
-
 float skyboxVertices[] = {
     // positions          
     -1.0f,  1.0f, -1.0f,

@@ -135,6 +135,8 @@ class UILoader{
                 return nullptr;
             }
         }
+
+        void cleanup();
 };
 
 TValue parseTValue(std::string source);

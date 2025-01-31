@@ -72,8 +72,6 @@ class GLTextureArray: public BindableTexture{
         void putImage(int x, int y, int layer, Image& image);
 
         void loadFromFiles(std::vector<std::string>& filenames, int layerWidth, int layerHeight);
-
-        static std::shared_ptr<GLTextureArray> LoadImage(const std::string& path);
 };
 
 class GLSkybox: public BindableTexture{

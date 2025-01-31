@@ -55,8 +55,6 @@ FetchContent_MakeAvailable(glm)
 FetchContent_Declare(
   lua
   URL https://www.lua.org/ftp/lua-5.4.7.tar.gz
-  URL_HASH SHA256=9fbf5e28ef86c69858f6d3d34eccc32e911c1a28b4120ff3e84aaa70cfbf1e30
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(lua)
 
@@ -102,9 +100,6 @@ file(GLOB_RECURSE SOURCES
   ${CMAKE_SOURCE_DIR}/external/src/*.cpp
   ${CMAKE_SOURCE_DIR}/external/src/*.c
 )
-
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g")
-add_compile_options(-Wall -Wextra)
 
 # Add executable target
 add_executable(main ${SOURCES})

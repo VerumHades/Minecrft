@@ -25,6 +25,8 @@
 
 #include <game/world/world_stream.hpp>
 
+class GameState;
+
 struct RaycastResult{
     glm::ivec3 position; // Position of the hit block
     glm::vec3 lastPosition; // Position before the hit
@@ -33,7 +35,7 @@ struct RaycastResult{
 class Terrain{
     private:
         std::mutex mutex;
-        std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>, IVec3Hash, IVec3Equal> chunks;
+        std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>, IVec3Hash, IVec3Equal> chunks{};
         
     public:
         Terrain(){}
@@ -54,5 +56,7 @@ class Terrain{
         RaycastResult raycast(const glm::vec3& from, const glm::vec3& direction, float maxDistance);
 
         int chunksTotal() const {return chunks.size();}
+
+        friend class GameState;
 };
 #endif

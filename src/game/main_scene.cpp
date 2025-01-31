@@ -603,11 +603,15 @@ void MainScene::close(GLFWwindow* window){
     threadsStopped = 0;
     running = false;
 
-    chunkMeshGenerator.setWorld(nullptr);
-
     while(threadsStopped < 1){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     } 
+
+    chunkMeshRegistry.clear();
+    game_state->unload();
+    game_state = nullptr;
+
+    chunkMeshGenerator.setWorld(nullptr);
 }
 
 void MainScene::render(){

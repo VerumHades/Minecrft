@@ -38,6 +38,7 @@ void UICore::cleanup(){
     underScrollHover = nullptr;
 
     windows.clear();
+    loaded_images.clear();
     loader_ = {};
 }
 
@@ -246,4 +247,21 @@ std::shared_ptr<UIFrame> UICore::getElementUnder(int x, int y, bool onlyScrollab
     }
 
     return current;
+}
+
+std::shared_ptr<GLTextureArray> UICore::LoadImage(const std::string& path){
+    if(UICore::get().loaded_images.contains(path))
+        return UICore::get().loaded_images[path];
+
+    Image image{path};
+    if(!image.isLoaded()) return nullptr;
+    
+    auto texture_array = std::make_shared<GLTextureArray>();
+
+    texture_array->setup(image.getWidth(), image.getHeight(),1);
+    texture_array->putImage(0,0,0,image);
+
+    UICore::get().loaded_images[path] = texture_array;
+
+    return texture_array;
 }

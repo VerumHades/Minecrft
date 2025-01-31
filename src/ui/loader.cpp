@@ -194,3 +194,7 @@ bool UILoader::loadWindowFromXML(UIWindow& window, const std::string& path){
 
     return true;
 }
+
+void UILoader::cleanup(){
+    elements_with_ids.clear();
+}

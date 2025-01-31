@@ -95,6 +95,8 @@ class UICore{
         sol::state _lua;
         UICore();
 
+        std::unordered_map<std::string, std::shared_ptr<GLTextureArray>> loaded_images{};
+
     public:
         void cleanup();
 
@@ -131,7 +133,9 @@ class UICore{
         int getScreenHeight() {return screenHeight;}
 
         static UICore& get();
+        static std::shared_ptr<GLTextureArray> LoadImage(const std::string& path);
 };
+
 
 template<typename T>
 static inline auto getElementById(const std::string& id){

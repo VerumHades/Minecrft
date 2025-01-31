@@ -442,7 +442,7 @@ void UIFrame::clearChildren(){
 }
 
 UIImage::UIImage(std::string path){
-    dedicated_texture_array = GLTextureArray::LoadImage(path);
+    dedicated_texture_array = UICore::LoadImage(path);
     if(!dedicated_texture_array) std::cerr << "Failed to load image '" << path << "'" << std::endl;
 }
 

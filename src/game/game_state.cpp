@@ -18,7 +18,13 @@ void GameState::loadChunk(const glm::ivec3& position){
     if(chunk) return;
 
     chunk = terrain.createEmptyChunk(position);
-    world_generator.generateTerrainChunkAccelerated(chunk, position);
+
+    if(world_stream.hasChunkAt(position)){
+        world_stream.load(chunk);
+        return;
+    }
+
+    world_generator.generateTerrainChunk(chunk, position);
 }
 
 bool GameState::entityCollision(Entity& checked_entity, const glm::vec3& offset){
@@ -47,7 +53,15 @@ bool GameState::entityCollision(Entity& checked_entity, const glm::vec3& offset)
 }
 
 void GameState::unloadChunk(const glm::ivec3& position){
+    auto* chunk = terrain.getChunk(position);
+    if(!chunk) return;
+
+    world_stream.save(*chunk);
     terrain.removeChunk(position);
+}
+
+void GameState::unload(){
+    //for(auto& [position, chunk]: terrain.chunks) unloadChunk(position);
 }
 
 void GameState::updateEntity(Entity& entity, float deltatime){
