@@ -157,7 +157,7 @@ UIStyle::UIStyle(){
                 value = value.substr(1,value.size() - 2); // Remove string ""
                 auto image = GLTextureArray::LoadImage(value);
                 if(!image){
-                    std::cerr << "Failed to load image: " << value << std::endl;
+                    std::cerr << "Failed to load image (background-image): " << value << std::endl;
                     return;
                 }
 

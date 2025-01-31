@@ -104,6 +104,6 @@ struct UISideSizesT{
         TValue right,
         TValue bottom,
         TValue left
-    ): top(top), left(left), right(right), bottom(bottom){}
-    UISideSizesT(TValue size): top(size), left(size), right(size), bottom(size){}
+    ): top(top), right(right), bottom(bottom), left(left) {}
+    UISideSizesT(TValue size): top(size), right(size), bottom(size), left(size) {}
 };

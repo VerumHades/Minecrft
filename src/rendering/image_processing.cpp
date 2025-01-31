@@ -10,7 +10,7 @@ Image::Image(const std::string& path){
     unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels_originaly, 4);
    
     if (!data) {
-        std::cerr << "Failed to load image: " << path << std::endl;
+        std::cerr << "Failed to load image (Image): '" << path << "' stbi:" << stbi_failure_reason() << std::endl;
         loaded = false;
         return;
     }
@@ -39,7 +39,7 @@ Image::Image(int width, int height, int nrChannels): width(width), height(height
     this->data = std::vector<unsigned char>(width * height * nrChannels, 255);
 }
 
-void Image::save(const std::string& path){
+void Image::save(const std::string& path) const{
     stbi_write_png(path.c_str(), width, height, nrChannels, data.data(), width * nrChannels);
 }
 
@@ -92,11 +92,11 @@ Image Image::perfectPixelReduce(Image& input, int width, int height){
 Image Image::pixelPerfectUpscale(Image& input, int width, int height){
     if(input.width > width || input.height > height) {
         std::cerr << "Cannot upsale to a smaller size." << std::endl;
-        return {};
+        return input;
     }
     if(!input.isLoaded()){
         std::cerr << "Cannot upsale to image that isnt loaded." << std::endl;
-        return {};
+        return input;
     }
     Image output{width, height, input.nrChannels};
 

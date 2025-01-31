@@ -30,7 +30,7 @@ class BitField3D{
         std::array<uint64_t, 64 * 64> _internal_data = {0};
 
         static bool inBounds(uint x, uint y, uint z = 0) {
-            return x >= 0 && y >= 0 && z >= 0 && x < 64 && y < 64 && z < 64;
+            return x < 64 && y < 64 && z < 64;
         }
         static uint calculateIndex(uint x, uint y) {
             return x + y * 64;

@@ -64,15 +64,15 @@ class MainScene: public Scene{
         ShaderProgram gBufferProgram = ShaderProgram("resources/shaders/graphical/deffered_shading/gbuffer.vs","resources/shaders/graphical/deffered_shading/gbuffer.fs");
         ShaderProgram blur_program = ShaderProgram("resources/shaders/graphical/quad.vs","resources/shaders/graphical/blur.fs");
         
-        std::unique_ptr<ThreadPool> threadPool;
+        //std::unique_ptr<ThreadPool> threadPool;
 
-        GLSkybox skybox;
+        GLSkybox skybox{};
         std::unique_ptr<GameState> game_state;
 
-        WireframeCubeRenderer wireframeRenderer;
+        WireframeCubeRenderer wireframeRenderer{};
         
         ChunkMeshRegistry chunkMeshRegistry{renderDistance};
-        ChunkMeshGenerator chunkMeshGenerator;
+        ChunkMeshGenerator chunkMeshGenerator{};
         std::queue<glm::ivec3> chunk_generation_queue = {};
 
         std::unique_ptr<GLTextureArray> block_texture_array = nullptr;
@@ -81,8 +81,8 @@ class MainScene: public Scene{
         std::shared_ptr<UILabel> structure_capture_start_label;
         std::shared_ptr<UILabel> structure_capture_end_label;
 
-        ItemTextureAtlas itemTextureAtlas;
-        ItemPrototypeRegistry itemPrototypeRegistry;
+        ItemTextureAtlas itemTextureAtlas{};
+        ItemPrototypeRegistry itemPrototypeRegistry{};
         std::shared_ptr<ItemSlot> held_item_slot;
         std::shared_ptr<ItemInventory> inventory;
         std::shared_ptr<UIHotbar> hotbar;

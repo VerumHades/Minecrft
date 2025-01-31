@@ -7,6 +7,7 @@
 #include <game/items/item.hpp>
 #include <vector>
 
+#include <vec_hash.hpp>
 #include <rendering/opengl/texture.hpp>
 #include <rendering/image_processing.hpp>
 
@@ -16,19 +17,19 @@ class ItemTextureAtlas{
         const size_t atlas_size = 1024;
         const size_t layer_count = 1;
 
-        std::shared_ptr<GLTextureArray> texture_array;
-        size_t textures_stored_total;
+        std::shared_ptr<GLTextureArray> texture_array{};
+        size_t textures_stored_total = 0;
         
         struct StoredTexture{
-            UIRegion uvs;
-            int index;
+            UIRegion uvs = {{0,0},{1,1}};
+            int index = 0;
         };
 
         struct TextureSet{
-            std::array<StoredTexture,3> textures;
+            std::array<StoredTexture,3> textures{};
         };
 
-        std::unordered_map<ItemPrototype*, TextureSet> stored_textures;
+        std::unordered_map<ItemPrototype*, TextureSet> stored_textures{};
 
         StoredTexture storeImage(const Image& image);
 
@@ -95,31 +96,30 @@ class ItemInventory: public UIFrame{
         const int slot_size = 64;
         const int slot_padding = 4;
         const int quantity_number_font_size = 12;
+        
     private:
-        std::vector<LogicalItemSlot> items{};
+        std::unordered_map<glm::ivec3, LogicalItemSlot, IVec3Hash, IVec3Equal> items{};
         ItemTextureAtlas& textureAtlas;
         int slots_horizontaly = 0;
         int slots_verticaly = 0;
         std::shared_ptr<ItemSlot> held_item_ptr = nullptr;
-
-        size_t getIndex(int x, int y){
-            size_t index = x + y * slots_horizontaly;
-            if(index >= items.size()) return 0;
-            return index;
+    protected:
+        LogicalItemSlot& getItemSlot(int x, int y){
+            return items[{x,y,0}];
         }
-
     public:
         ItemInventory(ItemTextureAtlas& textureAtlas, int slots_horizontaly, int slots_verticaly, std::shared_ptr<ItemSlot> held_item_ptr);
 
-        void setItem(int x, int y, Item item) {
-            items[getIndex(x,y)].addItem(item);
+        bool setItem(int x, int y, Item item) {
+            auto position = glm::ivec3{x,y,0};
+
+            if(!items.contains(position))
+                items[position] = {};
+
+            return items.at(position).addItem(item);
         }
         void removeItem(int x, int y){
-            items[getIndex(x,y)].clear();
-        }
-
-        LogicalItemSlot& getItemSlot(int x, int y){
-            return items[getIndex(x,y)];
+            items[{x,y,0}].clear();
         }
 
         bool addItem(Item item);

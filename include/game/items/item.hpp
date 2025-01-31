@@ -16,7 +16,7 @@ class Item;
 
 class ItemPrototype{
     private:
-        std::string name;
+        std::string name = "undefined";
 
         enum IconDisplayType{
             SIMPLE,
@@ -39,11 +39,7 @@ class ItemPrototype{
         ItemPrototype(std::string name, const BlockRegistry::BlockPrototype* block_prototype);
 
     public:
-        ItemPrototype(std::string name, std::string texture_path): name(name){
-            display_type = SIMPLE;
-            texture_paths[0] = texture_path;
-            model = std::make_shared<SpriteModel>(texture_path);
-        }
+        ItemPrototype(std::string name, std::string texture_path);
 
         bool isBlock(){return is_block;}
         BlockID getBlockID(){return block_id;}
@@ -93,22 +89,5 @@ class DroppedItem: public Entity{
         };
 
     public:
-        DroppedItem(Item item, glm::vec3 position): Entity(position, {0.3,0.3,0.3}) {
-            if(!item.getPrototype()){
-                std::cerr << "Dropped item without prototype!" << std::endl;
-                return;
-            }
-            VALID_ENTITY_DATA(Data);
-
-            solid = false;
-
-            entity_typename = "dropped_item";
-            reinterpret_cast<Data*>(entity_data)->item = item;
-
-            onCollision = [](Entity* self, Entity* entity) {
-                self->destroy = true;
-            };
-
-            model = item.getPrototype()->getModel();
-        }
+        DroppedItem(Item item, glm::vec3 position);
 };

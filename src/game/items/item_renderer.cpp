@@ -11,18 +11,20 @@ ItemTextureAtlas::StoredTexture ItemTextureAtlas::storeImage(const Image& image)
 
     int x = (textures_stored_total % textures_per_row) * single_texture_size;
     int y = (textures_stored_total / textures_per_row) * single_texture_size;
+
     // Upload the image data to the specified layer
     glTexSubImage3D(
         GL_TEXTURE_2D_ARRAY, // Target
         0,                  // Mipmap level
         x, y, layerIndex,   // x, y, and z (layer) offsets
-        width, height, 1,   // Width, height, depth (only one layer here)
+        single_texture_size, single_texture_size, 1,   // Width, height, depth (only one layer here)
         GL_RGBA,            // Format of the pixel data
         GL_UNSIGNED_BYTE,   // Data type of the pixel data
         image_data          // Pointer to the image data
     );
 
     textures_stored_total++;
+    //image.save(std::to_string(x) + "_" + std::to_string(y) + "saved_temp.png");
 
     return {
         {
@@ -36,13 +38,16 @@ ItemTextureAtlas::StoredTexture ItemTextureAtlas::storeImage(const Image& image)
 ItemTextureAtlas::TextureSet* ItemTextureAtlas::getPrototypeTextureSet(ItemPrototype* prototype){
     if(!prototype) return nullptr;
 
+
     if(!stored_textures.contains(prototype)){
         this->texture_array->bind(0);
 
         TextureSet set = {};
 
         for(int i = 0;i < (prototype->display_type == ItemPrototype::SIMPLE ? 1 : 3);i++){
-            set.textures[i] = storeImage(Image::LoadWithSize(prototype->texture_paths[i], single_texture_size, single_texture_size));
+            auto image = Image::LoadWithSize(prototype->texture_paths[i], single_texture_size, single_texture_size);
+           
+            set.textures[i] = storeImage(image);
         }
         
         stored_textures[prototype] = set;
@@ -106,6 +111,9 @@ void LogicalItemSlot::clear(){
 }
 
 void ItemTextureAtlas::RenderItemIntoSlot(UIRenderBatch& batch, ItemPrototype* prototype, UITransform transform){
+
+    std::cout << prototype << std::endl;
+    
     auto* texture_info = getPrototypeTextureSet(prototype);
     if(!texture_info) return;
     
@@ -213,7 +221,7 @@ ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, int slots_horizonta
 
         if(slot_x < 0 || slot_x >= this->slots_horizontaly || slot_y < 0 || slot_y >= this->slots_verticaly) return;
 
-        auto& item_slot = items[getIndex(slot_x,slot_y)];
+        auto& item_slot = items[{slot_x,slot_y,0}];
         auto& hand_slot = this->held_item_ptr->getSlot();
 
         if(button == GLFW_MOUSE_BUTTON_LEFT){
@@ -242,10 +250,16 @@ ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, int slots_horizonta
 bool ItemInventory::addItem(Item item){
     auto* prototype = item.getPrototype();
 
+    std::cout << "Adding item " << prototype << std::endl;
+
     LogicalItemSlot* first_empty_slot = nullptr;
     for(int x = 0;x < slots_horizontaly;x++){
         for(int y = 0;y < slots_verticaly;y++){
-            auto& item_slot = items[getIndex(x,y)];
+            auto position = glm::ivec3{x,y,0};
+            if(!items.contains(position)){
+                return setItem(x,y, item);
+            }
+            auto& item_slot = items.at(position);
 
             if(!item_slot.hasItem()){
                 if(first_empty_slot == nullptr) first_empty_slot = &item_slot;
@@ -295,37 +309,33 @@ void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
         );
     }
 
-    for(int x = 0;x < slots_horizontaly;x++){
-        for(int y = 0;y < slots_verticaly;y++){
-            auto& item_slot = items[getIndex(x,y)];
-
-            if(!item_slot.hasItem()) continue;
-            auto& item = item_slot.getItem().value();
-            auto* prototype = item.getPrototype();
-            if(!prototype) continue;
+    for(auto& [position,item_slot]: items){
+        if(!item_slot.hasItem()) continue;
+        auto& item = item_slot.getItem().value();
+        auto* prototype = item.getPrototype();
+        if(!prototype) continue;
 
 
-            int slot_x = transform.x + x * slot_size + slot_padding;
-            int slot_y = transform.y + y * slot_size + slot_padding;
-            int slot_width  = slot_size - slot_padding * 2;
-            int slot_height = slot_width;
+        int slot_x = transform.x + position.x * slot_size + slot_padding;
+        int slot_y = transform.y + position.y * slot_size + slot_padding;
+        int slot_width  = slot_size - slot_padding * 2;
+        int slot_height = slot_width;
 
-            textureAtlas.RenderItemIntoSlot(batch,prototype,{
-                slot_x,
-                slot_y,
-                slot_width,
-                slot_height,
-            });
+        textureAtlas.RenderItemIntoSlot(batch,prototype,{
+            slot_x,
+            slot_y,
+            slot_width,
+            slot_height,
+        });
 
-            std::string quantity_number = std::to_string(item.getQuantity());
-            UITextDimensions textDimensions = UICore::get().getBackend().getTextDimensions(quantity_number, quantity_number_font_size);
-            batch.Text( 
-                quantity_number, 
-                slot_x + slot_width  - textDimensions.width,
-                slot_y + slot_height - textDimensions.height,
-                quantity_number_font_size,
-                getAttribute(&UIFrame::Style::textColor)
-            );
-        }
+        std::string quantity_number = std::to_string(item.getQuantity());
+        UITextDimensions textDimensions = UICore::get().getBackend().getTextDimensions(quantity_number, quantity_number_font_size);
+        batch.Text( 
+            quantity_number, 
+            slot_x + slot_width  - textDimensions.width,
+            slot_y + slot_height - textDimensions.height,
+            quantity_number_font_size,
+            getAttribute(&UIFrame::Style::textColor)
+        );
     }
 }

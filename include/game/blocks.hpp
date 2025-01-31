@@ -37,7 +37,7 @@ class BlockRegistry: public TextureRegistry{
         };
 
     private:
-        std::vector<BlockPrototype> blocks;
+        std::vector<BlockPrototype> blocks{};
         
         BlockRegistry(){
             blocks.push_back({

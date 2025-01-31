@@ -103,6 +103,9 @@ file(GLOB_RECURSE SOURCES
   ${CMAKE_SOURCE_DIR}/external/src/*.c
 )
 
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g")
+add_compile_options(-Wall -Wextra)
+
 # Add executable target
 add_executable(main ${SOURCES})
 # Link libraries

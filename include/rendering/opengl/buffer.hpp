@@ -380,7 +380,7 @@ class GLVertexArray{
 
             BoundBuffer(){}
             BoundBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, const GLVertexFormat& format) :
-                format(format), buffer_pointer(buffer_pointer){}
+                buffer_pointer(buffer_pointer), format(format){}
         };
 
         std::vector<BoundBuffer> buffers{};

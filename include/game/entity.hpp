@@ -55,7 +55,7 @@ class Entity{
         void setGravity(bool value){hasGravity = value;}
         void setModel(std::shared_ptr<Model> model) {this->model = model;}
         bool isSolid(){return solid;}
-        void setOnGround(bool value){on_ground = true;}
+        void setOnGround(bool value){on_ground = value;}
 
         std::shared_ptr<Model>& getModel() {return model;}
 

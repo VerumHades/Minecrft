@@ -31,7 +31,7 @@ class Image{
         int getHeight() const {return height;}
         int getChannels() const {return nrChannels;}
 
-        void save(const std::string& path);
+        void save(const std::string& path) const;
 
         /*
             Reduces a scaled pixel art image down to its original size

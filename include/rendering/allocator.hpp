@@ -48,7 +48,7 @@ class Allocator{
             takenBlocks = {};
 
             this->memsize = memsize;
-            markFree(blocks.insert(blocks.end(),{0, memsize, false}));
+            markFree(blocks.insert(blocks.end(),MemBlock{0, memsize, false, freeBlocks.end()}));
         }
 
         void expand(size_t amount){
@@ -58,7 +58,7 @@ class Allocator{
                 nodeHandler.key() = blocks.back().size;
                 freeBlocks.insert(std::move(nodeHandler));
             }
-            else markFree(blocks.insert(blocks.end(),{memsize, amount, false}));
+            else markFree(blocks.insert(blocks.end(),{memsize, amount, false, freeBlocks.end()}));
             
             memsize += amount;
         }
@@ -92,7 +92,7 @@ class PoolAllocator{
     public:
         PoolAllocator(): PoolAllocator(0){}
         PoolAllocator(size_t memsize){
-            for(int i = 0;i < memsize;i++) freeLocations.push(i);
+            for(size_t i = 0;i < memsize;i++) freeLocations.push(i);
         }
         // Allocates the first empty block
         std::tuple<bool,size_t> allocate(){
@@ -107,13 +107,13 @@ class PoolAllocator{
         }
 
         void increaseSize(size_t size){
-            for(int i = 0; i < size;i++) freeLocations.push(memsize + i);
+            for(size_t i = 0; i < size;i++) freeLocations.push(memsize + i);
             memsize += size;
         }
 
         void clear(){
             freeLocations = {};
-            for(int i = 0;i < memsize;i++) freeLocations.push(i);
+            for(size_t i = 0;i < memsize;i++) freeLocations.push(i);
         }
 
         size_t getMemSize() {return memsize;}

@@ -66,7 +66,7 @@ SparseBlockArray SparseBlockArray::deserialize(ByteArray& array){
 
     size_t layer_count = array.read<size_t>();
 
-    for(int i = 0;i < layer_count;i++){
+    for(size_t i = 0;i < layer_count;i++){
         BlockID layer_type = array.read<BlockID>();
         auto data = array.vread<uint64_t>();
 

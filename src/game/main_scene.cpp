@@ -164,7 +164,7 @@ void MainScene::initialize(){
     camera.setModelPosition({0,0,0});
     suncam.setCaptureSize(renderDistance * 2 * CHUNK_SIZE);
 
-    threadPool = std::make_unique<ThreadPool>(12);
+    //threadPool = std::make_unique<ThreadPool>(12);
     //world->load("saves/worldsave.bin");
 
     inputManager.bindKey(GLFW_KEY_W    , MOVE_FORWARD , "Move forward ");
@@ -219,6 +219,15 @@ void MainScene::initialize(){
     sensitivity_slider->setIdentifiers({"mouse_sensitivity_slider"});
     
     mouse_settings->appendChild(sensitivity_slider);
+
+    for(auto& prototype: BlockRegistry::get().prototypes()){
+        if(prototype.id == 0) continue; // Dont make air
+
+        auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(&prototype);
+        Item it = itemPrototypeRegistry.createItem(item_prototype);
+        it.setQuantity(256);
+        hotbar->addItem(it);
+    }
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
@@ -321,8 +330,9 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS ){  
             auto* block_prototype = BlockRegistry::get().getBlockPrototypeByIndex(blockUnderCursor->id);
             if(!block_prototype) return;
-            auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(block_prototype);
-
+            auto* item_prototype = itemPrototypeRegistry.getPrototype("block_" + block_prototype->name);
+            if(!item_prototype) return;
+            
             auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), glm::vec3(blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5));
             entity.accelerate({
                 static_cast<float>(std::rand() % 200) / 100.0f - 1.0f,
@@ -579,15 +589,6 @@ void MainScene::open(GLFWwindow* window){
 
     player.setPosition({0,60,0});
 
-    for(auto& prototype: BlockRegistry::get().prototypes()){
-        if(prototype.id == 0) continue; // Dont make air
-
-        auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(&prototype);
-        Item it = itemPrototypeRegistry.createItem(item_prototype);
-        it.setQuantity(256);
-        hotbar->addItem(it);
-    }
-
     //std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
 
@@ -791,7 +792,7 @@ void MainScene::physicsUpdate(){
         current = glfwGetTime();
         deltatime = (float)(current - last);
 
-        threadPool->deployPendingJobs();
+        //threadPool->deployPendingJobs();
 
         if(deltatime < tickTime) continue;
         last = current;

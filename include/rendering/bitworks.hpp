@@ -214,7 +214,7 @@ inline std::string getColorForByte(uint8_t byte) {
 
 // Overload operator<< for ByteArray with colored hex output
 inline std::ostream& operator<<(std::ostream & Str, const ByteArray& v) {
-    for (int i = 0; i < v.getData().size(); ++i) {
+    for (size_t i = 0; i < v.getData().size(); ++i) {
         uint8_t byte = v.getData()[i];
         Str << getColorForByte(byte) << std::hex << std::setfill('0') << std::setw(2) << (int)byte;
     }
