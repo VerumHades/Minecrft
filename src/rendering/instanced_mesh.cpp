@@ -19,10 +19,13 @@ void InstancedMesh::addQuadFace(glm::vec3 position, float width, float height, i
         occlusion[2]
     };
 
-    auto& instance_data_list =  instance_data[type];
+    auto& instance_data_list = instance_data.at(type);
     instance_data_list.insert(instance_data_list.end(), data.begin(), data.end());
 }
 
+void InstancedMesh::preallocate(size_t size, FaceType type){
+     instance_data.at(type).reserve(size * instance_data_size);
+}
 const std::vector<float>& InstancedMesh::getInstanceData(FaceType type){
     return  instance_data[type];
 }

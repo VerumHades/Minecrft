@@ -11,7 +11,8 @@
 #include <rendering/allocator.hpp>
 #include <test_scene.hpp>
 
-
+#define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
 /*void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
         if(menuOpen){
@@ -106,6 +107,8 @@ void printOpenGLLimits() {
 
 SceneManager* s;
 int main() {
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
     GLFWwindow* window;
 
     /* Initialize the library */
@@ -184,13 +187,13 @@ int main() {
 
         s = &sceneManager;
 
-        /*UICore::get().lua().addFunction("setScene", [](std::string name){
+        UICore::get().lua().set_function("setScene", [](std::string name){
             s->setScene(name);
         });
 
-        UICore::get().lua().addFunction("setLayer", [](std::string name){
+        UICore::get().lua().set_function("setLayer", [](std::string name){
             s->getCurrentScene()->setUILayer(name);
-        });*/
+        });
 
         Scene* menuScene = sceneManager.createScene<Scene>("menu");
         menuScene->setUILayer("default");
