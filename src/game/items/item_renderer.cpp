@@ -112,7 +112,7 @@ void LogicalItemSlot::clear(){
 
 void ItemTextureAtlas::RenderItemIntoSlot(UIRenderBatch& batch, ItemPrototype* prototype, UITransform transform){
 
-    std::cout << prototype << std::endl;
+    //std::cout << prototype << std::endl;
     
     auto* texture_info = getPrototypeTextureSet(prototype);
     if(!texture_info) return;
@@ -250,7 +250,7 @@ ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, int slots_horizonta
 bool ItemInventory::addItem(Item item){
     auto* prototype = item.getPrototype();
 
-    std::cout << "Adding item " << prototype << std::endl;
+    //std::cout << "Adding item " << prototype << std::endl;
 
     LogicalItemSlot* first_empty_slot = nullptr;
     for(int x = 0;x < slots_horizontaly;x++){

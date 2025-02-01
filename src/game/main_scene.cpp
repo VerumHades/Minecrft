@@ -582,6 +582,8 @@ void MainScene::open(GLFWwindow* window){
 
         //if(world->isChunkLoadable(chunkPosition)) world->loadChunk(chunkPosition);
         game_state->loadChunk(chunkPosition);
+
+        std::cout << "\rLoaded chunk: " << i++ << "/" << pow(pregenDistance * 2 + 1, 3) << std::endl;
     }
 
     //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
