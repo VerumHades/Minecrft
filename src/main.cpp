@@ -152,10 +152,11 @@ int main() {
     glEnable(GL_MULTISAMPLE);  // Redundant perhaps
     //glDepthMask(GL_FALSE);
     
+    /*
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
-    
+    */
 
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
         s->resize(window, width, height); // Call resize on the instance
