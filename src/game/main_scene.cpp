@@ -545,6 +545,9 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
             updateStructureSavingDisplay();
         }
     }
+    else if(key == GLFW_KEY_B && action == GLFW_PRESS){
+        indexer = {};
+    }
 }
 
 void MainScene::open(GLFWwindow* window){

@@ -64,6 +64,11 @@ class SparseBlockArray{
         bool isEmpty(){return layers.size() == 0;}
 
         /*
+            Fills the entire chunk with one kind of block
+        */
+        void fill(const Block& block);
+
+        /*
             dont_check => if true ignores already existing block if there is one (will be faster)
         */
         void setBlock(glm::ivec3 position, const Block& block, bool dont_check = false);

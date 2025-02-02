@@ -46,6 +46,11 @@ uint64_t BitField3D::getRow(uint x, uint y) const {
     return _internal_data[calculateIndex(x,y)];
 }
 
+void BitField3D::fill(bool value){
+    uint64_t segment = value ? ~0ULL : 0ULL;
+    for(int i = 0;i < 64 * 64;i++) _internal_data[i] = segment;
+}
+
 
 static BitFieldCache transposed_cache = {};
 

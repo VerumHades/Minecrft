@@ -91,6 +91,11 @@ class BitField3D{
         */
         BitField3D* getTransposed();
 
+        /*
+            Fill the array with the set value
+        */
+        void fill(bool value);
+
         CompressedArray getCompressed();
 
         static CompressedArray compress(const std::array<uint64_t, 64 * 64>& source);

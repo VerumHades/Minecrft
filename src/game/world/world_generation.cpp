@@ -26,6 +26,8 @@ static auto chunk_definitions = std::to_array({
     ChunkDefinition({CT::WALL,CT::WALL,CT::OPEN,CT::WALL,CT::OPEN,CT::WALL}),
     ChunkDefinition({CT::WALL,CT::WALL,CT::OPEN,CT::WALL,CT::WALL,CT::OPEN}),
 
+
+    ChunkDefinition({CT::OPEN,CT::OPEN,CT::WALL,CT::WALL,CT::WALL,CT::WALL}),
     /*
         Open top
     */
@@ -66,6 +68,7 @@ const ChunkDefinition& ChunkDefinition::getDefinitionFor(const glm::ivec3& posit
     };
 
     std::array<CT, 6> surrounding_neighbours{};
+    std::unordered_set<size_t> found_neighbours{};
 
     for(int i = 0; i < 6;i++){
         glm::ivec3 offset_position = position + offsets[i];
@@ -73,7 +76,9 @@ const ChunkDefinition& ChunkDefinition::getDefinitionFor(const glm::ivec3& posit
             surrounding_neighbours[i] = UNKNOWN;
             continue;
         }
-        auto neighbour = chunk_definitions.at(generated_chunks.at(offset_position));
+        size_t neighbour_index = generated_chunks.at(offset_position);
+        found_neighbours.emplace(neighbour_index);
+        auto neighbour = chunk_definitions.at(neighbour_index);
 
         surrounding_neighbours[i] = neighbour.getCrossTypes().at(i + (i % 2 == 0 ? 1 : -1));
     }
@@ -95,6 +100,13 @@ const ChunkDefinition& ChunkDefinition::getDefinitionFor(const glm::ivec3& posit
 
         if(!passed) continue;
 
+        if(
+            found_neighbours.contains(i)
+            && chunk_definitions.at(i).getCrossTypes().at(BOTTOM) == WALL
+            && chunk_definitions.at(i).getCrossTypes().at(TOP) == WALL
+        ){
+            for(int i = 0;i < 3;i++) candidates.push_back(i);
+        }
         candidates.push_back(i);
     }
 
@@ -152,14 +164,39 @@ void ChunkDefinition::place(Chunk* chunk, const glm::ivec3& offset) const {
 }
 
 void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
-    static const int count = CHUNK_SIZE / ChunkDefinition::size;
+    //static const int count = CHUNK_SIZE / ChunkDefinition::size;
+    std::array<std::array<int,CHUNK_SIZE>, CHUNK_SIZE> heightMap{};
 
-    for(int x = 0; x <= count; x++) 
-    for(int y = 0; y <= count; y++) 
-    for(int z = 0; z <= count; z++){
-        glm::ivec3 localPosition = glm::ivec3(x,y,z);
-        glm::ivec3 chunkPosition = (position * count) + localPosition;
+    int lowest = INT32_MAX;
+    int highest = INT32_MIN;
 
-        ChunkDefinition::getDefinitionFor(chunkPosition, seed).place(chunk, localPosition * ChunkDefinition::size);
+    for(int x = 0; x < CHUNK_SIZE; x++) 
+    for(int z = 0; z < CHUNK_SIZE; z++){
+        glm::ivec3 localPosition = glm::ivec3(x,0,z) + position * CHUNK_SIZE;
+
+        int value = pow(noise.GetNoise(static_cast<float>(localPosition.x),static_cast<float>(localPosition.z)) * 10, 2);
+        lowest = std::min(value, lowest);
+        highest = std::max(value, highest);
+        heightMap[x][z] = value;
+    }   
+
+    auto stone = BlockRegistry::get().getIndexByName("stone");
+
+    if(lowest > position.y * CHUNK_SIZE + CHUNK_SIZE){
+        chunk->fill({stone});
+        return;
+    }
+    if(highest < position.y * CHUNK_SIZE){
+        return;
+    }
+
+    for(int x = 0; x <= CHUNK_SIZE; x++) 
+    for(int y = 0; y <= CHUNK_SIZE; y++) 
+    for(int z = 0; z <= CHUNK_SIZE; z++){
+        glm::ivec3 localPosition = glm::ivec3(x,y,z) + position * CHUNK_SIZE;
+        
+        if(localPosition.y > heightMap[x][z]) continue;
+
+        chunk->setBlock(glm::ivec3(x,y,z), {stone}, true);
     }
 }   

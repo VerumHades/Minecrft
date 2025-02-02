@@ -29,9 +29,29 @@ void SparseBlockArray::setBlock(glm::ivec3 position, const Block& block, bool do
     else solid_field.get()->reset(position.x,position.y,position.z);
 }
 
-/*
-    Returns a pointer to a block, if there is no block present returns an air block
-*/
+void SparseBlockArray::fill(const Block& block){
+    altered = true;
+
+    layers.clear();
+
+    if(block.id == BLOCK_AIR_INDEX){
+         solid_field.get()->fill(0);
+        return;
+    }
+
+    if(!hasLayerOfType(block.id)){
+        createLayer(block.id, {});
+    }
+
+    auto& layer = getLayer(block.id);
+    layer.field().fill(1);
+
+    auto* block_definition = BlockRegistry::get().getBlockPrototypeByIndex(block.id);
+    if(!block_definition) return;
+
+    solid_field.get()->fill(!block_definition->transparent);
+}
+
 Block* SparseBlockArray::getBlock(glm::ivec3 position){
     for(auto& layer: layers){
         if(!layer.field().get(position.x,position.y,position.z)) continue;
