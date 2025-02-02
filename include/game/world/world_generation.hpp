@@ -59,7 +59,7 @@ namespace WorldGeneration{
             static const ChunkDefinition& getDefinitionFor(const glm::ivec3& position, int seed);
 
             static const int TOP = 0, BOTTOM = 1, LEFT = 2, RIGHT = 3, FRONT = 4, BACK = 5;
-            static const int size = 16; // Size in all directions
+            static const int size = 8; // Size in all directions
 
             static_assert(64 % size == 0, "Generation chunk size must perfectly align with world chunk size (64).");
     };

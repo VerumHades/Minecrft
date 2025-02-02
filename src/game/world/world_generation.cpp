@@ -17,15 +17,40 @@ WorldGenerator::WorldGenerator() {
 
 static auto chunk_definitions = std::to_array({
     ChunkDefinition({CT::OPEN,CT::OPEN,CT::OPEN,CT::OPEN,CT::OPEN,CT::OPEN}),
-    ChunkDefinition({CT::WALL,CT::WALL,CT::OPEN,CT::OPEN,CT::OPEN,CT::OPEN}),
-    ChunkDefinition({CT::OPEN,CT::WALL,CT::OPEN,CT::OPEN,CT::OPEN,CT::OPEN}),
-    ChunkDefinition({CT::OPEN,CT::OPEN,CT::WALL,CT::WALL,CT::WALL,CT::WALL}),
-    ChunkDefinition({CT::WALL,CT::OPEN,CT::OPEN,CT::OPEN,CT::OPEN,CT::OPEN}),
+
+    ChunkDefinition({CT::WALL,CT::WALL,CT::WALL,CT::WALL,CT::OPEN,CT::OPEN}),
+    ChunkDefinition({CT::WALL,CT::WALL,CT::OPEN,CT::OPEN,CT::WALL,CT::WALL}),
+
+    ChunkDefinition({CT::WALL,CT::WALL,CT::WALL,CT::OPEN,CT::OPEN,CT::WALL}),
+    ChunkDefinition({CT::WALL,CT::WALL,CT::WALL,CT::OPEN,CT::WALL,CT::OPEN}),
+    ChunkDefinition({CT::WALL,CT::WALL,CT::OPEN,CT::WALL,CT::OPEN,CT::WALL}),
+    ChunkDefinition({CT::WALL,CT::WALL,CT::OPEN,CT::WALL,CT::WALL,CT::OPEN}),
+
+    /*
+        Open top
+    */
+
+    ChunkDefinition({CT::OPEN,CT::WALL,CT::WALL,CT::WALL,CT::OPEN,CT::OPEN}),
+    ChunkDefinition({CT::OPEN,CT::WALL,CT::OPEN,CT::OPEN,CT::WALL,CT::WALL}),
+
+    ChunkDefinition({CT::OPEN,CT::WALL,CT::WALL,CT::OPEN,CT::OPEN,CT::WALL}),
+    ChunkDefinition({CT::OPEN,CT::WALL,CT::WALL,CT::OPEN,CT::WALL,CT::OPEN}),
+    ChunkDefinition({CT::OPEN,CT::WALL,CT::OPEN,CT::WALL,CT::OPEN,CT::WALL}),
+    ChunkDefinition({CT::OPEN,CT::WALL,CT::OPEN,CT::WALL,CT::WALL,CT::OPEN}),
+
+    /*
+        Open bottom
+    */
+    ChunkDefinition({CT::WALL,CT::OPEN,CT::WALL,CT::WALL,CT::OPEN,CT::OPEN}),
+    ChunkDefinition({CT::WALL,CT::OPEN,CT::OPEN,CT::OPEN,CT::WALL,CT::WALL}),
+
+    ChunkDefinition({CT::WALL,CT::OPEN,CT::WALL,CT::OPEN,CT::OPEN,CT::WALL}),
+    ChunkDefinition({CT::WALL,CT::OPEN,CT::WALL,CT::OPEN,CT::WALL,CT::OPEN}),
+    ChunkDefinition({CT::WALL,CT::OPEN,CT::OPEN,CT::WALL,CT::OPEN,CT::WALL}),
+    ChunkDefinition({CT::WALL,CT::OPEN,CT::OPEN,CT::WALL,CT::WALL,CT::OPEN}),
 });
 
-static std::unordered_map<glm::ivec3, size_t, IVec3Hash, IVec3Equal> generated_chunks{
-    {glm::ivec3{0,0,0}, 1}
-};
+static std::unordered_map<glm::ivec3, size_t, IVec3Hash, IVec3Equal> generated_chunks{};
 
 const ChunkDefinition& ChunkDefinition::getDefinitionFor(const glm::ivec3& position, int iseed){
     if(generated_chunks.contains(position)) 
@@ -48,7 +73,7 @@ const ChunkDefinition& ChunkDefinition::getDefinitionFor(const glm::ivec3& posit
             surrounding_neighbours[i] = UNKNOWN;
             continue;
         }
-        auto neighbour = chunk_definitions[generated_chunks.at(offset_position)];
+        auto neighbour = chunk_definitions.at(generated_chunks.at(offset_position));
 
         surrounding_neighbours[i] = neighbour.getCrossTypes().at(i + (i % 2 == 0 ? 1 : -1));
     }
@@ -76,8 +101,8 @@ const ChunkDefinition& ChunkDefinition::getDefinitionFor(const glm::ivec3& posit
     if(candidates.size() == 0) candidates.push_back(0);
 
     // Define a fixed seed for reproducibility
-    std::seed_seq seed{iseed};  // You can change this seed
-    std::mt19937 gen(seed); // Mersenne Twister engine with fixed seed
+    static std::seed_seq seed{iseed};  // You can change this seed
+    static std::mt19937 gen(seed); // Mersenne Twister engine with fixed seed
     std::uniform_int_distribution<std::size_t> dist(0, candidates.size() - 1);
 
     size_t result = candidates.at(dist(gen));
@@ -116,14 +141,14 @@ static void placePlane(Chunk* chunk, const glm::ivec3& origin, int width, int he
 }
 
 void ChunkDefinition::place(Chunk* chunk, const glm::ivec3& offset) const {
-    if(neighbours[TOP]    == WALL) placePlane(chunk, offset, size, size, Y);
-    if(neighbours[BOTTOM] == WALL) placePlane(chunk, offset + glm::ivec3{0,15,0}, size, size, Y);
+    if(neighbours[TOP]    == WALL) placePlane(chunk, offset + glm::ivec3{0,size - 1,0}, size, size, Y);
+    if(neighbours[BOTTOM] == WALL) placePlane(chunk, offset, size, size, Y);
 
     if(neighbours[LEFT]   == WALL) placePlane(chunk, offset, size, size, X);
-    if(neighbours[RIGHT]  == WALL) placePlane(chunk, offset + glm::ivec3{15,0,0}, size, size, X);
+    if(neighbours[RIGHT]  == WALL) placePlane(chunk, offset + glm::ivec3{size - 1,0,0}, size, size, X);
 
     if(neighbours[FRONT]  == WALL) placePlane(chunk, offset, size, size, Z);
-    if(neighbours[BACK]   == WALL) placePlane(chunk, offset + glm::ivec3{0,0,15}, size, size, Z);
+    if(neighbours[BACK]   == WALL) placePlane(chunk, offset + glm::ivec3{0,0,size - 1}, size, size, Z);
 }
 
 void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
