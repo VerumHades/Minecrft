@@ -101,6 +101,11 @@ inline uint8_t count_leading_zeros(T x) {
     return std::countl_zero(x);
 }
 
+template <typename T>
+inline uint8_t count_ones(T x) {
+    return std::popcount(x);
+}
+
 #include <rendering/bitworks.tpp>
 
 template <int size>

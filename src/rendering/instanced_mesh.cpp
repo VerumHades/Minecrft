@@ -24,7 +24,7 @@ void InstancedMesh::addQuadFace(glm::vec3 position, float width, float height, i
 }
 
 void InstancedMesh::preallocate(size_t size, FaceType type){
-     instance_data.at(type).reserve(size * instance_data_size);
+    instance_data.at(type).reserve(size * instance_data_size);
 }
 const std::vector<float>& InstancedMesh::getInstanceData(FaceType type){
     return  instance_data[type];
@@ -36,6 +36,10 @@ bool InstancedMesh::empty(){
         return false;
     }
     return true;
+}
+
+void InstancedMesh::shrink(){
+    for(int i = 0;i < 4;i++) instance_data[i].shrink_to_fit();
 }
 
 InstancedMeshBuffer::InstancedMeshBuffer(){
@@ -71,9 +75,9 @@ InstancedMeshBuffer::InstancedMeshBuffer(){
 
     loaded_face_buffer.initialize(aligned_quad_data.size(), aligned_quad_data.data());
 
-    for(int i = 0;i < distinct_face_count;i++){
-        vaos[i].attachBuffer(&instance_data[i].getBuffer(), {{VEC3, VEC2, FLOAT, FLOAT, FLOAT, VEC4}, true});
-        vaos[i].attachBuffer(&loaded_face_buffer, {VEC3, VEC2});
+    for(auto& info: render_information){
+        info.vao.attachBuffer(&info.instance_data.getBuffer(), {{VEC3, VEC2, FLOAT, FLOAT, FLOAT, VEC4}, true});
+        info.vao.attachBuffer(&loaded_face_buffer, {VEC3, VEC2});
     }
 }
 
@@ -99,7 +103,7 @@ void InstancedMeshBuffer::LoadedMesh::addDrawCall(){
 }
 void InstancedMeshBuffer::renderMesh(LoadedMesh& mesh){
     for(int i = 0;i < distinct_face_count;i++){
-        vaos[i].bind();
+        render_information[i].vao.bind();
 
         size_t instances_total = mesh.loaded_regions[i]->size  / InstancedMesh::instance_data_size;
         size_t instance_offset = mesh.loaded_regions[i]->start / InstancedMesh::instance_data_size;
@@ -121,8 +125,8 @@ void InstancedMeshBuffer::renderMesh(LoadedMesh& mesh){
                 instance_offset
             );
         }
+        render_information[i].vao.unbind();
     }
-    vaos[0].unbind();
 }
 
 std::unique_ptr<InstancedMeshBuffer::LoadedMesh> InstancedMeshBuffer::loadMesh(InstancedMesh& mesh){
@@ -135,10 +139,10 @@ std::unique_ptr<InstancedMeshBuffer::LoadedMesh> InstancedMeshBuffer::loadMesh(I
             continue;
         }
 
-        loaded_mesh->loaded_regions[i] = instance_data[i].append(component_data.data(), component_data.size());
+        loaded_mesh->loaded_regions[i] = render_information[i].instance_data.append(component_data.data(), component_data.size());
         loaded_mesh->has_region[i] = true;
 
-        instance_data[i].flush();
+        render_information[i].instance_data.flush();
     }
 
     return loaded_mesh;
@@ -158,10 +162,10 @@ void InstancedMeshBuffer::addDrawCall(LoadedMesh& mesh){
             instance_offset // Instance offset
         };
 
-        draw_call_buffers[i].push(draw_call);
+        render_information[i].draw_call_buffer.push(draw_call);
         if(i == 3){ // Draw the seconds diagonal
             draw_call.first += 4;
-            draw_call_buffers[i].push(draw_call);
+            render_information[i].draw_call_buffer.push(draw_call);
         }
     }
 }
@@ -175,39 +179,35 @@ void InstancedMeshBuffer::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new
         }
     
         if(loaded_mesh.has_region[i])
-            loaded_mesh.loaded_regions[i] = instance_data[i].update(loaded_mesh.loaded_regions[i], component_data.data(), component_data.size());
+            loaded_mesh.loaded_regions[i] = render_information[i].instance_data.update(loaded_mesh.loaded_regions[i], component_data.data(), component_data.size());
         else
-            loaded_mesh.loaded_regions[i] = instance_data[i].append(component_data.data(), component_data.size());
+            loaded_mesh.loaded_regions[i] = render_information[i].instance_data.append(component_data.data(), component_data.size());
 
         loaded_mesh.has_region[i] = true;
 
-        instance_data[i].flush();
+        render_information[i].instance_data.flush();
     }
 }
 
 void InstancedMeshBuffer::removeMesh(LoadedMesh& mesh){
     for(int i = 0;i < distinct_face_count;i++){
-        instance_data[i].remove(mesh.loaded_regions[i]);
+        render_information[i].instance_data.remove(mesh.loaded_regions[i]);
     }
 }
 
 void InstancedMeshBuffer::render(){
-    for(int i = 0;i < distinct_face_count;i++){
-        vaos[i].bind();
-        draw_call_buffers[i].bind();
-        glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, draw_call_buffers[i].count(), sizeof(GLDrawCallBuffer::DrawCommand));
+    for(auto& info: render_information){
+        info.vao.bind();
+        info.draw_call_buffer.bind();
+        glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, info.draw_call_buffer.count(), sizeof(GLDrawCallBuffer::DrawCommand));
+        info.vao.unbind();
     }
-    vaos[0].unbind();
 }
 
 void InstancedMeshBuffer::clearDrawCalls(){
-    for(int i = 0;i < distinct_face_count;i++) draw_call_buffers[i].clear();
+    for(auto& info: render_information) info.draw_call_buffer.clear();
 }
 
 void InstancedMeshBuffer::flushDrawCalls(){
-    for(int i = 0;i < distinct_face_count;i++) draw_call_buffers[i].flush();
-}
-
-void InstancedMesh::shrink(){
-    for(int i = 0;i < 4;i++) instance_data[i].shrink_to_fit();
+    for(auto& info: render_information) info.draw_call_buffer.flush();
 }

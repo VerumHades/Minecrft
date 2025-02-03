@@ -6,6 +6,7 @@
 #include <rendering/chunk_buffer.hpp>
 #include <blockarray.hpp>
 #include <glm/glm.hpp>
+#include <bit>
 
 class ChunkMeshGenerator{
     public:
@@ -35,7 +36,8 @@ class ChunkMeshGenerator{
         };
 
     private:
-        std::vector<Face>& greedyMeshPlane(BitPlane<64> rows, int size = 64);
+        std::vector<Face>& greedyMeshPlaneWithLOD(BitPlane<64> rows, int level, int start = 0, int end = 64);
+        std::vector<Face>& greedyMeshPlane(BitPlane<64> rows);
         std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group);
 
         std::mutex meshLoadingMutex;

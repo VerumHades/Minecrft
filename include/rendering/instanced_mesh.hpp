@@ -61,10 +61,13 @@ class InstancedMeshBuffer{
     private:
         static const size_t distinct_face_count = 4;
 
-        std::array<GLCoherentBuffer<float, GL_ARRAY_BUFFER>, distinct_face_count> instance_data{};
-        std::array<GLDrawCallBuffer, distinct_face_count> draw_call_buffers{};
-
-        std::array<GLVertexArray, distinct_face_count> vaos{};
+        struct RenderableGroup{
+            GLCoherentBuffer<float, GL_ARRAY_BUFFER> instance_data{};
+            GLDrawCallBuffer draw_call_buffer{};
+            GLVertexArray vao{};
+        };
+        
+        std::array<RenderableGroup, distinct_face_count> render_information{};
         GLBuffer<float, GL_ARRAY_BUFFER> loaded_face_buffer{};
 
         void removeMesh(LoadedMesh& mesh);

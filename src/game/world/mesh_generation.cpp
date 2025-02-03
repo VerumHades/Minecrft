@@ -37,10 +37,90 @@ void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegis
     buffer.addMesh(solid_mesh.get(), chunk->getWorldPosition());
 }
 
+
+static inline uint8_t get_expaned_width(uint64_t row, uint8_t start, uint8_t block_size, uint8_t block_half_size, uint64_t mask){
+    uint8_t width_in_blocks = 0;
+    while(
+        mask != 0ULL && // We arent going outside
+        (row & mask) != 0ULL
+        //count_ones(row & mask) >= block_half_size
+    ){
+        mask >>= block_size;
+        width_in_blocks++;
+    }
+    return width_in_blocks;
+}
+
+std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlaneWithLOD(BitPlane<64> rows, int level, int start, int end){
+    const int size = 64;
+    const int block_size = 16;
+    
+    uint64_t block_mask = (~0ULL << (64 - block_size));
+    uint8_t  block_half_size = block_size / 2;
+    
+    static std::vector<Face> out;
+    out.clear();
+
+    int currentRow = start;
+    while(currentRow < end){
+        uint64_t row = rows[currentRow];
+        /*
+            0b00001101
+
+            'start' is 4
+        */    
+        uint8_t start = count_leading_zeros(row); // Find the first
+        if(start == size){
+            currentRow += block_size;
+            continue;
+        }
+
+        /*
+            Find the aligned start and end (aligned to the block size)
+            
+            1. Calculate the start
+            2. Expand over the succeding blocks while the faces remain valid with the majority being ones
+
+        */
+        uint8_t aligned_start = floor(static_cast<float>(start) / static_cast<float>(block_size)) * block_size;
+        
+        uint64_t local_mask = block_mask >> aligned_start;
+        
+        uint8_t width_in_blocks = get_expaned_width(row, aligned_start, block_size, block_half_size, local_mask);
+        uint8_t width = width_in_blocks * block_size;
+
+        uint64_t full_mask = ~0ULL;
+        full_mask >>= (size - width);
+        full_mask <<= (size - (aligned_start + width));
+
+        if(width_in_blocks == 0){ // Face is invalid
+            rows[currentRow] &= ~local_mask;
+            continue;
+        }
+
+        int height = 0; 
+        while(
+            currentRow + height < end // We are still in the checked area
+            && get_expaned_width(rows[currentRow + height], aligned_start, block_size, block_half_size, local_mask) == width_in_blocks
+        ){
+            rows[currentRow + height]  &= ~full_mask; // Remove this face part from the rows
+            height++;
+        }
+
+        out.push_back({ // Add the face to the face list
+            aligned_start, currentRow,
+            width, height
+        });
+    }
+
+    return out;
+}
+
 /*
     Generate greedy meshed faces from a plane of bits
 */
-std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPlane<64> rows, int size){
+std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPlane<64> rows){
+    const int size = 64;
     static std::vector<Face> out;
     out.clear();
 
@@ -51,11 +131,12 @@ std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPl
         00001111
         then it gets converted to this for meshing (because count_leading_zeros starts from the left )
         11110000
-    */
+
     if(size != 64){
         int size_to_real_size_adjustment = 64 - size;
         for(int i = 0;i < size;i++) rows[i] <<= size_to_real_size_adjustment;
     }
+    */
 
     int currentRow = 0;
     
@@ -236,7 +317,7 @@ std::vector<ChunkMeshGenerator::OccludedPlane>& ChunkMeshGenerator::calculatePla
     agregateTypes##axis.insert(agregateTypes##axis.end(), group->getPresentTypes().begin(), group->getPresentTypes().end());
 
 static inline void processFaces(
-    std::vector<ChunkMeshGenerator::Face> faces,
+    const std::vector<ChunkMeshGenerator::Face>& faces,
     InstancedMesh::FaceType face_type,
     InstancedMesh::Direction direction,
     BlockRegistry::BlockPrototype* type,
@@ -297,7 +378,7 @@ void ChunkMeshGenerator::proccessOccludedFaces(
     auto& processed_planes = calculatePlaneAmbientOcclusion(source_plane, occlusion_plane);
 
     for(auto& plane: processed_planes){
-        processFaces(greedyMeshPlane(plane.plane), face_type, direction, type, mesh, world_position, layer, plane.occlusion);
+        processFaces(greedyMeshPlaneWithLOD(plane.plane, 0, plane.start, plane.end), face_type, direction, type, mesh, world_position, layer, plane.occlusion);
     }
 }
 
@@ -567,14 +648,14 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
         if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
-        processFaces(greedyMeshPlane(planesXforward [static_cast<size_t>(type)], size), InstancedMesh::X_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, occlusion);
-        processFaces(greedyMeshPlane(planesXbackward[static_cast<size_t>(type)], size), InstancedMesh::X_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, -1, occlusion);
+        processFaces(greedyMeshPlane(planesXforward [static_cast<size_t>(type)]), InstancedMesh::X_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, occlusion);
+        processFaces(greedyMeshPlane(planesXbackward[static_cast<size_t>(type)]), InstancedMesh::X_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, -1, occlusion);
 
-        processFaces(greedyMeshPlane(planesYforward [static_cast<size_t>(type)], size), InstancedMesh::Y_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, occlusion);
-        processFaces(greedyMeshPlane(planesYbackward[static_cast<size_t>(type)], size), InstancedMesh::Y_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, -1, occlusion);
+        processFaces(greedyMeshPlane(planesYforward [static_cast<size_t>(type)]), InstancedMesh::Y_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, occlusion);
+        processFaces(greedyMeshPlane(planesYbackward[static_cast<size_t>(type)]), InstancedMesh::Y_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, -1, occlusion);
 
-        processFaces(greedyMeshPlane(planesZforward [static_cast<size_t>(type)], size), InstancedMesh::Z_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, occlusion);
-        processFaces(greedyMeshPlane(planesZbackward[static_cast<size_t>(type)], size), InstancedMesh::Z_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, -1, occlusion);
+        processFaces(greedyMeshPlane(planesZforward [static_cast<size_t>(type)]), InstancedMesh::Z_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, occlusion);
+        processFaces(greedyMeshPlane(planesZbackward[static_cast<size_t>(type)]), InstancedMesh::Z_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, -1, occlusion);
     }
     //std::cout << "Vertices:" << solidMesh.get()->getIndices().size() << std::endl;
     
