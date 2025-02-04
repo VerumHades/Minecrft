@@ -23,9 +23,21 @@ struct TCacheMember;
 */
 static size_t last_id = 0;
 class BitField3D{
+    public:
+        // Used for indexing, don't change!
+        enum SimplificationLevel{
+            TO_32 = 0,
+            TO_16,
+            TO_8,
+            TO_4,
+            TO_2,
+            TO_1
+        };
+
     private:
         size_t id = 0; // Unique identifier
         TCacheMember* transposed_cache_version_pointer = nullptr;
+        TCacheMember* simplified_version_pointer = nullptr;
 
         std::array<uint64_t, 64 * 64> _internal_data = {0};
 
@@ -92,6 +104,13 @@ class BitField3D{
         BitField3D* getTransposed();
 
         /*
+            Returns a pointer to a simplified version of the bitfield (avaraged out to form a simple mesh)
+        */
+
+        BitField3D* getSimplified(SimplificationLevel level);
+
+
+        /*
             Fill the array with the set value
         */
         void fill(bool value);
@@ -120,16 +139,24 @@ class BitFieldCache{
         
         std::array<TCacheMember, max_cached> cached_fields{};
         size_t next_spot = 0;
-    public:
+        
         BitFieldCache(){}
+            
+    public:
         TCacheMember* next(size_t id){
             next_spot = (next_spot + 1) % (max_cached - 1);
             auto& member = cached_fields[next_spot];
 
+            member.field.resetID();
             member.field = {}; // zero out
             member.creator_id = id;
 
             return &member;
+        }
+
+        static BitFieldCache& get(){
+            static BitFieldCache cache{};
+            return cache;
         }
 };
 
@@ -161,8 +188,13 @@ class CompressedBitFieldCache{
         const static int max_cached = 1024; // 2 * 32MB cache (32KB per field * 1024)
         std::array<CCacheMember, max_cached> cached_fields{};
 
+        CompressedBitFieldCache(){}
         size_t next_spot = 0;
     public:
-        CompressedBitFieldCache(){}
         CCacheMember* next(std::shared_ptr<CompressedArray> compressed_data);
+
+        static CompressedBitFieldCache& get(){
+            static CompressedBitFieldCache cache{};
+            return cache;
+        }
 };     

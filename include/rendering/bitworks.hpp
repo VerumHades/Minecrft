@@ -134,8 +134,7 @@ class BitPlane{
         }
 };
 
-template <size_t blocks_total>
-using BlockBitPlanes = std::array<BitPlane<64>, blocks_total>;
+using BlockBitPlanes = std::array<BitPlane<64>, 64>;
 
 using byte = uint8_t;
 

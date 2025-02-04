@@ -613,7 +613,7 @@ void MainScene::close(GLFWwindow* window){
     } 
 
     chunkMeshRegistry.clear();
-    game_state->unload();
+    //game_state->unload();
     game_state = nullptr;
 
     chunkMeshGenerator.setWorld(nullptr);

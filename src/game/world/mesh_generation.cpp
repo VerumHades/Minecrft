@@ -51,75 +51,10 @@ static inline uint8_t get_expaned_width(uint64_t row, uint8_t start, uint8_t blo
     return width_in_blocks;
 }
 
-std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlaneWithLOD(BitPlane<64> rows, int level, int start, int end){
-    const int size = 64;
-    const int block_size = 16;
-    
-    uint64_t block_mask = (~0ULL << (64 - block_size));
-    uint8_t  block_half_size = block_size / 2;
-    
-    static std::vector<Face> out;
-    out.clear();
-
-    int currentRow = start;
-    while(currentRow < end){
-        uint64_t row = rows[currentRow];
-        /*
-            0b00001101
-
-            'start' is 4
-        */    
-        uint8_t start = count_leading_zeros(row); // Find the first
-        if(start == size){
-            currentRow += block_size;
-            continue;
-        }
-
-        /*
-            Find the aligned start and end (aligned to the block size)
-            
-            1. Calculate the start
-            2. Expand over the succeding blocks while the faces remain valid with the majority being ones
-
-        */
-        uint8_t aligned_start = floor(static_cast<float>(start) / static_cast<float>(block_size)) * block_size;
-        
-        uint64_t local_mask = block_mask >> aligned_start;
-        
-        uint8_t width_in_blocks = get_expaned_width(row, aligned_start, block_size, block_half_size, local_mask);
-        uint8_t width = width_in_blocks * block_size;
-
-        uint64_t full_mask = ~0ULL;
-        full_mask >>= (size - width);
-        full_mask <<= (size - (aligned_start + width));
-
-        if(width_in_blocks == 0){ // Face is invalid
-            rows[currentRow] &= ~local_mask;
-            continue;
-        }
-
-        int height = 0; 
-        while(
-            currentRow + height < end // We are still in the checked area
-            && get_expaned_width(rows[currentRow + height], aligned_start, block_size, block_half_size, local_mask) == width_in_blocks
-        ){
-            rows[currentRow + height]  &= ~full_mask; // Remove this face part from the rows
-            height++;
-        }
-
-        out.push_back({ // Add the face to the face list
-            aligned_start, currentRow,
-            width, height
-        });
-    }
-
-    return out;
-}
-
 /*
     Generate greedy meshed faces from a plane of bits
 */
-std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPlane<64> rows){
+std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPlane<64> rows, int start_row, int end_row){
     const int size = 64;
     static std::vector<Face> out;
     out.clear();
@@ -138,9 +73,9 @@ std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPl
     }
     */
 
-    int currentRow = 0;
+    int currentRow = start_row;
     
-    while(currentRow < size){
+    while(currentRow < end_row){
         uint64_t row = rows[currentRow];
         /*
             0b00001101
@@ -179,7 +114,7 @@ std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPl
         mask &= row;
 
         int height = 0; 
-        while(currentRow + height < size && (mask & rows[currentRow + height]) == mask){
+        while(currentRow + height < end_row && (mask & rows[currentRow + height]) == mask){
             rows[currentRow + height]  &= ~mask; // Remove this face part from the rows
             height++;
         }
@@ -378,13 +313,12 @@ void ChunkMeshGenerator::proccessOccludedFaces(
     auto& processed_planes = calculatePlaneAmbientOcclusion(source_plane, occlusion_plane);
 
     for(auto& plane: processed_planes){
-        processFaces(greedyMeshPlaneWithLOD(plane.plane, 0, plane.start, plane.end), face_type, direction, type, mesh, world_position, layer, plane.occlusion);
+        processFaces(greedyMeshPlane(plane.plane, plane.start, plane.end), face_type, direction, type, mesh, world_position, layer, plane.occlusion);
     }
 }
 
-
 std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosition, Chunk* group){
-    //ScopeTimer timer("Generated mesh");
+    ScopeTimer timer("Generated mesh");
 
     auto solidMesh = std::make_unique<InstancedMesh>();
     if(!group){
@@ -443,10 +377,6 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
             occlusionPlanesY[y].left  = left->getRow(63, y);
             occlusionPlanesY[y].right = right->getRow(0,y);
         }*/
-
-        for(int y = 0;y < 64;y++){
-
-        }
     }
     //timer.timestamp("Generated occlusion planes");
 
@@ -456,45 +386,47 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
     */
 
     for(int layer = 0; layer < size - 1;layer++){
-        BlockBitPlanes<64> planesXforward = {};
-        BlockBitPlanes<64> planesXbackward = {};
+        BlockBitPlanes planesXforward = {};
+        BlockBitPlanes planesXbackward = {};
 
-        BlockBitPlanes<64> planesYforward = {};
-        BlockBitPlanes<64> planesYbackward = {};
+        BlockBitPlanes planesYforward = {};
+        BlockBitPlanes planesYbackward = {};
 
-        BlockBitPlanes<64> planesZforward = {};
-        BlockBitPlanes<64> planesZbackward = {};
+        BlockBitPlanes planesZforward = {};
+        BlockBitPlanes planesZbackward = {};
         
         for(int row = 0;row < size;row++){
             for(auto& field_layer: group->getLayers()){
                 auto& [type,block,_field] = field_layer;
-                auto& field = field_layer.field();
 
                 auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
                 if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
+                auto& field = field_layer.field();
                 auto* rotatedField = field.getTransposed();
-                auto* solidRotated = group->getSolidField().getTransposed();
+
+                auto& solidField   = group->getSolidField();
+                auto* solidRotated = solidField.getTransposed();
 
                 if(!definition->transparent){
-                    uint64_t allFacesX = (field.getRow(layer,row) | field.getRow(layer + 1,row)) & (group->getSolidField().getRow(layer,row) ^ group->getSolidField().getRow(layer + 1,row));
-                    planesXforward[ (size_t) type][row] = group->getSolidField().getRow(layer,row)     & allFacesX;
-                    planesXbackward[(size_t) type][row] = group->getSolidField().getRow(layer + 1,row) & allFacesX;
+                    uint64_t allFacesX = (field.getRow(layer,row) | field.getRow(layer + 1,row)) & (solidField.getRow(layer,row) ^ solidField.getRow(layer + 1,row));
+                    planesXforward[ (size_t) type][row] = solidField.getRow(layer,row)     & allFacesX;
+                    planesXbackward[(size_t) type][row] = solidField.getRow(layer + 1,row) & allFacesX;
 
-                    uint64_t allFacesY = (field.getRow(row,layer) | field.getRow(row,layer + 1)) & (group->getSolidField().getRow(row,layer) ^ group->getSolidField().getRow(row,layer + 1));
-                    planesYforward[ (size_t) type][row] = group->getSolidField().getRow(row,layer)     & allFacesY;
-                    planesYbackward[(size_t) type][row] = group->getSolidField().getRow(row,layer + 1) & allFacesY;
+                    uint64_t allFacesY = (field.getRow(row,layer) | field.getRow(row,layer + 1)) & (solidField.getRow(row,layer) ^ solidField.getRow(row,layer + 1));
+                    planesYforward[ (size_t) type][row] = solidField.getRow(row,layer)     & allFacesY;
+                    planesYbackward[(size_t) type][row] = solidField.getRow(row,layer + 1) & allFacesY;
 
                     uint64_t allFacesZ = (rotatedField->getRow(layer,row) | rotatedField->getRow(layer + 1,row)) & (solidRotated->getRow(layer,row) ^ solidRotated->getRow(layer + 1,row));
                     planesZforward[ (size_t) type][row] = solidRotated->getRow(layer,row)     & allFacesZ;
                     planesZbackward[(size_t) type][row] = solidRotated->getRow(layer + 1,row) & allFacesZ;
                 }
                 else{
-                    uint64_t allFacesX = (field.getRow(layer,row) ^ field.getRow(layer + 1,row)) & ~(group->getSolidField().getRow(layer,row) | group->getSolidField().getRow(layer + 1,row));
+                    uint64_t allFacesX = (field.getRow(layer,row) ^ field.getRow(layer + 1,row)) & ~(solidField.getRow(layer,row) | solidField.getRow(layer + 1,row));
                     planesXforward[ (size_t) type][row] = field.getRow(layer,row) & allFacesX;
                     planesXbackward[(size_t) type][row] = field.getRow(layer + 1,row) & allFacesX;
 
-                    uint64_t allFacesY = (field.getRow(row,layer) ^ field.getRow(row,layer + 1)) & ~(group->getSolidField().getRow(row,layer) | group->getSolidField().getRow(row,layer + 1));
+                    uint64_t allFacesY = (field.getRow(row,layer) ^ field.getRow(row,layer + 1)) & ~(solidField.getRow(row,layer) | solidField.getRow(row,layer + 1));
                     planesYforward[ (size_t) type][row] = field.getRow(row,layer)     & allFacesY;
                     planesYbackward[(size_t) type][row] = field.getRow(row,layer + 1) & allFacesY;
 
@@ -548,14 +480,14 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
     /*
         Mesh cross chunk faces
     */
-    BlockBitPlanes<64> planesXforward = {};
-    BlockBitPlanes<64> planesXbackward = {};
+    BlockBitPlanes planesXforward = {};
+    BlockBitPlanes planesXbackward = {};
 
-    BlockBitPlanes<64> planesYforward = {};
-    BlockBitPlanes<64> planesYbackward = {};
+    BlockBitPlanes planesYforward = {};
+    BlockBitPlanes planesYbackward = {};
 
-    BlockBitPlanes<64> planesZforward = {};
-    BlockBitPlanes<64> planesZbackward = {};
+    BlockBitPlanes planesZforward = {};
+    BlockBitPlanes planesZbackward = {};
 
     std::array<float,4> occlusion = {0,0,0,0};
     //std::cout << nextX << " " << nextY << " " << nextZ << std::endl;

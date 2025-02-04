@@ -51,9 +51,6 @@ void BitField3D::fill(bool value){
     for(int i = 0;i < 64 * 64;i++) _internal_data[i] = segment;
 }
 
-
-static BitFieldCache transposed_cache = {};
-
 BitField3D* BitField3D::getTransposed() {
     if(transposed_cache_version_pointer && transposed_cache_version_pointer->creator_id == id){
         return &transposed_cache_version_pointer->field;
@@ -63,7 +60,7 @@ BitField3D* BitField3D::getTransposed() {
         TODO: implement transposing
     */
 
-    auto transposed = transposed_cache.next(id);
+    auto transposed = BitFieldCache::get().next(id);
     transposed_cache_version_pointer = transposed;
 
     for(int z = 0;z < 64;z++){
@@ -81,6 +78,65 @@ BitField3D* BitField3D::getTransposed() {
     }
 
     return &transposed->field;
+}
+
+
+const static std::array<uint64_t, 6> column_masks = {
+    0xAAAAAAAAAAAAAAAA, // 1010
+    0x8888888888888888, 
+    0x8080808080808080, 
+    0x8000800080008000,
+    0x8000000080000000,
+    0x8000000000000000
+};
+
+const static std::array<int, 6> column_offsets = {
+    1,
+    2, 
+    4, 
+    8,
+    16,
+    32
+};
+
+/*
+    Avarages from one level to a level below, will not work properly across levels with gaps
+*/
+static inline uint64_t fourMemberAvarage(
+    uint64_t row1,
+    uint64_t row2,
+    uint64_t row3,
+    uint64_t row4,
+    BitField3D::SimplificationLevel level
+){
+    uint64_t column_mask = column_masks[(size_t) level];
+    int offset           = column_offsets[(size_t) level]; 
+
+    uint64_t whole_avarage = ((row1 | row2) & (row3 | row4)) | ((row1 | row3) & (row2  | row4));
+    
+    /*
+        Avarage for pairs
+    */
+    uint64_t pair_avarage = (whole_avarage & column_mask) | ((whole_avarage << offset) & column_mask);
+
+    uint64_t result = pair_avarage;
+    // Expands the ones to match the levels base size
+    for(int i = 1; i != (2 << level); i <<= 1) 
+        result |= (result >> i);
+
+    return result;
+}
+
+BitField3D* BitField3D::getSimplified(SimplificationLevel level){
+    if(simplified_version_pointer && simplified_version_pointer->creator_id == id){
+        return &simplified_version_pointer->field;
+    }
+
+    auto output = BitFieldCache::get().next(id);
+    
+
+
+    return &output->field;
 }
 
 CompressedArray BitField3D::getCompressed(){
@@ -143,9 +199,6 @@ void BitField3D::decompress(std::array<uint64_t, 64 * 64>& destination, Compress
     }
 }
 
-
-static CompressedBitFieldCache compressed_cache = {};
-
 CCacheMember* CompressedBitFieldCache::next(std::shared_ptr<CompressedArray> new_compressed_data){
     next_spot = (next_spot + 1) % (max_cached - 1);
 
@@ -164,7 +217,7 @@ CCacheMember* CompressedBitFieldCache::next(std::shared_ptr<CompressedArray> new
 BitField3D* CompressedBitField3D::get(){
     if(cached_ptr && cached_ptr->compressed_data.get() == data_ptr.get()) return &cached_ptr->field;
     
-    cached_ptr = compressed_cache.next(data_ptr);
+    cached_ptr = CompressedBitFieldCache::get().next(data_ptr);
     return &cached_ptr->field;
 }
 
