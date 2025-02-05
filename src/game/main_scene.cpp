@@ -650,8 +650,12 @@ void MainScene::render(){
         auto position = indexer.next() + lastCamWorldPosition;
         Chunk* chunk = game_state->getTerrain().getChunk(position);
 
+        int distance = glm::clamp(glm::distance(glm::vec3(lastCamWorldPosition), glm::vec3(position)) / 3.0f, 0.0f, 7.0f);
+
+        auto level = static_cast<BitField3D::SimplificationLevel>(distance - 1);
+
         if(!chunk) std::cerr << "Chunk not generated when generating meshes?" << std::endl;
-        else if(!chunkMeshRegistry.isChunkLoaded(position)) chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry); 
+        else if(!chunkMeshRegistry.isChunkLoaded(position)) chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry, level); 
         
     }
 
@@ -747,7 +751,7 @@ void MainScene::render(){
 }
 
 void MainScene::regenerateChunkMesh(Chunk* chunk){
-    chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry);
+    chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry, BitField3D::NONE);
     this->updateVisibility = 1;
     //chunkMeshRegistry.unloadChunkMesh(chunk->getWorldPosition());
 }

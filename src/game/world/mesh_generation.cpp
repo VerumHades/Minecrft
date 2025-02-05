@@ -19,7 +19,7 @@ void ChunkMeshGenerator::syncGenerateAsyncUploadMesh(Chunk* chunk){
     auto start = std::chrono::high_resolution_clock::now();
 
     auto world_position = chunk->getWorldPosition();
-    auto solid_mesh = generateChunkMesh(world_position, chunk);
+    auto solid_mesh = generateChunkMesh(world_position, chunk, BitField3D::NONE);
 
     addToChunkMeshLoadingQueue(world_position, std::move(solid_mesh));
 }
@@ -30,25 +30,11 @@ void ChunkMeshGenerator::asyncGenerateAsyncUploadMesh(Chunk* chunk, ThreadPool& 
     });
 }
 
-void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegistry& buffer){
+void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegistry& buffer, BitField3D::SimplificationLevel simplification_level){
     auto world_position = chunk->getWorldPosition();
-    auto solid_mesh = generateChunkMesh(world_position, chunk);
+    auto solid_mesh = generateChunkMesh(world_position, chunk, simplification_level);
 
     buffer.addMesh(solid_mesh.get(), chunk->getWorldPosition());
-}
-
-
-static inline uint8_t get_expaned_width(uint64_t row, uint8_t start, uint8_t block_size, uint8_t block_half_size, uint64_t mask){
-    uint8_t width_in_blocks = 0;
-    while(
-        mask != 0ULL && // We arent going outside
-        (row & mask) != 0ULL
-        //count_ones(row & mask) >= block_half_size
-    ){
-        mask >>= block_size;
-        width_in_blocks++;
-    }
-    return width_in_blocks;
 }
 
 /*
@@ -317,7 +303,7 @@ void ChunkMeshGenerator::proccessOccludedFaces(
     }
 }
 
-std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosition, Chunk* group){
+std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosition, Chunk* group, BitField3D::SimplificationLevel simplification_level){
     ScopeTimer timer("Generated mesh");
 
     auto solidMesh = std::make_unique<InstancedMesh>();
@@ -330,6 +316,8 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         std::cerr << "No world assigned, quitting mesh generation." << std::endl;
         return solidMesh;
     }
+
+    group->current_simplification = simplification_level;
 
     Chunk* nextX = world->getChunk(worldPosition - glm::ivec3{1,0,0});
     Chunk* nextY = world->getChunk(worldPosition - glm::ivec3{0,1,0});
@@ -402,10 +390,10 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
                 auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
                 if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
-                auto& field = field_layer.field();
+                auto& field = *field_layer.field().getSimplifiedWithNone(simplification_level);
                 auto* rotatedField = field.getTransposed();
 
-                auto& solidField   = group->getSolidField();
+                auto& solidField   = *group->getSolidField().getSimplifiedWithNone(simplification_level);
                 auto* solidRotated = solidField.getTransposed();
 
                 if(!definition->transparent){
@@ -505,19 +493,20 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
             auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
             
-            BitField3D& nextXSolid = nextX->getSolidField();
+            auto& solidField   = *group->getSolidField().getSimplifiedWithNone(simplification_level);
+            BitField3D& nextXSolid = *nextX->getSolidField().getSimplifiedWithNone(nextX->current_simplification);
 
-            const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field().getRow(0,row) : 0ULL;
-            const uint64_t otherMaskRow = nextX->hasLayerOfType(type) ? nextX->getLayer(type).field().getRow(size - 1,row)   : 0ULL;
+            const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field().getSimplifiedWithNone(simplification_level)->getRow(0,row) : 0ULL;
+            const uint64_t otherMaskRow = nextX->hasLayerOfType(type) ? nextX->getLayer(type).field().getSimplifiedWithNone(nextX->current_simplification)->getRow(size - 1,row)   : 0ULL;
             
             if(!definition->transparent){
-                uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (group->getSolidField().getRow(0,row) ^ nextXSolid.getRow(size - 1,row));
+                uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (solidField.getRow(0,row) ^ nextXSolid.getRow(size - 1,row));
                     
-                planesXforward[ (size_t) type][row] =  group->getSolidField().getRow(0,row) & allFacesX;
+                planesXforward[ (size_t) type][row] =  solidField.getRow(0,row) & allFacesX;
                 planesXbackward[(size_t) type][row] =  nextXSolid.getRow(size - 1,row) & allFacesX;
             }
             else{
-                uint64_t allFacesX =  (localMaskRow ^ otherMaskRow) & ~(group->getSolidField().getRow(0,row) | nextXSolid.getRow(size - 1,row));
+                uint64_t allFacesX =  (localMaskRow ^ otherMaskRow) & ~(solidField.getRow(0,row) | nextXSolid.getRow(size - 1,row));
                     
                 planesXforward[ (size_t) type][row] =  localMaskRow & allFacesX;
                 planesXbackward[(size_t) type][row] =  otherMaskRow & allFacesX;
@@ -528,19 +517,21 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
             auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
+            auto& solidField   = *group->getSolidField().getSimplifiedWithNone(simplification_level);
+
             BitField3D& nextYSolid = nextY->getSolidField();
 
-            const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field().getRow(row,0) : 0ULL;
-            const uint64_t otherMaskRow = nextY->hasLayerOfType(type) ? nextY->getLayer(type).field().getRow(row,size - 1)   : 0ULL;
+            const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field().getSimplifiedWithNone(simplification_level)->getRow(row,0) : 0ULL;
+            const uint64_t otherMaskRow = nextY->hasLayerOfType(type) ? nextY->getLayer(type).field().getSimplifiedWithNone(nextY->current_simplification)->getRow(row,size - 1)   : 0ULL;
             
             if(!definition->transparent){
-                uint64_t allFacesY =  (localMaskRow | otherMaskRow) & (group->getSolidField().getRow(row,0) ^ nextYSolid.getRow(row,size - 1));
+                uint64_t allFacesY =  (localMaskRow | otherMaskRow) & (solidField.getRow(row,0) ^ nextYSolid.getRow(row,size - 1));
 
-                planesYforward[ (size_t) type][row] = group->getSolidField().getRow(row,0) & allFacesY;
+                planesYforward[ (size_t) type][row] = solidField.getRow(row,0) & allFacesY;
                 planesYbackward[(size_t) type][row] = nextYSolid.getRow(row,size - 1) & allFacesY;
             }
             else{
-                uint64_t allFacesY =  (localMaskRow ^ otherMaskRow) & ~(group->getSolidField().getRow(row,0) | nextYSolid.getRow(row,size - 1));
+                uint64_t allFacesY =  (localMaskRow ^ otherMaskRow) & ~(solidField.getRow(row,0) | nextYSolid.getRow(row,size - 1));
 
                 planesYforward[ (size_t) type][row] = localMaskRow & allFacesY;
                 planesYbackward[(size_t) type][row] = otherMaskRow & allFacesY; 
@@ -551,15 +542,17 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
             auto* definition = BlockRegistry::get().getBlockPrototypeByIndex(type);
             if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
+            auto& solidField   = *group->getSolidField().getSimplifiedWithNone(simplification_level);
+            auto* solidRotated = solidField.getTransposed();
+
             auto* nextZSolidRotated = nextZ->getSolidField().getTransposed();
 
             uint64_t localMaskRow = 0ULL;
-            if(group->hasLayerOfType(type)) localMaskRow = group->getLayer(type).field().getTransposed()->getRow(0,row);
+            if(group->hasLayerOfType(type)) localMaskRow = group->getLayer(type).field().getSimplifiedWithNone(simplification_level)->getTransposed()->getRow(0,row);
             
             uint64_t otherMaskRow = 0ULL;
-            if(nextZ->hasLayerOfType(type)) otherMaskRow = nextZ->getLayer(type).field().getTransposed()->getRow(size - 1,row); 
+            if(nextZ->hasLayerOfType(type)) otherMaskRow = nextZ->getLayer(type).field().getSimplifiedWithNone(nextZ->current_simplification)->getTransposed()->getRow(size - 1,row); 
 
-            auto* solidRotated = group->getSolidField().getTransposed();
             
             if(!definition->transparent){
                 uint64_t allFacesX =  (localMaskRow | otherMaskRow) & (solidRotated->getRow(0,row) ^ nextZSolidRotated->getRow(size - 1,row));

@@ -163,31 +163,42 @@ void ChunkDefinition::place(Chunk* chunk, const glm::ivec3& offset) const {
     if(neighbours[BACK]   == WALL) placePlane(chunk, offset + glm::ivec3{0,0,size - 1}, size, size, Z);
 }
 
-void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
-    //static const int count = CHUNK_SIZE / ChunkDefinition::size;
-    std::array<std::array<int,CHUNK_SIZE>, CHUNK_SIZE> heightMap{};
+WorldGenerator::Heightmap& WorldGenerator::getHeightmapFor(glm::ivec3 position_in){
+    auto position = glm::ivec3(position_in.x, 0, position_in.z);
 
-    int lowest = INT32_MAX;
-    int highest = INT32_MIN;
+    if(getHeightMaps().contains(position)) 
+        return getHeightMaps().at(position);
+
+    auto& map = getHeightMaps()[position];
+
+    map.lowest = INT32_MAX;
+    map.highest = INT32_MIN;
 
     for(int x = 0; x < CHUNK_SIZE; x++) 
     for(int z = 0; z < CHUNK_SIZE; z++){
         glm::ivec3 localPosition = glm::ivec3(x,0,z) + position * CHUNK_SIZE;
 
         int value = pow(noise.GetNoise(static_cast<float>(localPosition.x),static_cast<float>(localPosition.z)) * 10, 3);
-        lowest = std::min(value, lowest);
-        highest = std::max(value, highest);
-        heightMap[x][z] = value;
-    }   
+        map.lowest = std::min(value, map.lowest);
+        map.highest = std::max(value, map.highest);
+        map.heights[x][z] = value;
+    }
+
+    return map;
+}
+
+void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
+    //static const int count = CHUNK_SIZE / ChunkDefinition::size;
+    auto& heightMap = getHeightmapFor(position);
 
     auto stone = BlockRegistry::get().getIndexByName("stone");
     auto grass = BlockRegistry::get().getIndexByName("grass");
 
-    if(lowest - 1 > position.y * CHUNK_SIZE + CHUNK_SIZE){
+    if(heightMap.lowest - 1 > position.y * CHUNK_SIZE + CHUNK_SIZE){
         chunk->fill({stone});
         return;
     }
-    if(highest < position.y * CHUNK_SIZE){
+    if(heightMap.highest < position.y * CHUNK_SIZE){
         return;
     }
 
@@ -196,9 +207,9 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
     for(int z = 0; z <= CHUNK_SIZE; z++){
         glm::ivec3 localPosition = glm::ivec3(x,y,z) + position * CHUNK_SIZE;
         
-        if(localPosition.y > heightMap[x][z]) continue;
+        if(localPosition.y > heightMap.heights[x][z]) continue;
 
-        if(localPosition.y == heightMap[x][z] && heightMap[x][z] < 120) 
+        if(localPosition.y == heightMap.heights[x][z] && heightMap.heights[x][z] < 120) 
             chunk->setBlock(glm::ivec3(x,y,z), {grass}, true);
         else 
             chunk->setBlock(glm::ivec3(x,y,z), {stone}, true);

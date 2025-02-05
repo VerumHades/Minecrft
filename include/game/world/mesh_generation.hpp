@@ -37,7 +37,7 @@ class ChunkMeshGenerator{
 
     private:
         std::vector<Face>& greedyMeshPlane(BitPlane<64> rows, int start = 0, int end = 64);
-        std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group);
+        std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group, BitField3D::SimplificationLevel simplification_level);
 
         std::mutex meshLoadingMutex;
         
@@ -99,7 +99,7 @@ class ChunkMeshGenerator{
         /*
             Generates and uploads the newly generated chunk mesh right away
         */
-        void syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegistry& buffer);
+        void syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegistry& buffer, BitField3D::SimplificationLevel simplification_level);
 
         void setWorld(Terrain* world){this->world = world;}
 };

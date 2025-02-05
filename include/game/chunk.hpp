@@ -31,6 +31,7 @@
 class Chunk: public SparseBlockArray{
     private:
         glm::ivec3 worldPosition;
+        BitField3D::SimplificationLevel current_simplification = BitField3D::NONE;
 
         friend class ChunkMeshGenerator;
         friend class WorldGenerator;

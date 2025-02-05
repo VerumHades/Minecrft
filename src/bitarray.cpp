@@ -112,6 +112,9 @@ static inline uint64_t fourMemberAvarage(
     uint64_t column_mask = column_masks[(size_t) level];
     int offset           = column_offsets[(size_t) level]; 
 
+    /*
+        Avarage for each column in all the 4 rows
+    */
     uint64_t whole_avarage = ((row1 | row2) & (row3 | row4)) | ((row1 | row3) & (row2  | row4));
     
     /*
@@ -119,24 +122,66 @@ static inline uint64_t fourMemberAvarage(
     */
     uint64_t pair_avarage = (whole_avarage & column_mask) | ((whole_avarage << offset) & column_mask);
 
-    uint64_t result = pair_avarage;
+    return pair_avarage;
+}
+
+static inline uint64_t expand(uint64_t value, BitField3D::SimplificationLevel level){
     // Expands the ones to match the levels base size
     for(int i = 1; i != (2 << level); i <<= 1) 
-        result |= (result >> i);
+        value |= (value >> i);
 
-    return result;
+    return value;
 }
 
 BitField3D* BitField3D::getSimplified(SimplificationLevel level){
     if(simplified_version_pointer && simplified_version_pointer->creator_id == id){
         return &simplified_version_pointer->field;
     }
+    if(level == NONE) throw std::logic_error("Cannot simplify mesh to NONE level.");
 
     auto output = BitFieldCache::get().next(id);
-    
+    simplified_version_pointer = output;
 
+    auto& field = output->field;
+
+    for(int step = 0; step <= level; step++){
+        int offset = column_offsets[step];
+        int group_offset = offset * 2;
+
+        auto& source_field = step == 0 ? *this : output->field;
+
+        for(int x = 0;x < 64; x += group_offset)
+        for(int y = 0;y < 64; y += group_offset){
+            field.setRow(x,y, 
+                fourMemberAvarage(
+                    source_field.getRow(x,y),
+                    source_field.getRow(x + offset,y         ),
+                    source_field.getRow(x         ,y + offset),
+                    source_field.getRow(x + offset,y + offset),
+                    static_cast<SimplificationLevel>(step)
+                )
+            );
+        }
+    }
+
+    int group_offset = column_offsets[level] * 2;
+    for(int x = 0;x < 64; x += group_offset)
+    for(int y = 0;y < 64; y += group_offset){
+        uint64_t core = expand(field.getRow(x,y), level);
+
+        for(int i = 0;i < group_offset;i++)
+        for(int j = 0;j < group_offset;j++)
+        {
+            field.setRow(x + i,y + j, core);
+        }
+    }
 
     return &output->field;
+}
+
+BitField3D* BitField3D::getSimplifiedWithNone(SimplificationLevel level){
+    if(level == NONE) return this;
+    else return getSimplified(level);
 }
 
 CompressedArray BitField3D::getCompressed(){

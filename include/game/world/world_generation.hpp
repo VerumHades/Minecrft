@@ -3,6 +3,8 @@
 #include <optional>
 #include <random>
 #include <game/blocks.hpp>
+#include <unordered_map>
+#include <vec_hash.hpp>
 
 #include <memory>
 #include <rendering/opengl/shaders.hpp>
@@ -20,11 +22,26 @@ class WorldGenerator{
     private:
         FastNoiseLite noise;
         int seed;
+
+        struct Heightmap{
+            std::array<std::array<int,CHUNK_SIZE>, CHUNK_SIZE> heights;
+            int lowest = INT32_MAX;
+            int highest = INT32_MIN;
+        };
+
+        std::unordered_map<glm::ivec3, WorldGenerator::Heightmap, IVec3Hash, IVec3Equal>& getHeightMaps(){
+            static std::unordered_map<glm::ivec3, WorldGenerator::Heightmap, IVec3Hash, IVec3Equal> height_maps{};
+            return height_maps;
+        }
         
+        Heightmap& getHeightmapFor(glm::ivec3 position);
+
     public:
         WorldGenerator();
 
         void generateTerrainChunk(Chunk* chunk, glm::ivec3 position);
+
+
 
         void setSeed(int seed) {
             noise.SetSeed(seed);

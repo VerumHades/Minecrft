@@ -31,7 +31,9 @@ class BitField3D{
             TO_8,
             TO_4,
             TO_2,
-            TO_1
+            TO_1,
+
+            NONE = -1
         };
 
     private:
@@ -106,9 +108,14 @@ class BitField3D{
         /*
             Returns a pointer to a simplified version of the bitfield (avaraged out to form a simple mesh)
         */
-
         BitField3D* getSimplified(SimplificationLevel level);
+        
+        /*
+            Returns the simplified version and itself for the NONE level.
 
+            Be careful the pointer can become invalid if the original field is lost.
+        */
+        BitField3D* getSimplifiedWithNone(SimplificationLevel level);
 
         /*
             Fill the array with the set value
@@ -143,6 +150,9 @@ class BitFieldCache{
         BitFieldCache(){}
             
     public:
+        /*
+            Returns the next cache spot, zeroes out the field
+        */
         TCacheMember* next(size_t id){
             next_spot = (next_spot + 1) % (max_cached - 1);
             auto& member = cached_fields[next_spot];
