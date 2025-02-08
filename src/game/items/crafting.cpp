@@ -42,3 +42,7 @@ void CraftingInterface::open(std::shared_ptr<BlockMetadata> metadata, GameState*
     }
     player_inventory->setInventory(&game_state->getPlayerInventory());
 }
+
+std::shared_ptr<BlockMetadata> CraftingInterface::createMetadata(){
+    return std::make_shared<CraftingMetadata>();
+}

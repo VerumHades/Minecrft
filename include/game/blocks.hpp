@@ -25,6 +25,7 @@ class BlockMetadata{
 class BlockInterface{
     public:
         virtual void open(std::shared_ptr<BlockMetadata> metadata, GameState* game_state) = 0;
+        virtual std::shared_ptr<BlockMetadata> createMetadata() = 0;
         virtual const std::string& getName() = 0;
 };
 class BlockBehaviour{
@@ -106,4 +107,5 @@ struct Block{
 
     Block() {}
     Block(BlockID id): id(id) {}
+     Block(BlockID id, std::shared_ptr<BlockMetadata> metadata): id(id),metadata(metadata) {}
 };

@@ -27,4 +27,5 @@ class CraftingInterface: public BlockInterface{
         const std::string& getName() override {return ui_layer->name;}
 
         std::shared_ptr<UILayer> getLayer(){return ui_layer;}
+        std::shared_ptr<BlockMetadata> createMetadata() override;
 };

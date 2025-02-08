@@ -6,6 +6,8 @@ void SparseBlockArray::setBlock(glm::ivec3 position, const Block& block, bool do
     if(!dont_check){
         auto* block_here = getBlock(position);
         if(block_here != &airBlock){
+            if(interactable_blocks.contains(position)) interactable_blocks.erase(position);
+
             getLayer(block_here->id).field().reset(position.x,position.y,position.z);
         }
     }
@@ -27,6 +29,8 @@ void SparseBlockArray::setBlock(glm::ivec3 position, const Block& block, bool do
 
     if(!block_definition->transparent) solid_field.get()->set(position.x,position.y,position.z);
     else solid_field.get()->reset(position.x,position.y,position.z);
+
+    if(block_definition->interface) interactable_blocks.emplace(position,Block{block.id, block_definition->interface->createMetadata()});
 }
 
 void SparseBlockArray::fill(const Block& block){
@@ -53,6 +57,8 @@ void SparseBlockArray::fill(const Block& block){
 }
 
 Block* SparseBlockArray::getBlock(glm::ivec3 position){
+    if(interactable_blocks.contains(position)) return &interactable_blocks.at(position);
+
     for(auto& layer: layers){
         if(!layer.field().get(position.x,position.y,position.z)) continue;
 

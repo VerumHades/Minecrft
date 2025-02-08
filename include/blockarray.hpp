@@ -3,7 +3,7 @@
 #include <bitarray.hpp>
 #include <game/blocks.hpp>
 #include <rendering/bitworks.hpp>
-
+#include <vec_hash.hpp>
 class SparseBlockArray{
     protected:
         struct Layer{
@@ -57,6 +57,7 @@ class SparseBlockArray{
         std::vector<Layer> layers;
         std::vector<BlockID> present_types;
         std::unordered_map<BlockID, size_t> type_indexes;
+        std::unordered_map<glm::ivec3, Block, IVec3Hash, IVec3Equal> interactable_blocks{};
     
     public:
         SparseBlockArray(){}
