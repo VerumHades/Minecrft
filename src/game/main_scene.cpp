@@ -217,11 +217,14 @@ void MainScene::initialize(){
 
     for(auto& prototype: BlockRegistry::get().prototypes()){
         if(prototype.id == 0) continue; // Dont make air
+        
+        if(prototype.name == "crafting"){
+            std::cout << "AAA" << std::endl;
+            auto interface = std::make_unique<CraftingInterface>(prototype.name + "_interface", itemTextureAtlas, held_item_slot);
+            getWindow()->addExternalLayer(interface->getLayer());
 
-        auto interface = std::make_unique<CraftingInterface>(prototype.name + "_interface", itemTextureAtlas, held_item_slot);
-        getWindow()->addExternalLayer(interface->getLayer());
-
-        BlockRegistry::get().setPrototypeInterface(prototype.id, std::move(interface));
+            BlockRegistry::get().setPrototypeInterface(prototype.id, std::move(interface));
+        }
 
         ItemRegistry::get().createPrototypeForBlock(&prototype);
     }
@@ -565,7 +568,7 @@ void MainScene::open(GLFWwindow* window){
     game_state = std::make_unique<GameState>(worldPath);
 
     for(auto& prototype: BlockRegistry::get().prototypes()){
-        if(prototype.id == 0) continue; // Dont make air
+        if(prototype.id == BLOCK_AIR_INDEX) continue; // Dont make air
 
         auto* ptype = ItemRegistry::get().createPrototypeForBlock(&prototype);
         ItemID id = ItemRegistry::get().createItem(ptype);
