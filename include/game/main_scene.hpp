@@ -36,6 +36,7 @@
 #include <game/items/item_renderer.hpp>
 #include <game/structure.hpp>
 #include <game/game_state.hpp>
+#include <game/items/crafting.hpp>
 
 #include <indexing.hpp>
 
@@ -90,7 +91,7 @@ class MainScene: public Scene{
         std::atomic<bool> update_hotbar = false;
 
         std::string worldPath = "saves/worldsave_new.bin";
-        int renderDistance = 4;
+        int renderDistance = 2;
         int selectedBlock = 4;
 
         bool allGenerated = false;

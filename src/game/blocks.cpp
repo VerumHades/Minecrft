@@ -91,3 +91,10 @@ BlockRegistry::BlockPrototype* BlockRegistry::getBlockPrototypeByIndex(size_t id
     if(id >= blocks.size()) return nullptr;
     return &blocks[id];
 }
+
+void BlockRegistry::setPrototypeInterface(BlockID id, std::unique_ptr<BlockInterface> interface){
+    auto prototype = getBlockPrototypeByIndex(id);
+    if(!prototype) return;
+
+    prototype->interface = std::move(interface);
+}

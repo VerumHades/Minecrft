@@ -9,7 +9,7 @@ class GameState{
         Terrain terrain;
         std::list<Entity> entities;
 
-        LogicalItemInventory player_inventory{20,10};
+        LogicalItemInventory player_inventory{10,5};
         LogicalItemInventory player_hotbar{9,1};
 
         WorldGenerator world_generator;

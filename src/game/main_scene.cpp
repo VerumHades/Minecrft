@@ -218,6 +218,11 @@ void MainScene::initialize(){
     for(auto& prototype: BlockRegistry::get().prototypes()){
         if(prototype.id == 0) continue; // Dont make air
 
+        auto interface = std::make_unique<CraftingInterface>(prototype.name + "_interface", itemTextureAtlas, held_item_slot);
+        getWindow()->addExternalLayer(interface->getLayer());
+
+        BlockRegistry::get().setPrototypeInterface(prototype.id, std::move(interface));
+
         ItemRegistry::get().createPrototypeForBlock(&prototype);
     }
 }
@@ -231,17 +236,17 @@ void MainScene::resize(GLFWwindow* window, int width, int height){
 }
 
 void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
-    if(isActiveLayer("inventory")){
-        if(held_item_slot){
-            held_item_slot->setPosition(
-                TValue::Pixels(mouseX),
-                TValue::Pixels(mouseY)
-            );
-            held_item_slot->calculateTransforms();
-            held_item_slot->update();
-        }
+    //if(isActiveLayer("inventory")){
+    if(held_item_slot){
+        held_item_slot->setPosition(
+            TValue::Pixels(mouseX),
+            TValue::Pixels(mouseY)
+        );
+        held_item_slot->calculateTransforms();
+        held_item_slot->update();
     }
-    else if(isActiveLayer("default") || isActiveLayer("structure_capture")){
+    //}
+    if(isActiveLayer("default") || isActiveLayer("structure_capture")){
         this->mouseX = mouseX;
         this->mouseY = mouseY;
         mouseMoved = true;
@@ -342,6 +347,15 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
             regenerateChunkMesh(chunk,game_state->getTerrain().getGetChunkRelativeBlockPosition(blockUnderCursorPosition));
         }
         else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
+            auto* block_prototype = BlockRegistry::get().getBlockPrototypeByIndex(blockUnderCursor->id);
+            if(block_prototype && block_prototype->interface){
+                block_prototype->interface->open(blockUnderCursor->metadata, game_state.get());
+                setUILayer(block_prototype->interface->getName());
+                return;
+            }
+
+
+
             glm::ivec3 blockPosition = glm::floor(blockUnderCursorEmpty);
 
             auto* selected_slot = hotbar->getSelectedSlot();

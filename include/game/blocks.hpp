@@ -10,10 +10,28 @@
 #include <rendering/texture_registry.hpp>
 #include <game/colliders.hpp>
 
+class GameState;
+
 #define CHUNK_SIZE 64
 
 using BlockID = size_t;
 #define BLOCK_AIR_INDEX 0
+
+class BlockMetadata{
+    public:
+        virtual ~BlockMetadata() = default;
+};
+
+class BlockInterface{
+    public:
+        virtual void open(std::shared_ptr<BlockMetadata> metadata, GameState* game_state) = 0;
+        virtual const std::string& getName() = 0;
+};
+class BlockBehaviour{
+    public:
+        virtual void update(BlockMetadata* metadata) = 0;
+};
+
 
 class BlockRegistry: public TextureRegistry{
     public:
@@ -34,6 +52,9 @@ class BlockRegistry: public TextureRegistry{
 
             std::array<std::string,6> texture_names{};
             std::array<std::string,6> texture_paths{};
+
+            std::unique_ptr<BlockInterface> interface = nullptr;
+            std::unique_ptr<BlockBehaviour> behaviour = nullptr;
         };
 
     private:
@@ -41,14 +62,13 @@ class BlockRegistry: public TextureRegistry{
         
         BlockRegistry(){
             blocks.push_back({
-                0,
+                BLOCK_AIR_INDEX,
                 "air",
                 {},
                 true,
                 true,
                 {},
-                FULL_BLOCK,
-                {}
+                FULL_BLOCK
             });
         }
 
@@ -72,6 +92,8 @@ class BlockRegistry: public TextureRegistry{
         BlockID getIndexByName(std::string name);
         BlockPrototype* getBlockPrototypeByIndex(BlockID id);
 
+        void setPrototypeInterface(BlockID id, std::unique_ptr<BlockInterface> interface);
+
         size_t registeredBlocksTotal(){return blocks.size();}
         const std::vector<BlockPrototype>& prototypes() {return blocks;};
 
@@ -80,6 +102,7 @@ class BlockRegistry: public TextureRegistry{
 
 struct Block{
     BlockID id = 0;
+    std::shared_ptr<BlockMetadata> metadata = nullptr;
 
     Block() {}
     Block(BlockID id): id(id) {}

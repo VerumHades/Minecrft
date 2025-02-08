@@ -1,7 +1,7 @@
 #include <game/game_state.hpp>
 
 GameState::GameState(const std::string& filename): world_stream(filename){
-    entities.push_back(Entity(glm::vec3(4,60,4), glm::vec3(0.6, 1.8, 0.6)));
+    entities.push_back(Entity(glm::vec3(4,30,4), glm::vec3(0.6, 1.8, 0.6)));
 }
 static int rotation = 0;
 static float position = 0;

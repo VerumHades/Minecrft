@@ -55,20 +55,27 @@ using UIWindowIdentifier = int;
 
 class UIWindow{
     private: 
-        std::unordered_map<std::string, UILayer> layers;
+        std::unordered_map<std::string, std::shared_ptr<UILayer>> layers;
         std::string currentLayer = "default";
 
     public:
         void setCurrentLayer(std::string name) {currentLayer = name;};
         std::string getCurrentLayerName(){return currentLayer;}
+
+        void addExternalLayer(std::shared_ptr<UILayer> layer){
+            if(!layer) return;
+            layers[layer->name] = layer;
+        }
         UILayer& getCurrentLayer() {
             return getLayer(currentLayer);
         }
         UILayer& getLayer(std::string name) {
-            if(layers.contains(name)) return layers.at(name);
-            UILayer& layer = layers[name];
-            layer.name = name;
-            return layer;
+            if(layers.contains(name)) return *layers.at(name);
+            
+            auto& layer = layers[name];
+            layer = std::make_shared<UILayer>();
+            layer->name = name;
+            return *layer;
         }
 };
 #include <ui/loader.hpp>

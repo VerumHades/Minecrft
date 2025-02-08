@@ -144,7 +144,7 @@ void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
 }
 
 InventoryDisplay::InventoryDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr): 
-    textureAtlas(textureAtlas), inventory(inventory), held_item_ptr(held_item_ptr)
+    textureAtlas(textureAtlas), held_item_ptr(held_item_ptr)
 {
     dedicated_texture_array = textureAtlas.getTextureArray();
 
@@ -155,6 +155,7 @@ InventoryDisplay::InventoryDisplay(ItemTextureAtlas& textureAtlas, std::shared_p
     onMouseEvent = [this](int button, int action, int mods){
         if(!this->hover) return;
         if(!this->held_item_ptr) return;
+        if(!this->inventory) return;
 
         auto mousePosition = UICore::get().getMousePosition();
         int relative_x = mousePosition.x - transform.x;
@@ -163,7 +164,6 @@ InventoryDisplay::InventoryDisplay(ItemTextureAtlas& textureAtlas, std::shared_p
         int slot_x = relative_x / this->slot_size;
         int slot_y = relative_y / this->slot_size;
 
-        if(!this->inventory) return;
         auto* slot = this->inventory->getSlot(slot_x, slot_y);
         if(!slot) return;
 
