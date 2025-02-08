@@ -82,9 +82,9 @@ class MainScene: public Scene{
         std::shared_ptr<UILabel> structure_capture_end_label;
 
         ItemTextureAtlas itemTextureAtlas{};
-        ItemPrototypeRegistry itemPrototypeRegistry{};
+
         std::shared_ptr<ItemSlot> held_item_slot;
-        std::shared_ptr<ItemInventory> inventory;
+        std::shared_ptr<InventoryDisplay> inventory;
         std::shared_ptr<UIHotbar> hotbar;
         
         std::atomic<bool> update_hotbar = false;
@@ -201,14 +201,14 @@ class UICrosshair: public UIFrame{
         void getRenderingInformation(UIRenderBatch& batch) override;
 };
 
-class UIHotbar: public ItemInventory{
+class UIHotbar: public InventoryDisplay{
     private:
         int selected_slot = 0;
         const int slots_total = 9;
 
     public:
-        UIHotbar(ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr): 
-        ItemInventory(textureAtlas, 9, 1, held_item_ptr){}
+        UIHotbar(ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr):
+        InventoryDisplay(textureAtlas, held_item_ptr){}
 
         void getRenderingInformation(UIRenderBatch& batch) override;
         void selectSlot(int slot){
@@ -216,7 +216,8 @@ class UIHotbar: public ItemInventory{
         }
         int getSelectedSlotNumber(){return selected_slot;}
 
-        LogicalItemSlot& getSelectedSlot() {
-            return getItemSlot(selected_slot,0);
+        LogicalItemSlot* getSelectedSlot() {
+            if(!inventory) return nullptr;
+            return inventory->getSlot(selected_slot,0);
         };
 };

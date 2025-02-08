@@ -56,60 +56,6 @@ ItemTextureAtlas::TextureSet* ItemTextureAtlas::getPrototypeTextureSet(ItemProto
     return &stored_textures[prototype];
 }
 
-bool LogicalItemSlot::takeItemFrom(LogicalItemSlot& source, int quantity){
-    bool source_has_item = source.item_option.has_value();
-    bool destination_has_item = item_option.has_value();
-
-    if(!source_has_item) return false;
-    
-    Item& source_item = source.item_option.value();
-    auto* source_item_prototype = source_item.getPrototype();
-    if(!source_item_prototype) return false;
-
-    int source_quantity = source_item.getQuantity();
-    if(quantity == -1) quantity = source_quantity;
-
-    if(destination_has_item){
-        Item& destination_item = item_option.value();
-        auto* destination_item_prototype = destination_item.getPrototype();
-        
-        if(source_item_prototype != destination_item_prototype) return false;
-
-        if(source_quantity <= quantity){
-            source.item_option.reset();
-            quantity = source_quantity;
-        }
-        else source_item.setQuantity(source_quantity - quantity);
-
-        destination_item.setQuantity(destination_item.getQuantity() + quantity);
-        return true;
-    }
-    
-    if(source_quantity <= quantity){
-        source.item_option.reset();
-        quantity = source_quantity;
-    }
-    else source_item.setQuantity(source_quantity - quantity);
-
-    item_option.emplace(source_item);
-    item_option.value().setQuantity(quantity);
-    return true;
-}
-bool LogicalItemSlot::moveItemTo(LogicalItemSlot& destination, int quantity){
-    return destination.takeItemFrom(*this, quantity);
-}
-
-void LogicalItemSlot::decreaseQuantity(int number){
-    if(!hasItem()) return;
-    auto& item = getItem().value();
-
-    if(item.getQuantity() <= number) clear();
-    else item.setQuantity(item.getQuantity() - number);
-}
-void LogicalItemSlot::clear(){
-    item_option.reset();
-}
-
 void ItemTextureAtlas::RenderItemIntoSlot(UIRenderBatch& batch, ItemPrototype* prototype, UITransform transform){
 
     //std::cout << prototype << std::endl;
@@ -175,8 +121,8 @@ void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
     );*/
 
     if(!item_slot.hasItem()) return;
-    auto& item = item_slot.getItem().value();
-    auto* prototype = item.getPrototype();
+    auto* item = item_slot.getItem();
+    auto* prototype = item->getPrototype();
     if(!prototype) return;
 
     textureAtlas.RenderItemIntoSlot(batch,prototype,transform);
@@ -186,7 +132,7 @@ void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
     int slot_width  = slot_size - slot_padding * 2;
     int slot_height = slot_width;
 
-    std::string quantity_number = std::to_string(item.getQuantity());
+    std::string quantity_number = std::to_string(item->getQuantity());
     UITextDimensions textDimensions = UICore::get().getBackend().getTextDimensions(quantity_number, quantity_number_font_size);
     batch.Text(
         quantity_number, 
@@ -197,13 +143,11 @@ void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
     );
 }
 
-ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, int slots_horizontaly, int slots_verticaly, std::shared_ptr<ItemSlot> held_item_ptr): 
-    textureAtlas(textureAtlas), slots_horizontaly(slots_horizontaly),
-    slots_verticaly(slots_verticaly), items(slots_horizontaly * slots_verticaly), held_item_ptr(held_item_ptr)
+InventoryDisplay::InventoryDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr): 
+    textureAtlas(textureAtlas), inventory(inventory), held_item_ptr(held_item_ptr)
 {
     dedicated_texture_array = textureAtlas.getTextureArray();
 
-    setSize(TValue::Pixels(slots_horizontaly * slot_size), TValue::Pixels(slots_verticaly * slot_size));
     setAttribute(&UIFrame::Style::backgroundColor, {20,20,20,200});
     setAttribute(&UIFrame::Style::borderWidth, {3_px,3_px,3_px,3_px});
     setAttribute(&UIFrame::Style::borderColor, {UIColor{0,0,0},{0,0,0},{0,0,0},{0,0,0}});
@@ -219,9 +163,11 @@ ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, int slots_horizonta
         int slot_x = relative_x / this->slot_size;
         int slot_y = relative_y / this->slot_size;
 
-        if(slot_x < 0 || slot_x >= this->slots_horizontaly || slot_y < 0 || slot_y >= this->slots_verticaly) return;
+        if(!this->inventory) return;
+        auto* slot = this->inventory->getSlot(slot_x, slot_y);
+        if(!slot) return;
 
-        auto& item_slot = items[{slot_x,slot_y,0}];
+        auto& item_slot = *slot;
         auto& hand_slot = this->held_item_ptr->getSlot();
 
         if(button == GLFW_MOUSE_BUTTON_LEFT){
@@ -246,36 +192,7 @@ ItemInventory::ItemInventory(ItemTextureAtlas& textureAtlas, int slots_horizonta
     };
 }
     
-
-bool ItemInventory::addItem(Item item){
-    auto* prototype = item.getPrototype();
-
-    //std::cout << "Adding item " << prototype << std::endl;
-
-    LogicalItemSlot* first_empty_slot = nullptr;
-    for(int x = 0;x < slots_horizontaly;x++){
-        for(int y = 0;y < slots_verticaly;y++){
-            auto position = glm::ivec3{x,y,0};
-            if(!items.contains(position)){
-                return setItem(x,y, item);
-            }
-            auto& item_slot = items.at(position);
-
-            if(!item_slot.hasItem()){
-                if(first_empty_slot == nullptr) first_empty_slot = &item_slot;
-                continue;
-            }
-
-            if(item_slot.addItem(item)) return true;
-        }
-    }
-
-    if(first_empty_slot)
-        return first_empty_slot->addItem(item);
-
-    return false;
-}
-void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
+void InventoryDisplay::getRenderingInformation(UIRenderBatch& batch){
     int line_width = borderSizes.top;
     UIColor line_color = getAttribute(&UIFrame::Style::borderColor).top;
 
@@ -289,7 +206,8 @@ void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
         getAttribute(&UIFrame::Style::borderColor)
     );
 
-    for(int y = 1;y < slots_verticaly; y++){
+    if(!this->inventory) return;
+    for(int y = 1;y < inventory->getHeight(); y++){
         batch.Rectangle(
             transform.x,
             transform.y + y * slot_size - line_width / 2,
@@ -299,7 +217,7 @@ void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
         );
     }
 
-    for(int x = 1;x < slots_horizontaly; x++){
+    for(int x = 1;x < inventory->getWidth(); x++){
         batch.Rectangle(
             transform.x + x * slot_size - line_width / 2,
             transform.y,
@@ -309,15 +227,18 @@ void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
         );
     }
 
-    for(auto& [position,item_slot]: items){
-        if(!item_slot.hasItem()) continue;
-        auto& item = item_slot.getItem().value();
-        auto* prototype = item.getPrototype();
+    for(int y = 0;y < inventory->getHeight();y++)
+    for(int x = 0;x < inventory->getWidth();x++){
+        auto* slot = inventory->getSlot(x,y);
+
+        auto* item = slot->getItem();
+        if(!item) continue;
+        auto* prototype = item->getPrototype();
         if(!prototype) continue;
 
 
-        int slot_x = transform.x + position.x * slot_size + slot_padding;
-        int slot_y = transform.y + position.y * slot_size + slot_padding;
+        int slot_x = transform.x + x * slot_size + slot_padding;
+        int slot_y = transform.y + y * slot_size + slot_padding;
         int slot_width  = slot_size - slot_padding * 2;
         int slot_height = slot_width;
 
@@ -328,7 +249,7 @@ void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
             slot_height,
         });
 
-        std::string quantity_number = std::to_string(item.getQuantity());
+        std::string quantity_number = std::to_string(item->getQuantity());
         UITextDimensions textDimensions = UICore::get().getBackend().getTextDimensions(quantity_number, quantity_number_font_size);
         batch.Text( 
             quantity_number, 
@@ -338,4 +259,10 @@ void ItemInventory::getRenderingInformation(UIRenderBatch& batch){
             getAttribute(&UIFrame::Style::textColor)
         );
     }
+}
+
+void InventoryDisplay::setInventory(LogicalItemInventory* new_inventory){
+    inventory = new_inventory;
+    if(!inventory) return;
+    setSize(TValue::Pixels(inventory->getWidth() * slot_size), TValue::Pixels(inventory->getHeight() * slot_size));
 }

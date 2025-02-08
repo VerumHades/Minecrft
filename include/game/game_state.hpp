@@ -1,12 +1,16 @@
 #pragma once
 
 #include <game/world/terrain.hpp>
+#include <game/items/item.hpp>
 #include <list>
 
 class GameState{
     private:
         Terrain terrain;
         std::list<Entity> entities;
+
+        LogicalItemInventory player_inventory{20,10};
+        LogicalItemInventory player_hotbar{9,1};
 
         WorldGenerator world_generator;
         WorldStream world_stream;
@@ -32,5 +36,7 @@ class GameState{
         bool entityCollision(Entity& entity, const glm::vec3& offset = {0,0,0});
 
         Entity& getPlayer(){return entities.front();}
+        LogicalItemInventory& getPlayerInventory(){return player_inventory;};
+        LogicalItemInventory& getPlayerHotbar(){return player_hotbar;}
         Terrain& getTerrain(){return terrain;}
 };

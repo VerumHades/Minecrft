@@ -54,21 +54,16 @@ void MainScene::initialize(){
         "resources/skybox/stars/back.png"
     };  
 
-    itemPrototypeRegistry.addPrototype(ItemPrototype("diamond","resources/textures/diamond.png"));
-    itemPrototypeRegistry.addPrototype(ItemPrototype("crazed","resources/textures/crazed.png"));
+    ItemRegistry::get().addPrototype(ItemPrototype("diamond","resources/textures/diamond.png"));
+    ItemRegistry::get().addPrototype(ItemPrototype("crazed","resources/textures/crazed.png"));
 
     held_item_slot = std::make_shared<ItemSlot>(itemTextureAtlas);
 
-    inventory = std::make_shared<ItemInventory>(itemTextureAtlas, 10,5, held_item_slot);
+    inventory = std::make_shared<InventoryDisplay>(itemTextureAtlas, held_item_slot);
     inventory->setPosition(
         {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}},
         {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}}
     );
-
-    auto item = itemPrototypeRegistry.createItem("diamond");
-    auto item2 = itemPrototypeRegistry.createItem("crazed");
-    inventory->setItem(1,0,item);
-    inventory->setItem(0,4,item2);
 
     hotbar = std::make_shared<UIHotbar>(itemTextureAtlas, held_item_slot);
     hotbar->setPosition(
@@ -223,10 +218,7 @@ void MainScene::initialize(){
     for(auto& prototype: BlockRegistry::get().prototypes()){
         if(prototype.id == 0) continue; // Dont make air
 
-        auto* item_prototype = itemPrototypeRegistry.createPrototypeForBlock(&prototype);
-        Item it = itemPrototypeRegistry.createItem(item_prototype);
-        it.setQuantity(256);
-        hotbar->addItem(it);
+        ItemRegistry::get().createPrototypeForBlock(&prototype);
     }
 }
 
@@ -330,16 +322,16 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS ){  
             auto* block_prototype = BlockRegistry::get().getBlockPrototypeByIndex(blockUnderCursor->id);
             if(!block_prototype) return;
-            auto* item_prototype = itemPrototypeRegistry.getPrototype("block_" + block_prototype->name);
+            auto* item_prototype = ItemRegistry::get().getPrototype("block_" + block_prototype->name);
             if(!item_prototype) return;
             
-            auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), glm::vec3(blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5));
+            /*auto entity = DroppedItem(ItemRegistry::get().createItem(item_prototype), glm::vec3(blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5));
             entity.accelerate({
                 static_cast<float>(std::rand() % 200) / 100.0f - 1.0f,
                 0.6f,
                 static_cast<float>(std::rand() % 200) / 100.0f - 1.0f
             }, 1.0f);
-            game_state->addEntity(entity);
+            game_state->addEntity(entity);*/
             //auto& selected_slot = hotbar->getSelectedSlot();
             //inventory->addItem();
 
@@ -352,10 +344,10 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
         else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
             glm::ivec3 blockPosition = glm::floor(blockUnderCursorEmpty);
 
-            auto& selected_slot = hotbar->getSelectedSlot();
-            if(!selected_slot.hasItem()) return;
+            auto* selected_slot = hotbar->getSelectedSlot();
+            if(!selected_slot || !selected_slot->hasItem()) return;
 
-            auto* prototype = selected_slot.getItem()->getPrototype();
+            auto* prototype = selected_slot->getItem()->getPrototype();
             if(!prototype || !prototype->isBlock()) return;
 
             game_state->getTerrain().setBlock(blockPosition, {prototype->getBlockID()});
@@ -367,7 +359,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
                 return;
             }
 
-            selected_slot.decreaseQuantity(1);
+            selected_slot->decreaseQuantity(1);
             hotbar->update();
 
             auto* chunk = game_state->getTerrain().getChunkFromBlockPosition(blockPosition);
@@ -492,17 +484,17 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
         }
 
         if(key == GLFW_KEY_Q && action == GLFW_PRESS){
-            auto& slot = hotbar->getSelectedSlot();
-            if(!slot.hasItem()) return;
+            auto* slot = hotbar->getSelectedSlot();
+            if(!slot || !slot->hasItem()) return;
             
-            auto* item_prototype = slot.getItem()->getPrototype();
+            auto* item_prototype = slot->getItem()->getPrototype();
             if(!item_prototype) return;
             
-            auto entity = DroppedItem(itemPrototypeRegistry.createItem(item_prototype), camera.getPosition() + camera.getDirection() * 0.5f);
+            /*auto entity = DroppedItem(ItemRegistry::get().createItem(item_prototype), camera.getPosition() + camera.getDirection() * 0.5f);
             entity.accelerate(camera.getDirection(),1.0f);
-            game_state->addEntity(entity);
+            game_state->addEntity(entity);*/
 
-            slot.decreaseQuantity(1);
+            slot->decreaseQuantity(1);
             hotbar->update();
         }
     }
@@ -558,15 +550,27 @@ void MainScene::open(GLFWwindow* window){
     
     game_state = std::make_unique<GameState>(worldPath);
 
+    for(auto& prototype: BlockRegistry::get().prototypes()){
+        if(prototype.id == 0) continue; // Dont make air
+
+        auto* ptype = ItemRegistry::get().createPrototypeForBlock(&prototype);
+        ItemID id = ItemRegistry::get().createItem(ptype);
+        ItemRegistry::get().getItem(id)->setQuantity(256);
+        game_state->getPlayerHotbar().addItem(id);
+    }
+
+    inventory->setInventory(&game_state->getPlayerInventory());
+    hotbar->setInventory(&game_state->getPlayerHotbar());
+
     auto& player = game_state->getPlayer();
 
     player.onCollision = [this](Entity* self, Entity* collided_with){
         if(collided_with->getTypename() != "dropped_item") return;
 
-        const auto* data = reinterpret_cast<const DroppedItem::Data*>(collided_with->getData());
+        //const auto* data = reinterpret_cast<const DroppedItem::Data*>(collided_with->getData());
         
-        if(!this->hotbar->addItem(data->item))
-            this->inventory->addItem(data->item);
+        //if(!this->hotbar->addItem(data->item))
+        //    this->inventory->addItem(data->item);
 
         this->update_hotbar = true;
         //else this->hotbar->update();
@@ -716,7 +720,7 @@ void MainScene::render(){
     
         // Draw models
         modelProgram.updateUniforms();
-        itemPrototypeRegistry.drawItemModels();
+        ItemRegistry::get().drawItemModels();
 
         glDisable( GL_CULL_FACE );
 
@@ -857,9 +861,9 @@ void MainScene::physicsUpdate(){
         game_state->updateEntities(deltatime);
 
         if(isActiveLayer("default")){
-            auto& in_hand_slot = hotbar->getSelectedSlot();
-            if(in_hand_slot.hasItem()){
-                auto* prototype = in_hand_slot.getItem()->getPrototype();
+            auto* in_hand_slot = hotbar->getSelectedSlot();
+            if(in_hand_slot && in_hand_slot->hasItem()){
+                auto* prototype = in_hand_slot->getItem()->getPrototype();
                 if(prototype && prototype->getModel()){
                     glm::vec3 item_offset = camera.getDirection() * 0.5f - camera.getLeft() + camera.getRelativeUp() * 0.4f;
                     prototype->getModel()->requestDraw(camera.getPosition() + item_offset, {1,1,1}, {0,-camera.getYaw(),camera.getPitch()}, {-0.5,-0.5,0}, {Model::Y,Model::Z,Model::X});
@@ -867,7 +871,7 @@ void MainScene::physicsUpdate(){
             }
         }
         
-        itemPrototypeRegistry.swapModelBuffers();
+        ItemRegistry::get().swapModelBuffers();
     }
 
     threadsStopped++;
@@ -913,7 +917,7 @@ void UICrosshair::getRenderingInformation(UIRenderBatch& batch){
 }
 
 void UIHotbar::getRenderingInformation(UIRenderBatch& batch){
-    ItemInventory::getRenderingInformation(batch);
+    InventoryDisplay::getRenderingInformation(batch);
 
     batch.BorderedRectangle(
         transform.x + selected_slot * slot_size,

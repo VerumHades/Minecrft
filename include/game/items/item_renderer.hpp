@@ -48,29 +48,6 @@ class ItemTextureAtlas{
         std::shared_ptr<GLTextureArray>& getTextureArray() {return texture_array;};
 };
 
-class LogicalItemSlot{
-    private:
-        std::optional<Item> item_option{};
-
-    public:
-        LogicalItemSlot(){}
-        bool takeItemFrom(LogicalItemSlot& source, int quantity = -1);
-        bool moveItemTo(LogicalItemSlot& destination, int quantity = -1);
-
-        bool addItem(Item item){
-            LogicalItemSlot slot;
-            slot.getItem().emplace(item);
-
-            return takeItemFrom(slot);
-        }
-
-        void clear();
-        bool hasItem() {return item_option.has_value();}
-        void decreaseQuantity(int number);
-
-        std::optional<Item>& getItem() {return item_option;}
-};
-
 class ItemSlot: public UIFrame{
     private:
         const int slot_size = 64;
@@ -91,38 +68,19 @@ class ItemSlot: public UIFrame{
         
 };
 
-class ItemInventory: public UIFrame{
+class InventoryDisplay: public UIFrame{
     protected:
         const int slot_size = 64;
         const int slot_padding = 4;
         const int quantity_number_font_size = 12;
         
-    private:
-        std::unordered_map<glm::ivec3, LogicalItemSlot, IVec3Hash, IVec3Equal> items{};
-        ItemTextureAtlas& textureAtlas;
-        int slots_horizontaly = 0;
-        int slots_verticaly = 0;
-        std::shared_ptr<ItemSlot> held_item_ptr = nullptr;
     protected:
-        LogicalItemSlot& getItemSlot(int x, int y){
-            return items[{x,y,0}];
-        }
+        ItemTextureAtlas& textureAtlas;
+        LogicalItemInventory* inventory = nullptr;
+        std::shared_ptr<ItemSlot> held_item_ptr = nullptr;
     public:
-        ItemInventory(ItemTextureAtlas& textureAtlas, int slots_horizontaly, int slots_verticaly, std::shared_ptr<ItemSlot> held_item_ptr);
+        InventoryDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr);
 
-        bool setItem(int x, int y, Item item) {
-            auto position = glm::ivec3{x,y,0};
-
-            if(!items.contains(position))
-                items[position] = {};
-
-            return items.at(position).addItem(item);
-        }
-        void removeItem(int x, int y){
-            items[{x,y,0}].clear();
-        }
-
-        bool addItem(Item item);
-
+        void setInventory(LogicalItemInventory* new_inventory);
         void getRenderingInformation(UIRenderBatch& batch) override;
 };

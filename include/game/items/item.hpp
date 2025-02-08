@@ -30,7 +30,7 @@ class ItemPrototype{
         
         std::shared_ptr<Model> model;
 
-        friend class ItemPrototypeRegistry;
+        friend class ItemRegistry;
         friend class ItemTextureAtlas;
 
         /*
@@ -46,40 +46,124 @@ class ItemPrototype{
         std::shared_ptr<Model>& getModel() {return model;}
 };
 
-class ItemPrototypeRegistry{
-    private:
-        std::unordered_map<std::string, std::list<ItemPrototype>::iterator> name_to_iterator = {};
-        std::list<ItemPrototype> prototypes = {};
-
-    public:
-        ItemPrototypeRegistry(){}
-        ItemPrototype* addPrototype(ItemPrototype prototype);
-        ItemPrototype* getPrototype(std::string name);
-
-        ItemPrototype* createPrototypeForBlock(const BlockRegistry::BlockPrototype* prototype);
-
-        bool prototypeExists(std::string name);
-
-        void drawItemModels();
-        void swapModelBuffers();
-
-        Item createItem(std::string prototype_name);
-        Item createItem(ItemPrototype* prototype);
-};
-
 class Item{
     private:
         ItemPrototype* prototype = nullptr;
         int quantity = 1;
 
-        Item(ItemPrototype* prototype_ptr): prototype(prototype_ptr) {}
-        friend class ItemPrototypeRegistry;
+        friend class ItemRegistry;
         friend class ItemTextureAtlas;
+
+        Item (const Item&) = delete;
+        Item& operator= (const Item&) = delete;
     
     public:
+        // DO NOT USE, USE createItem from ItemRegistry instead!
+        Item(ItemPrototype* prototype_ptr): prototype(prototype_ptr) {}
+
         ItemPrototype* getPrototype() {return prototype;}
         int getQuantity(){ return quantity; }
         void setQuantity(int number) {quantity = number;}
+};
+
+using ItemID = size_t;
+#define NO_ITEM 0ULL
+
+class ItemRegistry{
+    private:
+        std::unordered_map<std::string, std::unique_ptr<ItemPrototype>> prototypes = {};
+        std::unordered_map<size_t, Item> items = {};
+
+        ItemRegistry(){}
+    public:
+        ItemPrototype* addPrototype(ItemPrototype prototype);
+        ItemPrototype* getPrototype(std::string name);
+
+        ItemPrototype* createPrototypeForBlock(const BlockRegistry::BlockPrototype* prototype);
+        
+        bool prototypeExists(std::string name);
+
+        ItemID createItem(std::string prototype_name);
+        ItemID createItem(ItemPrototype* prototype);
+
+        void deleteItem(ItemID id);
+        Item* getItem(ItemID id);
+
+        void drawItemModels();
+        void swapModelBuffers();
+
+        static ItemRegistry& get();
+};
+
+class LogicalItemSlot{
+    private:
+        ItemID item = NO_ITEM;
+
+    public:
+        LogicalItemSlot(){}
+        bool takeItemFrom(LogicalItemSlot& source, int quantity = -1);
+        bool moveItemTo(LogicalItemSlot& destination, int quantity = -1);
+
+        bool addItem(ItemID id){
+            LogicalItemSlot slot;
+            slot.setItem(id);
+
+            return takeItemFrom(slot);
+        }
+
+        void clear();
+        bool hasItem() {return getItem() != nullptr; }
+        
+        /*
+            Decreses the item amount and returns the count removed,
+            automatically clears and manages the slot
+        */
+        int decreaseQuantity(int number);
+
+        /*
+            Takes a portion of the items in the slot and returns an id of an item that has exactly that quantity or less if there was not enough,
+            automatically clears and manages the slot
+        */
+        ItemID getPortion(int quantity = -1);
+
+        Item* getItem() {return ItemRegistry::get().getItem(item);}
+        void setItem(ItemID id) {item = id;}
+};
+
+class LogicalItemInventory{
+    private:
+        int slots_horizontaly = 0;
+        int slots_verticaly = 0;
+        std::vector<LogicalItemSlot> slots{};
+    public:
+        LogicalItemInventory(int slots_horizontaly, int slots_verticaly);
+
+        LogicalItemSlot* getSlot(int x, int y){
+            if(x < 0 || x >= slots_horizontaly || y < 0 || y > slots_verticaly) return nullptr;
+
+            return &slots[x + y * slots_horizontaly];
+        }
+
+        bool setItem(int x, int y, ItemID item) {
+            auto* slot = getSlot(x,y);
+            if(!slot) return false;
+            
+            return slot->addItem(item);
+        }
+
+        void removeItem(int x, int y){
+            auto* slot = getSlot(x,y);
+            if(!slot) return;
+
+            slot->clear();
+        }
+
+        bool addItem(ItemID item);
+
+        int getWidth() const {return slots_horizontaly;}
+        int getHeight() const {return slots_verticaly;}
+
+        std::vector<LogicalItemSlot>& getItemSlots() {return slots;};
 };
 
 class DroppedItem: public Entity{
