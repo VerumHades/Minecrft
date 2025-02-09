@@ -68,10 +68,7 @@ ItemID ItemRegistry::createItem(ItemPrototype* prototype){
 }  
 ItemID ItemRegistry::createItem(std::string prototype_name){
     auto prototype = getPrototype(prototype_name);
-    if(!prototype){
-        std::cerr << "Invalid item creation!" << std::endl;
-        throw std::logic_error("Invalid item creation");
-    }
+    if(!prototype) return NO_ITEM;
     return createItem(getPrototype(prototype_name));
 }
 
@@ -174,6 +171,12 @@ int LogicalItemSlot::decreaseQuantity(int number){
 void LogicalItemSlot::clear(){
     ItemRegistry::get().deleteItem(item);
     item = NO_ITEM;
+}
+
+bool LogicalItemSlot::swap(LogicalItemSlot& slot){
+    ItemID other = slot.item;
+    slot.item = item;
+    item = other;
 }
 
 LogicalItemInventory::LogicalItemInventory(int slots_horizontaly, int slots_verticaly): slots(slots_horizontaly * slots_verticaly),

@@ -83,7 +83,13 @@ class InventoryDisplay: public UIFrame{
     public:
         InventoryDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr);
 
+        std::function<void()> onStateUpdate;
+        std::function<void(int amount)> onItemTaken;
+
         void setInventory(LogicalItemInventory* new_inventory);
+        LogicalItemInventory* getInventory() {return inventory;};
+
         void getRenderingInformation(UIRenderBatch& batch) override;
         void setLockPlacing(bool value) {lock_placing = value;}
+
 };

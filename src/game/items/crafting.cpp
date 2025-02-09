@@ -5,10 +5,51 @@ CraftingInterface::CraftingInterface(const std::string& name, ItemTextureAtlas& 
     ui_layer->name = name;
 
     crafting_display = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
+    crafting_display->onStateUpdate = [this](){
+        result_display->update();
+        if(!crafting_display->getInventory()) return;
+        if(!result_display->getInventory()) return;
+
+        current_recipe = CraftingRecipeRegistry::get().getCraftingFor(*crafting_display->getInventory());
+        
+        auto* result_inventory = result_display->getInventory();
+        if(!current_recipe){
+            result_inventory->getSlot(0,0)->clear();
+            return;
+        }
+
+        result_inventory->getSlot(0,0)->clear();
+        ItemID item = ItemRegistry::get().createItem(current_recipe->result_prototype_name);
+        result_inventory->getSlot(0,0)->setItem(item);
+
+        result_display->update();
+    };
     
     result_display   = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
     result_display->setLockPlacing(true);
     result_display->setAttribute(&UIFrame::Style::margin, UISideSizesT(TValue(PIXELS, 0),TValue(PIXELS, 0),TValue(PIXELS, 0),TValue(PIXELS,40)));
+    result_display->onStateUpdate = crafting_display->onStateUpdate;
+    result_display->onItemTaken = [this](int amount){
+        if(!crafting_display->getInventory()) return;
+        if(!result_display->getInventory()) return;
+        if(!current_recipe){
+            std::cout << "Cheetah!" << std::endl;
+            return;
+        }
+
+        auto inventory = crafting_display->getInventory();
+
+        for(int y = 0;y < 3;y++)
+        for(int x = 0;x < 3;x++)
+        {
+            auto* slot = inventory->getSlot(x,y);
+            auto& requirement = current_recipe->required_items[x + y * 3];
+            if(!slot || !slot->hasItem()) continue;
+            slot->decreaseQuantity(requirement.amount);
+        }
+        current_recipe = CraftingRecipeRegistry::get().getCraftingFor(*crafting_display->getInventory());
+        crafting_display->update();
+    };
 
     player_inventory = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
     
@@ -59,4 +100,59 @@ void CraftingInterface::open(std::shared_ptr<BlockMetadata> metadata, GameState*
 
 std::shared_ptr<BlockMetadata> CraftingInterface::createMetadata(){
     return std::make_shared<CraftingMetadata>();
+}
+
+CraftingRecipe::CraftingRecipe(const std::array<CraftingRecipe::RecipeItemRequirement, 9>& required_items, const std::string& result_prototype_name):
+ required_items(required_items), result_prototype_name(result_prototype_name){
+    tag = "";
+    for(auto& requirement: required_items){
+        if(requirement.required){
+            tag += "_" + requirement.name;
+        }
+        else tag += "_NONE";
+    }
+}
+
+void CraftingRecipeRegistry::addRecipe(const CraftingRecipe& recipe){
+    recipes.emplace(recipe.tag,recipe);
+}
+
+CraftingRecipe* CraftingRecipeRegistry::getCraftingFor(LogicalItemInventory& inventory){
+    std::string tag = "";
+    
+    for(int y = 0;y < 3;y++)
+    for(int x = 0;x < 3;x++)
+    {
+        auto* slot = inventory.getSlot(x,y);
+        if(slot && slot->getItem() && slot->getItem()->getPrototype()){
+            auto* prototype = slot->getItem()->getPrototype();
+
+            tag += "_" + prototype->getName();
+        }
+        else tag += "_NONE";
+    }
+
+    if(recipes.contains(tag)){
+        auto& recipe = recipes.at(tag);
+
+        for(int y = 0;y < 3;y++)
+        for(int x = 0;x < 3;x++)
+        {
+            auto* slot = inventory.getSlot(x,y);
+            auto& requirement = recipe.required_items[x + y * 3];
+
+            bool hasItem = slot && slot->hasItem() && slot->getItem()->getPrototype();
+            bool shouldHaveItem = requirement.required;
+
+            if(!hasItem && shouldHaveItem) return nullptr;
+            if(hasItem && !shouldHaveItem) return nullptr;
+            if(!hasItem && !shouldHaveItem) continue;
+
+            if(slot->getItem()->getQuantity() < requirement.amount) return nullptr;
+        }
+
+        return &recipe;
+    }  
+
+    return nullptr;
 }

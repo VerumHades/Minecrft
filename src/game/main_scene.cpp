@@ -228,6 +228,8 @@ void MainScene::initialize(){
 
         ItemRegistry::get().createPrototypeForBlock(&prototype);
     }
+
+    CraftingRecipeRegistry::get().addRecipe(CraftingRecipe({CraftingRecipe::RecipeItemRequirement{"block_iron", 5},{},{},{},{},{},{},{},{}}, "crazed"));
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){

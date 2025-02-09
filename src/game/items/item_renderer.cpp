@@ -172,10 +172,17 @@ InventoryDisplay::InventoryDisplay(ItemTextureAtlas& textureAtlas, std::shared_p
 
         if(button == GLFW_MOUSE_BUTTON_LEFT){
             if(action == GLFW_PRESS && hand_slot.hasItem()){
-                if(!lock_placing) hand_slot.moveItemTo(item_slot);
+                if(!lock_placing){
+                    if(!hand_slot.moveItemTo(item_slot)) hand_slot.swap(item_slot);
+                }
+                else if(item_slot.hasItem()){
+                    int amount = item_slot.getItem()->getQuantity();
+                    if(hand_slot.takeItemFrom(item_slot) && onItemTaken) onItemTaken(amount); 
+                }
             }
-            else if(action == GLFW_PRESS && !hand_slot.hasItem()){
-                hand_slot.takeItemFrom(item_slot);
+            else if(action == GLFW_PRESS && !hand_slot.hasItem() && item_slot.hasItem()){
+                int amount = item_slot.getItem()->getQuantity();
+                if(hand_slot.takeItemFrom(item_slot) && onItemTaken) onItemTaken(amount); 
             }
         }
         else if(button == GLFW_MOUSE_BUTTON_RIGHT){
@@ -183,10 +190,11 @@ InventoryDisplay::InventoryDisplay(ItemTextureAtlas& textureAtlas, std::shared_p
                 if(!lock_placing) hand_slot.moveItemTo(item_slot, 1);
             }
             else if(action == GLFW_PRESS && !hand_slot.hasItem()){
-                hand_slot.takeItemFrom(item_slot, 1);
+                if(hand_slot.takeItemFrom(item_slot, 1) && onItemTaken) onItemTaken(1);
             }
         }
         
+        if(onStateUpdate) onStateUpdate();
         this->held_item_ptr->update();
         update();
     };

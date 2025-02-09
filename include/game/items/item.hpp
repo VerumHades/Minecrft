@@ -43,6 +43,7 @@ class ItemPrototype{
 
         bool isBlock(){return is_block;}
         BlockID getBlockID(){return block_id;}
+        const std::string& getName(){return name;}
         std::shared_ptr<Model>& getModel() {return model;}
 };
 
@@ -104,6 +105,7 @@ class LogicalItemSlot{
         LogicalItemSlot(){}
         bool takeItemFrom(LogicalItemSlot& source, int quantity = -1);
         bool moveItemTo(LogicalItemSlot& destination, int quantity = -1);
+        bool swap(LogicalItemSlot& slot);
 
         bool addItem(ItemID id){
             LogicalItemSlot slot;
