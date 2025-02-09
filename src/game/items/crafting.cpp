@@ -18,9 +18,11 @@ CraftingInterface::CraftingInterface(const std::string& name, ItemTextureAtlas& 
             return;
         }
 
-        result_inventory->getSlot(0,0)->clear();
+        auto* slot = result_inventory->getSlot(0,0);
+        slot->clear();
         ItemID item = ItemRegistry::get().createItem(current_recipe->result_prototype_name);
-        result_inventory->getSlot(0,0)->setItem(item);
+        slot->setItem(item);
+        if(slot->hasItem()) slot->getItem()->setQuantity(current_recipe->result_amount);
 
         result_display->update();
     };
@@ -102,8 +104,8 @@ std::shared_ptr<BlockMetadata> CraftingInterface::createMetadata(){
     return std::make_shared<CraftingMetadata>();
 }
 
-CraftingRecipe::CraftingRecipe(const std::array<CraftingRecipe::RecipeItemRequirement, 9>& required_items, const std::string& result_prototype_name):
- required_items(required_items), result_prototype_name(result_prototype_name){
+CraftingRecipe::CraftingRecipe(const std::array<CraftingRecipe::RecipeItemRequirement, 9>& required_items, const std::string& result_prototype_name, int result_amount):
+ required_items(required_items), result_prototype_name(result_prototype_name), result_amount(result_amount){
     tag = "";
     for(auto& requirement: required_items){
         if(requirement.required){

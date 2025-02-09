@@ -229,7 +229,10 @@ void MainScene::initialize(){
         ItemRegistry::get().createPrototypeForBlock(&prototype);
     }
 
-    CraftingRecipeRegistry::get().addRecipe(CraftingRecipe({CraftingRecipe::RecipeItemRequirement{"block_iron", 5},{},{},{},{},{},{},{},{}}, "crazed"));
+    CraftingRecipeRegistry::get().addRecipe(CraftingRecipe({CraftingRecipe::RecipeItemRequirement{"block_iron", 5},{},{},{},{},{},{},{},{}}, "crazed",64));
+    CraftingRecipeRegistry::get().addRecipe(CraftingRecipe(
+        {CraftingRecipe::RecipeItemRequirement{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1}}
+        , "block_crazed",1));
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){

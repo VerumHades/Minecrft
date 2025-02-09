@@ -25,11 +25,12 @@ class CraftingRecipe{
 
         std::array<RecipeItemRequirement, 9> required_items;
         std::string result_prototype_name;
+        int result_amount = 1;
 
         friend class CraftingRecipeRegistry;
         friend class CraftingInterface;
     public:
-        CraftingRecipe(const std::array<RecipeItemRequirement, 9>& required_items, const std::string& result_prototype_name);
+        CraftingRecipe(const std::array<RecipeItemRequirement, 9>& required_items, const std::string& result_prototype_name, int result_amount);
 };
 
 class CraftingRecipeRegistry{
