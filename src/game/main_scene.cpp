@@ -612,8 +612,11 @@ void MainScene::open(GLFWwindow* window){
 
     //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
     //generationThread.detach();
+    player.setPosition({0,256,0});
+    while(!game_state->entityCollision(player, {0,-1.0f,0})){
+        player.setPosition(player.getPosition() + glm::vec3{0,-1.0f,0});
+    }
 
-    player.setPosition({0,60,0});
 
     //std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
@@ -634,7 +637,7 @@ void MainScene::close(GLFWwindow* window){
     } 
 
     chunkMeshRegistry.clear();
-    //game_state->unload();
+    game_state->unload();
     game_state = nullptr;
 
     chunkMeshGenerator.setWorld(nullptr);

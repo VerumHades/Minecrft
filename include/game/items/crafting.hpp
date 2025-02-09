@@ -19,6 +19,7 @@ class CraftingInterface: public BlockInterface{
         std::shared_ptr<InventoryDisplay> crafting_display;
         std::shared_ptr<InventoryDisplay> result_display;
         std::shared_ptr<InventoryDisplay> player_inventory;
+        std::shared_ptr<InventoryDisplay> player_hotbar;
 
     public:
         CraftingInterface(const std::string& name, ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr);

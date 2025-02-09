@@ -172,7 +172,7 @@ InventoryDisplay::InventoryDisplay(ItemTextureAtlas& textureAtlas, std::shared_p
 
         if(button == GLFW_MOUSE_BUTTON_LEFT){
             if(action == GLFW_PRESS && hand_slot.hasItem()){
-                hand_slot.moveItemTo(item_slot);
+                if(!lock_placing) hand_slot.moveItemTo(item_slot);
             }
             else if(action == GLFW_PRESS && !hand_slot.hasItem()){
                 hand_slot.takeItemFrom(item_slot);
@@ -180,7 +180,7 @@ InventoryDisplay::InventoryDisplay(ItemTextureAtlas& textureAtlas, std::shared_p
         }
         else if(button == GLFW_MOUSE_BUTTON_RIGHT){
             if(action == GLFW_PRESS && hand_slot.hasItem()){
-                hand_slot.moveItemTo(item_slot, 1);
+                if(!lock_placing) hand_slot.moveItemTo(item_slot, 1);
             }
             else if(action == GLFW_PRESS && !hand_slot.hasItem()){
                 hand_slot.takeItemFrom(item_slot, 1);
@@ -211,7 +211,7 @@ void InventoryDisplay::getRenderingInformation(UIRenderBatch& batch){
         batch.Rectangle(
             transform.x,
             transform.y + y * slot_size - line_width / 2,
-            transform.width,
+            transform.width - line_width,
             line_width,
             line_color
         );

@@ -5,8 +5,18 @@ CraftingInterface::CraftingInterface(const std::string& name, ItemTextureAtlas& 
     ui_layer->name = name;
 
     crafting_display = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
+    
     result_display   = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
+    result_display->setLockPlacing(true);
+    result_display->setAttribute(&UIFrame::Style::margin, UISideSizesT(TValue(PIXELS, 0),TValue(PIXELS, 0),TValue(PIXELS, 0),TValue(PIXELS,40)));
+
     player_inventory = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
+    
+    player_hotbar = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
+    player_hotbar->setPosition(
+        TValue::Center(),
+        TValue::Bottom(20_px)
+    );
 
     auto frame = std::make_shared<UIFrame>();
     frame->setPosition(TValue::Pixels(0),TValue::Pixels(0));
@@ -15,7 +25,8 @@ CraftingInterface::CraftingInterface(const std::string& name, ItemTextureAtlas& 
 
     auto upper_frame = std::make_shared<UIFrame>();
     upper_frame->setLayout(std::make_shared<UIFlexLayout>(UIFlexLayout::HORIZONTAL));
-    upper_frame->setSize(TValue(FIT_CONTENT,0),TValue(PERCENT,50));
+    upper_frame->setAttribute(&UIFrame::Style::margin, UISideSizesT(TValue(PIXELS, 200),TValue(PIXELS, 0),TValue(PIXELS, 0),TValue(PIXELS,0)));
+    upper_frame->setSize(TValue(FIT_CONTENT,0),TValue(PIXELS,200));
 
     upper_frame->appendChild(crafting_display);
     upper_frame->appendChild(result_display);
@@ -28,8 +39,10 @@ CraftingInterface::CraftingInterface(const std::string& name, ItemTextureAtlas& 
 
     frame->appendChild(upper_frame);
     frame->appendChild(lower_frame);
-
+    
     ui_layer->addElement(frame);
+    ui_layer->addElement(player_hotbar);
+
     ui_layer->addElement(held_item_ptr);
 }
 
@@ -41,6 +54,7 @@ void CraftingInterface::open(std::shared_ptr<BlockMetadata> metadata, GameState*
         }
     }
     player_inventory->setInventory(&game_state->getPlayerInventory());
+    player_hotbar->setInventory(&game_state->getPlayerHotbar());
 }
 
 std::shared_ptr<BlockMetadata> CraftingInterface::createMetadata(){

@@ -73,6 +73,8 @@ class InventoryDisplay: public UIFrame{
         const int slot_size = 64;
         const int slot_padding = 4;
         const int quantity_number_font_size = 12;
+
+        bool lock_placing = false;
         
     protected:
         ItemTextureAtlas& textureAtlas;
@@ -83,4 +85,5 @@ class InventoryDisplay: public UIFrame{
 
         void setInventory(LogicalItemInventory* new_inventory);
         void getRenderingInformation(UIRenderBatch& batch) override;
+        void setLockPlacing(bool value) {lock_placing = value;}
 };

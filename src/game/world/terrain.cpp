@@ -18,8 +18,8 @@ Chunk* Terrain::createEmptyChunk(glm::ivec3 position){
 
 void Terrain::removeChunk(const glm::ivec3& position){
     std::unique_lock lock(chunkGenLock);
-    if(this->chunks.contains(position))
-        this->chunks.erase(position);
+    //if(this->chunks.contains(position))
+    //    this->chunks.erase(position);
 }
 
 Chunk* Terrain::getChunk(glm::ivec3 position) const {

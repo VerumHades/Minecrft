@@ -98,6 +98,7 @@ class ItemRegistry{
 class LogicalItemSlot{
     private:
         ItemID item = NO_ITEM;
+        bool block_placing = false;
 
     public:
         LogicalItemSlot(){}
@@ -134,6 +135,7 @@ class LogicalItemInventory{
     private:
         int slots_horizontaly = 0;
         int slots_verticaly = 0;
+
         std::vector<LogicalItemSlot> slots{};
     public:
         LogicalItemInventory(int slots_horizontaly, int slots_verticaly);
