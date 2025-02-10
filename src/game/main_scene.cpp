@@ -333,7 +333,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
     if(isActiveLayer("default")){
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS ){  
-            auto* block_prototype = BlockRegistry::get().getBlockPrototypeByIndex(blockUnderCursor->id);
+            auto* block_prototype = BlockRegistry::get().getPrototype(blockUnderCursor->id);
             if(!block_prototype) return;
             auto* item_prototype = ItemRegistry::get().getPrototype("block_" + block_prototype->name);
             if(!item_prototype) return;
@@ -355,7 +355,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
             regenerateChunkMesh(chunk,game_state->getTerrain().getGetChunkRelativeBlockPosition(blockUnderCursorPosition));
         }
         else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
-            auto* block_prototype = BlockRegistry::get().getBlockPrototypeByIndex(blockUnderCursor->id);
+            auto* block_prototype = BlockRegistry::get().getPrototype(blockUnderCursor->id);
             if(block_prototype && block_prototype->interface){
                 block_prototype->interface->open(blockUnderCursor->metadata, game_state.get());
                 setUILayer(block_prototype->interface->getName());

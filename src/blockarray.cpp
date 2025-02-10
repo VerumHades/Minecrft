@@ -6,13 +6,12 @@ void SparseBlockArray::setBlock(glm::ivec3 position, const Block& block, bool do
     if(!dont_check){
         auto* block_here = getBlock(position);
         if(block_here != &airBlock){
-            if(interactable_blocks.contains(position)) interactable_blocks.erase(position);
-
             getLayer(block_here->id).field().reset(position.x,position.y,position.z);
         }
     }
 
     if(block.id == BLOCK_AIR_INDEX){
+        if(interactable_blocks.contains(position)) interactable_blocks.erase(position);
         solid_field.get()->reset(position.x,position.y,position.z);
         return;
     }
@@ -24,12 +23,13 @@ void SparseBlockArray::setBlock(glm::ivec3 position, const Block& block, bool do
     auto& layer = getLayer(block.id);
     layer.field().set(position.x,position.y,position.z);
 
-    auto* block_definition = BlockRegistry::get().getBlockPrototypeByIndex(block.id);
+    auto* block_definition = BlockRegistry::get().getPrototype(block.id);
     if(!block_definition) return;
 
     if(!block_definition->transparent) solid_field.get()->set(position.x,position.y,position.z);
     else solid_field.get()->reset(position.x,position.y,position.z);
 
+    if(interactable_blocks.contains(position)) interactable_blocks.erase(position);
     if(block_definition->interface) interactable_blocks.emplace(position,Block{block.id, block_definition->interface->createMetadata()});
 }
 
@@ -50,7 +50,7 @@ void SparseBlockArray::fill(const Block& block){
     auto& layer = getLayer(block.id);
     layer.field().fill(1);
 
-    auto* block_definition = BlockRegistry::get().getBlockPrototypeByIndex(block.id);
+    auto* block_definition = BlockRegistry::get().getPrototype(block.id);
     if(!block_definition) return;
 
     solid_field.get()->fill(!block_definition->transparent);
@@ -76,6 +76,18 @@ void SparseBlockArray::serialize(ByteArray& output_array){
         output_array.append<BlockID>(layer.type);
         output_array.append(BitField3D::compress(layer.field().data()));
     }
+
+    output_array.append<size_t>(interactable_blocks.size());
+    for(auto& [position, block]: interactable_blocks){
+        output_array.append<signed char>(position.x);
+        output_array.append<signed char>(position.y);
+        output_array.append<signed char>(position.z);
+
+        auto* prototype = BlockRegistry::get().getPrototype(block.id);
+        if(prototype) output_array.append(prototype->name);
+        else output_array.append("NO_PROTOTYPE");
+        block.metadata->serialize(output_array);
+    }
 }
 
 ByteArray SparseBlockArray::serialize(){
@@ -99,6 +111,19 @@ SparseBlockArray SparseBlockArray::deserialize(ByteArray& array){
         BitField3D field{};
         BitField3D::decompress(field.data(), data);
         output.createLayer(layer_type, field);
+    }
+
+    size_t interactable_block_count = array.read<size_t>();
+    for(size_t i = 0;i < interactable_block_count;i++){
+        glm::ivec3 position = {
+            array.read<signed char>(),
+            array.read<signed char>(),
+            array.read<signed char>()
+        };
+        
+        std::string prototype_name = array.sread();
+        auto* prototype = BlockRegistry::get().getPrototype(prototype_name);
+        if(prototype) output.interactable_blocks[position] = Block{prototype->id, prototype->interface->deserialize(array)};
     }
 
     return output;

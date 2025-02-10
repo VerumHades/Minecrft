@@ -53,6 +53,8 @@ class CraftingMetadata: public BlockMetadata{
     public:
         LogicalItemInventory crafting_field{3,3};
         LogicalItemInventory result_slot{1,1};
+
+        void serialize(ByteArray& to) override;
 };
 
 class CraftingInterface: public BlockInterface{
@@ -74,4 +76,5 @@ class CraftingInterface: public BlockInterface{
 
         std::shared_ptr<UILayer> getLayer(){return ui_layer;}
         std::shared_ptr<BlockMetadata> createMetadata() override;
+        std::shared_ptr<BlockMetadata> deserialize(ByteArray& from) override;
 };

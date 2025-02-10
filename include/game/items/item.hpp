@@ -10,9 +10,13 @@
 #include <game/items/sprite_model.hpp>
 #include <game/blocks.hpp>
 #include <game/items/block_model.hpp>
+#include <rendering/bitworks.hpp>
 
 class ItemTextureAtlas;
 class Item;
+
+using ItemID = size_t;
+#define NO_ITEM 0ULL
 
 class ItemPrototype{
     private:
@@ -65,10 +69,10 @@ class Item{
         ItemPrototype* getPrototype() {return prototype;}
         int getQuantity(){ return quantity; }
         void setQuantity(int number) {quantity = number;}
-};
 
-using ItemID = size_t;
-#define NO_ITEM 0ULL
+        void serialize(ByteArray& to);
+        static ItemID deserialize(ByteArray& from);
+};
 
 class ItemRegistry{
     private:
@@ -168,6 +172,9 @@ class LogicalItemInventory{
         int getHeight() const {return slots_verticaly;}
 
         std::vector<LogicalItemSlot>& getItemSlots() {return slots;};
+
+        void serialize(ByteArray& to);
+        static LogicalItemInventory deserialize(ByteArray& from);
 };
 
 class DroppedItem: public Entity{

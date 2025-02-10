@@ -42,6 +42,22 @@ ItemPrototype::ItemPrototype(std::string name, std::string texture_path): name(n
 }
 
 
+void Item::serialize(ByteArray& to){
+    auto* prototype = getPrototype();
+    std::string name = prototype ? prototype->getName() : "NO_NAME";
+    to.append(name);
+    to.append(quantity);
+}
+ItemID Item::deserialize(ByteArray& from){
+    std::string name = from.sread();
+    int quantity = from.read<int>();
+
+    ItemID id = ItemRegistry::get().createItem(name);
+    if(id == NO_ITEM) return id;
+    ItemRegistry::get().getItem(id)->setQuantity(quantity);
+    return id;
+}
+
 ItemPrototype* ItemRegistry::createPrototypeForBlock(const BlockRegistry::BlockPrototype* prototype){
     std::string prototype_name = "block_" + prototype->name;
 
@@ -207,6 +223,48 @@ bool LogicalItemInventory::addItem(ItemID item_id){
         return first_empty_slot->addItem(item_id );
 
     return false;
+}
+
+
+void LogicalItemInventory::serialize(ByteArray& to){
+    to.append<int>(slots_horizontaly);
+    to.append<int>(slots_verticaly);
+
+    size_t items_total = 0;
+    for(int y = 0;y < slots_verticaly;y++)
+    for(int x = 0;x < slots_horizontaly;x++){
+        auto* slot = getSlot(x,y);
+        if(!slot->hasItem()) continue;
+        items_total++;
+    }
+
+    to.append<size_t>(items_total);
+
+    for(int y = 0;y < slots_verticaly;y++)
+    for(int x = 0;x < slots_horizontaly;x++){
+        auto* slot = getSlot(x,y);
+
+        if(!slot->hasItem()) continue;
+
+        to.append<int>(x);
+        to.append<int>(y);
+        slot->getItem()->serialize(to);
+    }
+}
+LogicalItemInventory LogicalItemInventory::deserialize(ByteArray& from){
+    LogicalItemInventory output{from.read<int>(),from.read<int>()};
+    size_t items_total = from.read<size_t>();
+
+    for(int i = 0;i < items_total;i++){
+        int x = from.read<int>();
+        int y = from.read<int>();
+
+        auto* slot = output.getSlot(x,y);
+        if(!slot) continue;
+        slot->setItem(Item::deserialize(from));
+    }
+
+    return output;
 }
 
 

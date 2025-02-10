@@ -158,3 +158,16 @@ CraftingRecipe* CraftingRecipeRegistry::getCraftingFor(LogicalItemInventory& inv
 
     return nullptr;
 }
+
+void CraftingMetadata::serialize(ByteArray& to){
+    crafting_field.serialize(to);
+    result_slot.serialize(to);
+}
+std::shared_ptr<BlockMetadata> CraftingInterface::deserialize(ByteArray& from){
+    auto output = std::make_shared<CraftingMetadata>();
+
+    output->crafting_field = LogicalItemInventory::deserialize(from);
+    output->result_slot = LogicalItemInventory::deserialize(from);
+
+    return output;
+}

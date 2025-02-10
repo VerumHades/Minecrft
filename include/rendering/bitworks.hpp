@@ -15,8 +15,6 @@
 #include <variant>
 #include <cstring>
 
-#include <game/blocks.hpp>
-
 /*
     Structure that can represent a full 64 * 64 * 64 array of bits with a single instance
 
@@ -163,6 +161,30 @@ class ByteArray{
             auto* sourceArray = reinterpret_cast<const byte*>(source.data());
             std::memcpy(data.data() + data.size() - totalSize, sourceArray, totalSize);
         }
+
+        void append(const std::string& source){
+            size_t totalSize = source.size();
+            append<size_t>(source.size()); 
+
+            data.resize(data.size() + totalSize);
+            auto* sourceArray = reinterpret_cast<const byte*>(source.data());
+            std::memcpy(data.data() + data.size() - totalSize, sourceArray, totalSize);
+        }
+
+        std::string sread(){
+            size_t size = read<size_t>();
+
+            if(cursor + size > data.size()){
+                std::cerr << "Invalid bytearray read: " << size << " at " << cursor << " which is: " << (cursor + size) << " over the total size: " << data.size() << std::endl; 
+                return {};
+            }
+            std::string out(" ",size);
+            std::memcpy(out.data(), data.data() + cursor, size);
+
+            cursor += size;
+            return out;
+        }
+
         template <typename T, typename = std::enable_if_t<std::is_trivially_copyable<T>::value>>
         T read(){
             T out{};

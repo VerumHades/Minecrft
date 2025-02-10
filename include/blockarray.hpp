@@ -27,7 +27,7 @@ class SparseBlockArray{
         bool createLayer(BlockID type, const BitField3D& field){
             if(hasLayerOfType(type)) return false;
             type_indexes[type] = layers.size();
-            layers.push_back({type,{type},field});
+            layers.push_back({type,Block{type},field});
             present_types.push_back(type);
             return true;
         }
@@ -36,7 +36,7 @@ class SparseBlockArray{
             Returns a layer of type if its present, otherwise crashes.
         */
         Layer& getLayer(BlockID type){
-            if(!hasLayerOfType(type)) throw std::runtime_error("Layer has no layer of that type. Use 'hasLayerOfType' to check for layers.");
+            if(!hasLayerOfType(type)) *(int*)nullptr = 1; ;
 
             return layers[type_indexes[type]];
         }

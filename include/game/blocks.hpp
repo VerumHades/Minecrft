@@ -9,6 +9,7 @@
 
 #include <rendering/texture_registry.hpp>
 #include <game/colliders.hpp>
+#include <rendering/bitworks.hpp>
 
 class GameState;
 
@@ -19,13 +20,15 @@ using BlockID = size_t;
 
 class BlockMetadata{
     public:
-        virtual ~BlockMetadata() = default;
+        virtual void serialize(ByteArray& to) = 0;
+        //static virtual std::shared_ptr<BlockMetadata> deserialize(ByteArray& from) = 0;
 };
 
 class BlockInterface{
     public:
         virtual void open(std::shared_ptr<BlockMetadata> metadata, GameState* game_state) = 0;
         virtual std::shared_ptr<BlockMetadata> createMetadata() = 0;
+        virtual std::shared_ptr<BlockMetadata> deserialize(ByteArray& from) = 0;
         virtual const std::string& getName() = 0;
 };
 class BlockBehaviour{
@@ -91,7 +94,8 @@ class BlockRegistry: public TextureRegistry{
         void addBillboardBlock(std::string name, std::string texture_name);
 
         BlockID getIndexByName(std::string name);
-        BlockPrototype* getBlockPrototypeByIndex(BlockID id);
+        BlockPrototype* getPrototype(BlockID id);
+        BlockPrototype* getPrototype(std::string name);
 
         void setPrototypeInterface(BlockID id, std::unique_ptr<BlockInterface> interface);
 
@@ -107,5 +111,5 @@ struct Block{
 
     Block() {}
     Block(BlockID id): id(id) {}
-     Block(BlockID id, std::shared_ptr<BlockMetadata> metadata): id(id),metadata(metadata) {}
+    Block(BlockID id, std::shared_ptr<BlockMetadata> metadata): id(id),metadata(metadata) {}
 };
