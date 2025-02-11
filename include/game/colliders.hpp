@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-
+#include <rendering/bitworks.hpp>
 
 struct RectangularCollider {
     float x, y, z;
@@ -9,7 +9,7 @@ struct RectangularCollider {
     float bounding_sphere_radius;
     glm::vec3 center;
 
-    RectangularCollider(): RectangularCollider(0,0,0,0,0,0){}
+    RectangularCollider(): RectangularCollider(0,0,0,1,1,1){}
     RectangularCollider(float x, float y, float z, float width, float height, float depth):
     x(x),y(y),z(z),width(width),height(height),depth(depth)
     {
@@ -27,4 +27,7 @@ struct RectangularCollider {
                 otherCollider->y + other_offset.y + otherCollider->height >= y + offset.y && otherCollider->y + other_offset.y <= y + offset.y + height &&
                 otherCollider->z + other_offset.z + otherCollider->depth  >= z + offset.z && otherCollider->z + other_offset.z <= z + offset.z + depth;
     }
+
+    void serialize(ByteArray& array);
+    static RectangularCollider deserialize(ByteArray& array);
 };

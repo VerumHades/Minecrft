@@ -206,9 +206,9 @@ int main() {
             scrollable->clearChildren();
 
             for (const auto& dirEntry : std::filesystem::directory_iterator("saves")){
-                if(!dirEntry.is_regular_file()) continue;
+                if(!dirEntry.is_directory()) continue;
 
-                std::string filepath = dirEntry.path().string();
+                std::string filepath = (dirEntry.path() / std::filesystem::path("world.dat")).string();
                 WorldStream stream(filepath);
                 
                 auto frame = std::make_shared<UIFrame>();

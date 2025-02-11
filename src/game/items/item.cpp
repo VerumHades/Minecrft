@@ -193,6 +193,7 @@ bool LogicalItemSlot::swap(LogicalItemSlot& slot){
     ItemID other = slot.item;
     slot.item = item;
     item = other;
+    return true;
 }
 
 LogicalItemInventory::LogicalItemInventory(int slots_horizontaly, int slots_verticaly): slots(slots_horizontaly * slots_verticaly),
@@ -269,20 +270,5 @@ LogicalItemInventory LogicalItemInventory::deserialize(ByteArray& from){
 
 
 DroppedItem::DroppedItem(Item item, glm::vec3 position): Entity(position, {0.3,0.3,0.3}) {
-    if(!item.getPrototype()){
-        std::cerr << "Dropped item without prototype!" << std::endl;
-        return;
-    }
-    VALID_ENTITY_DATA(Data);
-
-    solid = false;
-
-    entity_typename = "dropped_item";
-    //reinterpret_cast<Data*>(entity_data)->item = item;
-
-    onCollision = [](Entity* self, Entity* entity) {
-        self->destroy = true;
-    };
-
-    model = item.getPrototype()->getModel();
+    
 }

@@ -1,8 +1,72 @@
 #include <game/game_state.hpp>
 
-GameState::GameState(const std::string& filename): world_stream(filename){
+namespace fs = std::filesystem;
+
+GameState::GameState(const std::string& path): save_structure(path){
     entities.push_back(Entity(glm::vec3(4,30,4), glm::vec3(0.6, 1.8, 0.6)));
+    
+    world_stream  = save_structure.save<WorldStream>("");
+    player_stream = save_structure.save<FileStream>("player", "",
+        [this](FileStream*){
+            this->savePlayer();
+        },
+        [this](FileStream* stream){
+            this->loadPlayer();
+        }
+    );
+
+    entity_stream = save_structure.save<FileStream>("entities", "",
+        [this](FileStream*){
+            this->saveEntities();
+        },
+        [this](FileStream*){
+            this->loadEntities();
+        }
+    );
+
+    save_structure.open();
+    saveEntities();
+    loadEntities();
 }
+
+void GameState::savePlayer(){
+    ByteArray array{};
+
+    player_inventory.serialize(array);
+    player_hotbar.serialize(array);
+    
+    player_stream->go_to(0);
+    array.write(player_stream->stream());
+}
+void GameState::loadPlayer(){
+    player_stream->go_to(0);
+    ByteArray array = ByteArray::FromStream(player_stream->stream());
+
+    player_inventory = LogicalItemInventory::deserialize(array);
+    player_hotbar = LogicalItemInventory::deserialize(array);
+}
+
+void GameState::saveEntities(){
+    ByteArray array{};
+
+    array.append<size_t>(entities.size());
+    for(auto& entity: entities) entity.serialize(array);
+
+    entity_stream->go_to(0);
+    array.write(entity_stream->stream());
+}
+
+void GameState::loadEntities(){
+    entity_stream->go_to(0);
+    entities.clear();
+    ByteArray array = ByteArray::FromStream(entity_stream->stream());
+
+    size_t count = array.read<size_t>();
+    for(size_t i = 0;i < count;i++){
+        entities.emplace_back(Entity::deserialize(array));
+    }
+}
+
 static int rotation = 0;
 static float position = 0;
 static float position_mult = 1;
@@ -19,8 +83,8 @@ void GameState::loadChunk(const glm::ivec3& position){
 
     chunk = terrain.createEmptyChunk(position);
 
-    if(world_stream.hasChunkAt(position)){
-        world_stream.load(chunk);
+    if(world_stream && world_stream->hasChunkAt(position)){
+        world_stream->load(chunk);
         return;
     }
 
@@ -56,12 +120,14 @@ void GameState::unloadChunk(const glm::ivec3& position){
     auto* chunk = terrain.getChunk(position);
     if(!chunk) return;
 
-    world_stream.save(*chunk);
+    if(world_stream) world_stream->save(*chunk);
     terrain.removeChunk(position);
 }
 
 void GameState::unload(){
     for(auto& [position, chunk]: terrain.chunks) unloadChunk(position);
+    savePlayer();
+    saveEntities();
 }
 
 void GameState::updateEntity(Entity& entity, float deltatime){

@@ -6,10 +6,11 @@
 #include <string>
 #include <shared_mutex>
 #include <random>
+#include <game/save_structure.hpp>
 
-class WorldStream{
+
+class WorldStream: public FileStream{
     private:
-        std::fstream file_stream;
         std::shared_mutex mutex;
 
         struct Header{
@@ -47,7 +48,7 @@ class WorldStream{
         size_t moveChunk(size_t from, size_t to);
 
     public:
-        WorldStream(std::string filepath);
+        WorldStream(const std::string& path);
         ~WorldStream();
         //bool save(Chunk& chunk);
         //void load(Chunk* chunk);

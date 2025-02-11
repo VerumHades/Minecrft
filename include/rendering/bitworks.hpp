@@ -16,29 +16,6 @@
 #include <cstring>
 
 /*
-    Structure that can represent a full 64 * 64 * 64 array of bits with a single instance
-
-    00-0.. (22 remaining bits)
-
-    First two bits are for modes: 
-        0. ZEROES
-        1. ONES
-        2. LITERAL 
-        4. unused
-*/
-struct compressed_24bit{
-    uint8_t bytes[3];
-    
-    public:
-        // Sets the numerical value, cannot store a whole 32 bit number
-        void setValue(uint32_t value);
-        uint32_t getValue();
-        void setMode(uint8_t mode);
-        uint8_t getMode();
-        
-        std::string to_string();
-};
-/*
     Type that selects the smallest type that fits the set number of bits
 
     Max size of 64 bits.
@@ -70,28 +47,6 @@ namespace bitworks{
         file.read(reinterpret_cast<char*>(&value), sizeof(T));
         return value;
     }
-
-    struct CompressedArray{
-        std::vector<compressed_24bit> data;
-        size_t source_size;
-    };
-
-    /*
-        Compresses an array of unsigned integers to an array of 3 byte chunks that each represents a number of consecutive ones or zeroes
-
-        - array => the array to be compressed
-        - size  => the length of the array
-    */
-    template <int bits>
-    CompressedArray compress(uint_t<bits>* array, size_t size);
-
-    /*
-        Converts a series of 3 byte values that indicate a number of ones or zeros to an actual array of ones and zeroes
-
-        - compressed_data => data for decompression
-    */
-    template <int bits>
-    void decompress(CompressedArray compressed_data, std::vector<uint_t<bits>>& result);
 };
 
 template <typename T>
@@ -103,8 +58,6 @@ template <typename T>
 inline uint8_t count_ones(T x) {
     return std::popcount(x);
 }
-
-#include <rendering/bitworks.tpp>
 
 template <int size>
 class BitPlane{
@@ -221,7 +174,9 @@ class ByteArray{
         bool read(std::fstream &file);
 
         bool saveToFile(std::string path);
+
         static ByteArray FromFile(std::string path);
+        static ByteArray FromStream(std::fstream &file);
 
         size_t getFullSize() {return sizeof(char) + sizeof(size_t) + data.size() * sizeof(byte);};
 

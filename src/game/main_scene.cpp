@@ -81,7 +81,7 @@ void MainScene::initialize(){
         Structure structure = Structure::capture(min, size, game_state->getTerrain());
 
         const std::string& name = getElementById<UIInput>("structure_name")->getText();
-        structure.serialize().saveToFile("saves/structures/" + name + ".structure");
+        structure.serialize().saveToFile("structures/" + name + ".structure");
         setUILayer("structure_capture"); 
 
         if(!this->structure_selection->hasOption(name)) this->structure_selection->addOption(name);
@@ -95,7 +95,7 @@ void MainScene::initialize(){
     structure_selection->setAttribute(&UIFrame::Style::fontSize, 16_px);
 
     structure_selection->onSelected = [this](const std::string& name){
-        auto bt = ByteArray::FromFile("saves/structures/"  + name);
+        auto bt = ByteArray::FromFile("structures/"  + name);
 
         auto structure_name_label = getElementById<UILabel>("selected_structure");
         structure_name_label->setText("Selected structure:" + name);
@@ -105,7 +105,7 @@ void MainScene::initialize(){
         this->updateStructureDisplay();
     };
 
-    for (const auto& entry : std::filesystem::directory_iterator("saves/structures")){
+    for (const auto& entry : std::filesystem::directory_iterator("structures")){
         auto& path = entry.path();
         if(!entry.is_regular_file()) continue;
 
@@ -587,14 +587,14 @@ void MainScene::open(GLFWwindow* window){
     auto& player = game_state->getPlayer();
 
     player.onCollision = [this](Entity* self, Entity* collided_with){
-        if(collided_with->getTypename() != "dropped_item") return;
+        //if(collided_with->getTypename() != "dropped_item") return;
 
         //const auto* data = reinterpret_cast<const DroppedItem::Data*>(collided_with->getData());
         
         //if(!this->hotbar->addItem(data->item))
         //    this->inventory->addItem(data->item);
 
-        this->update_hotbar = true;
+        //this->update_hotbar = true;
         //else this->hotbar->update();
     };
 
@@ -612,15 +612,15 @@ void MainScene::open(GLFWwindow* window){
         //if(world->isChunkLoadable(chunkPosition)) world->loadChunk(chunkPosition);
         game_state->loadChunk(chunkPosition);
 
-        std::cout << "\rLoaded chunk: " << i++ << "/" << pow(pregenDistance * 2 + 1, 3) << std::endl;
+        std::cout << "\rLoaded chunk: " << i++ << "/" << pow(pregenDistance * 2 + 1, 3);
     }
 
     //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
     //generationThread.detach();
-    player.setPosition({0,256,0});
-    while(!game_state->entityCollision(player, {0,-1.0f,0})){
-        player.setPosition(player.getPosition() + glm::vec3{0,-1.0f,0});
-    }
+    //player.setPosition({0,256,0});
+    //while(!game_state->entityCollision(player, {0,-1.0f,0})){
+    //    player.setPosition(player.getPosition() + glm::vec3{0,-1.0f,0});
+    //}
 
 
     //std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));

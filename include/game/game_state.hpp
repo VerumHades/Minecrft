@@ -2,18 +2,32 @@
 
 #include <game/world/terrain.hpp>
 #include <game/items/item.hpp>
+#include <game/save_structure.hpp>
 #include <list>
+#include <filesystem>
 
 class GameState{
     private:
+        std::string path;
+
         Terrain terrain;
         std::list<Entity> entities;
 
         LogicalItemInventory player_inventory{10,5};
         LogicalItemInventory player_hotbar{9,1};
 
+        FileSaveStructure save_structure;
         WorldGenerator world_generator;
-        WorldStream world_stream;
+        
+        WorldStream* world_stream;
+        FileStream* player_stream;
+        FileStream* entity_stream;
+
+        void savePlayer();
+        void loadPlayer();
+
+        void saveEntities();
+        void loadEntities();
 
         void drawEntity(Entity& entity);
         

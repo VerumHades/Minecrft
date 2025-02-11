@@ -1,5 +1,11 @@
 #include <game/entity.hpp>
 #include <iostream>
+
+std::shared_ptr<EntityData> EntityData::deserialize(ByteArray& array){
+    Type type = array.read<Type>();
+    return nullptr;
+}
+
 Entity::Entity(glm::vec3 position, glm::vec3 colliderDimensions): position(position) {
     collider = {0,0,0,colliderDimensions.x,colliderDimensions.y,colliderDimensions.z};
 }
@@ -19,4 +25,28 @@ void Entity::accelerate(glm::vec3 direction, float deltatime){
 void Entity::decellerate(float strength, float deltatime){
     glm::vec3 horizontalVelocity = glm::vec3(velocity.x, 0, velocity.z);
     if(glm::length(horizontalVelocity) >= 0) accelerate(-horizontalVelocity * glm::min(strength,1.0f), deltatime);
+}
+
+void Entity::serialize(ByteArray& array){
+    array.append<glm::vec3>(position);
+    array.append<glm::vec3>(velocity);
+    array.append<glm::vec3>(lastPosition);
+    collider.serialize(array);
+
+    if(data) data->serialize(array);
+    else array.append(EntityData::Type::NONE);
+}
+
+Entity Entity::deserialize(ByteArray& array){
+    Entity entity{{},glm::vec3(0.6, 1.8, 0.6)};
+
+    entity.position = array.read<glm::vec3>();
+    entity.velocity = array.read<glm::vec3>();
+    entity.lastPosition = array.read<glm::vec3>();
+
+    entity.collider = RectangularCollider::deserialize(array);
+    
+    entity.data = EntityData::deserialize(array);
+
+    return entity;
 }

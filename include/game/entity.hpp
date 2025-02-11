@@ -23,11 +23,21 @@ class GameState;
 
 #define VALID_ENTITY_DATA(t) static_assert(sizeof(t) <= 128, "Entity data too large!");
 
+class EntityData{
+    public:
+        enum Type{
+            NONE
+        };
+
+        virtual void serialize(ByteArray& array) = 0;
+        virtual void update(GameState* state) = 0;
+        static std::shared_ptr<EntityData> deserialize(ByteArray& array);
+};
+
 class Entity{
     private:
         glm::vec3 position = glm::vec3(0);
         glm::vec3 velocity = glm::vec3(0);
-        std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> regionPositions = {};
         glm::vec3 lastPosition = glm::vec3(0);
 
         float maxVelocityHorizontal = 6.0f;
@@ -36,12 +46,12 @@ class Entity{
         bool hasGravity = true;
         bool on_ground = false;
 
+        Entity(){}
+        
     protected:
-        std::string entity_typename = "entity";
-
+        std::shared_ptr<EntityData> data;
         RectangularCollider collider;
         std::shared_ptr<Model> model;
-        unsigned char entity_data[128];
         bool solid = true;
 
     public:
@@ -64,12 +74,10 @@ class Entity{
         const glm::vec3& getVelocity() const {return velocity;};
         const RectangularCollider& getCollider() const {return collider;}
 
-        const std::string getTypename() const {return entity_typename;}
-
-        std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal>& getRegionPositions() { return regionPositions; }
-
         bool shouldGetDestroyed(){return destroy;}
-        const unsigned char* getData() {return entity_data; }
+
+        void serialize(ByteArray& array);
+        static Entity deserialize(ByteArray& array);
 
         friend class GameState;
 };
