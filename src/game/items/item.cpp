@@ -46,13 +46,15 @@ void Item::serialize(ByteArray& to){
     auto* prototype = getPrototype();
     std::string name = prototype ? prototype->getName() : "NO_NAME";
     to.append(name);
-    to.append(quantity);
+    to.append<int>(quantity);
 }
 ItemID Item::deserialize(ByteArray& from){
     std::string name = from.sread();
     int quantity = from.read<int>();
 
     ItemID id = ItemRegistry::get().createItem(name);
+    std::cout << "Creating item: "  << name <<  " id:" << id << std::endl;
+
     if(id == NO_ITEM) return id;
     ItemRegistry::get().getItem(id)->setQuantity(quantity);
     return id;
@@ -71,13 +73,14 @@ bool ItemRegistry::prototypeExists(std::string name){
     return prototypes.contains(name);
 }
 
-static size_t itemID = 0;
+static size_t itemID = NO_ITEM;
 ItemID ItemRegistry::createItem(ItemPrototype* prototype){
-    size_t id = itemID++;
+    size_t id = itemID;
     if(id == NO_ITEM){
         itemID = 1;
         id = 1;
     }
+    itemID++;
 
     items.try_emplace(id,prototype);
     return id;
@@ -268,7 +271,29 @@ LogicalItemInventory LogicalItemInventory::deserialize(ByteArray& from){
     return output;
 }
 
+void DroppedItem::serialize(ByteArray& array){
+    Item* item = ItemRegistry::get().getItem(this->item);
+    if(!item) return;
+    item->serialize(array);
+}
 
-DroppedItem::DroppedItem(Item item, glm::vec3 position): Entity(position, {0.3,0.3,0.3}) {
+void DroppedItem::setup(Entity* entity){
+    Item* item = ItemRegistry::get().getItem(this->item);
+    if(!item) return;
+
+    entity->setModel(item->getPrototype()->getModel());
+    entity->onCollision = [](Entity* self, Entity* entity) {
+        if(!entity->hasTag("player")) return;
+        self->destroy = true;
+    };
+    entity->setSolid(false);
+}
+
+std::shared_ptr<EntityData> DroppedItem::deserializeData(ByteArray& array){
+    ItemID item = Item::deserialize(array);
+    return std::make_shared<DroppedItem>(item);
+}
+
+void DroppedItem::update(GameState* state){
     
 }

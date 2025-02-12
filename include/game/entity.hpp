@@ -14,24 +14,22 @@
 #include <vec_hash.hpp>
 
 class Terrain;
-
-
 class Entity;
 
 class DroppedItem;
 class GameState;
 
-#define VALID_ENTITY_DATA(t) static_assert(sizeof(t) <= 128, "Entity data too large!");
-
 class EntityData{
     public:
         enum Type{
-            NONE
-        };
+            NONE,
+            DROPPED_ITEM
+        } type;
+        bool do_update = false;
 
         virtual void serialize(ByteArray& array) = 0;
         virtual void update(GameState* state) = 0;
-        static std::shared_ptr<EntityData> deserialize(ByteArray& array);
+        virtual void setup(Entity* entity) = 0;
 };
 
 class Entity{
@@ -46,7 +44,9 @@ class Entity{
         bool hasGravity = true;
         bool on_ground = false;
 
-        Entity(){}
+        std::unordered_set<std::string> tags{};
+
+        static std::shared_ptr<EntityData> deserializeData(ByteArray& array);
         
     protected:
         std::shared_ptr<EntityData> data;
@@ -56,6 +56,8 @@ class Entity{
 
     public:
         Entity(glm::vec3 position, glm::vec3 colliderDimensions);
+        Entity(glm::vec3 position, glm::vec3 colliderDimensions, std::shared_ptr<EntityData> data);
+        Entity(): Entity(glm::vec3{0,0,0},{1,1,1}){}
 
         std::function<void(Entity*, Entity*)> onCollision;
         bool destroy = false;
@@ -65,6 +67,7 @@ class Entity{
         void setGravity(bool value){hasGravity = value;}
         void setModel(std::shared_ptr<Model> model) {this->model = model;}
         bool isSolid(){return solid;}
+        void setSolid(bool value){solid = value;}
         void setOnGround(bool value){on_ground = value;}
 
         std::shared_ptr<Model>& getModel() {return model;}
@@ -79,8 +82,19 @@ class Entity{
         void serialize(ByteArray& array);
         static Entity deserialize(ByteArray& array);
 
+        std::shared_ptr<EntityData>& getData(){return data;}
+        
+        void setData(const std::shared_ptr<EntityData>& data){
+            this->data = data;
+            if(this->data) this->data->setup(this);
+        }
+
+        void addTag(const std::string& tag){tags.emplace(tag);}
+        bool hasTag(const std::string& tag){return tags.contains(tag);}
+
         friend class GameState;
 };
 
+#include <game/items/item.hpp>
 
 #endif

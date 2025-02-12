@@ -338,13 +338,13 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
             auto* item_prototype = ItemRegistry::get().getPrototype("block_" + block_prototype->name);
             if(!item_prototype) return;
             
-            /*auto entity = DroppedItem(ItemRegistry::get().createItem(item_prototype), glm::vec3(blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5));
+            Entity entity = DroppedItem::create(glm::vec3(blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5), ItemRegistry::get().createItem(item_prototype));
             entity.accelerate({
                 static_cast<float>(std::rand() % 200) / 100.0f - 1.0f,
                 0.6f,
                 static_cast<float>(std::rand() % 200) / 100.0f - 1.0f
             }, 1.0f);
-            game_state->addEntity(entity);*/
+            game_state->addEntity(entity);
             //auto& selected_slot = hotbar->getSelectedSlot();
             //inventory->addItem();
 
@@ -512,9 +512,9 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
             auto* item_prototype = slot->getItem()->getPrototype();
             if(!item_prototype) return;
             
-            /*auto entity = DroppedItem(ItemRegistry::get().createItem(item_prototype), camera.getPosition() + camera.getDirection() * 0.5f);
+            auto entity = DroppedItem::create(camera.getPosition() + camera.getDirection() * 0.5f, ItemRegistry::get().createItem(item_prototype));
             entity.accelerate(camera.getDirection(),1.0f);
-            game_state->addEntity(entity);*/
+            game_state->addEntity(entity);
 
             slot->decreaseQuantity(1);
             hotbar->update();
@@ -587,15 +587,13 @@ void MainScene::open(GLFWwindow* window){
     auto& player = game_state->getPlayer();
 
     player.onCollision = [this](Entity* self, Entity* collided_with){
-        //if(collided_with->getTypename() != "dropped_item") return;
-
-        //const auto* data = reinterpret_cast<const DroppedItem::Data*>(collided_with->getData());
+        if(!collided_with->getData() || collided_with->getData()->type != EntityData::DROPPED_ITEM) return;
         
-        //if(!this->hotbar->addItem(data->item))
-        //    this->inventory->addItem(data->item);
+        const auto& data = dynamic_pointer_cast<DroppedItem>(collided_with->getData());
+        //const auto* data = reinterpret_cast<const DroppedItem::Data*>(collided_with->getData());
+        this->game_state->giveItemToPlayer(data->getItem());
 
-        //this->update_hotbar = true;
-        //else this->hotbar->update();
+        this->update_hotbar = true;
     };
 
     chunkMeshGenerator.setWorld(&game_state->getTerrain());

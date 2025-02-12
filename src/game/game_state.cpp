@@ -3,7 +3,9 @@
 namespace fs = std::filesystem;
 
 GameState::GameState(const std::string& path): save_structure(path){
-    entities.push_back(Entity(glm::vec3(4,30,4), glm::vec3(0.6, 1.8, 0.6)));
+    Entity player = Entity(glm::vec3(4,30,4), glm::vec3(0.6, 1.8, 0.6));
+    player.addTag("player");
+    entities.push_back(player);
     
     world_stream  = save_structure.save<WorldStream>("");
     player_stream = save_structure.save<FileStream>("player", "",
@@ -65,6 +67,11 @@ void GameState::loadEntities(){
     for(size_t i = 0;i < count;i++){
         entities.emplace_back(Entity::deserialize(array));
     }
+}
+
+void GameState::giveItemToPlayer(ItemID item){
+    if(!player_hotbar.addItem(item))
+            player_inventory.addItem(item);
 }
 
 static int rotation = 0;
@@ -131,6 +138,8 @@ void GameState::unload(){
 }
 
 void GameState::updateEntity(Entity& entity, float deltatime){
+    if(entity.data && entity.data->do_update) entity.data->update(this);
+
     if(entity.hasGravity) entity.accelerate(glm::vec3(0,-(0.98 + entity.friction * 2),0), deltatime);
     
     if(

@@ -177,12 +177,24 @@ class LogicalItemInventory{
         static LogicalItemInventory deserialize(ByteArray& from);
 };
 
-class DroppedItem: public Entity{
-    public:
-        struct Data{
-            Item item;
-        };
+class DroppedItem: public EntityData{
+    private:
+        ItemID item;
 
     public:
-        DroppedItem(Item item, glm::vec3 position);
+        DroppedItem(ItemID item): item(item){type = DROPPED_ITEM;}
+
+        void serialize(ByteArray& array) override;
+        void update(GameState* state) override;
+        ItemID getItem(){return item;}
+
+        void setup(Entity* entity) override;
+
+        static Entity create(glm::vec3 position, ItemID item_id){
+            Item* item = ItemRegistry::get().getItem(item_id);
+            if(!item) return {};
+
+            return Entity(position, glm::vec3{0.4,0.4,0.4}, std::make_shared<DroppedItem>(item_id));
+        }
+        static std::shared_ptr<EntityData> deserializeData(ByteArray& array);
 };

@@ -1,14 +1,21 @@
 #include <game/entity.hpp>
 #include <iostream>
 
-std::shared_ptr<EntityData> EntityData::deserialize(ByteArray& array){
-    Type type = array.read<Type>();
+std::shared_ptr<EntityData> Entity::deserializeData(ByteArray& array){
+    EntityData::Type type = array.read<EntityData::Type>();
+    std::cout << type << std::endl;
+    if(type == EntityData::DROPPED_ITEM) return DroppedItem::deserializeData(array);
     return nullptr;
 }
 
 Entity::Entity(glm::vec3 position, glm::vec3 colliderDimensions): position(position) {
     collider = {0,0,0,colliderDimensions.x,colliderDimensions.y,colliderDimensions.z};
 }
+Entity::Entity(glm::vec3 position, glm::vec3 colliderDimensions, std::shared_ptr<EntityData> data): position(position){
+    setData(data);
+    collider = {0,0,0,colliderDimensions.x,colliderDimensions.y,colliderDimensions.z};
+}
+
 
 void Entity::accelerate(glm::vec3 direction, float deltatime){
     auto newVelocity = velocity + direction * deltatime;
@@ -33,7 +40,13 @@ void Entity::serialize(ByteArray& array){
     array.append<glm::vec3>(lastPosition);
     collider.serialize(array);
 
-    if(data) data->serialize(array);
+    array.append<size_t>(tags.size());
+    for(auto& tag: tags) array.append(tag);
+
+    if(data){
+        array.append(data->type);
+        data->serialize(array);
+    }
     else array.append(EntityData::Type::NONE);
 }
 
@@ -46,7 +59,10 @@ Entity Entity::deserialize(ByteArray& array){
 
     entity.collider = RectangularCollider::deserialize(array);
     
-    entity.data = EntityData::deserialize(array);
+    size_t tag_count = array.read<size_t>();
+    for(size_t i = 0;i < tag_count;i++) entity.tags.emplace(array.sread());
+
+    entity.setData(deserializeData(array));
 
     return entity;
 }

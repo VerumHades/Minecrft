@@ -49,6 +49,8 @@ class GameState{
         
         bool entityCollision(Entity& entity, const glm::vec3& offset = {0,0,0});
 
+        void giveItemToPlayer(ItemID item);
+
         Entity& getPlayer(){return entities.front();}
         LogicalItemInventory& getPlayerInventory(){return player_inventory;};
         LogicalItemInventory& getPlayerHotbar(){return player_hotbar;}
