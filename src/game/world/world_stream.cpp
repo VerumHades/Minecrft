@@ -142,7 +142,7 @@ bool WorldStream::save(Chunk& chunk){
 
 void WorldStream::load(Chunk* chunk){
     if(!hasChunkAt(chunk->getWorldPosition())) return;
-    //std::cout << "Loadeding: " << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
+    std::cout << "Loadeding: " << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
     //std::cout << "Located at: " << chunkTable[chunk->getWorldPosition()] << std::endl;
     stream().seekg(chunkTable[chunk->getWorldPosition()].in_file_start, std::ios::beg);
     ByteArray source;

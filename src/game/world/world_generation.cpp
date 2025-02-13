@@ -170,26 +170,35 @@ WorldGenerator::Heightmap& WorldGenerator::getHeightmapFor(glm::ivec3 position_i
     {
         std::shared_lock lock(mutex);
         if(getHeightMaps().contains(position)) 
-            return getHeightMaps().at(position);
+            return *getHeightMaps().at(position);
     }
 
     std::unique_lock lock(mutex);
-    auto& map = getHeightMaps()[position];
+    getHeightMaps().emplace(position,std::make_unique<Heightmap>());
+    auto& map = getHeightMaps().at(position);
 
-    map.lowest = INT32_MAX;
-    map.highest = INT32_MIN;
+    map->lowest = INT32_MAX;
+    map->highest = INT32_MIN;
 
     for(int x = 0; x < CHUNK_SIZE; x++) 
     for(int z = 0; z < CHUNK_SIZE; z++){
         glm::ivec3 localPosition = glm::ivec3(x,0,z) + position * CHUNK_SIZE;
 
         int value = pow(noise.GetNoise(static_cast<float>(localPosition.x),static_cast<float>(localPosition.z)) * 10, 3);
-        map.lowest = std::min(value, map.lowest);
-        map.highest = std::max(value, map.highest);
-        map.heights[x][z] = value;
+        map->lowest = std::min(value, map->lowest);
+        map->highest = std::max(value, map->highest);
+        map->heights[x][z] = value;
     }
 
-    return map;
+    return *map;
+}
+
+void WorldGenerator::prepareHeightMaps(glm::ivec3 around, int distance){
+    for(int i = -distance;i <= distance;i++)
+    for(int j = -distance;j <= distance;j++)
+    {
+        getHeightmapFor(around + glm::ivec3{i, 0, j});
+    }
 }
 
 void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){

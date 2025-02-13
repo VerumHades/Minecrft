@@ -20,12 +20,12 @@ class ScopeTimer{
             auto end = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - relative_start).count();
             relative_start = end;
-            std::cout << message << " in: " << duration << " microseconds" << std::endl;
+            std::cout << message << " in: " << duration << " microseconds " << duration / 1000 << "miliseconds " << duration / 1000000 << "seconds" << std::endl;
         }
         ~ScopeTimer(){
             auto end = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-            std::cout << message << " in: " << duration << " microseconds" << std::endl;
+            std::cout << message << " in: " << duration << " microseconds " << duration / 1000 << "miliseconds " << duration / 1000000 << "seconds" << std::endl;
         }
         
 };

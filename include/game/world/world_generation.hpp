@@ -32,8 +32,8 @@ class WorldGenerator{
             int highest = INT32_MIN;
         };
 
-        std::unordered_map<glm::ivec3, WorldGenerator::Heightmap, IVec3Hash, IVec3Equal>& getHeightMaps(){
-            static std::unordered_map<glm::ivec3, WorldGenerator::Heightmap, IVec3Hash, IVec3Equal> height_maps{};
+        std::unordered_map<glm::ivec3, std::unique_ptr<WorldGenerator::Heightmap>, IVec3Hash, IVec3Equal>& getHeightMaps(){
+            static std::unordered_map<glm::ivec3, std::unique_ptr<WorldGenerator::Heightmap>, IVec3Hash, IVec3Equal> height_maps{};
             return height_maps;
         }
         
@@ -41,6 +41,8 @@ class WorldGenerator{
 
     public:
         WorldGenerator();
+
+        void prepareHeightMaps(glm::ivec3 around, int distance);
 
         std::thread threadedQueueGeneration(std::queue<Chunk*>& queue);
         void generateTerrainChunk(Chunk* chunk, glm::ivec3 position);

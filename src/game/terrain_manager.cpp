@@ -9,14 +9,15 @@ void TerrainManager::generateRegion(glm::ivec3 around, int render_distance){
 
     int pregenDistance = render_distance + 1; 
 
-    const int thread_count = 12;
+    const int thread_count = 8;
     std::array<std::queue<Chunk*>, thread_count> generation_queues;
     int queue_index = 0;
 
     //world->getWorldGenerator().generateChunkRegion(*world, {0,0,0});
 
-    // ORDER IS IMPORTANT THIS GENERATES IN LAYERS! BEST USE OF HEIGHT MAP CACHE!
-    for(int x = -pregenDistance; x <= pregenDistance; x++) 
+    ScopeTimer timer("Generated chunks");
+    
+    /*for(int x = -pregenDistance; x <= pregenDistance; x++) 
     for(int z = -pregenDistance; z <= pregenDistance; z++)
     for(int y = -pregenDistance; y <= pregenDistance; y++) 
     {
@@ -30,11 +31,31 @@ void TerrainManager::generateRegion(glm::ivec3 around, int render_distance){
             return;
         }
 
+        world_generator.generateTerrainChunk(chunk, chunkPosition);
+    }*/
+
+    for(int x = -pregenDistance; x <= pregenDistance; x++) 
+    for(int z = -pregenDistance; z <= pregenDistance; z++)
+    for(int y = -pregenDistance; y <= pregenDistance; y++) 
+    {
+        glm::ivec3 chunkPosition = glm::ivec3(x,y,z) + around;
+
+        if(terrain.getChunk(chunkPosition)) continue;
+        auto* chunk = terrain.createEmptyChunk(chunkPosition);
+
+        if(world_stream.hasChunkAt(chunkPosition)){
+            world_stream.load(chunk);
+            continue;
+        }
+
         generation_queues[queue_index].push(chunk);
         queue_index = (queue_index + 1) % thread_count;
     }
 
-    ScopeTimer timer("Generated chunks in");
+    timer.timestamp("Setup queues");
+    world_generator.prepareHeightMaps(around, render_distance);
+    timer.timestamp("Perpared height maps");
+
     std::array<std::thread, thread_count> threads;
     
     int i = 0;
