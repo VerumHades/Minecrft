@@ -6,6 +6,8 @@
 #include <list>
 #include <filesystem>
 
+class TerrainManager;
+
 class GameState{
     private:
         std::string path;
@@ -17,7 +19,6 @@ class GameState{
         LogicalItemInventory player_hotbar{9,1};
 
         FileSaveStructure save_structure;
-        WorldGenerator world_generator;
         
         WorldStream* world_stream;
         FileStream* player_stream;
@@ -30,12 +31,14 @@ class GameState{
         void loadEntities();
 
         void drawEntity(Entity& entity);
+
+        friend class TerrainManager;
         
     public:
         GameState(const std::string& filename);
 
         void unload();
-
+        
         void loadChunk(const glm::ivec3& position);
         void unloadChunk(const glm::ivec3& position);
 

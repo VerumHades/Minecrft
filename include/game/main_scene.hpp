@@ -37,6 +37,7 @@
 #include <game/structure.hpp>
 #include <game/game_state.hpp>
 #include <game/items/crafting.hpp>
+#include <game/terrain_manager.hpp>
 
 #include <indexing.hpp>
 
@@ -67,14 +68,13 @@ class MainScene: public Scene{
         
         //std::unique_ptr<ThreadPool> threadPool;
 
+        ThreadPool threadPool{1};
         GLSkybox skybox{};
         std::unique_ptr<GameState> game_state;
 
         WireframeCubeRenderer wireframeRenderer{};
         
-        ChunkMeshRegistry chunkMeshRegistry{renderDistance};
-        ChunkMeshGenerator chunkMeshGenerator{};
-        std::queue<glm::ivec3> chunk_generation_queue = {};
+        TerrainManager terrain_manager{};
 
         std::unique_ptr<GLTextureArray> block_texture_array = nullptr;
         
@@ -144,7 +144,6 @@ class MainScene: public Scene{
         void physicsUpdate();
         void processMouseMovement();
 
-        void enqueueChunkGeneration(glm::ivec3 position);
         void updateLoadedLocations(glm::ivec3 old_location, glm::ivec3 new_location);
 
         double last = glfwGetTime();
@@ -172,6 +171,11 @@ class MainScene: public Scene{
 
         void updateStructureDisplay();
         void updateStructureSavingDisplay();
+
+        void regenerateChunkMesh(Chunk* chunk, glm::ivec3 position){
+            terrain_manager.regenerateChunkMesh(chunk, position);
+            updateVisibility = 1;
+        }
         
     public:
         MainScene(){}
@@ -182,9 +186,6 @@ class MainScene: public Scene{
         void open(GLFWwindow* window)  override;
         void close(GLFWwindow* window)  override;
         void resize(GLFWwindow* window, int width, int height)  override;
-
-        void regenerateChunkMesh(Chunk* chunk);
-        void regenerateChunkMesh(Chunk* chunk,glm::vec3 blockCoords);
 
         void mouseMove(GLFWwindow* window, int x, int y)  override;
         void mouseEvent(GLFWwindow* window, int button, int action, int mods)  override;

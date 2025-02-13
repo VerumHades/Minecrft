@@ -25,7 +25,7 @@ void SleepyThread::run(){
     }
 }
 
-void SleepyThread::awake(std::function<void(void)> func){
+void SleepyThread::awake(const std::function<void(void)>& func){
     {
         std::lock_guard<std::mutex> lock(mutex);
         this->func = func;
@@ -70,7 +70,7 @@ void ThreadPool::deployPendingJobs(){
     }
 }
 
-bool ThreadPool::deployInternal(std::function<void(void)>& func){
+bool ThreadPool::deployInternal(const std::function<void(void)>& func){
     if(nextThread.empty()) return false;
     //std::cout << "Deploying thread!" << std::endl;
 
@@ -82,7 +82,7 @@ bool ThreadPool::deployInternal(std::function<void(void)>& func){
     return true;
 }
 
-bool ThreadPool::deploy(std::function<void(void)> func){
+bool ThreadPool::deploy(const std::function<void(void)>& func){
     std::lock_guard<std::mutex> lock(this->updateMutex);
     
     if(nextThread.empty()){

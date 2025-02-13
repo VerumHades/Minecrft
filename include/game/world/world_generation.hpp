@@ -14,6 +14,9 @@
 #include <random>
 
 #include <FastNoiseLite.h> 
+#include <mutex>
+#include <queue>
+#include <thread>
 
 class Chunk;
 class Terrain;
@@ -39,9 +42,8 @@ class WorldGenerator{
     public:
         WorldGenerator();
 
+        std::thread threadedQueueGeneration(std::queue<Chunk*>& queue);
         void generateTerrainChunk(Chunk* chunk, glm::ivec3 position);
-
-
 
         void setSeed(int seed) {
             noise.SetSeed(seed);

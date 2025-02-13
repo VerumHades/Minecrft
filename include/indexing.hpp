@@ -19,7 +19,8 @@ class SpiralIndexer{
     public:
         SpiralIndexer(){}
 
-        glm::ivec2 next();
+        glm::ivec2 get();
+        void next();
         size_t getTotal(){return total;}
 };
 
@@ -36,6 +37,7 @@ class SpiralIndexer3D{
 
     public:
         SpiralIndexer3D(){}
-        glm::ivec3 next();
+        void next();
+        glm::ivec3 get();
         int getCurrentDistance() { return current_distance; }
 };

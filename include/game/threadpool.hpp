@@ -24,7 +24,7 @@ class SleepyThread{
         ~SleepyThread();
 
         std::function<void(void)> onAvailable;
-        void awake(std::function<void(void)> func);
+        void awake(const std::function<void(void)>& func);
 };
 
 class ThreadPool{
@@ -36,14 +36,14 @@ class ThreadPool{
 
         std::queue<std::function<void(void)>> pendingJobs;
 
-        bool deployInternal(std::function<void(void)>& func);
+        bool deployInternal(const std::function<void(void)>& func);
 
     public:
         ThreadPool(size_t maxThreads);
         /*
             Deploys the job immidiately or adds it to processing queue
         */
-        bool deploy(std::function<void(void)> func);
+        bool deploy(const std::function<void(void)>& func);
 
         /*
             Deploys pending jobs if possible

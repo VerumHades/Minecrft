@@ -164,11 +164,16 @@ void ChunkDefinition::place(Chunk* chunk, const glm::ivec3& offset) const {
 }
 
 WorldGenerator::Heightmap& WorldGenerator::getHeightmapFor(glm::ivec3 position_in){
+    static std::shared_mutex mutex;
     auto position = glm::ivec3(position_in.x, 0, position_in.z);
 
-    if(getHeightMaps().contains(position)) 
-        return getHeightMaps().at(position);
+    {
+        std::shared_lock lock(mutex);
+        if(getHeightMaps().contains(position)) 
+            return getHeightMaps().at(position);
+    }
 
+    std::unique_lock lock(mutex);
     auto& map = getHeightMaps()[position];
 
     map.lowest = INT32_MAX;
@@ -215,3 +220,25 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
             chunk->setBlock(glm::ivec3(x,y,z), {stone}, true);
     }
 }   
+
+std::thread WorldGenerator::threadedQueueGeneration(std::queue<Chunk*>& queue){
+    static int id = 0;
+    int myid = id++;
+
+    std::thread thread = std::thread([this, &queue, myid] {
+        int count = 50;
+        while(!queue.empty()){
+            auto chunk = queue.front();
+            queue.pop();
+
+            this->generateTerrainChunk(chunk, chunk->getWorldPosition());
+            if(count <= 0){
+                std::cout << "Amount left " << myid << ":" << queue.size() << "\n";
+                count = 50;
+            }
+            else count--;
+        }
+    });
+
+    return thread;
+}

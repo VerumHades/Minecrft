@@ -84,20 +84,6 @@ void GameState::drawEntity(Entity& entity){
     entity.getModel()->requestDraw(entity.getPosition() + glm::vec3{0,position,0}, {0.3,0.3,0.3}, {0,rotation,0}, entity.getModel()->getRotationCenterOffset());
 }
 
-void GameState::loadChunk(const glm::ivec3& position){
-    auto* chunk = terrain.getChunk(position);
-    if(chunk) return;
-
-    chunk = terrain.createEmptyChunk(position);
-
-    if(world_stream && world_stream->hasChunkAt(position)){
-        world_stream->load(chunk);
-        return;
-    }
-
-    world_generator.generateTerrainChunk(chunk, position);
-}
-
 bool GameState::entityCollision(Entity& checked_entity, const glm::vec3& offset){
     auto& checked_collider = checked_entity.getCollider();
     auto position = checked_entity.getPosition() + offset;
@@ -123,13 +109,28 @@ bool GameState::entityCollision(Entity& checked_entity, const glm::vec3& offset)
     return false;
 }
 
+void GameState::loadChunk(const glm::ivec3& position){
+    auto* chunk = terrain.getChunk(position);
+    if(chunk) return;
+
+    if(world_stream && world_stream->hasChunkAt(position)){
+        chunk = terrain.createEmptyChunk(position);
+        world_stream->load(chunk);
+        return;
+    }
+}
+
 void GameState::unloadChunk(const glm::ivec3& position){
     auto* chunk = terrain.getChunk(position);
     if(!chunk) return;
 
-    if(world_stream) world_stream->save(*chunk);
+    if(world_stream){
+        std::cout << "Saved chunk: " <<  std::endl;
+        world_stream->save(*chunk);
+    }
     terrain.removeChunk(position);
 }
+
 
 void GameState::unload(){
     for(auto& [position, chunk]: terrain.chunks) unloadChunk(position);

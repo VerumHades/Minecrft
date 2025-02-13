@@ -352,7 +352,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
             auto chunk = game_state->getTerrain().getChunkFromBlockPosition(blockUnderCursorPosition);
             if(!chunk) return;
-            regenerateChunkMesh(chunk,game_state->getTerrain().getGetChunkRelativeBlockPosition(blockUnderCursorPosition));
+            regenerateChunkMesh(chunk, game_state->getTerrain().getGetChunkRelativeBlockPosition(blockUnderCursorPosition));
         }
         else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
             auto* block_prototype = BlockRegistry::get().getPrototype(blockUnderCursor->id);
@@ -386,7 +386,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
 
             auto* chunk = game_state->getTerrain().getChunkFromBlockPosition(blockPosition);
             if(!chunk) return;
-            regenerateChunkMesh(chunk,game_state->getTerrain().getGetChunkRelativeBlockPosition(blockPosition));
+            regenerateChunkMesh(chunk, game_state->getTerrain().getGetChunkRelativeBlockPosition(blockPosition));
         }
     }
     else if(isActiveLayer("structure_capture")){
@@ -566,7 +566,6 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
 
 void MainScene::open(GLFWwindow* window){
     game_state = nullptr;
-    chunkMeshRegistry.clear();
     running = true;
     indexer = {};
     
@@ -596,30 +595,8 @@ void MainScene::open(GLFWwindow* window){
         this->update_hotbar = true;
     };
 
-    chunkMeshGenerator.setWorld(&game_state->getTerrain());
-
-    int pregenDistance = renderDistance + 1; 
-
-    int i = 0;
-    //world->getWorldGenerator().generateChunkRegion(*world, {0,0,0});
-    for(int x = -pregenDistance; x <= pregenDistance; x++) 
-    for(int y = -pregenDistance; y <= pregenDistance; y++) 
-    for(int z = -pregenDistance; z <= pregenDistance; z++){
-        glm::ivec3 chunkPosition = glm::ivec3(x,y,z);
-
-        //if(world->isChunkLoadable(chunkPosition)) world->loadChunk(chunkPosition);
-        game_state->loadChunk(chunkPosition);
-
-        std::cout << "\rLoaded chunk: " << i++ << "/" << pow(pregenDistance * 2 + 1, 3);
-    }
-
-    //std::thread generationThread(std::bind(&MainScene::generateSurroundingChunks, this));
-    //generationThread.detach();
-    //player.setPosition({0,256,0});
-    //while(!game_state->entityCollision(player, {0,-1.0f,0})){
-    //    player.setPosition(player.getPosition() + glm::vec3{0,-1.0f,0});
-    //}
-
+    terrain_manager.setGameState(game_state.get());
+    terrain_manager.loadRegion(glm::ivec3(0,0,0), renderDistance);
 
     //std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
@@ -639,11 +616,11 @@ void MainScene::close(GLFWwindow* window){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     } 
 
-    chunkMeshRegistry.clear();
+    terrain_manager.unloadAll();
     game_state->unload();
     game_state = nullptr;
 
-    chunkMeshGenerator.setWorld(nullptr);
+    terrain_manager.setGameState(nullptr);
 }
 
 void MainScene::render(){
@@ -653,6 +630,8 @@ void MainScene::render(){
 
     fps_label->setText(std::to_string(1.0f / deltatime) + "FPS");
     fps_label->update();
+
+    terrain_manager.uploadPendingMeshes();
     
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
@@ -660,36 +639,16 @@ void MainScene::render(){
     glm::vec3 camPosition = game_state->getPlayer().getPosition() + camOffset;
 
     camera.setPosition(camPosition);
-    chunkMeshGenerator.loadMeshFromQueue(chunkMeshRegistry);
 
     if(update_hotbar){
         hotbar->update();
         update_hotbar = false;
     } 
 
-    if(!chunk_generation_queue.empty()){
-        auto& position = chunk_generation_queue.front();
-        game_state->loadChunk(position);
-        chunk_generation_queue.pop();
-    }
-
-    if(chunk_generation_queue.empty() && indexer.getCurrentDistance() < renderDistance){
-        auto position = indexer.next() + lastCamWorldPosition;
-        Chunk* chunk = game_state->getTerrain().getChunk(position);
-
-        int distance = glm::clamp(glm::distance(glm::vec3(lastCamWorldPosition), glm::vec3(position)) / 3.0f, 0.0f, 7.0f);
-
-        auto level = static_cast<BitField3D::SimplificationLevel>(distance - 1);
-
-        if(!chunk) std::cerr << "Chunk not generated when generating meshes?" << std::endl;
-        else if(!chunkMeshRegistry.isChunkLoaded(position)) chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry, level); 
-        
-    }
-
     processMouseMovement();
 
     if(updateVisibility > 0){
-        chunkMeshRegistry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
+        terrain_manager.getMeshRegistry().updateDrawCalls(camera.getPosition(), camera.getFrustum());
         updateVisibility = 0;
     }
     
@@ -718,7 +677,7 @@ void MainScene::render(){
     suncam.setModelPosition({0,0,0});
     terrainProgram.updateUniforms();
     suncam.prepareForRender();
-    chunkMeshRegistry.draw();
+    terrain_manager.getMeshRegistry().draw();
     glEnable( GL_CULL_FACE );
     // ====
 
@@ -739,7 +698,7 @@ void MainScene::render(){
 
         // Draw terrain
         terrainProgram.updateUniforms();
-        chunkMeshRegistry.draw();
+        terrain_manager.getMeshRegistry().draw();
     
         // Draw models
         modelProgram.updateUniforms();
@@ -777,47 +736,8 @@ void MainScene::render(){
     gBuffer.unbindTextures();
 }
 
-void MainScene::regenerateChunkMesh(Chunk* chunk){
-    chunkMeshGenerator.syncGenerateSyncUploadMesh(chunk, chunkMeshRegistry, BitField3D::NONE);
-    this->updateVisibility = 1;
-    //chunkMeshRegistry.unloadChunkMesh(chunk->getWorldPosition());
-}
-
-
-#define regenMesh(position) { \
-    Chunk* temp = game_state->getTerrain().getChunk(position);\
-    if(temp) regenerateChunkMesh(temp);\
-}
-void MainScene::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
-    regenerateChunkMesh(chunk);
-    if(blockCoords.x == 0)              regenMesh(chunk->getWorldPosition() - glm::ivec3(1,0,0));
-    if(blockCoords.x == CHUNK_SIZE - 1) regenMesh(chunk->getWorldPosition() + glm::ivec3(1,0,0));
-
-    if(blockCoords.y == 0)              regenMesh(chunk->getWorldPosition() - glm::ivec3(0,1,0));
-    if(blockCoords.y == CHUNK_SIZE - 1) regenMesh(chunk->getWorldPosition() + glm::ivec3(0,1,0));
-
-    if(blockCoords.z == 0)              regenMesh(chunk->getWorldPosition() - glm::ivec3(0,0,1));
-    if(blockCoords.z == CHUNK_SIZE - 1) regenMesh(chunk->getWorldPosition() + glm::ivec3(0,0,1));
-}
-#undef regenMesh
-
-void MainScene::enqueueChunkGeneration(glm::ivec3 position){
-    if(game_state->getTerrain().getChunk(position)) return;
-    chunk_generation_queue.push(position); 
-}
-
 void MainScene::updateLoadedLocations(glm::ivec3 old_location, glm::ivec3 new_location){
-    int pregenDistance = renderDistance + 1; 
-
-    for(int x = -pregenDistance; x <= pregenDistance; x++) 
-    for(int y = -pregenDistance; y <= pregenDistance; y++) 
-    for(int z = -pregenDistance; z <= pregenDistance; z++){
-        glm::ivec3 chunkPosition = new_location + glm::ivec3(x,y,z);
-
-        enqueueChunkGeneration(chunkPosition);
-    }
-
-    indexer = {};
+    terrain_manager.loadRegion(new_location, renderDistance);
 }
 
 void MainScene::physicsUpdate(){

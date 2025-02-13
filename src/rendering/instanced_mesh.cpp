@@ -209,5 +209,8 @@ void InstancedMeshBuffer::clearDrawCalls(){
 }
 
 void InstancedMeshBuffer::flushDrawCalls(){
-    for(auto& info: render_information) info.draw_call_buffer.flush();
+    for(auto& info: render_information){
+        std::cout << "Flushed draw calls: " << info.draw_call_buffer.count() << std::endl;
+        info.draw_call_buffer.flush();
+    }
 }
