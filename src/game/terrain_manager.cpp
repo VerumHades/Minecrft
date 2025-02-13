@@ -15,7 +15,7 @@ void TerrainManager::generateRegion(glm::ivec3 around, int render_distance){
 
     //world->getWorldGenerator().generateChunkRegion(*world, {0,0,0});
 
-    ScopeTimer timer("Generated chunks");
+    //ScopeTimer timer("Generated chunks");
     
     /*for(int x = -pregenDistance; x <= pregenDistance; x++) 
     for(int z = -pregenDistance; z <= pregenDistance; z++)
@@ -52,9 +52,9 @@ void TerrainManager::generateRegion(glm::ivec3 around, int render_distance){
         queue_index = (queue_index + 1) % thread_count;
     }
 
-    timer.timestamp("Setup queues");
+    //timer.timestamp("Setup queues");
     world_generator.prepareHeightMaps(around, render_distance);
-    timer.timestamp("Perpared height maps");
+    //timer.timestamp("Perpared height maps");
 
     std::array<std::thread, thread_count> threads;
     
@@ -135,25 +135,3 @@ void TerrainManager::regenerateChunkMesh(Chunk* chunk){
     if(!generating_meshes) mesh_generator.syncGenerateSyncUploadMesh(chunk, mesh_registry, BitField3D::NONE);
     else priority = chunk;
 }
-
-/*void TerrainManager::loadChunk(const glm::ivec3& position){
-    auto* chunk = game_state->getTerrain().getChunk(position);
-    if(chunk) return;
-
-    chunk = terrain.createEmptyChunk(position);
-
-    if(world_stream && world_stream->hasChunkAt(position)){
-        world_stream->load(chunk);
-        return;
-    }
-
-    world_generator.generateTerrainChunk(chunk, position);
-}
-
-void TerrainManager::unloadChunk(const glm::ivec3& position){
-    auto* chunk = terrain.getChunk(position);
-    if(!chunk) return;
-
-    if(world_stream) world_stream->save(*chunk);
-    terrain.removeChunk(position);
-}*/

@@ -92,7 +92,7 @@ BlockRegistry::BlockPrototype* BlockRegistry::getPrototype(size_t id){
     return &blocks[id];
 }
 
-BlockRegistry::BlockPrototype* BlockRegistry::getPrototype(std::string name){
+BlockRegistry::BlockPrototype* BlockRegistry::getPrototype(const std::string& name){
     return getPrototype(getIndexByName(name));
 }
 void BlockRegistry::setPrototypeInterface(BlockID id, std::unique_ptr<BlockInterface> interface){

@@ -7,7 +7,7 @@
 #include <shared_mutex>
 #include <random>
 #include <game/save_structure.hpp>
-
+#include <limits>
 
 class WorldStream: public FileStream{
     private:
@@ -47,6 +47,7 @@ class WorldStream: public FileStream{
 
         size_t moveChunk(size_t from, size_t to);
 
+        size_t findFirstChunk();
     public:
         WorldStream(const std::string& path);
         ~WorldStream();

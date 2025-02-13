@@ -216,9 +216,9 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
         return;
     }
 
-    for(int x = 0; x <= CHUNK_SIZE; x++) 
-    for(int y = 0; y <= CHUNK_SIZE; y++) 
-    for(int z = 0; z <= CHUNK_SIZE; z++){
+    for(int x = 0; x < CHUNK_SIZE; x++) 
+    for(int y = 0; y < CHUNK_SIZE; y++) 
+    for(int z = 0; z < CHUNK_SIZE; z++){
         glm::ivec3 localPosition = glm::ivec3(x,y,z) + position * CHUNK_SIZE;
         
         if(localPosition.y > heightMap.heights[x][z]) continue;

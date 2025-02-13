@@ -95,7 +95,7 @@ class BlockRegistry: public TextureRegistry{
 
         BlockID getIndexByName(std::string name);
         BlockPrototype* getPrototype(BlockID id);
-        BlockPrototype* getPrototype(std::string name);
+        BlockPrototype* getPrototype(const std::string& name);
 
         void setPrototypeInterface(BlockID id, std::unique_ptr<BlockInterface> interface);
 

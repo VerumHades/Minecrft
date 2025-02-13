@@ -67,13 +67,15 @@ ByteArray WorldStream::serializeTableData(){
     return tableData;
 }
 
+
+
 void WorldStream::saveTable(){
     ByteArray tableData = serializeTableData();
     while(header.chunk_table_start + tableData.getFullSize() >= header.chunk_data_start){
         size_t movedSize = moveChunk(header.chunk_data_start, header.chunk_data_end); // Move the first chunk to the end
 
         //std::cout << movedSize << " > " << tableData.getFullSize() << std::endl;
-        header.chunk_data_start += movedSize;
+        header.chunk_data_start = findFirstChunk();
         header.chunk_data_end += movedSize;
     }
     tableData = serializeTableData();
@@ -81,6 +83,16 @@ void WorldStream::saveTable(){
     stream().seekp(header.chunk_table_start, std::ios::beg);
     tableData.write(stream());
     saveHeader();
+}
+
+size_t WorldStream::findFirstChunk(){
+    size_t position = std::numeric_limits<size_t>::max();
+    
+    for(auto& [geo_position, file_position]: chunkTable){
+        position = std::min(position,file_position.in_file_start);
+    }
+
+    return position;
 }
 
 size_t WorldStream::moveChunk(size_t from, size_t to){
@@ -142,7 +154,7 @@ bool WorldStream::save(Chunk& chunk){
 
 void WorldStream::load(Chunk* chunk){
     if(!hasChunkAt(chunk->getWorldPosition())) return;
-    std::cout << "Loadeding: " << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
+    //std::cout << "Loadeding: " << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
     //std::cout << "Located at: " << chunkTable[chunk->getWorldPosition()] << std::endl;
     stream().seekg(chunkTable[chunk->getWorldPosition()].in_file_start, std::ios::beg);
     ByteArray source;
