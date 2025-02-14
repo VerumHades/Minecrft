@@ -631,7 +631,7 @@ void MainScene::render(){
     fps_label->setText(std::to_string(1.0f / deltatime) + "FPS");
     fps_label->update();
 
-    terrain_manager.uploadPendingMeshes();
+    if(terrain_manager.uploadPendingMeshes()) updateVisibility = 1;
     
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );

@@ -69,8 +69,6 @@ void TerrainManager::generateRegion(glm::ivec3 around, int render_distance){
 void TerrainManager::loadRegion(glm::ivec3 around, int render_distance){
     if(!game_state || !game_state->world_stream) return;
 
-    auto& terrain = game_state->getTerrain();
-
     generateRegion(around, render_distance);
     meshRegion(around,render_distance);
 }
@@ -85,12 +83,27 @@ void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){
 
         generating_meshes = true;
 
+        for(int x = -render_distance; x <= render_distance; x++) 
+        for(int z = -render_distance; z <= render_distance; z++)
+        for(int y = -render_distance; y <= render_distance; y++) 
+        {
+            glm::ivec3 chunkPosition = indexer.get() + glm::ivec3(x,y,z);
+            
+            auto* chunk = terrain.getChunk(chunkPosition);
+            if(!chunk) continue;
+
+            int distance = glm::clamp(glm::distance(glm::vec3(around), glm::vec3(chunkPosition)) / 3.0f, 0.0f, 7.0f);
+            auto level = static_cast<BitField3D::SimplificationLevel>(distance - 1);
+
+            chunk->current_simplification = level;
+        }
+
         while(indexer.getCurrentDistance() < render_distance){
-            if(priority){
-                mesh_generator.syncGenerateAsyncUploadMesh(priority, BitField3D::NONE);
-                priority = nullptr;
+            if(has_priority_meshes && priority_count > 0){
+                mesh_generator.syncGenerateAsyncUploadMesh(priority_mesh_queue[(priority_count--) - 1], BitField3D::NONE);
                 continue;
             }
+            else if(has_priority_meshes && priority_count == 0) has_priority_meshes = false;
 
             glm::ivec3 chunkPosition = indexer.get() + around;
             indexer.next();
@@ -99,7 +112,6 @@ void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){
             if(!chunk) continue;
 
             int distance = glm::clamp(glm::distance(glm::vec3(around), glm::vec3(chunkPosition)) / 3.0f, 0.0f, 7.0f);
-
             auto level = static_cast<BitField3D::SimplificationLevel>(distance - 1);
 
             mesh_generator.syncGenerateAsyncUploadMesh(chunk, level);
@@ -110,8 +122,8 @@ void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){
     thread.detach();
 }
 
-void TerrainManager::uploadPendingMeshes(){
-    mesh_generator.loadMeshFromQueue(mesh_registry, 25);
+bool TerrainManager::uploadPendingMeshes(){
+    return mesh_generator.loadMeshFromQueue(mesh_registry, 25);
 }
 
 #define regenMesh(position) { \
@@ -128,10 +140,14 @@ void TerrainManager::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
 
     if(blockCoords.z == 0)              regenMesh(chunk->getWorldPosition() - glm::ivec3(0,0,1));
     if(blockCoords.z == CHUNK_SIZE - 1) regenMesh(chunk->getWorldPosition() + glm::ivec3(0,0,1));
+
+    if(generating_meshes) has_priority_meshes = true;
 }
 #undef regenMesh
 
 void TerrainManager::regenerateChunkMesh(Chunk* chunk){
     if(!generating_meshes) mesh_generator.syncGenerateSyncUploadMesh(chunk, mesh_registry, BitField3D::NONE);
-    else priority = chunk;
+    else if(!has_priority_meshes){
+        priority_mesh_queue[priority_count++] = chunk;
+    }
 }

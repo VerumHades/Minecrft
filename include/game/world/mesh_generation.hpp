@@ -7,6 +7,7 @@
 #include <blockarray.hpp>
 #include <glm/glm.hpp>
 #include <bit>
+#include <atomic>
 
 class ChunkMeshGenerator{
     public:
@@ -83,10 +84,11 @@ class ChunkMeshGenerator{
         );
 
         std::array<bool, max_threads> thread_ids{};
+        std::atomic<bool> meshes_pending = false;
     
     public:
         ChunkMeshGenerator(){}
-        void loadMeshFromQueue(ChunkMeshRegistry&  buffer, size_t limit = 1);
+        bool loadMeshFromQueue(ChunkMeshRegistry&  buffer, size_t limit = 1);
 
         /*
             Launches a thread if possible, the when the mesh is generated sends it to the worlds mesh loading queue,

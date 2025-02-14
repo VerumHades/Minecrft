@@ -5,10 +5,15 @@ void ChunkMeshGenerator::addToChunkMeshLoadingQueue(glm::ivec3 position, std::un
     std::lock_guard<std::mutex> lock(meshLoadingMutex);
     meshLoadingQueue.push({position,std::move(mesh)});
 }
-void ChunkMeshGenerator::loadMeshFromQueue(ChunkMeshRegistry&  buffer, size_t limit){
+bool ChunkMeshGenerator::loadMeshFromQueue(ChunkMeshRegistry&  buffer, size_t limit){
+    if(!meshes_pending) return false;
+
     std::lock_guard<std::mutex> lock(meshLoadingMutex);
     
-    if(meshLoadingQueue.empty()) return;
+    if(meshLoadingQueue.empty()){
+        meshes_pending = false;
+        return false;
+    }
 
     for(size_t i = 0; i < std::min(limit,meshLoadingQueue.size());i++){
         auto& [position,mesh] = meshLoadingQueue.front();
@@ -17,6 +22,10 @@ void ChunkMeshGenerator::loadMeshFromQueue(ChunkMeshRegistry&  buffer, size_t li
             meshLoadingQueue.pop();
         }
     }
+
+    if(meshLoadingQueue.empty())  meshes_pending = false;
+
+    return true;
 }
 
 void ChunkMeshGenerator::syncGenerateAsyncUploadMesh(Chunk* chunk, BitField3D::SimplificationLevel simplification_level, int thread_number){
@@ -26,6 +35,7 @@ void ChunkMeshGenerator::syncGenerateAsyncUploadMesh(Chunk* chunk, BitField3D::S
     auto solid_mesh = generateChunkMesh(world_position, chunk, simplification_level);
 
     addToChunkMeshLoadingQueue(world_position, std::move(solid_mesh));
+    meshes_pending = true;
 }
 
 bool ChunkMeshGenerator::asyncGenerateAsyncUploadMesh(Chunk* chunk, BitField3D::SimplificationLevel simplification_level, ThreadPool& pool){

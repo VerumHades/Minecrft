@@ -19,7 +19,11 @@ class TerrainManager{
         void generateRegion(glm::ivec3 around, int render_distance);
 
         std::atomic<bool> generating_meshes = false;
-        std::atomic<Chunk*> priority = nullptr;
+        std::atomic<bool> has_priority_meshes = false;
+
+        std::array<Chunk*, 4> priority_mesh_queue{};
+        int priority_count = 0;
+        
         void meshRegion(glm::ivec3 around, int render_distance);
         
         //void loadChunk(const glm::ivec3& position);
@@ -30,7 +34,7 @@ class TerrainManager{
         // Actually deploys meshes
         void unloadAll(){ mesh_registry.clear(); }
 
-        void uploadPendingMeshes();
+        bool uploadPendingMeshes();
         void loadRegion(glm::ivec3 around, int render_distance);
 
         void regenerateChunkMesh(Chunk* chunk);

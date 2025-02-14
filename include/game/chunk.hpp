@@ -28,6 +28,8 @@
 #include <bitset>
 #include <iostream>
 
+class TerrainManager;
+
 class Chunk: public SparseBlockArray{
     private:
         glm::ivec3 worldPosition;
@@ -37,12 +39,13 @@ class Chunk: public SparseBlockArray{
         friend class WorldGenerator;
         friend class AcceleratedChunkGenerator;
         friend class RegionChunkGenerator;
+        friend class TerrainManager;
 
     public:
         Chunk(glm::ivec3 worldPosition): SparseBlockArray(), worldPosition(worldPosition) { }
 
         const glm::ivec3& getWorldPosition() const { return worldPosition; }
-        
+
         void serialize(ByteArray& output_array) override;
         ByteArray serialize() override;
         static Chunk deserialize(ByteArray& array);
