@@ -39,7 +39,7 @@ class Entity{
         glm::vec3 lastPosition = glm::vec3(0);
 
         float maxVelocityHorizontal = 6.0f;
-        float maxVelocityVertical = 20.0f;
+        float maxVelocityVertical = 50.0f;
         float friction = 4.0f;
         bool hasGravity = true;
         bool on_ground = false;

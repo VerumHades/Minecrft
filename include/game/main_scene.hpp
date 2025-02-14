@@ -90,7 +90,7 @@ class MainScene: public Scene{
         
         std::atomic<bool> update_hotbar = false;
 
-        std::string worldPath = "saves/worldsave_new.bin";
+        std::string worldPath = "saves";
         int renderDistance = 8;
         int selectedBlock = 4;
 
