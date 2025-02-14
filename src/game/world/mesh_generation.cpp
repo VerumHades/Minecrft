@@ -549,7 +549,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
 
             auto& solidField   = *group->getSolidField().getSimplifiedWithNone(simplification_level);
 
-            BitField3D& nextYSolid = nextY->getSolidField();
+            BitField3D& nextYSolid = *nextY->getSolidField().getSimplifiedWithNone(nextY->current_simplification);
 
             const uint64_t localMaskRow = group->hasLayerOfType(type) ? group->getLayer(type).field().getSimplifiedWithNone(simplification_level)->getRow(row,0) : 0ULL;
             const uint64_t otherMaskRow = nextY->hasLayerOfType(type) ? nextY->getLayer(type).field().getSimplifiedWithNone(nextY->current_simplification)->getRow(row,size - 1)   : 0ULL;
@@ -575,7 +575,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
             auto& solidField   = *group->getSolidField().getSimplifiedWithNone(simplification_level);
             auto* solidRotated = solidField.getTransposed();
 
-            auto* nextZSolidRotated = nextZ->getSolidField().getTransposed();
+            auto* nextZSolidRotated = nextZ->getSolidField().getSimplifiedWithNone(nextZ->current_simplification)->getTransposed();
 
             uint64_t localMaskRow = 0ULL;
             if(group->hasLayerOfType(type)) localMaskRow = group->getLayer(type).field().getSimplifiedWithNone(simplification_level)->getTransposed()->getRow(0,row);

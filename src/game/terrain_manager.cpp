@@ -88,7 +88,8 @@ void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){
         for(int y = -render_distance; y <= render_distance; y++) 
         {
             glm::ivec3 chunkPosition = indexer.get() + glm::ivec3(x,y,z);
-            
+            indexer.next();
+
             auto* chunk = terrain.getChunk(chunkPosition);
             if(!chunk) continue;
 
@@ -97,7 +98,9 @@ void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){
 
             chunk->current_simplification = level;
         }
-
+        
+        indexer = {};
+        
         while(indexer.getCurrentDistance() < render_distance){
             if(has_priority_meshes && priority_count > 0){
                 mesh_generator.syncGenerateAsyncUploadMesh(priority_mesh_queue[(priority_count--) - 1], BitField3D::NONE);
