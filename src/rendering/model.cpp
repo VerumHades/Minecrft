@@ -61,6 +61,8 @@ void Model::requestDraw(
 }
 
 void Model::drawAllRequests(){
+    std::lock_guard<std::mutex> lock(swap_mutex);
+    
     auto& request_buffer = request_buffers[selected];
 
     if(request_buffer.size() == 0) return;

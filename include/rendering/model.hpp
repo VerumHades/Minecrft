@@ -22,6 +22,7 @@
 
 class Model{ 
     private:
+        std::mutex swap_mutex;
         size_t request_size = 4 * 4;
         
         std::atomic<bool> upload_data = false;
@@ -74,6 +75,8 @@ class Model{
         void drawAllRequests();
 
         void swap() {
+            std::lock_guard<std::mutex> lock(swap_mutex);
+            
             selected = !selected;
             request_buffers[!selected].clear();
             upload_data = true;
