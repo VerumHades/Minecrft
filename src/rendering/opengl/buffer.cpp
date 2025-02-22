@@ -65,8 +65,6 @@ GLVertexArray::GLVertexArray(){
     glGenVertexArrays(1,  &vao_id);
 }
 GLVertexArray::~GLVertexArray(){
-    //int* a = nullptr;
-    //*a = 10;
     glDeleteVertexArrays(1,  &vao_id);
 }
 

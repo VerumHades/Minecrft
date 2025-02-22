@@ -598,6 +598,10 @@ void MainScene::open(GLFWwindow* window){
     terrain_manager.setGameState(game_state.get());
     terrain_manager.loadRegion(glm::ivec3(0,0,0), renderDistance);
 
+    Entity e = Entity(player.getPosition() + glm::vec3{5,0,0}, glm::vec3{1,1,1});
+    e.setModel(std::make_shared<GenericModel>("resources/models/steve/scene.gltf"));
+    game_state->addEntity(e);
+
     //std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
 

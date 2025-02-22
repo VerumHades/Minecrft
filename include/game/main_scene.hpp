@@ -38,6 +38,7 @@
 #include <game/game_state.hpp>
 #include <game/items/crafting.hpp>
 #include <game/terrain_manager.hpp>
+#include <game/models/generic_model.hpp>
 
 #include <indexing.hpp>
 
