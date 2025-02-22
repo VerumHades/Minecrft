@@ -1,12 +1,26 @@
 #include <rendering/model.hpp>
 
 Model::Model(){
+    getModelSet().emplace(this);
     for(auto& buffer: instance_buffers) buffer.initialize(1);
+}
+Model::~Model(){
+    getModelSet().erase(this);
+}
+
+void Model::DrawAll(){
+    for(auto& model: getModelSet())
+        model->drawAllRequests();
+    
+}
+void Model::SwapAll(){
+    for(auto& model: getModelSet())
+        model->swap();
 }
 
 void Model::addMesh(Mesh& mesh){
     auto loaded_mesh = mesh.load();
-    
+
     for(int i = 0;i < loaded_mesh->getVAO().size();i++){
         auto& vao = loaded_mesh->getVAO()[i];
         vao.attachBuffer(&instance_buffers[i], {{VEC4,VEC4,VEC4,VEC4}, true}, 0);
@@ -62,7 +76,7 @@ void Model::drawAllRequests(){
 
     for(auto& mesh: loaded_meshes){
         if(mesh->getTexture()) mesh->getTexture()->bind(0);
-
+        
         mesh->getVAO()[selected].bind();
         glDrawElementsInstanced(GL_TRIANGLES, mesh->indicesTotal(), GL_UNSIGNED_INT, 0, request_buffer.size() / request_size);
         mesh->getVAO()[selected].unbind();

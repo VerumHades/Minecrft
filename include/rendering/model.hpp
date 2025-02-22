@@ -18,6 +18,8 @@
 #include <coherency.hpp>
 #include <vec_hash.hpp>
 
+#include <unordered_set>
+
 class Model{ 
     private:
         size_t request_size = 4 * 4;
@@ -32,6 +34,11 @@ class Model{
         GLBuffer<float, GL_ARRAY_BUFFER>& getFrontInstanceBuffer() { return instance_buffers[selected]; }
         
         std::vector<std::unique_ptr<LoadedMesh>> loaded_meshes;
+
+        static std::unordered_set<Model*>& getModelSet(){
+            static std::unordered_set<Model*> models{};
+            return models;
+        };
 
     protected:
         glm::vec3 rotation_center_offset = {0,0,0};
@@ -50,6 +57,7 @@ class Model{
         };
 
         Model();
+        ~Model();
         /*
             Adds a position to where an instance of the model will be drawn
 
@@ -72,4 +80,7 @@ class Model{
         }
 
         const glm::vec3& getRotationCenterOffset(){return rotation_center_offset;}
+
+        static void DrawAll();
+        static void SwapAll();
 };

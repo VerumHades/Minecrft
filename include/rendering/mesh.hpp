@@ -33,6 +33,9 @@ class LoadedMesh{
 
         const std::shared_ptr<GLTexture2D>& getTexture() {return texture;};
         size_t indicesTotal() {return index_buffer.size();};
+
+        const auto& getVertexBuffer(){return vertex_buffer;};
+        const auto& getIndexBuffer(){return index_buffer;};
         std::array<GLVertexArray,2>& getVAO() {return vaos;};
 };
 

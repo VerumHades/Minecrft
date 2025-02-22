@@ -21,7 +21,7 @@ void SpriteModel::setupMesh(){
     std::vector<float> metadata = {
         0, // Is not solid colored
         0,0,0,
-        1 // Pixel perfect sampling enabled
+        32 // Pixel perfect sampling enabled
     };
 
     mesh->addQuadFace({vertices[0],vertices[1],vertices[2],vertices[3]}, {0,0,-1}, true , metadata); // Front face
