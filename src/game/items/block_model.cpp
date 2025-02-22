@@ -10,8 +10,10 @@ std::array<glm::vec2, 4> BlockModel::getTextureCoordinates(int i){
 }
 
 BlockModel::BlockModel(const BlockRegistry::BlockPrototype* prototype){
-    texture = std::make_shared<GLTexture2D>();
-
+    Mesh mesh = createMesh();
+    mesh.setTexture(std::make_shared<GLTexture2D>());
+    auto& texture = mesh.getTexture();
+    
     if(prototype->single_texture){
         Image image = Image::LoadWithSize(prototype->texture_paths[0], 32, 32);
         texture->configure(GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, 32, 32);
@@ -24,8 +26,6 @@ BlockModel::BlockModel(const BlockRegistry::BlockPrototype* prototype){
             texture->putImage(32 * i, 0, image);
         }
     }
-
-    Mesh mesh{GLVertexFormat({VEC3, VEC3, VEC2})};
 
     std::array<glm::vec3,8> vertices = {
         glm::vec3(0.0f,1.0f,0.0f),
@@ -67,9 +67,5 @@ BlockModel::BlockModel(const BlockRegistry::BlockPrototype* prototype){
 
     rotation_center_offset = {-0.5,-0.5,-0.5};
 
-    vertex_buffer.initialize(mesh.getVertices().size());
-    vertex_buffer.insert(0, mesh.getVertices().size(), mesh.getVertices().data());
-
-    index_buffer.initialize(mesh.getIndices().size());
-    index_buffer.insert(0, mesh.getIndices().size(), mesh.getIndices().data());
+    addMesh(mesh);
 }

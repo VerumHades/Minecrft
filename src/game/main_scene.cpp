@@ -624,15 +624,17 @@ void MainScene::close(GLFWwindow* window){
 }
 
 void MainScene::render(){
+    //ScopeTimer timer("Rendered scene");
     current = glfwGetTime();
     deltatime = (float)(current - last);
     last = current;
 
     fps_label->setText(std::to_string(1.0f / deltatime) + "FPS");
     fps_label->update();
-
+    //timer.timestamp("Updated fps label");
     if(terrain_manager.uploadPendingMeshes()) updateVisibility = 1;
-    
+    //timer.timestamp("Uploaded meshes.");
+
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 
@@ -645,12 +647,14 @@ void MainScene::render(){
         update_hotbar = false;
     } 
 
+    //timer.timestamp("Updated ui");
     processMouseMovement();
 
     if(updateVisibility > 0){
         terrain_manager.getMeshRegistry().updateDrawCalls(camera.getPosition(), camera.getFrustum());
         updateVisibility = 0;
     }
+    //timer.timestamp("Updated visibility");
     
     int offsetX = ((int) camera.getPosition().x / 64) * 64;
     int offsetY = ((int) camera.getPosition().y / 64) * 64;
@@ -680,6 +684,8 @@ void MainScene::render(){
     terrain_manager.getMeshRegistry().draw();
     glEnable( GL_CULL_FACE );
     // ====
+
+    //timer.timestamp("Rendered to shadow map.");
 
     gBuffer.bind();
         glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
@@ -713,6 +719,8 @@ void MainScene::render(){
         wireframeRenderer.draw();
     gBuffer.unbind();
 
+    //timer.timestamp("Rendered to gBuffer.");
+
     /*auto& gTextures = gBuffer.getTextures();
     ssao.render(gTextures[0],gTextures[1], fullscreen_quad);
     
@@ -734,6 +742,7 @@ void MainScene::render(){
     fullscreen_quad.render();
 
     gBuffer.unbindTextures();
+    //timer.timestamp("Rendered to screen.");
 }
 
 void MainScene::updateLoadedLocations(glm::ivec3 old_location, glm::ivec3 new_location){

@@ -1,16 +1,22 @@
 #include <rendering/model.hpp>
 
 Model::Model(){
-    for(int i = 0;i < vaos.size();i++){
-        auto& vao = vaos[i];
-        auto& instance_buffer = instance_buffers[i];
+    for(auto& buffer: instance_buffers) buffer.initialize(1);
+}
 
-        vao.attachBuffer(&instance_buffer, {{VEC4,VEC4,VEC4,VEC4}, true});
-        vao.attachBuffer(&index_buffer);
-        vao.attachBuffer(&vertex_buffer, {VEC3,VEC3,VEC2,FLOAT,VEC3,FLOAT});
-
-        instance_buffer.initialize(1);
+void Model::addMesh(Mesh& mesh){
+    auto loaded_mesh = mesh.load();
+    
+    for(int i = 0;i < loaded_mesh->getVAO().size();i++){
+        auto& vao = loaded_mesh->getVAO()[i];
+        vao.attachBuffer(&instance_buffers[i], {{VEC4,VEC4,VEC4,VEC4}, true}, 0);
     }
+
+    loaded_meshes.push_back(std::move(loaded_mesh));
+}
+
+Mesh Model::createMesh(){
+    return Mesh({VEC3,VEC3,VEC2,FLOAT,VEC3,FLOAT});
 }
 
 void Model::requestDraw(
@@ -20,7 +26,7 @@ void Model::requestDraw(
     const glm::vec3& rotation_center_offset,
     const std::array<Rotation,3>& rotation_order
 ){
-    std::array<glm::mat4,3> rotation_matrices = {
+    const std::array<glm::mat4,3> rotation_matrices = {
         glm::rotate(glm::mat4(1.0f), glm::radians(rotation.x), glm::vec3(1, 0, 0)),  // Rotation around X axis
         glm::rotate(glm::mat4(1.0f), glm::radians(rotation.y), glm::vec3(0, 1, 0)),  // Rotation around Y axis
         glm::rotate(glm::mat4(1.0f), glm::radians(rotation.z), glm::vec3(0, 0, 1))  // Rotation around Z axis
@@ -44,7 +50,6 @@ void Model::drawAllRequests(){
     auto& request_buffer = request_buffers[selected];
 
     if(request_buffer.size() == 0) return;
-    if(texture) texture->bind(0);
 
     if(upload_data){
         auto& front_buffer = getFrontInstanceBuffer();
@@ -55,7 +60,11 @@ void Model::drawAllRequests(){
         upload_data = false;
     }
 
-    vaos[selected].bind();
-    glDrawElementsInstanced(GL_TRIANGLES, index_buffer.size(), GL_UNSIGNED_INT, 0, request_buffer.size() / request_size);
-    vaos[selected].unbind();
+    for(auto& mesh: loaded_meshes){
+        if(mesh->getTexture()) mesh->getTexture()->bind(0);
+
+        mesh->getVAO()[selected].bind();
+        glDrawElementsInstanced(GL_TRIANGLES, mesh->indicesTotal(), GL_UNSIGNED_INT, 0, request_buffer.size() / request_size);
+        mesh->getVAO()[selected].unbind();
+    }
 }

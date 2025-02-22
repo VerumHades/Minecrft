@@ -36,21 +36,20 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
-#FetchContent_Declare(
-#  assimp
-#  GIT_REPOSITORY https://github.com/assimp/assimp.git
-#)
-## Set CMake options to reduce Assimp to only GLTF
-#set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)  # Disable all importers by default
-#set(ASSIMP_BUILD_GLTF_IMPORTER ON CACHE BOOL "" FORCE)              # Enable only GLTF importer
-#set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)                        # Disable exporters (optional, if not needed)
-#set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)              # Disable tools like assimp viewer
-#set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)                     # Disable unit tests to reduce size
-#set(ASSIMP_BUILD_FBX_IMPORTER OFF CACHE BOOL "" FORCE)                     # Disable unit tests to reduce size
-#set(ASSIMP_BUILD_OBJ_IMPORTER OFF CACHE BOOL "" FORCE)                     # Disable unit tests to reduce size
-#set(ASSIMP_BUILD_TYPE "Release" CACHE STRING "Build type for Assimp" FORCE)
-
-#FetchContent_MakeAvailable(assimp)
+# Fetch Assimp (uncommented and enabled with configuration)
+FetchContent_Declare(
+  assimp
+  GIT_REPOSITORY https://github.com/assimp/assimp.git
+)
+# Set CMake options to reduce Assimp to only GLTF
+set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)  # Disable all importers by default
+set(ASSIMP_BUILD_GLTF_IMPORTER ON CACHE BOOL "" FORCE)              # Enable only GLTF importer
+set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)                        # Disable exporters (optional, if not needed)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)              # Disable tools like assimp viewer
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)                     # Disable unit tests to reduce size
+set(ASSIMP_BUILD_FBX_IMPORTER OFF CACHE BOOL "" FORCE)              # Disable FBX importer
+set(ASSIMP_BUILD_OBJ_IMPORTER OFF CACHE BOOL "" FORCE)              # Disable OBJ importer
+FetchContent_MakeAvailable(assimp)
 
 FetchContent_Declare(
   lua
@@ -77,10 +76,10 @@ target_compile_options(glm PRIVATE
     -w  # Suppress all warnings
 )
 
-# Suppress all warnings for GLM
-#target_compile_options(assimp PRIVATE
-#    -w  # Suppress all warnings
-#)
+# Suppress all warnings for Assimp
+target_compile_options(assimp PRIVATE
+    -w  # Suppress all warnings
+)
 
 #set_target_properties(assimp PROPERTIES MAP_IMPORTED_CONFIG_DEBUG Release)
 
@@ -104,6 +103,6 @@ file(GLOB_RECURSE SOURCES
 # Add executable target
 add_executable(main ${SOURCES})
 # Link libraries
-target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad freetype tinyxml2 lua)
+target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad freetype tinyxml2 lua assimp)
 
 target_compile_options(main PRIVATE -Wall)

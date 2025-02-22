@@ -373,6 +373,7 @@ class GLVertexFormat{
 class GLVertexArray{
     private:
         uint vao_id = 0;
+        int index_counter = 100;
 
         struct BoundBuffer{
             GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer = nullptr;
@@ -383,11 +384,11 @@ class GLVertexArray{
                 buffer_pointer(buffer_pointer), format(format){}
         };
 
-        std::vector<BoundBuffer> buffers{};
+        std::map<int,BoundBuffer> buffers{};
     public:
         GLVertexArray();
         ~GLVertexArray();
-        size_t attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format);
+        size_t attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format, int index = -1);
 
         void attachBuffer(GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>* buffer);
 

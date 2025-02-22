@@ -27,15 +27,11 @@ void SpriteModel::setupMesh(){
     mesh->addQuadFace({vertices[0],vertices[1],vertices[2],vertices[3]}, {0,0,-1}, true , metadata); // Front face
     mesh->addQuadFace({vertices[4],vertices[5],vertices[6],vertices[7]}, {0,0, 1}, false, metadata); // Back face
 
-    vertex_buffer.initialize(mesh->getVertices().size());
-    vertex_buffer.insert(0, mesh->getVertices().size(), mesh->getVertices().data());
+    mesh->setTexture(std::make_shared<GLTexture2D>(sprite_path.c_str()));
 
-    index_buffer.initialize(mesh->getIndices().size());
-    index_buffer.insert(0, mesh->getIndices().size(), mesh->getIndices().data());
+    addMesh(*mesh);
 
     rotation_center_offset = {-0.5,-0.5,0};
-
-    texture = std::make_shared<GLTexture2D>(sprite_path.c_str());
 }
 std::unique_ptr<Mesh> SpriteModel::generateFaces(){
     int width = 0, height = 0, original_channels = 0;
@@ -47,7 +43,7 @@ std::unique_ptr<Mesh> SpriteModel::generateFaces(){
         std::cout << "Failed to load image: " << stbi_failure_reason() << std::endl;
         return nullptr;
     }
-    auto mesh = std::make_unique<Mesh>(GLVertexFormat({VEC3, VEC3, VEC2}));
+    auto mesh = std::make_unique<Mesh>(createMesh());
 
     const int size = std::min(width,height);
     float thickness = scale / (float)size;

@@ -20,10 +20,5 @@ void main()
     float Specular = texture(gAlbedoSpec, TexCoords).a;
     float occlusion = texture(AmbientOcclusion, TexCoords).r;
 
-    if(FragPos.z == 1){ // Avoid the skybox
-        FragColor = vec4(Albedo, 1.0);
-        return;
-    }
-
     FragColor = vec4(Albedo, 1.0);
 }  
