@@ -68,8 +68,9 @@ GLVertexArray::~GLVertexArray(){
     glDeleteVertexArrays(1,  &vao_id);
 }
 
-size_t GLVertexArray::attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format){
-    buffers.push_back({buffer_pointer, format});
+size_t GLVertexArray::attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format, int index){
+    if(index == -1) index = index_counter++;
+    buffers[index] = {buffer_pointer, format};
 
     update();
     
@@ -90,9 +91,9 @@ void GLVertexArray::update(){
 
     uint slot = 0;
 
-    for(auto& [buffer_pointer, format]: buffers){
-        buffer_pointer->bind();
-        format.apply(slot);
+    for(auto& [index,element]: buffers){
+        element.buffer_pointer->bind();
+        element.format.apply(slot);
     }
 
     unbind();

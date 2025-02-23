@@ -598,6 +598,10 @@ void MainScene::open(GLFWwindow* window){
     terrain_manager.setGameState(game_state.get());
     terrain_manager.loadRegion(player.getPosition() / (float)CHUNK_SIZE, renderDistance);
 
+    //Entity e = Entity(player.getPosition() + glm::vec3{5,0,5}, glm::vec3(1,1,1));
+    //e.setModel(std::make_shared<GenericModel>("resources/models/130/scene.gltf"));
+    //game_state->addEntity(e);g
+
     //std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
 
@@ -624,15 +628,17 @@ void MainScene::close(GLFWwindow* window){
 }
 
 void MainScene::render(){
+    //ScopeTimer timer("Rendered scene");
     current = glfwGetTime();
     deltatime = (float)(current - last);
     last = current;
 
     fps_label->setText(std::to_string(1.0f / deltatime) + "FPS");
     fps_label->update();
-
+    //timer.timestamp("Updated fps label");
     if(terrain_manager.uploadPendingMeshes()) updateVisibility = 1;
-    
+    //timer.timestamp("Uploaded meshes.");
+
     glEnable(GL_DEPTH_TEST);
     glEnable( GL_CULL_FACE );
 
@@ -645,12 +651,14 @@ void MainScene::render(){
         update_hotbar = false;
     } 
 
+    //timer.timestamp("Updated ui");
     processMouseMovement();
 
     if(updateVisibility > 0){
         terrain_manager.getMeshRegistry().updateDrawCalls(camera.getPosition(), camera.getFrustum());
         updateVisibility = 0;
     }
+    //timer.timestamp("Updated visibility");
     
     int offsetX = ((int) camera.getPosition().x / 64) * 64;
     int offsetY = ((int) camera.getPosition().y / 64) * 64;
@@ -681,6 +689,8 @@ void MainScene::render(){
     glEnable( GL_CULL_FACE );
     // ====
 
+    //timer.timestamp("Rendered to shadow map.");
+
     gBuffer.bind();
         glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
 
@@ -702,7 +712,8 @@ void MainScene::render(){
     
         // Draw models
         modelProgram.updateUniforms();
-        ItemRegistry::get().drawItemModels();
+        Model::DrawAll(current - last_tick_time, tickTime);
+        //ItemRegistry::get().drawItemModels();
 
         glDisable( GL_CULL_FACE );
 
@@ -712,6 +723,8 @@ void MainScene::render(){
 
         wireframeRenderer.draw();
     gBuffer.unbind();
+
+    //timer.timestamp("Rendered to gBuffer.");
 
     /*auto& gTextures = gBuffer.getTextures();
     ssao.render(gTextures[0],gTextures[1], fullscreen_quad);
@@ -734,6 +747,7 @@ void MainScene::render(){
     fullscreen_quad.render();
 
     gBuffer.unbindTextures();
+    //timer.timestamp("Rendered to screen.");
 }
 
 void MainScene::updateLoadedLocations(glm::ivec3 old_location, glm::ivec3 new_location){
@@ -741,12 +755,9 @@ void MainScene::updateLoadedLocations(glm::ivec3 old_location, glm::ivec3 new_lo
 }
 
 void MainScene::physicsUpdate(){
-    double last = glfwGetTime();
+    last_tick_time = glfwGetTime();
     double current = glfwGetTime();
     float deltatime;
-
-    float targetTPS = 120;
-    float tickTime = 1.0f / targetTPS;
 
     while(running){
         current = glfwGetTime();
@@ -814,7 +825,7 @@ void MainScene::physicsUpdate(){
             }
         }
         
-        ItemRegistry::get().swapModelBuffers();
+        Model::SwapAll();
     }
 
     threadsStopped++;

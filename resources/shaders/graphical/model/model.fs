@@ -17,7 +17,7 @@ uniform sampler2D textureIn;
 
 void main()
 {
-    const float sprite_size = 32.0;
+    float sprite_size = PixelPerfectSampling;
     
     vec2 pixel_position  = vec2(floor(TexCoords * sprite_size)) + 0.5;
     vec2 sample_position = vec2(pixel_position) / sprite_size;

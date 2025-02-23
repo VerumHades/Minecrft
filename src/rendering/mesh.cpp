@@ -1,15 +1,16 @@
 #include <rendering/mesh.hpp>
 
-LoadedMesh::LoadedMesh(Mesh& mesh, std::initializer_list<GLVertexValueType> instance_types){
-    vao.bind();
-    vao.attachBuffer(&vertex_buffer, mesh.vertex_format);
-    vao.attachBuffer(&instance_buffer, {instance_types, true});
-    vao.attachBuffer(&index_buffer);
+LoadedMesh::LoadedMesh(Mesh& mesh, std::shared_ptr<GLTexture2D> texture): texture(std::move(texture)){
+    for(auto& vao: vaos){
+        vao.bind();
+        vao.attachBuffer(&vertex_buffer, mesh.vertex_format);
+        vao.attachBuffer(&index_buffer);
 
-    vertex_buffer.initialize(mesh.vertices.size(), mesh.vertices.data());
-    index_buffer.initialize(mesh.indices.size(), mesh.indices.data());
+        vertex_buffer.initialize(mesh.vertices.size(), mesh.vertices.data());
+        index_buffer.initialize(mesh.indices.size(), mesh.indices.data());
 
-    vao.unbind();
+        vao.unbind();
+    }
 }
 
 void Mesh::addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height){

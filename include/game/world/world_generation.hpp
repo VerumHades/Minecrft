@@ -2,21 +2,24 @@
 
 #include <optional>
 #include <random>
-#include <game/blocks.hpp>
 #include <unordered_map>
-#include <vec_hash.hpp>
-
+#include <thread>
+#include <FastNoiseLite.h> 
+#include <queue>
+#include <random>
 #include <memory>
+#include <mutex>
+
 #include <rendering/opengl/shaders.hpp>
 #include <rendering/opengl/texture.hpp>
 
-#include <parsing/source_template.hpp>
-#include <random>
+#include <game/blocks.hpp>
+#include <game/world/region_lookup.hpp>
+#include <game/structure.hpp>
 
-#include <FastNoiseLite.h> 
-#include <mutex>
-#include <queue>
-#include <thread>
+#include <parsing/source_template.hpp>
+
+#include <vec_hash.hpp>
 
 class Chunk;
 class Terrain;
@@ -38,6 +41,8 @@ class WorldGenerator{
         }
         
         Heightmap& getHeightmapFor(glm::ivec3 position);
+
+        RegionRegistry<std::shared_ptr<Structure>> structures;
 
     public:
         WorldGenerator();

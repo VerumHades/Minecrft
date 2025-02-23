@@ -37,10 +37,8 @@ class ChunkMeshGenerator{
         };
 
     private:
-        const static int max_threads = 24;
-
-        std::vector<Face>& greedyMeshPlane(BitPlane<64> rows, int start = 0, int end = 64, int thread_number = 0);
-        std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group, BitField3D::SimplificationLevel simplification_level, int thread_number = 0);
+        std::vector<Face>& greedyMeshPlane(BitPlane<64> rows, int start = 0, int end = 64);
+        std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group, BitField3D::SimplificationLevel simplification_level);
 
         std::mutex meshLoadingMutex;
         
@@ -57,7 +55,7 @@ class ChunkMeshGenerator{
         /*
             Creates separate planes from one plane with occlusion values
         */
-        std::vector<OccludedPlane>& calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, OcclusionPlane& occlusion_plane, int thread_number);
+        std::vector<OccludedPlane>& calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, OcclusionPlane& occlusion_plane);
 
         /*
             Returns two plains separated by the occlusion at the offset and information whether they are empty
@@ -78,12 +76,9 @@ class ChunkMeshGenerator{
             BlockRegistry::BlockPrototype* type,
             InstancedMesh* mesh, 
             glm::vec3 world_position,
-            int layer,
-
-            int thread_number
+            int layer
         );
 
-        std::array<bool, max_threads> thread_ids{};
         std::atomic<bool> meshes_pending = false;
     
     public:
@@ -102,7 +97,7 @@ class ChunkMeshGenerator{
 
             ISNT RESPONSIBLE FOR ACTUALLY UPLOADING THE MESH
         */
-        void syncGenerateAsyncUploadMesh(Chunk* chunk, BitField3D::SimplificationLevel simplification_level, int thread_number = 0);
+        void syncGenerateAsyncUploadMesh(Chunk* chunk, BitField3D::SimplificationLevel simplification_level);
 
         /*
             Generates and uploads the newly generated chunk mesh right away

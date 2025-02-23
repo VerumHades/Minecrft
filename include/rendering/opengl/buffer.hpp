@@ -86,25 +86,25 @@ class GLBuffer{
         /*
             Writes the buffers contents into the destination
         */
-        void get(T* destination, size_t size, size_t offset = 0){
+        void get(T* destination, size_t size, size_t offset = 0) const{
             if(!initialized) throw std::runtime_error("Getting data from an uninitialized buffer.");
 
             glGetBufferSubData(type, offset * sizeof(T), size * sizeof(T), destination);
         }
 
-        void bind(){
+        void bind() const{
             glBindBuffer(type, opengl_buffer_id);
         }
 
-        void bindBase(uint slot){
+        void bindBase(uint slot) const{
             glBindBufferBase(type, slot, opengl_buffer_id);
         }
 
-        size_t size(){
+        size_t size() const{
             return buffer_size;
         }
 
-        uint getID(){
+        uint getID() const{
             return opengl_buffer_id;
         }
 };
@@ -373,6 +373,7 @@ class GLVertexFormat{
 class GLVertexArray{
     private:
         uint vao_id = 0;
+        int index_counter = 100;
 
         struct BoundBuffer{
             GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer = nullptr;
@@ -383,11 +384,11 @@ class GLVertexArray{
                 buffer_pointer(buffer_pointer), format(format){}
         };
 
-        std::vector<BoundBuffer> buffers{};
+        std::map<int,BoundBuffer> buffers{};
     public:
         GLVertexArray();
         ~GLVertexArray();
-        size_t attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format);
+        size_t attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format, int index = -1);
 
         void attachBuffer(GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>* buffer);
 

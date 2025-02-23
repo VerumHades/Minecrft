@@ -100,18 +100,6 @@ void ItemRegistry::deleteItem(ItemID id){
     if(items.contains(id)) items.erase(id);
 }
 
-void ItemRegistry::drawItemModels(){
-    for(auto& [name,prototype]: prototypes){
-        prototype->getModel()->drawAllRequests();
-    }
-}
-
-void ItemRegistry::swapModelBuffers(){
-    for(auto& [name,prototype]: prototypes){
-        prototype->getModel()->swap();
-    }
-}
-
 bool LogicalItemSlot::takeItemFrom(LogicalItemSlot& source, int quantity){
     bool source_has_item = source.hasItem();
     bool destination_has_item = hasItem();
