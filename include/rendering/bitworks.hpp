@@ -59,7 +59,7 @@ inline uint8_t count_ones(T x) {
     return std::popcount(x);
 }
 
-template <int size>
+template <int size = 64>
 class BitPlane{
     private:
         std::array<uint_t<size>, size> data{};
@@ -83,9 +83,28 @@ class BitPlane{
         const uint_t<size>& operator[](std::size_t index) const {
             return data[index];
         }
+
+        void clear(){
+            data = {};
+        }
 };
 
-using BlockBitPlanes = std::array<BitPlane<64>, 64>;
+
+class BlockBitPlanes{
+    private:
+        BitPlane<64> mask{};
+        std::vector<BitPlane<64>> planes{};
+    public:
+        BlockBitPlanes();
+
+        void setRow(size_t type, size_t row, uint64_t value);
+        std::vector<BitPlane<64>>& getPlanes(){ return planes; };
+
+        void clear(){
+            mask.clear();
+            planes.clear();
+        }
+};
 
 using byte = uint8_t;
 
@@ -202,3 +221,5 @@ inline std::ostream& operator<<(std::ostream & Str, const ByteArray& v) {
     Str << "\033[0m";  // Reset the color after printing
     return Str;
 }
+
+#include <game/blocks.hpp>

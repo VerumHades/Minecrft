@@ -8,8 +8,8 @@
 #include <array>
 
 #include <rendering/texture_registry.hpp>
-#include <game/colliders.hpp>
 #include <rendering/bitworks.hpp>
+#include <game/colliders.hpp>
 
 class GameState;
 

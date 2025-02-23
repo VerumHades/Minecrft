@@ -91,7 +91,7 @@ class MainScene: public Scene{
         std::atomic<bool> update_hotbar = false;
 
         std::string worldPath = "saves";
-        int renderDistance = 8;
+        int renderDistance = 32;
         int selectedBlock = 4;
 
         bool allGenerated = false;

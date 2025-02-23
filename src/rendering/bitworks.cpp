@@ -54,3 +54,13 @@ ByteArray ByteArray::FromStream(std::fstream &file){
     output.read(file);
     return output;
 }
+
+BlockBitPlanes::BlockBitPlanes(){
+    planes = std::vector<BitPlane<64>>(BlockRegistry::get().registeredBlocksTotal());
+}
+
+void BlockBitPlanes::setRow(size_t type, size_t row, uint64_t value){
+    value = value & ~mask[row];
+    mask[row] |= value;
+    planes[type][row] = value;
+}

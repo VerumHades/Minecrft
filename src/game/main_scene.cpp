@@ -596,7 +596,7 @@ void MainScene::open(GLFWwindow* window){
     };
 
     terrain_manager.setGameState(game_state.get());
-    terrain_manager.loadRegion(glm::ivec3(0,0,0), renderDistance);
+    terrain_manager.loadRegion(player.getPosition() / (float)CHUNK_SIZE, renderDistance);
 
     //std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
