@@ -596,7 +596,7 @@ void MainScene::open(GLFWwindow* window){
     };
 
     terrain_manager.setGameState(game_state.get());
-    terrain_manager.loadRegion(glm::ivec3(0,0,0), renderDistance);
+    terrain_manager.loadRegion(player.getPosition() / (float)CHUNK_SIZE, renderDistance);
 
     //Entity e = Entity(player.getPosition() + glm::vec3{5,0,5}, glm::vec3(1,1,1));
     //e.setModel(std::make_shared<GenericModel>("resources/models/130/scene.gltf"));

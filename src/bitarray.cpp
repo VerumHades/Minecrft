@@ -115,7 +115,9 @@ static inline uint64_t fourMemberAvarage(
     /*
         Avarage for each column in all the 4 rows
     */
-    uint64_t whole_avarage = ((row1 | row2) & (row3 | row4)) | ((row1 | row3) & (row2  | row4));
+    //uint64_t whole_avarage = ((row1 | row2) & (row3 | row4)) | ((row1 | row3) & (row2  | row4));
+
+    uint64_t whole_avarage = row1 | row2 | row3 | row4;
     
     /*
         Avarage for pairs
@@ -133,6 +135,7 @@ static inline uint64_t expand(uint64_t value, BitField3D::SimplificationLevel le
     return value;
 }
 
+static bool capture = true;
 BitField3D* BitField3D::getSimplified(SimplificationLevel level){
     if(simplified_version_pointer && simplified_version_pointer->creator_id == id){
         return &simplified_version_pointer->field;

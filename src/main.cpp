@@ -208,27 +208,26 @@ int main() {
             for (const auto& dirEntry : std::filesystem::directory_iterator("saves")){
                 if(!dirEntry.is_directory()) continue;
 
-                std::string filepath = (dirEntry.path() / std::filesystem::path("world.dat")).string();
-                WorldStream stream(filepath);
-                
+                std::string path = dirEntry.path().string();
+
                 auto frame = std::make_shared<UIFrame>();
                 frame->setIdentifiers({"world_option_frame"});
                 
                 auto temp = std::make_shared<UILabel>();
-                temp->setText(stream.getName());
+                temp->setText(" ");
                 temp->setSize({PERCENT,100}, 40_px);
                 temp->setHoverable(false);
                 temp->setIdentifiers({"world_option_label"});
 
                 auto chunkCountLabel = std::make_shared<UILabel>();
-                chunkCountLabel->setText("Number of saved chunks: " + std::to_string(stream.getChunkCount()));
+                chunkCountLabel->setText("Number of saved chunks: ");
                 chunkCountLabel->setSize({PERCENT,100},40_px);
                 chunkCountLabel->setPosition(0_px,45_px);
                 chunkCountLabel->setHoverable(false);
                 chunkCountLabel->setIdentifiers({"world_option_chunk_count_label"});
 
-                frame->onClicked = [menuScene, mainScene, filepath] {
-                    mainScene->setWorldPath(filepath);
+                frame->onClicked = [menuScene, mainScene, path] {
+                    mainScene->setWorldPath(path);
                     s->setScene("game");
                 };
 
@@ -261,7 +260,7 @@ int main() {
         newWorldButton->onClicked = newWorldFunc;*/
 
         //sceneManager.createScene<TestScene>("test_scene");
-        sceneManager.setScene("game");
+        sceneManager.setScene("menu");
         //menuScene->setUILayer("default");
 
         double last = glfwGetTime();

@@ -1,7 +1,8 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <rendering/bitworks.hpp>
+
+class ByteArray;
 
 struct RectangularCollider {
     float x, y, z;
@@ -31,3 +32,5 @@ struct RectangularCollider {
     void serialize(ByteArray& array);
     static RectangularCollider deserialize(ByteArray& array);
 };
+
+#include <rendering/bitworks.hpp>

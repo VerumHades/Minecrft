@@ -138,7 +138,7 @@ void GameState::unload(){
 void GameState::updateEntity(Entity& entity, float deltatime){
     if(entity.data && entity.data->do_update) entity.data->update(this);
 
-    if(entity.hasGravity) entity.accelerate(glm::vec3(0,-(0.98 + entity.friction * 2),0), deltatime);
+    if(entity.hasGravity) entity.accelerate(glm::vec3(0,-(15.0 + entity.friction * 2),0), deltatime);
     
     if(
         entity.velocity.x != 0 || 
