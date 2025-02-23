@@ -160,6 +160,11 @@ class MainScene: public Scene{
         glm::ivec3 structureCaptureStart = {0,0,0};
         glm::ivec3 structureCaptureEnd   = {0,0,0};
         bool structureCaptured = false;
+
+        float targetTPS = 120;
+        float tickTime = 1.0f / targetTPS;
+
+        double last_tick_time;
         
         enum StructureMenuMode{
             CAPTURE,

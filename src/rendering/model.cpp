@@ -8,9 +8,9 @@ Model::~Model(){
     getModelSet().erase(this);
 }
 
-void Model::DrawAll(){
+void Model::DrawAll(float time, float time_max){
     for(auto& model: getModelSet())
-        model->drawAllRequests();
+        model->drawAllRequests(time, time_max);
     
 }
 void Model::SwapAll(){
@@ -24,6 +24,7 @@ void Model::addMesh(Mesh& mesh){
     for(int i = 0;i < loaded_mesh->getVAO().size();i++){
         auto& vao = loaded_mesh->getVAO()[i];
         vao.attachBuffer(&instance_buffers[i], {{VEC4,VEC4,VEC4,VEC4}, true}, 0);
+        vao.attachBuffer(&instance_buffers[(i + 2) % 3], {{VEC4,VEC4,VEC4,VEC4}, true}, 1);
     }
 
     loaded_meshes.push_back(std::move(loaded_mesh));
@@ -54,18 +55,20 @@ void Model::requestDraw(
 
     //modelMatrix = glm::scale(modelMatrix, scale);
         
-    auto& request_back_buffer = request_buffers[!selected];
+    auto& request_back_buffer = request_buffers[backIndex()];
 
     auto* data = glm::value_ptr(modelMatrix);
     request_back_buffer.insert(request_back_buffer.end(), data, data + 16);
 }
 
-void Model::drawAllRequests(){
+void Model::drawAllRequests(float time, float time_max){
     std::lock_guard<std::mutex> lock(swap_mutex);
-    
+
     auto& request_buffer = request_buffers[selected];
 
     if(request_buffer.size() == 0) return;
+
+    interpolation_time.setValue(time / time_max);
 
     if(upload_data){
         auto& front_buffer = getFrontInstanceBuffer();

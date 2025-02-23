@@ -712,7 +712,7 @@ void MainScene::render(){
     
         // Draw models
         modelProgram.updateUniforms();
-        Model::DrawAll();
+        Model::DrawAll(current - last_tick_time, tickTime);
         //ItemRegistry::get().drawItemModels();
 
         glDisable( GL_CULL_FACE );
@@ -755,12 +755,9 @@ void MainScene::updateLoadedLocations(glm::ivec3 old_location, glm::ivec3 new_lo
 }
 
 void MainScene::physicsUpdate(){
-    double last = glfwGetTime();
+    last_tick_time = glfwGetTime();
     double current = glfwGetTime();
     float deltatime;
-
-    float targetTPS = 120;
-    float tickTime = 1.0f / targetTPS;
 
     while(running){
         current = glfwGetTime();

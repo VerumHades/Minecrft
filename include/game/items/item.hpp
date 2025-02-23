@@ -94,9 +94,6 @@ class ItemRegistry{
         void deleteItem(ItemID id);
         Item* getItem(ItemID id);
 
-        void drawItemModels();
-        void swapModelBuffers();
-
         static ItemRegistry& get();
 };
 

@@ -12,6 +12,7 @@
 #include <array>
 #include <rendering/opengl/buffer.hpp>
 #include <rendering/opengl/texture.hpp>
+#include <rendering/opengl/shaders.hpp>
 #include <rendering/mesh.hpp>
 
 #include <synchronization.hpp>
@@ -28,10 +29,15 @@ class Model{
         std::atomic<bool> upload_data = false;
         std::atomic<int> selected = 0;
 
-        std::array<GLBuffer<float, GL_ARRAY_BUFFER>,2> instance_buffers = {};
-        std::array<std::vector<float>,2> request_buffers = {};
+        std::array<GLBuffer<float, GL_ARRAY_BUFFER>,3> instance_buffers = {};
+        std::array<std::vector<float>,3> request_buffers = {};
 
-        GLBuffer<float, GL_ARRAY_BUFFER>& getBackInstanceBuffer()  { return instance_buffers[!selected]; }
+        std::vector<float> intermidiate_request_buffer;
+
+        int backIndex() {return (selected + 1) % 3; }
+        int lastIndex() {return (selected + 2) % 3; }
+
+        GLBuffer<float, GL_ARRAY_BUFFER>& getBackInstanceBuffer()  { return instance_buffers[backIndex()]; }
         GLBuffer<float, GL_ARRAY_BUFFER>& getFrontInstanceBuffer() { return instance_buffers[selected]; }
         
         std::vector<std::unique_ptr<LoadedMesh>> loaded_meshes;
@@ -40,6 +46,8 @@ class Model{
             static std::unordered_set<Model*> models{};
             return models;
         };
+
+        Uniform<float> interpolation_time = Uniform<float>("model_interpolation_time");
 
     protected:
         glm::vec3 rotation_center_offset = {0,0,0};
@@ -72,18 +80,18 @@ class Model{
             const std::array<Rotation,3>& rotation_order = {Z,Y,X}
         );
 
-        void drawAllRequests();
+        void drawAllRequests(float time, float time_max);
 
         void swap() {
             std::lock_guard<std::mutex> lock(swap_mutex);
-            
-            selected = !selected;
-            request_buffers[!selected].clear();
+
+            request_buffers[selected].clear();
+            selected = (selected + 1) % 3;
             upload_data = true;
         }
 
         const glm::vec3& getRotationCenterOffset(){return rotation_center_offset;}
 
-        static void DrawAll();
+        static void DrawAll(float time, float time_max);
         static void SwapAll();
 };

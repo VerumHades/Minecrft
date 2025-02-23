@@ -12,7 +12,6 @@ WorldGenerator::WorldGenerator() {
     noise.SetFractalOctaves(3);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetSeed(1985);
-
 }
 
 static auto chunk_definitions = std::to_array({

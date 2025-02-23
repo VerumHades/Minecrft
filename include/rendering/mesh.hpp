@@ -21,7 +21,7 @@ class Mesh;
 
 class LoadedMesh{
     private:
-        std::array<GLVertexArray,2> vaos{};
+        std::array<GLVertexArray,3> vaos{};
         GLBuffer<float, GL_ARRAY_BUFFER> vertex_buffer;
         GLBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> index_buffer;
         std::shared_ptr<GLTexture2D> texture = nullptr;
@@ -36,7 +36,7 @@ class LoadedMesh{
 
         const auto& getVertexBuffer(){return vertex_buffer;};
         const auto& getIndexBuffer(){return index_buffer;};
-        std::array<GLVertexArray,2>& getVAO() {return vaos;};
+        std::array<GLVertexArray,3>& getVAO() {return vaos;};
 };
 
 class Mesh{
