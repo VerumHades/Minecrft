@@ -19,6 +19,14 @@
     background-color: rgba(0,0,0,0);
 }
 
+#new_world_name{
+    width: 200px;
+    height: 40px;
+}
+#create_new_world{
+    margin: 50px 0px 0px 0px;
+}
+
 .world_option_frame {
     width: 1200px;
     height: 250px;

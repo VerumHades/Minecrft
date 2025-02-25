@@ -24,15 +24,13 @@
 class Model{ 
     private:
         std::mutex swap_mutex;
-        size_t request_size = 4 * 4;
+        const size_t request_size = 4 * 4;
         
         std::atomic<bool> upload_data = false;
         std::atomic<int> selected = 0;
 
         std::array<GLBuffer<float, GL_ARRAY_BUFFER>,3> instance_buffers = {};
         std::array<std::vector<float>,3> request_buffers = {};
-
-        std::vector<float> intermidiate_request_buffer;
 
         int backIndex() {return (selected + 1) % 3; }
         int lastIndex() {return (selected + 2) % 3; }
@@ -46,8 +44,6 @@ class Model{
             static std::unordered_set<Model*> models{};
             return models;
         };
-
-        Uniform<float> interpolation_time = Uniform<float>("model_interpolation_time");
 
     protected:
         glm::vec3 rotation_center_offset = {0,0,0};
@@ -80,7 +76,7 @@ class Model{
             const std::array<Rotation,3>& rotation_order = {Z,Y,X}
         );
 
-        void drawAllRequests(float time, float time_max);
+        void drawAllRequests();
 
         void swap() {
             std::lock_guard<std::mutex> lock(swap_mutex);
@@ -92,6 +88,6 @@ class Model{
 
         const glm::vec3& getRotationCenterOffset(){return rotation_center_offset;}
 
-        static void DrawAll(float time, float time_max);
+        static void DrawAll();
         static void SwapAll();
 };

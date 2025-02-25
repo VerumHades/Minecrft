@@ -58,4 +58,5 @@ class GameState{
         LogicalItemInventory& getPlayerInventory(){return player_inventory;};
         LogicalItemInventory& getPlayerHotbar(){return player_hotbar;}
         Terrain& getTerrain(){return terrain;}
+        WorldStream* getWorldStream(){return world_stream;}
 };

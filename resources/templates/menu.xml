@@ -6,7 +6,7 @@
         
         <image class="background_image" src="resources/textures/ui/background.png"></image>
         <frame class = "vertical_flex center" width="500px" height="500px" id="main_menu_selection">
-            <label id="new_world" class="interactable menu_button">New Terrain</label>
+            <label onclick="setLayer('world_menu')" class="interactable menu_button">New Game</label>
             <label onclick="setLayer('settings')"   class="interactable menu_button">Settings</label>
         </frame>
     </default>
@@ -21,9 +21,12 @@
         </frame>
     </world_menu>
     <new_world_menu>
+        <image class="background_image" src="resources/textures/ui/background_2.png"></image>
         <label onclick="setLayer('world_menu')" class="back_button interactable">Go back</label>
         <frame class="middle_frame">
-
+            <label>New World Name:</label>
+            <input id="new_world_name"></input>
+            <label id="create_new_world" class="back_button interactable">Create World</label>
         </frame>
     </new_world_menu>
     <settings>

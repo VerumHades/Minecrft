@@ -38,6 +38,7 @@ class UILayer{
         uint cursorMode =  GLFW_CURSOR_NORMAL;
         UIEventLock eventLocks = {};
         std::string name = "none";
+        std::function<void()> onEntered;
 
         void clear(){elements.clear();}
         void addElement(std::shared_ptr<UIFrame> element){

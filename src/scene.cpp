@@ -19,6 +19,8 @@ void Scene::setUILayer(std::string name){
     
     UICore::get().resetStates();
     UICore::get().updateAll();
+
+    if(layer.onEntered) layer.onEntered();
 }
 
 bool Scene::isActiveLayer(std::string name){

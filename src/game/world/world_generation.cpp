@@ -11,7 +11,7 @@ WorldGenerator::WorldGenerator() {
     noise.SetFrequency(0.001f);
     noise.SetFractalOctaves(3);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetSeed(1985);
+    //noise.SetSeed(1985);
 }
 
 static auto chunk_definitions = std::to_array({
@@ -229,11 +229,11 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
     }
 }   
 
-std::thread WorldGenerator::threadedQueueGeneration(std::queue<Chunk*>& queue){
+std::thread WorldGenerator::threadedQueueGeneration(std::queue<Chunk*>& queue, std::atomic<int>* progress_report){
     static int id = 0;
     int myid = id++;
 
-    std::thread thread = std::thread([this, &queue, myid] {
+    std::thread thread = std::thread([this, &queue, myid, progress_report] {
         int count = 50;
         while(!queue.empty()){
             auto chunk = queue.front();
@@ -241,7 +241,7 @@ std::thread WorldGenerator::threadedQueueGeneration(std::queue<Chunk*>& queue){
 
             this->generateTerrainChunk(chunk, chunk->getWorldPosition());
             if(count <= 0){
-                std::cout << "Amount left " << myid << ":" << queue.size() << "\n";
+                if(progress_report) progress_report->store(queue.size());
                 count = 50;
             }
             else count--;

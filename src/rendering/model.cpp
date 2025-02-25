@@ -8,9 +8,9 @@ Model::~Model(){
     getModelSet().erase(this);
 }
 
-void Model::DrawAll(float time, float time_max){
+void Model::DrawAll(){
     for(auto& model: getModelSet())
-        model->drawAllRequests(time, time_max);
+        model->drawAllRequests();
     
 }
 void Model::SwapAll(){
@@ -61,14 +61,12 @@ void Model::requestDraw(
     request_back_buffer.insert(request_back_buffer.end(), data, data + 16);
 }
 
-void Model::drawAllRequests(float time, float time_max){
+void Model::drawAllRequests(){
     std::lock_guard<std::mutex> lock(swap_mutex);
 
     auto& request_buffer = request_buffers[selected];
 
     if(request_buffer.size() == 0) return;
-
-    interpolation_time.setValue(time / time_max);
 
     if(upload_data){
         auto& front_buffer = getFrontInstanceBuffer();

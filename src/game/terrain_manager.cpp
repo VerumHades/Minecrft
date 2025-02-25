@@ -9,7 +9,6 @@ void TerrainManager::generateRegion(glm::ivec3 around, int render_distance){
 
     int pregenDistance = render_distance + 1; 
 
-    const int thread_count = 8;
     std::array<std::queue<Chunk*>, thread_count> generation_queues;
     int queue_index = 0;
 
@@ -34,6 +33,7 @@ void TerrainManager::generateRegion(glm::ivec3 around, int render_distance){
         world_generator.generateTerrainChunk(chunk, chunkPosition);
     }*/
 
+    int total = 0;
     for(int x = -pregenDistance; x <= pregenDistance; x++) 
     for(int z = -pregenDistance; z <= pregenDistance; z++)
     for(int y = -pregenDistance; y <= pregenDistance; y++) 
@@ -50,7 +50,10 @@ void TerrainManager::generateRegion(glm::ivec3 around, int render_distance){
 
         generation_queues[queue_index].push(chunk);
         queue_index = (queue_index + 1) % thread_count;
+        total++;
     }
+
+    if(total >= pow(pregenDistance * 2, 3)) generating_world = true;
 
     //timer.timestamp("Setup queues");
     world_generator.prepareHeightMaps(around, render_distance);
@@ -60,10 +63,13 @@ void TerrainManager::generateRegion(glm::ivec3 around, int render_distance){
     
     int i = 0;
     for(auto& queue: generation_queues){
-        threads[i++] = world_generator.threadedQueueGeneration(queue);    
+        threads[i] = world_generator.threadedQueueGeneration(queue, &generation_left[i]);    
+        i++;
     }
 
     for(auto& thread: threads) thread.join();
+
+    generating_world = false;
 }
 
 void TerrainManager::loadRegion(glm::ivec3 around, int render_distance){
@@ -102,6 +108,7 @@ void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){
         indexer = {};
         
         while(indexer.getCurrentDistance() < render_distance){
+            if(stop_mesh_generation) break;
             if(has_priority_meshes && priority_count > 0){
                 mesh_generator.syncGenerateAsyncUploadMesh(priority_mesh_queue[(priority_count--) - 1], BitField3D::NONE);
                 continue;

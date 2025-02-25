@@ -102,7 +102,8 @@ file(GLOB_RECURSE SOURCES
 
 # Add executable target
 add_executable(main ${SOURCES})
+
 # Link libraries
-target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad freetype tinyxml2 lua assimp)
+target_link_libraries(main PRIVATE glfw OpenGL::GL glm::glm glad freetype tinyxml2 lua assimp -static)
 
 target_compile_options(main PRIVATE -Wall)

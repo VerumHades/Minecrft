@@ -250,9 +250,6 @@ std::vector<ChunkMeshGenerator::OccludedPlane>& ChunkMeshGenerator::calculatePla
     return planes;
 }
 
-#define AGREGATE_TYPES(axis) std::vector<BlockID> agregateTypes##axis = next##axis->getPresentTypes(); \
-    agregateTypes##axis.insert(agregateTypes##axis.end(), group->getPresentTypes().begin(), group->getPresentTypes().end());
-
 static inline void processFaces(
     const std::vector<ChunkMeshGenerator::Face>& faces,
     InstancedMesh::FaceType face_type,
@@ -319,8 +316,14 @@ void ChunkMeshGenerator::proccessOccludedFaces(
     }
 }
 
+#define AGREGATE_TYPES(axis) std::unordered_set<BlockID> agregateTypes##axis{}; \
+    agregateTypes##axis.insert(group->getPresentTypes().begin(), group->getPresentTypes().end());
+
+
 std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosition, Chunk* group, BitField3D::SimplificationLevel simplification_level){
     //ScopeTimer timer("Generated mesh");
+
+    //simplification_level = BitField3D::NONE;
 
     auto solidMesh = std::make_unique<InstancedMesh>();
     if(!group){
@@ -501,7 +504,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
 
     planesZforward.clear();
     planesZbackward.clear();
-    
+
     std::array<float,4> occlusion = {0,0,0,0};
     //std::cout << nextX << " " << nextY << " " << nextZ << std::endl;
 
@@ -509,9 +512,9 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
     AGREGATE_TYPES(Y);
     AGREGATE_TYPES(Z);
 
-    std::vector<BlockID> fullAgregate = agregateTypesX;
-    fullAgregate.insert(fullAgregate.begin(), agregateTypesY.begin(),agregateTypesY.end());
-    fullAgregate.insert(fullAgregate.begin(), agregateTypesZ.begin(),agregateTypesZ.end());
+    std::unordered_set<BlockID> fullAgregate = agregateTypesX;
+    fullAgregate.insert(agregateTypesY.begin(),agregateTypesY.end());
+    fullAgregate.insert(agregateTypesZ.begin(),agregateTypesZ.end());
 
     for(int row = 0;row < size;row++){
         for(auto& type: agregateTypesX){

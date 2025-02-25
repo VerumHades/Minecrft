@@ -152,11 +152,11 @@ int main() {
     glEnable(GL_MULTISAMPLE);  // Redundant perhaps
     //glDepthMask(GL_FALSE);
     
-    
+    /*
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
-    
+    */
 
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
         s->resize(window, width, height); // Call resize on the instance
@@ -198,23 +198,25 @@ int main() {
         
         MainScene* mainScene = sceneManager.createScene<MainScene>("game");
 
-        auto startButton = getElementById<UILabel>("new_world");
         auto scrollable = getElementById<UIScrollableFrame>("world_selection");
         
-        startButton->onClicked = [menuScene, mainScene, scrollable] {
-            menuScene->setUILayer("world_menu");
+        menuScene->getUILayer("world_menu").onEntered = [menuScene, mainScene, scrollable] {
             scrollable->clearChildren();
+
+            if(!std::filesystem::exists("saves") && !std::filesystem::create_directory("saves")) return;
 
             for (const auto& dirEntry : std::filesystem::directory_iterator("saves")){
                 if(!dirEntry.is_directory()) continue;
 
                 std::string path = dirEntry.path().string();
 
+                GameState state{path};
+
                 auto frame = std::make_shared<UIFrame>();
                 frame->setIdentifiers({"world_option_frame"});
                 
                 auto temp = std::make_shared<UILabel>();
-                temp->setText(" ");
+                if(state.getWorldStream()) temp->setText(state.getWorldStream()->getName());
                 temp->setSize({PERCENT,100}, 40_px);
                 temp->setHoverable(false);
                 temp->setIdentifiers({"world_option_label"});
@@ -241,23 +243,23 @@ int main() {
             scrollable->updateChildren();
         };
 
-        /*auto newWorldNameInput = getElementById<UIInput>("new_world_name");
+        auto newWorldNameInput = getElementById<UIInput>("new_world_name");
         
-        auto newWorldFunc = [newWorldNameInput, startButton]{
+        auto newWorldFunc = [newWorldNameInput, menuScene]{
             auto name = newWorldNameInput->getText();
             newWorldNameInput->setText("");
             if(name == "") return;
 
-            WorldStream stream("saves/" + name + ".bin");
-            stream.setName(name);
-
-            startButton->onClicked.trigger();
+            GameState state{(std::filesystem::path("saves") / std::filesystem::path(name)).string()};
+            if(state.getWorldStream()) state.getWorldStream()->setName(name);
+            
+            menuScene->setUILayer("world_menu");
         };
 
         newWorldNameInput->onSubmit = [newWorldFunc](std::string){newWorldFunc();};
 
         auto newWorldButton = getElementById<UIFrame>("create_new_world");
-        newWorldButton->onClicked = newWorldFunc;*/
+        newWorldButton->onClicked = newWorldFunc;
 
         //sceneManager.createScene<TestScene>("test_scene");
         sceneManager.setScene("menu");

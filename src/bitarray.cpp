@@ -191,15 +191,56 @@ CompressedArray BitField3D::getCompressed(){
     return compress(_internal_data);
 }
 
+const uint64_t all_zeroes = 0ULL;
+const uint64_t all_ones = ~0ULL; 
+
+void compressPlane(const std::array<uint64_t, 64>& plane, CompressedArray& output){
+    CompressedArray compressed_rows{};
+    compressed_rows.reserve(64);
+
+    uint64_t row_compression_mask = 0;
+    uint64_t row_value_mask = 0;
+
+    for(int i = 0;i < 64;i++){
+        auto& row = plane[i];
+
+        if(row == all_zeroes || row == all_ones){
+            row_compression_mask |= (1ULL << i);
+            if(row == all_ones) row_value_mask |= (1ULL << i);
+        }
+        else compressed_rows.push_back(row);
+    }
+
+    output.push_back(row_compression_mask);
+    output.push_back(row_value_mask);
+    output.insert(output.end(), compressed_rows.begin(), compressed_rows.end());
+}
+
+std::tuple<std::array<uint64_t, 64>, uint64_t*> decompressPlane(uint64_t* input){
+    std::array<uint64_t, 64> output;
+    
+    uint64_t row_compression_mask = *input++;
+    uint64_t row_value_mask = *input++;
+    uint64_t* uncompressed_rows = input;
+
+    for(int i = 0;i < 64;i++){
+        auto& row = output[i];
+
+        if(row_compression_mask & (1ULL << i)) 
+            row = (row_value_mask & (1ULL << i)) ? all_ones : all_zeroes;  
+
+        else row = *uncompressed_rows++;
+    }
+
+    return {output, uncompressed_rows};
+}
+
 /*
     Row based compression
 */
 CompressedArray BitField3D::compress(const std::array<uint64_t, 64 * 64>& source){
     CompressedArray data_output{};
     data_output.reserve(64*64);
-
-    const uint64_t all_zeroes = 0ULL;
-    const uint64_t all_ones = ~0ULL; 
 
     std::array<uint64_t, 64> compression_mask{};
     std::array<uint64_t, 64> value_mask{};
@@ -218,8 +259,9 @@ CompressedArray BitField3D::compress(const std::array<uint64_t, 64 * 64>& source
     CompressedArray output{};
     output.reserve(data_output.size() + 64 * 2);
 
-    output.insert(output.end(), compression_mask.begin(), compression_mask.end());
-    output.insert(output.end(), value_mask.begin(), value_mask.end());
+    compressPlane(compression_mask, output);
+    compressPlane(value_mask, output);
+
     output.insert(output.end(), data_output.begin(), data_output.end());
 
     output.shrink_to_fit();
@@ -229,12 +271,9 @@ CompressedArray BitField3D::compress(const std::array<uint64_t, 64 * 64>& source
 void BitField3D::decompress(std::array<uint64_t, 64 * 64>& destination, CompressedArray& source){
     if(source.size() == 0) return;
 
-    const uint64_t all_zeroes = 0ULL;
-    const uint64_t all_ones = ~0ULL;
-
-    uint64_t* compression_mask = source.data();
-    uint64_t* value_mask       = compression_mask + 64;
-    uint64_t* data             = value_mask + 64;
+    auto [compression_mask, post_compression_mask] = decompressPlane(source.data());
+    auto [value_mask, post_value_mask] = decompressPlane(post_compression_mask);
+    uint64_t* data = post_value_mask;
 
     for(int x = 0;x < 64;x++)
     for(int y = 0;y < 64;y++){
@@ -254,7 +293,7 @@ CCacheMember* CompressedBitFieldCache::next(std::shared_ptr<CompressedArray> new
     if(member.compressed_data) *member.compressed_data = BitField3D::compress(member.field.data());
 
     member.compressed_data = new_compressed_data;
-    member.field.resetID();
+    //member.field.resetID();
     member.field = {}; // Decompression expects a zeroed out field
     
     BitField3D::decompress(member.field.data(), *new_compressed_data);

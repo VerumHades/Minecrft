@@ -8,6 +8,8 @@ parser.add_argument('-d', '--debug', action='store_true')
 parser.add_argument('-c', '--clear-build', action='store_true')
 parser.add_argument('-w', '--with-debuger', action='store_true')
 parser.add_argument('-b', '--build-type', default=None)
+parser.add_argument('-n', '--no-run', action='store_true')
+parser.add_argument('-i', '--install-build', action='store_true')
 
 args = parser.parse_args()
 root_director = os.getcwd()
@@ -49,10 +51,12 @@ def os_command(linux,windows, prefix = ""):
         os.system(prefix + linux)
 
 
+suffixus = "--target install" if args.install_build else ""
+
 if args.remake:
     os_command(
-        f"cmake ../.. -DCMAKE_BUILD_TYPE={build_type}",
-        f"cmake ../.. -DCMAKE_COLOR_MAKEFILE=ON -G \"Unix Makefiles\" -DCMAKE_BUILD_TYPE={build_type}"
+        f"cmake ../.. -DCMAKE_BUILD_TYPE={build_type} {suffixus}",
+        f"cmake ../.. -DCMAKE_COLOR_MAKEFILE=ON -G \"Unix Makefiles\" -DCMAKE_BUILD_TYPE={build_type} {suffixus}"
     )
 
 os.chdir(root_director)
@@ -65,11 +69,12 @@ if build_exit_code != 0:
     print("Build failed.")
     exit()
     
-os_command(
-    f"./build/{build_type}/main",
-    f"build\\{build_type}\\main.exe",
-    prefix = prefix
-)
+if not args.no_run:
+    os_command(
+        f"./build/{build_type}/main",
+        f"build\\{build_type}\\main.exe",
+        prefix = prefix
+    )
     
     
 

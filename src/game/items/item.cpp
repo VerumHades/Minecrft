@@ -53,7 +53,6 @@ ItemID Item::deserialize(ByteArray& from){
     int quantity = from.read<int>();
 
     ItemID id = ItemRegistry::get().createItem(name);
-    std::cout << "Creating item: "  << name <<  " id:" << id << std::endl;
 
     if(id == NO_ITEM) return id;
     ItemRegistry::get().getItem(id)->setQuantity(quantity);

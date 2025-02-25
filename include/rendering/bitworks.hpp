@@ -14,7 +14,6 @@
 #include <memory>
 #include <variant>
 #include <cstring>
-
 /*
     Type that selects the smallest type that fits the set number of bits
 
@@ -85,15 +84,15 @@ class BitPlane{
         }
 
         void clear(){
-            data = {};
+            data.fill(0);
         }
 };
-
 
 class BlockBitPlanes{
     private:
         BitPlane<64> mask{};
         std::vector<BitPlane<64>> planes{};
+        bool log = false;
     public:
         BlockBitPlanes();
 
@@ -102,8 +101,11 @@ class BlockBitPlanes{
 
         void clear(){
             mask.clear();
-            planes.clear();
+            for(auto& plane: planes) plane.clear();
         }
+
+        BitPlane<64>& getMask() {return mask;}
+        void setLog(bool value){log = value;}
 };
 
 using byte = uint8_t;

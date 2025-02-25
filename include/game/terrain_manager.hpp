@@ -21,6 +21,12 @@ class TerrainManager{
         std::atomic<bool> generating_meshes = false;
         std::atomic<bool> has_priority_meshes = false;
 
+        std::atomic<bool> generating_world = false;
+        std::atomic<bool> stop_mesh_generation = false;
+
+        static const int thread_count = 8;
+        std::array<std::atomic<int>, thread_count> generation_left;
+
         std::array<Chunk*, 4> priority_mesh_queue{};
         int priority_count = 0;
         
@@ -41,10 +47,22 @@ class TerrainManager{
         void regenerateChunkMesh(Chunk* chunk,glm::vec3 blockCoords);
 
         void setGameState(GameState* state){
+            if(state == nullptr) stopMeshGeneration();
             game_state = state;
             if(state == nullptr) mesh_generator.setWorld(nullptr);
             else mesh_generator.setWorld(&game_state->getTerrain());
         }
 
+        void stopMeshGeneration() {
+            stop_mesh_generation = true;
+            while(generating_meshes) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            }
+            stop_mesh_generation = false;
+        };
+
         ChunkMeshRegistry& getMeshRegistry(){ return mesh_registry; }
+
+        const std::array<std::atomic<int>, thread_count>& getGenerationCountsLeft(){ return generation_left; }
+        const std::atomic<bool>& isGenerating() { return generating_world; };
 };

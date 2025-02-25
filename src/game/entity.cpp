@@ -3,7 +3,6 @@
 
 std::shared_ptr<EntityData> Entity::deserializeData(ByteArray& array){
     EntityData::Type type = array.read<EntityData::Type>();
-    std::cout << type << std::endl;
     if(type == EntityData::DROPPED_ITEM) return DroppedItem::deserializeData(array);
     return nullptr;
 }

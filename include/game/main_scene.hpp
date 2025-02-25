@@ -80,6 +80,7 @@ class MainScene: public Scene{
         std::unique_ptr<GLTextureArray> block_texture_array = nullptr;
         
         std::shared_ptr<UILabel> fps_label;
+        std::shared_ptr<UILabel> generation_progress_label;
         std::shared_ptr<UILabel> structure_capture_start_label;
         std::shared_ptr<UILabel> structure_capture_end_label;
 
@@ -92,7 +93,7 @@ class MainScene: public Scene{
         std::atomic<bool> update_hotbar = false;
 
         std::string worldPath = "saves";
-        int renderDistance = 32;
+        int renderDistance = 8;
         int selectedBlock = 4;
 
         bool allGenerated = false;
@@ -161,10 +162,11 @@ class MainScene: public Scene{
         glm::ivec3 structureCaptureEnd   = {0,0,0};
         bool structureCaptured = false;
 
-        float targetTPS = 120;
+        float targetTPS = 240;
         float tickTime = 1.0f / targetTPS;
 
         double last_tick_time;
+        Uniform<float> interpolation_time = Uniform<float>("model_interpolation_time");
         
         enum StructureMenuMode{
             CAPTURE,

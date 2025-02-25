@@ -105,11 +105,16 @@ void MainScene::initialize(){
         this->updateStructureDisplay();
     };
 
-    for (const auto& entry : std::filesystem::directory_iterator("structures")){
-        auto& path = entry.path();
-        if(!entry.is_regular_file()) continue;
+    if(
+        std::filesystem::exists("structures") || 
+        std::filesystem::create_directory("structures")
+    ){
+        for (const auto& entry : std::filesystem::directory_iterator("structures")){
+            auto& path = entry.path();
+            if(!entry.is_regular_file()) continue;
 
-        structure_selection->addOption(path.stem().string());
+            structure_selection->addOption(path.stem().string());
+        }
     }
 
     setUILayer("structure_capture");
@@ -120,9 +125,15 @@ void MainScene::initialize(){
     addElement(held_item_slot);
     setUILayer("default");
     addElement(hotbar);
+    setUILayer("generation");
+
+    generation_progress_label = std::make_shared<UILabel>();
+    generation_progress_label->setPosition(TValue::Center(), TValue::Center());
+    addElement(generation_progress_label);
+
+    setUILayer("default");
 
     skyboxProgram.use();
-
     skybox.load(skyboxPaths);
     
     terrainProgram.use();
@@ -219,7 +230,6 @@ void MainScene::initialize(){
         if(prototype.id == 0) continue; // Dont make air
         
         if(prototype.name == "crafting"){
-            std::cout << "AAA" << std::endl;
             auto interface = std::make_unique<CraftingInterface>(prototype.name + "_interface", itemTextureAtlas, held_item_slot);
             getWindow()->addExternalLayer(interface->getLayer());
 
@@ -538,7 +548,7 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
         }
     }
 
-    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS && !isActiveLayer("generation")){
         if(!isActiveLayer("default")) 
             this->setUILayer("default");
         else
@@ -596,7 +606,6 @@ void MainScene::open(GLFWwindow* window){
     };
 
     terrain_manager.setGameState(game_state.get());
-    terrain_manager.loadRegion(player.getPosition() / (float)CHUNK_SIZE, renderDistance);
 
     //Entity e = Entity(player.getPosition() + glm::vec3{5,0,5}, glm::vec3(1,1,1));
     //e.setModel(std::make_shared<GenericModel>("resources/models/130/scene.gltf"));
@@ -621,10 +630,10 @@ void MainScene::close(GLFWwindow* window){
     } 
 
     terrain_manager.unloadAll();
+    terrain_manager.setGameState(nullptr);
+
     game_state->unload();
     game_state = nullptr;
-
-    terrain_manager.setGameState(nullptr);
 }
 
 void MainScene::render(){
@@ -635,12 +644,28 @@ void MainScene::render(){
 
     fps_label->setText(std::to_string(1.0f / deltatime) + "FPS");
     fps_label->update();
+
+    if(terrain_manager.isGenerating()){
+        if(!isActiveLayer("generation")) setUILayer("generation");
+        std::string value = "";
+
+        for(auto& segment: terrain_manager.getGenerationCountsLeft()){
+            value += " " + std::to_string(segment);
+        }
+
+        generation_progress_label->setText(value);
+        generation_progress_label->calculateTransforms();
+        generation_progress_label->update();
+        return;
+    }
+    else if(isActiveLayer("generation")) setUILayer("default");
+    
     //timer.timestamp("Updated fps label");
     if(terrain_manager.uploadPendingMeshes()) updateVisibility = 1;
     //timer.timestamp("Uploaded meshes.");
 
     glEnable(GL_DEPTH_TEST);
-    glEnable( GL_CULL_FACE );
+    glDisable(GL_CULL_FACE);
 
     glm::vec3 camPosition = game_state->getPlayer().getPosition() + camOffset;
 
@@ -658,36 +683,18 @@ void MainScene::render(){
         terrain_manager.getMeshRegistry().updateDrawCalls(camera.getPosition(), camera.getFrustum());
         updateVisibility = 0;
     }
+
+    const int chunk_bound_distance = 4;
+    const int chunk_bound_diameter = (chunk_bound_distance + 1) * 2;
+
+    int counter = 10;
+    for(int x = -chunk_bound_distance; x <= chunk_bound_distance; x++) 
+    for(int z = -chunk_bound_distance; z <= chunk_bound_distance; z++)
+    for(int y = -chunk_bound_distance; y <= chunk_bound_distance; y++) {
+        glm::ivec3 position = (glm::ivec3{x,y,z} + glm::ivec3{glm::floor(game_state->getPlayer().getPosition() / (float)CHUNK_SIZE)})  * CHUNK_SIZE;
+        wireframeRenderer.setCube(counter++, position, glm::vec3{CHUNK_SIZE}, glm::vec3{0.1,0.5,0.5});
+    }
     //timer.timestamp("Updated visibility");
-    
-    int offsetX = ((int) camera.getPosition().x / 64) * 64;
-    int offsetY = ((int) camera.getPosition().y / 64) * 64;
-    int offsetZ = ((int) camera.getPosition().z / 64) * 64;
-
-    suncam.getTexture()->bind(1);
-    
-    suncam.setPosition(
-        (float) offsetX + sunDistance * cos(glm::radians(sunAngle)), // X position (cosine component)
-        (float) offsetY + sunDistance * sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
-        (float) offsetZ  // Z position (cosine component)
-    );
-    suncam.setTarget(
-        (float) offsetX,
-        (float) offsetY,
-        (float) offsetZ
-    );
-    suncam.updateProjection();
-
-    /*
-        Render to shadow map
-    */
-    glDisable( GL_CULL_FACE );
-    suncam.setModelPosition({0,0,0});
-    terrainProgram.updateUniforms();
-    suncam.prepareForRender();
-    terrain_manager.getMeshRegistry().draw();
-    glEnable( GL_CULL_FACE );
-    // ====
 
     //timer.timestamp("Rendered to shadow map.");
 
@@ -700,22 +707,21 @@ void MainScene::render(){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Draw skybox
-        glDisable(GL_CULL_FACE);
-        skyboxProgram.use();
+        skyboxProgram.updateUniforms();
         skybox.draw();
-        
         // ====
 
         // Draw terrain
         terrainProgram.updateUniforms();
         terrain_manager.getMeshRegistry().draw();
-    
+
+        interpolation_time = (current - last_tick_time) / tickTime;
         // Draw models
         modelProgram.updateUniforms();
-        Model::DrawAll(current - last_tick_time, tickTime);
+        Model::DrawAll();
         //ItemRegistry::get().drawItemModels();
 
-        glDisable( GL_CULL_FACE );
+
 
         //int start_index = 20;
         //wireframeRenderer.setCubes(start_index);
@@ -759,14 +765,16 @@ void MainScene::physicsUpdate(){
     double current = glfwGetTime();
     float deltatime;
 
+    updateLoadedLocations({},glm::ivec3{game_state->getPlayer().getPosition() / (float)CHUNK_SIZE});
+
     while(running){
         current = glfwGetTime();
-        deltatime = (float)(current - last);
+        deltatime = (float)(current - last_tick_time);
 
         //threadPool->deployPendingJobs();
 
         if(deltatime < tickTime) continue;
-        last = current;
+        last_tick_time = current;
 
         glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
         if(glm::distance(glm::vec3(camWorldPosition),glm::vec3(lastCamWorldPosition)) >= 2){ // Crossed chunks
