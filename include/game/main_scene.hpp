@@ -50,6 +50,7 @@
 #include <queue>
 
 class UIHotbar;
+class UILoading;
 
 class MainScene: public Scene{
     private:
@@ -80,7 +81,7 @@ class MainScene: public Scene{
         std::unique_ptr<GLTextureArray> block_texture_array = nullptr;
         
         std::shared_ptr<UILabel> fps_label;
-        std::shared_ptr<UILabel> generation_progress_label;
+        std::shared_ptr<UILoading> generation_progress;
         std::shared_ptr<UILabel> structure_capture_start_label;
         std::shared_ptr<UILabel> structure_capture_end_label;
 
@@ -93,7 +94,7 @@ class MainScene: public Scene{
         std::atomic<bool> update_hotbar = false;
 
         std::string worldPath = "saves";
-        int renderDistance = 8;
+        int renderDistance = 32;
         int selectedBlock = 4;
 
         bool allGenerated = false;
@@ -230,4 +231,13 @@ class UIHotbar: public InventoryDisplay{
             if(!inventory) return nullptr;
             return inventory->getSlot(selected_slot,0);
         };
+};
+
+class UILoading: public UIFrame{
+    private:
+        std::array<std::atomic<int>, 8>* values = nullptr;
+        std::array<int, 8> max_values{};
+    public:
+        void setValues(std::array<std::atomic<int>, 8>* ptr) {values = ptr;}
+        void getRenderingInformation(UIRenderBatch& batch) override;
 };

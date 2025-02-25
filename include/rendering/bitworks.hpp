@@ -191,8 +191,10 @@ class ByteArray{
         }
 
         bool operator == (const ByteArray& array);
-        void write(std::fstream &file);
+        void write(std::fstream &file, bool headless = false);
         bool read(std::fstream &file);
+
+        void writeToBuffer(std::vector<byte>& buffer);
 
         bool saveToFile(std::string path);
 

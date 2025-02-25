@@ -60,6 +60,8 @@ class WorldStream: public FileStream{
         
         int getChunkCount() {return chunkTable.size();}
 
+        void bulkSave(std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>, IVec3Hash, IVec3Equal>& chunks);
+
         bool save(Chunk& chunk);
         void load(Chunk* chunk);
 

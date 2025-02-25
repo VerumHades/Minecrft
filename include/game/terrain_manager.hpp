@@ -63,6 +63,6 @@ class TerrainManager{
 
         ChunkMeshRegistry& getMeshRegistry(){ return mesh_registry; }
 
-        const std::array<std::atomic<int>, thread_count>& getGenerationCountsLeft(){ return generation_left; }
+        std::array<std::atomic<int>, thread_count>& getGenerationCountsLeft(){ return generation_left; }
         const std::atomic<bool>& isGenerating() { return generating_world; };
 };

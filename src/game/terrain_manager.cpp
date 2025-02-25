@@ -53,7 +53,7 @@ void TerrainManager::generateRegion(glm::ivec3 around, int render_distance){
         total++;
     }
 
-    if(total >= pow(pregenDistance * 2, 3)) generating_world = true;
+    if(total >= 100 * 8) generating_world = true;
 
     //timer.timestamp("Setup queues");
     world_generator.prepareHeightMaps(around, render_distance);
@@ -89,11 +89,9 @@ void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){
 
         generating_meshes = true;
 
-        for(int x = -render_distance; x <= render_distance; x++) 
-        for(int z = -render_distance; z <= render_distance; z++)
-        for(int y = -render_distance; y <= render_distance; y++) 
+        while(indexer.getCurrentDistance() < render_distance)
         {
-            glm::ivec3 chunkPosition = indexer.get() + glm::ivec3(x,y,z);
+            glm::ivec3 chunkPosition = indexer.get() + around;
             indexer.next();
 
             auto* chunk = terrain.getChunk(chunkPosition);

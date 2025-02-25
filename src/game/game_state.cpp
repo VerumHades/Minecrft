@@ -130,7 +130,10 @@ void GameState::unloadChunk(const glm::ivec3& position){
 
 
 void GameState::unload(){
-    for(auto& [position, chunk]: terrain.chunks) unloadChunk(position);
+    //for(auto& [position, chunk]: terrain.chunks) unloadChunk(position);
+
+    world_stream->bulkSave(terrain.chunks);
+    terrain.chunks.clear();
     savePlayer();
     saveEntities();
 }

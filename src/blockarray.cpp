@@ -68,7 +68,7 @@ Block* SparseBlockArray::getBlock(glm::ivec3 position){
     return &airBlock;
 }
 
-void SparseBlockArray::serialize(ByteArray& output_array){
+void SparseBlockArray::serialize(ByteArray& output_array) {
     output_array.append(BitField3D::compress(getSolidField().data()));
     output_array.append<size_t>(layers.size());
 

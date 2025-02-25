@@ -127,9 +127,10 @@ void MainScene::initialize(){
     addElement(hotbar);
     setUILayer("generation");
 
-    generation_progress_label = std::make_shared<UILabel>();
-    generation_progress_label->setPosition(TValue::Center(), TValue::Center());
-    addElement(generation_progress_label);
+    generation_progress = std::make_shared<UILoading>();
+    generation_progress->setPosition(TValue::Center(), TValue::Center());
+    generation_progress->setSize(TValue::Pixels(600), TValue::Pixels(200));
+    addElement(generation_progress);
 
     setUILayer("default");
 
@@ -647,19 +648,20 @@ void MainScene::render(){
 
     if(terrain_manager.isGenerating()){
         if(!isActiveLayer("generation")) setUILayer("generation");
-        std::string value = "";
-
-        for(auto& segment: terrain_manager.getGenerationCountsLeft()){
-            value += " " + std::to_string(segment);
-        }
-
-        generation_progress_label->setText(value);
-        generation_progress_label->calculateTransforms();
-        generation_progress_label->update();
+        //std::string value = "";
+        //for(auto& segment: terrain_manager.getGenerationCountsLeft()){
+        //    value += " " + std::to_string(segment);
+        //}
+        generation_progress->setValues(&terrain_manager.getGenerationCountsLeft());
+        //generation_progress_label->setText(value);
+        generation_progress->calculateTransforms();
+        generation_progress->update();
         return;
     }
-    else if(isActiveLayer("generation")) setUILayer("default");
-    
+    else if(isActiveLayer("generation")){
+        generation_progress->setValues(nullptr);
+        setUILayer("default");
+    }
     //timer.timestamp("Updated fps label");
     if(terrain_manager.uploadPendingMeshes()) updateVisibility = 1;
     //timer.timestamp("Uploaded meshes.");
@@ -890,4 +892,27 @@ void UIHotbar::getRenderingInformation(UIRenderBatch& batch){
         UISideSizes{3,3,3,3},
         UIColor{180,180,180}
     );
+}
+
+void UILoading::getRenderingInformation(UIRenderBatch& batch){
+    if(!values) return;
+    
+    const int margin = 10; 
+    const int width = (transform.width - values->size() * margin) / values->size();
+
+    int i = 0;
+    for(auto& value: *values){
+        if(value > max_values[i]) max_values[i] = value;
+
+        float max = max_values[i] != 0 ? max_values[i] : 1;
+
+        batch.Rectangle(
+            transform.x + width * i + margin * (i + 1), 
+            transform.y, 
+            width, 
+            ((float)value / max) * (float)transform.height, 
+            UIColor{200,100,0}
+        );
+        i++;
+    }
 }

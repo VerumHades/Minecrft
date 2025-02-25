@@ -2,12 +2,25 @@
 
 using namespace bitworks;
 
+template <typename T>
+inline void saveToBuffer(std::vector<byte>& buffer, const T& value){
+    const byte* start = reinterpret_cast<const byte*>(&value);
+    buffer.insert(buffer.end(), start, start + sizeof(T));
+}
 
-void ByteArray::write(std::fstream &file){
-    bitworks::saveValue<char>(file,'|'); // Magic start character
-    //std::cout << data.size() << std::endl;
-    bitworks::saveValue<size_t>(file, data.size());
+void ByteArray::write(std::fstream &file, bool headless){
+    if(!headless){
+        bitworks::saveValue<char>(file,'|');
+        bitworks::saveValue<size_t>(file, data.size());
+    }
+
     file.write(reinterpret_cast<const char*>(data.data()), data.size());
+}
+
+void ByteArray::writeToBuffer(std::vector<byte>& buffer){
+    saveToBuffer<char>(buffer, '|');
+    saveToBuffer<size_t>(buffer, data.size());
+    buffer.insert(buffer.end(), data.begin(), data.end());
 }
 
 bool ByteArray::read(std::fstream &file){
