@@ -7,6 +7,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <path_config.hpp>
+
 class GenericModel: public Model{
     private:
         std::string directory;

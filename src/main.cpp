@@ -11,6 +11,8 @@
 #include <rendering/allocator.hpp>
 #include <test_scene.hpp>
 
+#include <path_config.hpp>
+
 /*void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
         if(menuOpen){
@@ -203,9 +205,10 @@ int main() {
         menuScene->getUILayer("world_menu").onEntered = [menuScene, mainScene, scrollable] {
             scrollable->clearChildren();
 
-            if(!std::filesystem::exists("saves") && !std::filesystem::create_directory("saves")) return;
+            auto path = Paths::Get(Paths::GAME_SAVES);
+            if(!path) return;
 
-            for (const auto& dirEntry : std::filesystem::directory_iterator("saves")){
+            for (const auto& dirEntry: fs::directory_iterator(path.value())){
                 if(!dirEntry.is_directory()) continue;
 
                 std::string path = dirEntry.path().string();
@@ -250,8 +253,14 @@ int main() {
             newWorldNameInput->setText("");
             if(name == "") return;
 
-            GameState state{(std::filesystem::path("saves") / std::filesystem::path(name)).string()};
-            if(state.getWorldStream()) state.getWorldStream()->setName(name);
+            auto path = Paths::Get(Paths::GAME_SAVES);
+
+            if(path) {
+                GameState state{(path.value() / fs::path(name)).string()};
+
+                if(state.getWorldStream()) 
+                    state.getWorldStream()->setName(name);
+            }
             
             menuScene->setUILayer("world_menu");
         };

@@ -7,6 +7,8 @@
 #include <vector>
 #include <filesystem>
 
+#include <path_config.hpp>
+
 class TextureRegistry{
     private:
         size_t last_index = 0;

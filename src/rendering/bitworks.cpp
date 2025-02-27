@@ -39,7 +39,7 @@ bool ByteArray::operator== (const ByteArray& array){
     return std::memcmp(data.data(), array.data.data(), data.size()) == 0;
 }
 
-bool ByteArray::saveToFile(std::string path){
+bool ByteArray::saveToFile(fs::path path){
     std::fstream file(path, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
     if (!file) {
         std::cerr << "Failed to open file '" << path << "'." << std::endl;
@@ -49,7 +49,7 @@ bool ByteArray::saveToFile(std::string path){
     write(file);
     return true;
 }
-ByteArray ByteArray::FromFile(std::string path){
+ByteArray ByteArray::FromFile(fs::path path){
     std::fstream file(path, std::ios::in | std::ios::binary);
     if (!file) {
         std::cerr << "Failed to open file '" << path << "'." << std::endl;

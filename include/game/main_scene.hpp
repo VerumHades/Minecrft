@@ -41,6 +41,7 @@
 #include <game/models/generic_model.hpp>
 
 #include <indexing.hpp>
+#include <path_config.hpp>
 
 #include <scene.hpp>
 #include <set>

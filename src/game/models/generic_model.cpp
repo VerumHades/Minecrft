@@ -94,7 +94,7 @@ std::shared_ptr<GLTexture2D> GenericModel::loadMaterialTexture(aiMaterial *mat, 
         mat->GetTexture(type, i, &str);
 
         return std::make_shared<GLTexture2D>(
-            (std::filesystem::path(directory) / std::filesystem::path(str.C_Str())).string()
+            (fs::path(directory) / fs::path(str.C_Str())).string()
         );
     }
     return nullptr;

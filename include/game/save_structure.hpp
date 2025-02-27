@@ -8,6 +8,8 @@
 #include <functional>
 #include <filesystem>
 
+#include <path_config.hpp>
+
 class FileSaveStructure;
 
 class FileStream{

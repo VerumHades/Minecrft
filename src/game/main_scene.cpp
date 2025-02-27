@@ -81,7 +81,10 @@ void MainScene::initialize(){
         Structure structure = Structure::capture(min, size, game_state->getTerrain());
 
         const std::string& name = getElementById<UIInput>("structure_name")->getText();
-        structure.serialize().saveToFile("structures/" + name + ".structure");
+
+        auto path = Paths::Get(Paths::GAME_STRUCTURES);
+        if(path) structure.serialize().saveToFile(path.value() / fs::path(name + ".structure"));
+
         setUILayer("structure_capture"); 
 
         if(!this->structure_selection->hasOption(name)) this->structure_selection->addOption(name);
@@ -95,9 +98,18 @@ void MainScene::initialize(){
     structure_selection->setAttribute(&UIFrame::Style::fontSize, 16_px);
 
     structure_selection->onSelected = [this](const std::string& name){
-        auto bt = ByteArray::FromFile("structures/"  + name);
+        auto structures_path = Paths::Get(Paths::GAME_STRUCTURES);
 
         auto structure_name_label = getElementById<UILabel>("selected_structure");
+        
+        if(!structures_path){
+            structure_name_label->setText("Error: Structure file missing.");
+            structure_name_label->update();
+            return;
+        }
+
+        auto bt = ByteArray::FromFile(structures_path.value() / name);
+
         structure_name_label->setText("Selected structure:" + name);
         structure_name_label->update();
 
@@ -105,11 +117,9 @@ void MainScene::initialize(){
         this->updateStructureDisplay();
     };
 
-    if(
-        std::filesystem::exists("structures") || 
-        std::filesystem::create_directory("structures")
-    ){
-        for (const auto& entry : std::filesystem::directory_iterator("structures")){
+    auto structures_path = Paths::Get(Paths::GAME_STRUCTURES);
+    if(structures_path){
+        for (const auto& entry: fs::directory_iterator(structures_path.value())){
             auto& path = entry.path();
             if(!entry.is_regular_file()) continue;
 

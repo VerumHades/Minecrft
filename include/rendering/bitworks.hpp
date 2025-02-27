@@ -14,6 +14,8 @@
 #include <memory>
 #include <variant>
 #include <cstring>
+
+#include <path_config.hpp>
 /*
     Type that selects the smallest type that fits the set number of bits
 
@@ -196,9 +198,9 @@ class ByteArray{
 
         void writeToBuffer(std::vector<byte>& buffer);
 
-        bool saveToFile(std::string path);
+        bool saveToFile(fs::path path);
 
-        static ByteArray FromFile(std::string path);
+        static ByteArray FromFile(fs::path path);
         static ByteArray FromStream(std::fstream &file);
 
         size_t getFullSize() {return sizeof(char) + sizeof(size_t) + data.size() * sizeof(byte);};

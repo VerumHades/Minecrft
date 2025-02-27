@@ -1,6 +1,6 @@
 #include <game/save_structure.hpp>
 
-namespace fs = std::filesystem;
+namespace fs = fs;
 
 bool FileStream::open(const std::string& relative_path){
     fs::path full_path = fs::path(relative_path).append(path).append(name + ".dat");

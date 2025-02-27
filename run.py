@@ -4,42 +4,32 @@ import os, platform, argparse, shutil
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-r', '--remake', action='store_true')
-parser.add_argument('-d', '--debug', action='store_true')
-parser.add_argument('-c', '--clear-build', action='store_true')
-parser.add_argument('-w', '--with-debuger', action='store_true')
-parser.add_argument('-b', '--build-type', default=None)
-parser.add_argument('-n', '--no-run', action='store_true')
-parser.add_argument('-i', '--install-build', action='store_true')
+
+parser.add_argument('-d', '--debug', action='store_true', help="Build is Debug and runs gdb")
+parser.add_argument('-w', '--with-debuger', action='store_true', help="Runs gdb")
+
+parser.add_argument('-c', '--clear-build', action='store_true', help="Clears the build directory")
+parser.add_argument(
+    '-b', '--build-type', 
+    default="Release", 
+    help="Allows you to specify the build type. Ignored if -d is specified",
+    choices = ["Release","Debug","RelWithDebInfo","MinSizeRel"]
+)
+
+parser.add_argument('-n', '--no-run', action='store_true', help="Builds but doesnt run")
+parser.add_argument('-p', '--package', action='store_true', help="Builds and creates and installer in build directory")
 
 args = parser.parse_args()
 root_director = os.getcwd()
 
-build_types_valid = [
-    "Release",
-    "Debug",
-    "RelWithDebInfo",
-    "MinSizeRel"
-]
+build_type = "Debug" if args.debug else parser.build_type
+build_directory = os.path.join("build", build_type)
 
-build_type = "Debug" if args.debug else "Release"
-
-if not args.build_type is None:
-    if args.build_type in build_types_valid:
-        build_type = args.build_type
-    else:
-        print(f"Invalid build type: {args.build_type}")
-        exit()
-
-build_directory = os.path.join("build",build_type)
-
-if not os.path.isdir("build"):
-    os.mkdir("build")
+os.makedirs(build_directory, exist_ok=True)
     
-if not os.path.isdir(build_directory):
-    os.mkdir(build_directory)
-elif args.clear_build:
+if args.clear_build:
     shutil.rmtree(build_directory)
-    os.mkdir(build_directory)  
+    os.makedirs(build_directory, exist_ok=True) 
     
 os.chdir(build_directory)
 platform_is_windows = platform.system().lower() == "windows"
@@ -51,12 +41,12 @@ def os_command(linux,windows, prefix = ""):
         os.system(prefix + linux)
 
 
-suffixus = "--target install" if args.install_build else ""
+suffixus = "-DCMAKE_CXX_FLAGS=\"-DWINDOWS_PACKAGED_BUILD\"" if args.package else ""
 
 if args.remake:
     os_command(
-        f"cmake ../.. -DCMAKE_BUILD_TYPE={build_type} {suffixus}",
-        f"cmake ../.. -DCMAKE_COLOR_MAKEFILE=ON -G \"Unix Makefiles\" -DCMAKE_BUILD_TYPE={build_type} {suffixus}"
+        f"cmake {root_director} -DCMAKE_BUILD_TYPE={build_type} {suffixus}",
+        f"cmake {root_director} -DCMAKE_COLOR_MAKEFILE=ON -G \"Unix Makefiles\" -DCMAKE_BUILD_TYPE={build_type} {suffixus}"
     )
 
 os.chdir(root_director)
@@ -64,19 +54,34 @@ os.chdir(root_director)
 prefix = "gdb -ex run " if args.debug or args.with_debuger else "" 
 #prefix =  ""
 
-build_exit_code = os.system(f"cmake --build build/{build_type} -j 8")
+build_exit_code = os.system(f"cmake --build {build_directory} -j 8")
 if build_exit_code != 0:
     print("Build failed.")
     exit()
+
+if args.package:
+    os.chdir(build_directory)
     
-if not args.no_run:
+    file_path = 'CPackConfig.cmake'
+
+    with open(file_path, 'r') as file:
+            lines = file.readlines()
+
+    with open(file_path, 'w') as file:
+        for line in lines:
+            if line.startswith("set(CPACK_COMPONENTS_ALL"):
+                line = line.replace("-","_")
+            file.write(line)
+        
+    os.system(f"cpack --config {file_path}")    
+    
+elif not args.no_run:
     os_command(
-        f"./build/{build_type}/main",
-        f"build\\{build_type}\\main.exe",
+        f"./{build_directory}/majnkraft",
+        f"{build_directory}\\majnkraft.exe",
         prefix = prefix
     )
-    
-    
+
 
 #platform_command("clear","cls")
 

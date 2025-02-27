@@ -36,7 +36,7 @@ std::unique_ptr<GLTextureArray> TextureRegistry::load(){
 }
 
 void TextureRegistry::loadFromFolder(const std::string& path){
-    for (const auto& entry : std::filesystem::directory_iterator(path)){
+    for (const auto& entry : fs::directory_iterator(path)){
         auto& path = entry.path();
 
         int width, height, channels;

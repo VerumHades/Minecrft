@@ -183,7 +183,7 @@ WorldGenerator::Heightmap& WorldGenerator::getHeightmapFor(glm::ivec3 position_i
     for(int z = 0; z < CHUNK_SIZE; z++){
         glm::ivec3 localPosition = glm::ivec3(x,0,z) + position * CHUNK_SIZE;
 
-        int value = pow(noise.GetNoise(static_cast<float>(localPosition.x),static_cast<float>(localPosition.z)) * 10, 3);
+        int value = pow(noise.GetNoise(static_cast<float>(localPosition.x),static_cast<float>(localPosition.z)) * 10, 2);
         map->lowest = std::min(value, map->lowest);
         map->highest = std::max(value, map->highest);
         map->heights[x][z] = value;
