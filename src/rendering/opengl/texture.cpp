@@ -124,7 +124,7 @@ Image GLTexture2D::fetch(){
     return image;
 }
 
-void GLTexture2D::putImage(int x, int y, Image& image){
+void GLTexture2D::putImage(int x, int y, const Image& image){
     bind(0);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, image.getChannels());
@@ -201,7 +201,7 @@ void GLTextureArray::loadFromFiles(std::vector<std::string>& filenames, int laye
     //CHECK_GL_ERROR();;
 }
 
-void GLTextureArray::putImage(int x, int y, int layer, Image& image){
+void GLTextureArray::putImage(int x, int y, int layer, const Image& image){
     bind(0);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, image.getChannels());

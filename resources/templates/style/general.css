@@ -38,6 +38,17 @@
     text-align: center;
 }
 
+input{
+    width: 80%;
+    height: 40px;
+    background-image: "resources/textures/ui/input.png";
+}
+
+.spacer{
+    background-color: rgba(10,10,10,0);
+    margin: 20px;
+}
+
 .sidebar{
     top:0px;
     left:0px;

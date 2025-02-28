@@ -7,7 +7,10 @@
 #include <ui/core.hpp>
 #include <ui/loader.hpp>
 #include <scene.hpp>
+
 #include <game/main_scene.hpp>
+#include <game/menu_scene.hpp>
+
 #include <rendering/allocator.hpp>
 #include <test_scene.hpp>
 
@@ -194,81 +197,8 @@ int main() {
             s->getCurrentScene()->setUILayer(name);
         });
 
-        Scene* menuScene = sceneManager.createScene<Scene>("menu");
-        menuScene->setUILayer("default");
-        UICore::get().loadWindowFromXML(*menuScene->getWindow(), "resources/templates/menu.xml");
-        
-        MainScene* mainScene = sceneManager.createScene<MainScene>("game");
-
-        auto scrollable = getElementById<UIScrollableFrame>("world_selection");
-        
-        menuScene->getUILayer("world_menu").onEntered = [menuScene, mainScene, scrollable] {
-            scrollable->clearChildren();
-
-            auto path = Paths::Get(Paths::GAME_SAVES);
-            if(!path) return;
-
-            for (const auto& dirEntry: fs::directory_iterator(path.value())){
-                if(!dirEntry.is_directory()) continue;
-
-                std::string path = dirEntry.path().string();
-
-                GameState state{path};
-
-                auto frame = std::make_shared<UIFrame>();
-                frame->setIdentifiers({"world_option_frame"});
-                
-                auto temp = std::make_shared<UILabel>();
-                if(state.getWorldStream()) temp->setText(state.getWorldStream()->getName());
-                temp->setSize({PERCENT,100}, 40_px);
-                temp->setHoverable(false);
-                temp->setIdentifiers({"world_option_label"});
-
-                auto chunkCountLabel = std::make_shared<UILabel>();
-                chunkCountLabel->setText("Number of saved chunks: ");
-                chunkCountLabel->setSize({PERCENT,100},40_px);
-                chunkCountLabel->setPosition(0_px,45_px);
-                chunkCountLabel->setHoverable(false);
-                chunkCountLabel->setIdentifiers({"world_option_chunk_count_label"});
-
-                frame->onClicked = [menuScene, mainScene, path] {
-                    mainScene->setWorldPath(path);
-                    s->setScene("game");
-                };
-
-                frame->appendChild(temp);
-                frame->appendChild(chunkCountLabel);
-                scrollable->appendChild(frame);
-            }
-            
-            scrollable->calculateTransforms();
-            scrollable->update();
-            scrollable->updateChildren();
-        };
-
-        auto newWorldNameInput = getElementById<UIInput>("new_world_name");
-        
-        auto newWorldFunc = [newWorldNameInput, menuScene]{
-            auto name = newWorldNameInput->getText();
-            newWorldNameInput->setText("");
-            if(name == "") return;
-
-            auto path = Paths::Get(Paths::GAME_SAVES);
-
-            if(path) {
-                GameState state{(path.value() / fs::path(name)).string()};
-
-                if(state.getWorldStream()) 
-                    state.getWorldStream()->setName(name);
-            }
-            
-            menuScene->setUILayer("world_menu");
-        };
-
-        newWorldNameInput->onSubmit = [newWorldFunc](std::string){newWorldFunc();};
-
-        auto newWorldButton = getElementById<UIFrame>("create_new_world");
-        newWorldButton->onClicked = newWorldFunc;
+        sceneManager.createScene<MenuScene>("menu");
+        sceneManager.createScene<MainScene>("game");
 
         //sceneManager.createScene<TestScene>("test_scene");
         sceneManager.setScene("menu");
@@ -284,7 +214,10 @@ int main() {
             current = glfwGetTime();
             deltatime = (float)(current - last);
 
-            if(sceneManager.isFPSLocked() && deltatime < sceneManager.getTickTime()){
+            if(
+                sceneManager.isFPSLocked() && 
+                deltatime < sceneManager.getTickTime()
+            ){
                 std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<size_t>((sceneManager.getTickTime() - deltatime) * 1000)));
                 continue;
             }

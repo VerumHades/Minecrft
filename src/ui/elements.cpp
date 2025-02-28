@@ -265,9 +265,12 @@ UIInput::UIInput(){
     this->focusable = true;
 
     onKeyTyped = [this](unsigned int codepoint){
+        if(this->text.size() >= max_length) return;
+        
         char typedChar = static_cast<char>(codepoint);
 
-        if (typedChar >= 32 && typedChar <= 126) {
+        if (typedChar >= 32 && typedChar <= 126) { 
+            if(inputValidation && !inputValidation(typedChar)) return;
             this->text += typedChar;
         }
     };
@@ -444,6 +447,11 @@ void UIFrame::clearChildren(){
 UIImage::UIImage(std::string path){
     dedicated_texture_array = UICore::LoadImage(path);
     if(!dedicated_texture_array) std::cerr << "Failed to load image '" << path << "'" << std::endl;
+}
+
+UIImage::UIImage(const Image& image){
+    dedicated_texture_array = UICore::LoadImage(image);
+    if(!dedicated_texture_array) std::cerr << "Failed to load image." << std::endl;
 }
 
 void UIImage::getRenderingInformation(UIRenderBatch& batch){

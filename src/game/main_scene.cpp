@@ -618,6 +618,10 @@ void MainScene::open(GLFWwindow* window){
 
     terrain_manager.setGameState(game_state.get());
 
+    if(player.getPosition().x == 0.0f && player.getPosition().z == 0.0f){
+        int height = terrain_manager.getWorldGenerator().getHeightAt({0,0,0});
+        player.setPosition({0,height + 5,0});
+    }
     //Entity e = Entity(player.getPosition() + glm::vec3{5,0,5}, glm::vec3(1,1,1));
     //e.setModel(std::make_shared<GenericModel>("resources/models/130/scene.gltf"));
     //game_state->addEntity(e);g
@@ -696,7 +700,7 @@ void MainScene::render(){
         updateVisibility = 0;
     }
 
-    const int chunk_bound_distance = 4;
+    /*const int chunk_bound_distance = 4;
     const int chunk_bound_diameter = (chunk_bound_distance + 1) * 2;
 
     int counter = 10;
@@ -705,7 +709,7 @@ void MainScene::render(){
     for(int y = -chunk_bound_distance; y <= chunk_bound_distance; y++) {
         glm::ivec3 position = (glm::ivec3{x,y,z} + glm::ivec3{glm::floor(game_state->getPlayer().getPosition() / (float)CHUNK_SIZE)})  * CHUNK_SIZE;
         wireframeRenderer.setCube(counter++, position, glm::vec3{CHUNK_SIZE}, glm::vec3{0.1,0.5,0.5});
-    }
+    }*/
     //timer.timestamp("Updated visibility");
 
     //timer.timestamp("Rendered to shadow map.");

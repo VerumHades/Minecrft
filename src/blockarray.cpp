@@ -69,12 +69,12 @@ Block* SparseBlockArray::getBlock(glm::ivec3 position){
 }
 
 void SparseBlockArray::serialize(ByteArray& output_array) {
-    output_array.append(BitField3D::compress(getSolidField().data()));
+    output_array.append(solid_field.getCompressed());
     output_array.append<size_t>(layers.size());
 
     for(auto& layer: layers){
         output_array.append<BlockID>(layer.type);
-        output_array.append(BitField3D::compress(layer.field().data()));
+        output_array.append(layer._field.getCompressed());
     }
 
     output_array.append<size_t>(interactable_blocks.size());

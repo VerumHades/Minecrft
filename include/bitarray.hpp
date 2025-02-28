@@ -193,6 +193,7 @@ class CompressedBitField3D{
 
         void set(const BitField3D& source);
         BitField3D* get();
+        const CompressedArray& getCompressed();
 };
 
 class CompressedBitFieldCache{

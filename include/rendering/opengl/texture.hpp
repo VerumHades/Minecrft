@@ -38,7 +38,7 @@ class GLTexture2D: public BindableTexture{
         GLTexture2D(const char* filename);
         GLTexture2D(const Image& image);
 
-        void putImage(int x, int y, Image& image);
+        void putImage(int x, int y, const Image& image);
         void configure(int internal_format, int format, int data_type, int width, int height, void* data = nullptr, int pixel_pack = 4);
         void reset();
         Image fetch();
@@ -69,7 +69,7 @@ class GLTextureArray: public BindableTexture{
             layer_height = height;
             glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, width, height,  layers);
         }
-        void putImage(int x, int y, int layer, Image& image);
+        void putImage(int x, int y, int layer, const Image& image);
 
         void loadFromFiles(std::vector<std::string>& filenames, int layerWidth, int layerHeight);
 };

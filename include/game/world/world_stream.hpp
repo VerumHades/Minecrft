@@ -56,6 +56,7 @@ class WorldStream: public FileStream{
         bool hasChunkAt(glm::vec3 position);
 
         int getSeed() const {return header.seed;};
+        void setSeed(int value) {header.seed = value; saveHeader();}
         std::string getName() const {return std::string(header.name);}
         
         int getChunkCount() {return chunkTable.size();}

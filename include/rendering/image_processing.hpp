@@ -51,5 +51,5 @@ class Image{
         static Image LoadWithSize(const std::string& path, int width, int height);
 
         const unsigned char* getData() const {return data.data();};
-        bool isLoaded() {return loaded;}
+        bool isLoaded() const {return loaded;}
 };

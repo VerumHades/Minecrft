@@ -280,8 +280,10 @@ class UIInput: public UILabel{
 
     public:
         UIInput();
- 
+    
+        int max_length = 100;
         std::function<void(std::string)> onSubmit;
+        std::function<bool(char)> inputValidation;
 
         virtual void getRenderingInformation(UIRenderBatch& batch);
 };
@@ -344,6 +346,7 @@ class UIScrollableFrame: public UIFrame{
 class UIImage: public UIFrame{
     public:
         UIImage(std::string path);
+        UIImage(const Image& image);
 
         void getRenderingInformation(UIRenderBatch& batch) override;
 };

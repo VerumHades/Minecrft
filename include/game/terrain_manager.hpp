@@ -50,7 +50,10 @@ class TerrainManager{
             if(state == nullptr) stopMeshGeneration();
             game_state = state;
             if(state == nullptr) mesh_generator.setWorld(nullptr);
-            else mesh_generator.setWorld(&game_state->getTerrain());
+            else{
+                mesh_generator.setWorld(&game_state->getTerrain());
+                world_generator.setSeed(game_state->getSeed());
+            }
         }
 
         void stopMeshGeneration() {
@@ -65,4 +68,5 @@ class TerrainManager{
 
         std::array<std::atomic<int>, thread_count>& getGenerationCountsLeft(){ return generation_left; }
         const std::atomic<bool>& isGenerating() { return generating_world; };
+        WorldGenerator& getWorldGenerator() { return world_generator; }
 };

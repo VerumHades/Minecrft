@@ -44,6 +44,10 @@ class WorldGenerator{
 
         RegionRegistry<std::shared_ptr<Structure>> structures;
 
+        float getNoiseValueAt(const glm::vec3 position);
+
+        const int water_level = 40;
+
     public:
         WorldGenerator();
 
@@ -56,6 +60,10 @@ class WorldGenerator{
             noise.SetSeed(seed);
             this->seed = seed;
         }
+        
+        int getHeightAt(const glm::vec3 position);
+
+        Image createPreview(int width, int height, float step = 1);
 };
 
 namespace WorldGeneration{

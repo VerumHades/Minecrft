@@ -307,12 +307,17 @@ BitField3D* CompressedBitField3D::get(){
     cached_ptr = CompressedBitFieldCache::get().next(data_ptr);
     return &cached_ptr->field;
 }
+const CompressedArray& CompressedBitField3D::getCompressed(){
+    if(cached_ptr && cached_ptr->compressed_data.get() == data_ptr.get())
+        *data_ptr = BitField3D::compress(cached_ptr->field.data());
+    
+    return *data_ptr;
+}
 
 void CompressedBitField3D::set(const BitField3D& source){
     cached_ptr = nullptr;
     data_ptr = std::make_shared<CompressedArray>(BitField3D::compress(source.data()));
 }
-
 
 CompressedBitField3D::CompressedBitField3D(){
     data_ptr = std::make_shared<CompressedArray>();

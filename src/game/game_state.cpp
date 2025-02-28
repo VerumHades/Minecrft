@@ -2,8 +2,8 @@
 
 namespace fs = fs;
 
-GameState::GameState(const std::string& path): save_structure(path){
-    Entity player = Entity(glm::vec3(4,30,4), glm::vec3(0.6, 1.8, 0.6));
+GameState::GameState(const std::string& path, int worldSeed): save_structure(path){
+    Entity player = Entity(glm::vec3(0,30,0), glm::vec3(0.6, 1.8, 0.6));
     player.addTag("player");
     entities.push_back(player);
     
@@ -27,8 +27,8 @@ GameState::GameState(const std::string& path): save_structure(path){
     );
 
     save_structure.open();
-    saveEntities();
-    loadEntities();
+
+    if(worldSeed != -1) world_stream->setSeed(worldSeed);
 }
 
 void GameState::savePlayer(){

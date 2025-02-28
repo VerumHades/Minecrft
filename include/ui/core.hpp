@@ -142,6 +142,7 @@ class UICore{
 
         static UICore& get();
         static std::shared_ptr<GLTextureArray> LoadImage(const std::string& path);
+        static std::shared_ptr<GLTextureArray> LoadImage(const Image& image);
 };
 
 

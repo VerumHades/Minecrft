@@ -265,3 +265,14 @@ std::shared_ptr<GLTextureArray> UICore::LoadImage(const std::string& path){
 
     return texture_array;
 }
+
+std::shared_ptr<GLTextureArray> UICore::LoadImage(const Image& image){
+    if(!image.isLoaded()) return nullptr;
+    
+    auto texture_array = std::make_shared<GLTextureArray>();
+
+    texture_array->setup(image.getWidth(), image.getHeight(),1);
+    texture_array->putImage(0,0,0,image);
+    
+    return texture_array;
+}

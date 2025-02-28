@@ -21,12 +21,20 @@
         </frame>
     </world_menu>
     <new_world_menu>
-        <image class="background_image" src="resources/textures/ui/background_2.png"></image>
-        <label onclick="setLayer('world_menu')" class="back_button interactable">Go back</label>
-        <frame class="middle_frame">
+        <frame class="create_frame">
+            <label onclick="setLayer('world_menu')" class="back_button interactable" id="create_world_back">Go back</label>
             <label>New World Name:</label>
             <input id="new_world_name"></input>
+            <label>New World Seed:</label>
+            <input id="new_world_seed"></input>
+            <label id="new_world_seed_regenerate" class="back_button interactable">Regenerate Seed</label>
+            <label id="new_world_seed_preview_reset" class="back_button interactable">Update Preview</label>
+            <label class="spacer"></label>
+
             <label id="create_new_world" class="back_button interactable">Create World</label>
+        </frame>
+        <frame id="world_preview_container">
+            
         </frame>
     </new_world_menu>
     <settings>

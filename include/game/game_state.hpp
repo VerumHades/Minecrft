@@ -33,9 +33,11 @@ class GameState{
         void drawEntity(Entity& entity);
 
         friend class TerrainManager;
+
+        int seed = 0;
         
     public:
-        GameState(const std::string& filename);
+        GameState(const std::string& filename, int worldSeed = -1);
 
         void unload();
         
@@ -54,6 +56,7 @@ class GameState{
 
         void giveItemToPlayer(ItemID item);
 
+        int getSeed(){return world_stream->getSeed();}
         Entity& getPlayer(){return entities.front();}
         LogicalItemInventory& getPlayerInventory(){return player_inventory;};
         LogicalItemInventory& getPlayerHotbar(){return player_hotbar;}
