@@ -22,7 +22,7 @@ parser.add_argument('-p', '--package', action='store_true', help="Builds and cre
 args = parser.parse_args()
 root_director = os.getcwd()
 
-build_type = "Debug" if args.debug else parser.build_type
+build_type = "Debug" if args.debug else args.build_type
 build_directory = os.path.join("build", build_type)
 
 os.makedirs(build_directory, exist_ok=True)

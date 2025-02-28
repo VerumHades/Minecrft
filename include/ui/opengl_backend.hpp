@@ -13,7 +13,7 @@ class UIOpenglBackend: public UIBackend{
         const int vertex_size = 9;
 
         FontManager fontManager;
-        Font mainFont = Font("resources/fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 32);
+        Font mainFont = Font("resources/fonts/JetBrainsMono[wght].ttf", 32);
 
         GLVertexArray vao;
 

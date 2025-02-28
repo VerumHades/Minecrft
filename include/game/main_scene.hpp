@@ -143,7 +143,7 @@ class MainScene: public Scene{
 
         KeyInputManager<ControllActions> inputManager;
 
-        Font testFont = Font("resources/fonts/JetBrainsMono/fonts/variable/JetBrainsMono[wght].ttf", 24);
+        Font testFont = Font("resources/fonts/JetBrainsMono[wght].ttf", 24);
 
         void physicsUpdate();
         void processMouseMovement();

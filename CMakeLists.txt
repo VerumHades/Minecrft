@@ -178,6 +178,7 @@ set(RESOURCE_FILES
     C:/msys64/mingw64/bin/libintl-8.dll 
     C:/msys64/mingw64/bin/libwinpthread-1.dll 
     C:/msys64/mingw64/bin/libbrotlidec.dll
+    C:/msys64/mingw64/bin/libstdc++-6.dll
 )
 
 install(FILES ${RESOURCE_FILES} DESTINATION .)

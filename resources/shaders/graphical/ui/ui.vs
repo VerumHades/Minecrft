@@ -10,7 +10,7 @@ layout (location = 7) in vec4  aBorderWidth;
 layout (location = 8) in vec4  aClipRegion; 
 
 layout (location = 9)  in vec4  aBorderColorTop; 
-layout (location = 10)  in vec4  aBorderColorRight; 
+layout (location = 10) in vec4  aBorderColorRight; 
 layout (location = 11) in vec4  aBorderColorBottom; 
 layout (location = 12) in vec4  aBorderColorLeft; 
 
