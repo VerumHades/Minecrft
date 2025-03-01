@@ -17,10 +17,14 @@ void Structure::setBlock(glm::ivec3 position, const Block& block){
     if(!block_array) return;
     
     glm::ivec3 block_position = position - (array_position * 64);
-
     block_array->setBlock(block_position, block);
 }
+
+
 Block* Structure::getBlock(glm::ivec3 position){
+    static std::shared_mutex mutex;
+    std::shared_lock lock(mutex);
+
     glm::ivec3 chunk_position = glm::floor(glm::vec3(position) / 64.0f);
     if(!block_arrays.contains(chunk_position)) return nullptr;
 

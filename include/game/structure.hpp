@@ -4,6 +4,8 @@
 #include <vector>
 #include <vec_hash.hpp>
 #include <unordered_set>
+#include <shared_mutex>
+#include <mutex>
 
 class Terrain;
 

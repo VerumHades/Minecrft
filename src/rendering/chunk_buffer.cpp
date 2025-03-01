@@ -47,7 +47,7 @@ std::string formatSize(size_t bytes) {
 }
 
 
-ChunkMeshRegistry::ChunkMeshRegistry(uint renderDistance){
+ChunkMeshRegistry::ChunkMeshRegistry(){
     actualRegionSizes.push_back(1);
     for(int i = 1;i < maxRegionLevel;i++){
         actualRegionSizes.push_back(pow(2, i));

@@ -36,7 +36,7 @@ class TerrainManager{
         //void unloadChunk(const glm::ivec3& position);
 
     public:
-        TerrainManager(): mesh_registry(12) {}
+        TerrainManager() {}
         // Actually deploys meshes
         void unloadAll(){ mesh_registry.clear(); }
 

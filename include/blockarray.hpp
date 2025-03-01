@@ -36,7 +36,7 @@ class SparseBlockArray{
             Returns a layer of type if its present, otherwise crashes.
         */
         Layer& getLayer(BlockID type){
-            if(!hasLayerOfType(type)) *(int*)nullptr = 1; ;
+            if(!hasLayerOfType(type)) *(int*)nullptr = 1; ; // Crashing is easier to find than an exception
 
             return layers[type_indexes[type]];
         }

@@ -14,13 +14,16 @@
 */
 template <typename T>
 class RegionRegistry{
-    private:
+    public:
         struct Region{
             glm::ivec3 min;
             glm::ivec3 max;
             T value;
-        };
 
+            Region(const glm::ivec3& min, const glm::ivec3& max, const T& value): 
+                min(min), max(max), value(value) {}
+        };
+    private:
         std::shared_mutex mutex;
 
         const float subregion_size = 16;
@@ -30,7 +33,7 @@ class RegionRegistry{
         void add(const glm::ivec3& position, const glm::ivec3& size, const T& value){
             glm::ivec3 min = position;
             glm::ivec3 max = position + size;
-            
+
             auto region = std::make_shared<Region>(min, max, value);
 
             std::array<glm::vec3, 8> points = {
@@ -50,7 +53,6 @@ class RegionRegistry{
 
             for(auto& point: points){
                 glm::ivec3 subregion_position = glm::floor(glm::vec3(point) / subregion_size);
-
                 if(already_checked.contains(subregion_position)) continue;
                 already_checked.emplace(subregion_position);
 
@@ -58,7 +60,7 @@ class RegionRegistry{
             }
         }
 
-        T* get(const glm::ivec3& position){
+        Region* get(const glm::ivec3& position){
             glm::ivec3 subregion_position = glm::floor(glm::vec3(position) / subregion_size);
             
             std::shared_lock lock(mutex);
@@ -66,11 +68,11 @@ class RegionRegistry{
 
             for(auto& region: regions.at(subregion_position)){
                 if(
-                    position.x >= region.min.x && position.x < region.max.x &&
-                    position.y >= region.min.y && position.y < region.max.y &&
-                    position.z >= region.min.z && position.z < region.max.z
+                    position.x >= region->min.x && position.x < region->max.x &&
+                    position.y >= region->min.y && position.y < region->max.y &&
+                    position.z >= region->min.z && position.z < region->max.z
                 ){
-                    return &region.value;
+                    return region.get();
                 }
             }
 

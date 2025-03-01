@@ -16,6 +16,7 @@
 #include <general.hpp>
 
 #include <chrono>
+#include <unordered_set>
 
 template <typename T>
 class GLBinding{
@@ -35,8 +36,47 @@ class GLBinding{
 void checkGLError(const char *file, int line);
 #define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
 
+#ifdef GL_DIAGNOSTICS
+
 template <typename T, int type>
-class GLBuffer{
+class GLBuffer;
+
+class GLBufferWrapper {
+public:
+    virtual ~GLBufferWrapper() = default; // Virtual destructor
+    virtual size_t size() const = 0;
+};
+
+class GLBufferStatistics{
+    private:
+        std::unordered_set<GLBufferWrapper*> registered;
+
+        GLBufferStatistics(){}
+        static GLBufferStatistics& get(){
+            static GLBufferStatistics stats;
+            return stats;
+        }
+
+        template <typename T, int type>
+        friend class GLBuffer;
+
+    public:
+        static size_t getMemoryUsage(){
+            size_t total = 0;
+            for(auto* buffer: get().registered)
+                total += buffer->size();
+            return total;
+        }
+};
+
+
+template <typename T, int type>
+class GLBuffer: public GLBufferWrapper {
+#else
+
+template <typename T, int type>
+class GLBuffer {
+#endif
     private:
         uint opengl_buffer_id = 0;
         
@@ -46,6 +86,10 @@ class GLBuffer{
         bool invalidated = false;
     public:
         GLBuffer(){
+            #ifdef GL_DIAGNOSTICS
+            GLBufferStatistics::get().registered.emplace(this);
+            #endif
+
             glGenBuffers(1, &opengl_buffer_id);
         }
         ~GLBuffer(){
@@ -101,7 +145,11 @@ class GLBuffer{
             glBindBufferBase(type, slot, opengl_buffer_id);
         }
 
-        size_t size() const{
+        #ifdef GL_DIAGNOSTICS
+        size_t size() const override {
+        #else
+        size_t size() const {
+        #endif
             return buffer_size;
         }
 
@@ -112,6 +160,10 @@ class GLBuffer{
         void cleanup(){
             glDeleteBuffers(1, &opengl_buffer_id);
             invalidated = true;
+            
+            #ifdef GL_DIAGNOSTICS
+            GLBufferStatistics::get().registered.erase(this);
+            #endif
         }
 };
 
@@ -147,8 +199,6 @@ class GLAllocatedBuffer: public GLBuffer<T,type>{
         std::tuple<bool, size_t> allocateAligned(size_t size){
             auto [success, position] = allocator.allocate(aligned(size));
             position *= alignment; // Aligned position
-
-            //std::cout << "Inserting at: " << position << " of actual size: " << aligned(size) * alignment << " for:" << size << std::endl;
 
             return {success, position};
         }

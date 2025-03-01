@@ -182,6 +182,7 @@ int main() {
         s->keyTypedEvent(window, codepoint);
     });
 
+
     glLineWidth(2.0f);
     
     {
@@ -197,6 +198,11 @@ int main() {
             s->getCurrentScene()->setUILayer(name);
         });
 
+
+        BlockRegistry::get().setTextureSize(160,160);
+        BlockRegistry::get().loadFromFolder("resources/textures");
+        BlockLoader::loadFromFile("resources/blocks.config");
+    
         sceneManager.createScene<MenuScene>("menu");
         sceneManager.createScene<MainScene>("game");
 

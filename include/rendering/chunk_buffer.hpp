@@ -108,7 +108,7 @@ class ChunkMeshRegistry{
         InstancedMeshBuffer mesh_buffer;
 
     public:
-        ChunkMeshRegistry(uint renderDistance);
+        ChunkMeshRegistry();
 
         void clear();
         bool isChunkLoaded(const glm::ivec3& pos){

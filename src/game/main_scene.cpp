@@ -149,11 +149,7 @@ void MainScene::initialize(){
     
     terrainProgram.use();
     
-    BlockRegistry::get().setTextureSize(160,160);
-    BlockRegistry::get().loadFromFolder("resources/textures");
     block_texture_array = BlockRegistry::get().load();
-
-    BlockLoader::loadFromFile("resources/blocks.config");
 
     terrainProgram.setSamplerSlot("textureArray", 0);
     terrainProgram.setSamplerSlot("shadowMap", 1);
