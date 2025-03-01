@@ -321,7 +321,7 @@ void ChunkMeshGenerator::proccessOccludedFaces(
 
 
 std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosition, Chunk* group, BitField3D::SimplificationLevel simplification_level){
-    //ScopeTimer timer("Generated mesh");
+    ScopeTimer timer("Generated mesh");
 
     //simplification_level = BitField3D::NONE;
 

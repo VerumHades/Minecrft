@@ -117,7 +117,7 @@ void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){
             indexer.next();
 
             auto* chunk = terrain.getChunk(chunkPosition);
-            if(!chunk) continue;
+            if(!chunk || chunk->isEmpty()) continue;
 
             int distance = glm::clamp(glm::distance(glm::vec3(around), glm::vec3(chunkPosition)) / 3.0f, 0.0f, 7.0f);
             auto level = static_cast<BitField3D::SimplificationLevel>(distance - 1);
