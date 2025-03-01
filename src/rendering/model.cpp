@@ -16,6 +16,12 @@ void Model::SwapAll(){
     for(auto& model: getModelSet())
         model->swap();
 }
+void Model::CleanupAll(){
+    for(auto& model: getModelSet()){
+        model->loaded_meshes.clear();
+        for(auto& buffer: model->instance_buffers) buffer.cleanup();
+    }
+}
 
 void Model::addMesh(Mesh& mesh){
     auto loaded_mesh = mesh.load();

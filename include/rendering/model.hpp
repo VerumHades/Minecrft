@@ -90,4 +90,5 @@ class Model{
 
         static void DrawAll();
         static void SwapAll();
+        static void CleanupAll();
 };

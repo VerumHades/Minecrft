@@ -82,15 +82,23 @@ ShaderUniformLinker& ShaderUniformLinker::get(){
 void ShaderUniformLinker::updateUniforms(ShaderProgram* program){
     if(!shaderPrograms.contains(program)) return;
 
-    program->use();
-    for(auto& [name,location]: shaderPrograms[program].uniforms){
-        if(!uniforms.contains(name)){
-            if(ignored_uniforms.contains(name)) continue;
-            //std::cerr << "Shader program is missing a uniform: " << name << std::endl;
-            continue;
-        }
+    auto& linkable_program = shaderPrograms[program];
+    if(linkable_program.to_be_linked.size() > 0) 
+        linkUniforms(linkable_program);
 
-        uniforms[name]->update(location);
+    program->use();
+    for(auto& [location,index]: linkable_program.linked)
+        uniform_ptr_list.at(index)->update(location);
+}
+
+void ShaderUniformLinker::linkUniforms(LinkedProgram& program){
+    for (auto it = program.to_be_linked.begin(); it != program.to_be_linked.end(); ) {
+        auto& [name, location] = *it;
+        if(!uniforms.contains(name)) ++it;
+        else{
+            program.linked.push_back({location, uniforms[name].list_index});
+            it = program.to_be_linked.erase(it);
+        }
     }
 }
 
@@ -101,6 +109,9 @@ void ShaderUniformLinker::addProgram(ShaderProgram* program){
     GLint numUniforms = 0;
     glGetProgramiv(program->getID(), GL_ACTIVE_UNIFORMS, &numUniforms);
 
+    linked_program.to_be_linked.reserve(numUniforms);
+    linked_program.linked.reserve(numUniforms);
+    
     for (GLint i = 0; i < numUniforms; ++i) {
         char name_buffer[256]; 
         GLsizei nameLength = 0;
@@ -122,20 +133,12 @@ void ShaderUniformLinker::addProgram(ShaderProgram* program){
             continue;
         }
 
-        linked_program.uniforms[name] = location;
+        linked_program.to_be_linked.push_back({name, location});
     }
 
     shaderPrograms[program] = linked_program;
 }
 
-void ShaderUniformLinker::addUniform(UniformBase* uniform){
-    if(uniforms.contains(uniform->getName())){
-        std::cerr << "Cannot overwrite already existing uniform '" << uniform->getName() << "'." << std::endl;
-        return;
-    }
-    //std::cout << "Added uniform '" << uniform->getName() << "' to linker." << std::endl;
-    uniforms[uniform->getName()] = uniform;
-}
 
 void ShaderUniformLinker::removeProgram(ShaderProgram* program){
     if(!shaderPrograms.contains(program)){ // Can happend for uncompiled programs
@@ -143,12 +146,4 @@ void ShaderUniformLinker::removeProgram(ShaderProgram* program){
     }
 
     shaderPrograms.erase(program);
-}
-void ShaderUniformLinker::removeUniform(UniformBase* uniform){
-    if(!uniforms.contains(uniform->getName())){
-        std::cerr << "Removing a missing uniform from uniform linker? This shouldnt happen." << std::endl;
-        return;
-    }
-
-    uniforms.erase(uniform->getName());
 }

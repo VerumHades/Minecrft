@@ -233,6 +233,8 @@ int main() {
         }
 
         sceneManager.setScene("menu"); // Wait for game threads to stop if running
+
+        Model::CleanupAll();
         UICore::get().cleanup();
     }
 

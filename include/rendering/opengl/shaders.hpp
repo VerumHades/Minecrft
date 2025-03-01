@@ -12,10 +12,10 @@
 #include <fstream>
 #include <sstream>
 #include <unordered_set>
-
-#define MAX_SHADERS 16
+#include <memory>
 
 class ShaderProgram;
+class ShaderUniformLinker;
 template <typename T>
 class Uniform;
 
@@ -25,34 +25,153 @@ class UniformBase{
         virtual std::string getName() = 0;
 };
 
+template <typename T>
+class FunctionalUniform: public UniformBase{
+    private:
+        T value;
+        std::string name;
+
+        friend class ShaderUniformLinker;
+        template <typename L>
+        friend class Uniform;
+    public:
+        FunctionalUniform(const std::string& uniformName){
+            this->name = uniformName;
+        };
+
+        T& operator=(T newValue) {
+            value = newValue; 
+            return value;
+        }
+
+        void setValue(const T& newValue) {
+            value = newValue;
+        }
+
+        T& getValue(){
+            return value;
+        }
+
+        void update(uint location){
+            setUniformValue(value,  location);
+        }
+
+        std::string getName() {return name; };
+    private:
+        void setUniformValue(const glm::mat4& mat, int32_t location) {
+            glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(mat));
+        }
+
+        void setUniformValue(const glm::vec3& vec, int32_t location) {
+            glUniform3fv(location, 1, glm::value_ptr(vec));
+        }
+
+        void setUniformValue(const std::vector<glm::vec3>& vectors, int32_t location){
+            glUniform3fv(location, static_cast<GLsizei>(vectors.size()), glm::value_ptr(vectors[0]));
+        }
+
+        void setUniformValue(const std::vector<glm::mat4>& mats, int32_t location){
+            glUniformMatrix4fv(location, static_cast<GLsizei>(mats.size()), GL_FALSE, glm::value_ptr(mats[0]));
+        }
+
+        void setUniformValue(const std::vector<glm::mat3>& mats, int32_t location){
+            glUniformMatrix3fv(location, static_cast<GLsizei>(mats.size()), GL_FALSE, glm::value_ptr(mats[0]));
+        }
+};
+
 class ShaderUniformLinker{
     private:
         std::unordered_set<std::string> ignored_uniforms; // Usually uniforms reserver for texture bindings
+
         struct LinkedProgram{
             // Uniforms and their location in the program
-            std::unordered_map<std::string, size_t> uniforms;
+            std::vector<std::tuple<std::string, size_t>> to_be_linked;
+            // Location and index in the uniform_ptr_list;
+            std::vector<std::tuple<size_t, size_t>> linked;
+        };
+
+        struct RegisteredUniform{
+            size_t list_index;
+            std::unique_ptr<UniformBase> uniform;
         };
 
         std::unordered_map<ShaderProgram*, LinkedProgram> shaderPrograms;
-        std::unordered_map<std::string, UniformBase*> uniforms;
+        
+        std::unordered_map<std::string, RegisteredUniform> uniforms;
+        std::vector<UniformBase*> uniform_ptr_list;
+
+        void linkUniforms(LinkedProgram& program);
 
         void updateUniforms(ShaderProgram* program);
 
-        void addUniform(UniformBase* uniform);
         void addProgram(ShaderProgram* program);
-
         void removeProgram(ShaderProgram* program);
-        void removeUniform(UniformBase* uniform);
 
         friend class ShaderProgram;
         template <typename T>
         friend class Uniform;
+
     public:
+        /*
+            Returns a reference to a uniform of set type, creates one under the name if it doesnt exist
+        */
+        template <typename T>
+        static FunctionalUniform<T>* getUniform(const std::string& name){
+            if(get().uniforms.contains(name)){
+                FunctionalUniform<T>* ptr = dynamic_cast<FunctionalUniform<T>*>(get().uniforms.at(name).uniform.get());
+                if(!ptr){
+                    std::cerr << "Existing uniform has different type that the one fetched." << std::endl;
+                    return nullptr;
+                }
+                return ptr;
+            }
+
+            RegisteredUniform new_uniform = {
+                get().uniform_ptr_list.size(),
+                std::make_unique<FunctionalUniform<T>>(name)
+            };
+            auto* value = static_cast<FunctionalUniform<T>*>(new_uniform.uniform.get());
+
+            get().uniform_ptr_list.push_back(value);
+            get().uniforms.emplace(name,std::move(new_uniform));
+
+            return value;
+        }
+
         void ignore(std::string name){
             ignored_uniforms.emplace(name);
         }
 
         static ShaderUniformLinker& get();
+};
+
+template <typename T>
+class Uniform{
+    private:
+        FunctionalUniform<T>* base;
+
+    public:
+        Uniform(const std::string& name){
+            base = ShaderUniformLinker::getUniform<T>(name);
+            if(!base) throw std::runtime_error("Uniform cannot operate without base, check for type errors.");
+        }
+
+        T& operator=(T newValue) {
+            base->value = newValue; 
+            return base->value;
+        }
+
+        void setValue(const T& newValue) {
+            base->value = newValue;
+        }
+
+        T& getValue() {
+            return base->value;
+        }
+
+        void update(uint location){
+            base->setUniformValue(base->value, location);
+        }
 };
 
 static int programInUse = -1;
@@ -105,62 +224,6 @@ class ShaderProgram{
         int getUniformLocation(std::string name);
 
         int getID() {return program;};
-};
-
-template <typename T>
-class Uniform: public UniformBase{
-    private:
-        T value;
-        std::string name;
-
-    public:
-        Uniform(const std::string& uniformName){
-            this->name = uniformName;
-            ShaderUniformLinker::get().addUniform(reinterpret_cast<UniformBase*>(this));
-        };
-        ~Uniform(){
-            ShaderUniformLinker::get().removeUniform(reinterpret_cast<UniformBase*>(this));
-        }
-
-        T& operator=(T newValue) {
-            value = newValue; 
-            return value;
-        }
-
-        void setValue(const T& newValue) {
-            value = newValue;
-        }
-
-        T& getValue(){
-            return value;
-        }
-
-        void update(uint location){
-            //std::cout << "Updating uniform: " << name << " at: " << programID << std::endl;
-            setUniformValue(value,  location);
-        }
-
-        std::string getName() {return name; };
-    private:
-        void setUniformValue(const glm::mat4& mat, int32_t location) {
-            glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(mat));
-        }
-
-        void setUniformValue(const glm::vec3& vec, int32_t location) {
-            glUniform3fv(location, 1, glm::value_ptr(vec));
-        }
-
-        void setUniformValue(const std::vector<glm::vec3>& vectors, int32_t location){
-            glUniform3fv(location, static_cast<GLsizei>(vectors.size()), glm::value_ptr(vectors[0]));
-        }
-
-        void setUniformValue(const std::vector<glm::mat4>& mats, int32_t location){
-            glUniformMatrix4fv(location, static_cast<GLsizei>(mats.size()), GL_FALSE, glm::value_ptr(mats[0]));
-        }
-
-        void setUniformValue(const std::vector<glm::mat3>& mats, int32_t location){
-            glUniformMatrix3fv(location, static_cast<GLsizei>(mats.size()), GL_FALSE, glm::value_ptr(mats[0]));
-        }
 };
 
 #endif

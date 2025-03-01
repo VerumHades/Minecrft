@@ -43,12 +43,13 @@ class GLBuffer{
         size_t buffer_size = 0;
 
         bool initialized = false;
+        bool invalidated = false;
     public:
         GLBuffer(){
             glGenBuffers(1, &opengl_buffer_id);
         }
         ~GLBuffer(){
-            glDeleteBuffers(1, &opengl_buffer_id);
+            if(!invalidated) cleanup();
         }
 
         GLBuffer(std::vector<T> data): GLBuffer(){
@@ -106,6 +107,11 @@ class GLBuffer{
 
         uint getID() const{
             return opengl_buffer_id;
+        }
+
+        void cleanup(){
+            glDeleteBuffers(1, &opengl_buffer_id);
+            invalidated = true;
         }
 };
 
