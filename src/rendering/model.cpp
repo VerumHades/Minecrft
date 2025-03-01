@@ -11,7 +11,6 @@ Model::~Model(){
 void Model::DrawAll(){
     for(auto& model: getModelSet())
         model->drawAllRequests();
-    
 }
 void Model::SwapAll(){
     for(auto& model: getModelSet())

@@ -670,6 +670,8 @@ void MainScene::render(){
         //generation_progress_label->setText(value);
         generation_progress->calculateTransforms();
         generation_progress->update();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         return;
     }
     else if(isActiveLayer("generation")){
@@ -731,7 +733,7 @@ void MainScene::render(){
         terrainProgram.updateUniforms();
         terrain_manager.getMeshRegistry().draw();
 
-        interpolation_time = (current - last_tick_time) / tickTime;
+        //interpolation_time = (current - last_tick_time) / tickTime;
         // Draw models
         modelProgram.updateUniforms();
         Model::DrawAll();

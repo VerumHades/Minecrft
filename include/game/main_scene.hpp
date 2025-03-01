@@ -96,7 +96,7 @@ class MainScene: public Scene{
 
         std::string worldPath = "saves";
 
-        int renderDistance = 16;
+        int renderDistance = 8;
         int selectedBlock = 4;
 
         bool allGenerated = false;

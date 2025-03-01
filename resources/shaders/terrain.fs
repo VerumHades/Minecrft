@@ -26,7 +26,7 @@ void main()
     vec4 full_color = texture(textureArray, vec3(TexCoords, TexIndex));
     if(full_color.a < 0.1) discard;
     
-    full_color.rgb = full_color.rgb - (Occlusion / 6);
+    full_color.rgb = full_color.rgb - ((Occlusion / 6) / 2);
 
     gPosition = FragPos;
     gNormal = normalize(Normal);
