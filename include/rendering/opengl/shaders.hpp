@@ -48,7 +48,7 @@ class FunctionalUniform: public UniformBase{
             value = newValue;
         }
 
-        T& getValue(){
+        const T& getValue() const {
             return value;
         }
 
@@ -165,7 +165,11 @@ class Uniform{
             base->value = newValue;
         }
 
-        T& getValue() {
+        T& getValue(){
+            return base->value;
+        }
+
+        const T& getValue() const {
             return base->value;
         }
 

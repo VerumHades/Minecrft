@@ -1,35 +1,42 @@
 #pragma once
 
 #include <memory>
+#include <functional>
 
 #include <game/game_state.hpp>
 #include <game/input.hpp>
+#include <rendering/camera.hpp>
 
 #include <ui/core.hpp>
 #include <ui/elements.hpp>
 
-struct CursorState{
-    glm::ivec3 blockUnderCursorPosition = {0,0,0};
-    glm::vec3 blockUnderCursorEmpty = {0,0,0}; // Block before the selected block, air where a block will be placed
-    Block* blockUnderCursor = nullptr;
-};
 
 struct GameModeState{
-    GameState* state;
-    CursorState* cursor_state;
-    WireframeCubeRenderer* wireframe_renderer;
+    GameState& game_state;
+    WireframeCubeRenderer& wireframe_renderer;
+    KeyInputManager<ControllActions>& input_manager;
+    const PerspectiveCamera& camera;
+    const std::function<void(const std::string& name)>& setUILayer;
+    const std::function<bool(const std::string& name)>& isActiveLayer;
 };
 
 class GameMode{
+    private:
+        std::unordered_map<std::string, std::shared_ptr<UILayer>> ui_layers;
+        std::string name;
+
+        std::string getLocalLayerName(const std::string& name);
+
     protected:
-        std::shared_ptr<UILayer> ui_layer;
-    
+        UILayer& getLayerLocal(const std::string& name);
+        bool isActiveLayerLocal(const std::string& name, GameModeState& state);
+
     public:
         GameMode(const std::string& name);
 
-        virtual void KeyEvent(GameState* state, CursorState* cursor_state, WireframeCubeRenderer* wireframe_renderer, int key, int scancode, int action, int mods) = 0;
-        virtual void MouseEvent(GameState* state, CursorState* cursor_state, WireframeCubeRenderer* wireframe_renderer, int button, int action, int mods) = 0;
-
-        std::shared_ptr<UILayer>& getInterfaceLayer(){ return ui_layer; }
+        virtual void KeyEvent(GameModeState& state, int key, int scancode, int action, int mods) = 0;
+        virtual void MouseEvent(GameModeState& state, int button, int action, int mods) = 0;
+        virtual void MouseMoved(GameModeState& state, int xoffset, int yoffset) = 0;
+        virtual void MouseScroll(GameModeState& state, double xoffset, double yoffset) = 0;
 };
 

@@ -86,16 +86,32 @@ class MainScene: public Scene{
         std::shared_ptr<UILoading> generation_progress;
         std::shared_ptr<UILabel> structure_capture_start_label;
         std::shared_ptr<UILabel> structure_capture_end_label;
-
-        ItemTextureAtlas itemTextureAtlas{};
-
-        std::shared_ptr<ItemSlot> held_item_slot;
-        std::shared_ptr<InventoryDisplay> inventory;
-        std::shared_ptr<UIHotbar> hotbar;
         
         std::atomic<bool> update_hotbar = false;
 
         std::string worldPath = "saves";
+
+        std::vector<std::shared_ptr<GameMode>> game_modes;
+        int selected_game_mode = -1;
+
+        template <typename FuncName, typename ...Args>
+        void HandleGamemodeEvent(FuncName func, Args... args){
+            if(selected_game_mode < 0 || selected_game_mode >= game_modes.size()) return;
+            if(!game_state) return;
+
+            (game_modes.at(selected_game_mode).*func)({
+                *game_state,
+                wireframeRenderer,
+                inputManager,
+                camera,
+                [this](const std::string& name){
+                    this->setUILayer(name);
+                }
+                [this](const std::string& name){
+                    return this->isLayerActive(name);
+                }
+            }, ...args);
+        }
 
         int renderDistance = 32;
         int selectedBlock = 4;
@@ -133,16 +149,6 @@ class MainScene: public Scene{
 
         int updateVisibility = 0; // If greater than 0 decreses and the chunk draw calls update
 
-        enum ControllActions{
-            MOVE_FORWARD,
-            MOVE_BACKWARD,
-            STRAFE_LEFT,
-            STRAFE_RIGHT,
-            MOVE_UP,
-            MOVE_DOWN,
-            SCROLL_ZOOM
-        };
-
         KeyInputManager<ControllActions> inputManager;
 
         Font testFont = Font("resources/fonts/JetBrainsMono[wght].ttf", 24);
@@ -155,10 +161,6 @@ class MainScene: public Scene{
         double last = glfwGetTime();
         double current = glfwGetTime();
         double deltatime;
-
-        void updateCursor();
-
-        CursorState cursor_state{};
 
         glm::ivec3 structureCaptureStart = {0,0,0};
         glm::ivec3 structureCaptureEnd   = {0,0,0};
@@ -202,36 +204,6 @@ class MainScene: public Scene{
         void scrollEvent(GLFWwindow* window, double xoffset, double yoffset) override;
 
         void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) override;
-};
-
-class UICrosshair: public UIFrame{
-    private:
-        int part_margin = 5;
-        int thickness = 5;
-    public:
-        UICrosshair(){setFocusable(false);setHoverable(false);}
-        void getRenderingInformation(UIRenderBatch& batch) override;
-};
-
-class UIHotbar: public InventoryDisplay{
-    private:
-        int selected_slot = 0;
-        const int slots_total = 9;
-
-    public:
-        UIHotbar(ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr):
-        InventoryDisplay(textureAtlas, held_item_ptr){}
-
-        void getRenderingInformation(UIRenderBatch& batch) override;
-        void selectSlot(int slot){
-            selected_slot = (slot + slots_total) % slots_total;
-        }
-        int getSelectedSlotNumber(){return selected_slot;}
-
-        LogicalItemSlot* getSelectedSlot() {
-            if(!inventory) return nullptr;
-            return inventory->getSlot(selected_slot,0);
-        };
 };
 
 class UILoading: public UIFrame{

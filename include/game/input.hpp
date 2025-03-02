@@ -5,6 +5,16 @@
 #include <iostream>
 #include <unordered_map>
 
+enum ControllActions{
+    MOVE_FORWARD,
+    MOVE_BACKWARD,
+    STRAFE_LEFT,
+    STRAFE_RIGHT,
+    MOVE_UP,
+    MOVE_DOWN,
+    SCROLL_ZOOM
+};
+
 template <typename T>
 class KeyInputManager{
     private:

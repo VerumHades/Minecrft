@@ -24,7 +24,7 @@ class Camera{
         //~Camera() {std::cout << "Camera destroyed:" << this << std::endl;}
         virtual void setModelPosition(const glm::vec3& position) = 0;
         virtual void setModelRotation(const glm::vec3& rotation) = 0;
-        virtual glm::vec3& getPosition() = 0;
+        virtual const glm::vec3& getPosition() const = 0;
         virtual bool isVisible(Volume& volume) = 0;
 };
 
@@ -75,11 +75,11 @@ class PerspectiveCamera: public Camera{
             return volume.isOnFrustum(*this);
         }
 
-        glm::vec3& getPosition() {return position.getValue();}
-        glm::vec3& getDirection() {return direction;}
-        glm::vec3& getUp() {return up;}
-        glm::vec3& getLeft() {return left;}
-        glm::vec3& getRelativeUp() {return relative_up;}
+        const glm::vec3& getPosition() const {return position.getValue();}
+        const glm::vec3& getDirection() const {return direction;}
+        const glm::vec3& getUp() const {return up;}
+        const glm::vec3& getLeft() const {return left;}
+        const glm::vec3& getRelativeUp() const {return relative_up;}
 
         Frustum& getFrustum() {return frustum;}
         Frustum& getLocalFrustum() {return localFrustum;}
@@ -128,7 +128,7 @@ class DepthCamera: public Camera{
         void setTarget(glm::vec3& t) {this->target = t;}
         bool isVisible(Volume&){return true;}
         
-        glm::vec3& getPosition() {return position;}
+        const glm::vec3& getPosition() const {return position;}
         GLDepthTexture* getTexture() const {return texture.get();}
         ShaderProgram& getProgram() {return program;}
         
