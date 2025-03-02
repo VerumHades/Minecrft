@@ -39,6 +39,7 @@
 #include <game/items/crafting.hpp>
 #include <game/terrain_manager.hpp>
 #include <game/models/generic_model.hpp>
+#include <game/gamemodes/gamemode.hpp>
 
 #include <indexing.hpp>
 #include <path_config.hpp>
@@ -96,7 +97,7 @@ class MainScene: public Scene{
 
         std::string worldPath = "saves";
 
-        int renderDistance = 8;
+        int renderDistance = 32;
         int selectedBlock = 4;
 
         bool allGenerated = false;
@@ -157,9 +158,7 @@ class MainScene: public Scene{
 
         void updateCursor();
 
-        glm::ivec3 blockUnderCursorPosition = {0,0,0};
-        glm::vec3 blockUnderCursorEmpty = {0,0,0}; // Block before the selected block, air where a block will be placed
-        Block* blockUnderCursor = nullptr;
+        CursorState cursor_state{};
 
         glm::ivec3 structureCaptureStart = {0,0,0};
         glm::ivec3 structureCaptureEnd   = {0,0,0};

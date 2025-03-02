@@ -329,33 +329,33 @@ void MainScene::updateCursor(){
 
     RaycastResult hit = game_state->getTerrain().raycast(camPosition,camDirection,10);
  
-    blockUnderCursor = game_state->getTerrain().getBlock(hit.position);
-    blockUnderCursorPosition = hit.position;
-    blockUnderCursorEmpty = hit.lastPosition;
+    cursor_state.blockUnderCursor = game_state->getTerrain().getBlock(hit.position);
+    cursor_state.blockUnderCursorPosition = hit.position;
+    cursor_state.blockUnderCursorEmpty = hit.lastPosition;
 
-    if(!blockUnderCursor || blockUnderCursor->id == BLOCK_AIR_INDEX) wireframeRenderer.removeCube(0);
+    if(!cursor_state.blockUnderCursor || cursor_state.blockUnderCursor->id == BLOCK_AIR_INDEX) wireframeRenderer.removeCube(0);
     else wireframeRenderer.setCube(0,glm::vec3(hit.position) - 0.005f, {1.01,01.01,1.01},{0,0,0});
     
     if(isActiveLayer("structure_capture")){
-        if(!structureCaptured) structureCaptureEnd = blockUnderCursorPosition;
+        if(!structureCaptured) structureCaptureEnd = cursor_state.blockUnderCursorPosition;
         updateStructureDisplay();
     }
     //wireframeRenderer.setCube(1,glm::vec3(hit.lastPosition) - 0.005f, {1.01,01.01,1.01},{1.0,0,0});
 }
 
 void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods){
-    if(!blockUnderCursor || blockUnderCursor->id == BLOCK_AIR_INDEX) return;
+    if(!cursor_state.blockUnderCursor || cursor_state.blockUnderCursor->id == BLOCK_AIR_INDEX) return;
 
     auto& player = game_state->getPlayer();
 
     if(isActiveLayer("default")){
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS ){  
-            auto* block_prototype = BlockRegistry::get().getPrototype(blockUnderCursor->id);
+            auto* block_prototype = BlockRegistry::get().getPrototype(cursor_state.blockUnderCursor->id);
             if(!block_prototype) return;
             auto* item_prototype = ItemRegistry::get().getPrototype("block_" + block_prototype->name);
             if(!item_prototype) return;
             
-            Entity entity = DroppedItem::create(glm::vec3(blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5), ItemRegistry::get().createItem(item_prototype));
+            Entity entity = DroppedItem::create(glm::vec3(cursor_state.blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5), ItemRegistry::get().createItem(item_prototype));
             entity.accelerate({
                 static_cast<float>(std::rand() % 200) / 100.0f - 1.0f,
                 0.6f,
@@ -365,23 +365,23 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
             //auto& selected_slot = hotbar->getSelectedSlot();
             //inventory->addItem();
 
-            game_state->getTerrain().setBlock(blockUnderCursorPosition, {BLOCK_AIR_INDEX});
+            game_state->getTerrain().setBlock(cursor_state.blockUnderCursorPosition, {BLOCK_AIR_INDEX});
 
-            auto chunk = game_state->getTerrain().getChunkFromBlockPosition(blockUnderCursorPosition);
+            auto chunk = game_state->getTerrain().getChunkFromBlockPosition(cursor_state.blockUnderCursorPosition);
             if(!chunk) return;
-            regenerateChunkMesh(chunk, game_state->getTerrain().getGetChunkRelativeBlockPosition(blockUnderCursorPosition));
+            regenerateChunkMesh(chunk, game_state->getTerrain().getGetChunkRelativeBlockPosition(cursor_state.blockUnderCursorPosition));
         }
         else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
-            auto* block_prototype = BlockRegistry::get().getPrototype(blockUnderCursor->id);
+            auto* block_prototype = BlockRegistry::get().getPrototype(cursor_state.blockUnderCursor->id);
             if(block_prototype && block_prototype->interface){
-                block_prototype->interface->open(blockUnderCursor->metadata, game_state.get());
+                block_prototype->interface->open(cursor_state.blockUnderCursor->metadata, game_state.get());
                 setUILayer(block_prototype->interface->getName());
                 return;
             }
 
 
 
-            glm::ivec3 blockPosition = glm::floor(blockUnderCursorEmpty);
+            glm::ivec3 blockPosition = glm::floor(cursor_state.blockUnderCursorEmpty);
 
             auto* selected_slot = hotbar->getSelectedSlot();
             if(!selected_slot || !selected_slot->hasItem()) return;
@@ -410,11 +410,11 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
         if(structure_menu_mode == CAPTURE){
             if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
                 structureCaptured = false;
-                structureCaptureStart = blockUnderCursorPosition;
+                structureCaptureStart = cursor_state.blockUnderCursorPosition;
                 updateStructureDisplay();
             }
             else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
-                structureCaptureEnd = blockUnderCursorPosition;
+                structureCaptureEnd = cursor_state.blockUnderCursorPosition;
                 structureCaptured = true;
                 updateStructureDisplay();
             }
@@ -422,7 +422,7 @@ void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods)
         else{
             if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
                 if(selected_structure){
-                    auto positions = selected_structure->place(blockUnderCursorPosition, game_state->getTerrain());
+                    auto positions = selected_structure->place(cursor_state.blockUnderCursorPosition, game_state->getTerrain());
                     for(auto& position: positions)
                         regenerateChunkMesh(game_state->getTerrain().getChunk(position), {1,1,1});
                 }
@@ -463,7 +463,7 @@ void MainScene::updateStructureDisplay(){
         if(!selected_structure) return;
         wireframeRenderer.setCube(
             1,
-            glm::vec3(blockUnderCursorPosition) - 0.005f, 
+            glm::vec3(cursor_state.blockUnderCursorPosition) - 0.005f, 
             glm::vec3{0.01,0.01,0.01} + glm::vec3(selected_structure->getSize()),
             {0,0.3,0.2}
         );
