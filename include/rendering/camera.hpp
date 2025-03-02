@@ -87,8 +87,8 @@ class PerspectiveCamera: public Camera{
         int getScreenWidth(){return screenWidth;}
         int getScreenHeight(){return screenHeight;}
 
-        float getPitch(){return pitch;};
-        float getYaw(){return yaw;};
+        float getPitch() const {return pitch;};
+        float getYaw() const {return yaw;};
 };
 
 class DepthCamera: public Camera{

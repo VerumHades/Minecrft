@@ -39,7 +39,9 @@
 #include <game/items/crafting.hpp>
 #include <game/terrain_manager.hpp>
 #include <game/models/generic_model.hpp>
+
 #include <game/gamemodes/gamemode.hpp>
+#include <game/gamemodes/gamemode_survival.hpp>
 
 #include <indexing.hpp>
 #include <path_config.hpp>
@@ -86,34 +88,54 @@ class MainScene: public Scene{
         std::shared_ptr<UILoading> generation_progress;
         std::shared_ptr<UILabel> structure_capture_start_label;
         std::shared_ptr<UILabel> structure_capture_end_label;
-        
-        std::atomic<bool> update_hotbar = false;
 
         std::string worldPath = "saves";
 
         std::vector<std::shared_ptr<GameMode>> game_modes;
         int selected_game_mode = -1;
 
+        template <typename T, typename ...Args>
+        void AddGameMode(Args... args){
+            auto mode = std::make_shared<T>(args...);
+            int temp = selected_game_mode;
+            
+            selected_game_mode = game_modes.size();
+            game_modes.push_back(mode);
+
+            HandleGamemodeEvent(&GameMode::Initialize);
+            selected_game_mode = temp;
+        }
+
         template <typename FuncName, typename ...Args>
         void HandleGamemodeEvent(FuncName func, Args... args){
             if(selected_game_mode < 0 || selected_game_mode >= game_modes.size()) return;
             if(!game_state) return;
 
-            (game_modes.at(selected_game_mode).*func)({
-                *game_state,
+            GameModeState state = GameModeState{
+                game_state.get(),
                 wireframeRenderer,
                 inputManager,
                 camera,
+                terrain_manager,
                 [this](const std::string& name){
                     this->setUILayer(name);
-                }
+                },
                 [this](const std::string& name){
-                    return this->isLayerActive(name);
+                    return this->isActiveLayer(name);
+                },
+                [this](const std::shared_ptr<UILayer>& layer){
+                    this->getWindow()->addLayer(layer);
+                },
+                [this](Chunk* chunk, glm::ivec3 position){
+                    terrain_manager.regenerateChunkMesh(chunk, position);
+                    updateVisibility = 1;
                 }
-            }, ...args);
+            };
+
+            (*(game_modes.at(selected_game_mode)).*func)(state, args...);
         }
 
-        int renderDistance = 32;
+        int renderDistance = 8;
         int selectedBlock = 4;
 
         bool allGenerated = false;
@@ -183,11 +205,6 @@ class MainScene: public Scene{
 
         void updateStructureDisplay();
         void updateStructureSavingDisplay();
-
-        void regenerateChunkMesh(Chunk* chunk, glm::ivec3 position){
-            terrain_manager.regenerateChunkMesh(chunk, position);
-            updateVisibility = 1;
-        }
         
     public:
         MainScene(){}

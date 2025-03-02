@@ -1,9 +1,15 @@
 #pragma once
 
-#include <game/gamemodes/gamemode.hpp>
 #include <ui/elements.hpp>
+
+#include <game/gamemodes/gamemode.hpp>
 #include <game/items/item.hpp>
 #include <game/items/item_renderer.hpp>
+#include <game/items/crafting.hpp>
+
+#include <atomic>
+
+class UIHotbar;
 
 class GameModeSurvival: public GameMode{
     private:
@@ -19,15 +25,24 @@ class GameModeSurvival: public GameMode{
         std::shared_ptr<InventoryDisplay> inventory;
         std::shared_ptr<UIHotbar> hotbar;
 
+        std::atomic<bool> update_hotbar = false;
+
         ItemTextureAtlas itemTextureAtlas{};
 
     public:
         GameModeSurvival();
 
+        void Initialize(GameModeState& state) override;
+        
+        void Open(GameModeState& state) override;
+        void Render(GameModeState& state) override;
+        void PhysicsUpdate(GameModeState& state) override;
+
         void KeyEvent(GameModeState& state, int key, int scancode, int action, int mods) override;
         void MouseEvent(GameModeState& state, int button, int action, int mods) override;
         void MouseMoved(GameModeState& state, int xoffset, int yoffset) override;
-};
+        void MouseScroll(GameModeState& state, double xoffset, double yoffset) override;
+};      
 
 class UICrosshair: public UIFrame{
     private:

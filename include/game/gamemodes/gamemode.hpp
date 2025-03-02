@@ -5,19 +5,25 @@
 
 #include <game/game_state.hpp>
 #include <game/input.hpp>
+#include <game/terrain_manager.hpp>
+
 #include <rendering/camera.hpp>
 
 #include <ui/core.hpp>
 #include <ui/elements.hpp>
 
+class Chunk;
 
 struct GameModeState{
-    GameState& game_state;
+    GameState* game_state;
     WireframeCubeRenderer& wireframe_renderer;
     KeyInputManager<ControllActions>& input_manager;
     const PerspectiveCamera& camera;
+    TerrainManager& terrain_manager;
     const std::function<void(const std::string& name)>& setUILayer;
     const std::function<bool(const std::string& name)>& isActiveLayer;
+    const std::function<void(const std::shared_ptr<UILayer>& layer)>& addLayer;
+    const std::function<void(Chunk* chunk, const glm::ivec3& position)>& regenerateChunkMesh;
 };
 
 class GameMode{
@@ -33,6 +39,14 @@ class GameMode{
 
     public:
         GameMode(const std::string& name);
+
+        UILayer& GetBaseLayer();
+
+        virtual void Initialize(GameModeState& state) = 0;
+
+        virtual void Open(GameModeState& state) = 0;
+        virtual void Render(GameModeState& state) = 0;
+        virtual void PhysicsUpdate(GameModeState& state) = 0;
 
         virtual void KeyEvent(GameModeState& state, int key, int scancode, int action, int mods) = 0;
         virtual void MouseEvent(GameModeState& state, int button, int action, int mods) = 0;

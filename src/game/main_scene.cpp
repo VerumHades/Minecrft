@@ -207,23 +207,8 @@ void MainScene::initialize(){
     
     mouse_settings->appendChild(sensitivity_slider);
 
-    for(auto& prototype: BlockRegistry::get().prototypes()){
-        if(prototype.id == 0) continue; // Dont make air
-        
-        if(prototype.name == "crafting"){
-            auto interface = std::make_unique<CraftingInterface>(prototype.name + "_interface", itemTextureAtlas, held_item_slot);
-            getWindow()->addExternalLayer(interface->getLayer());
-
-            BlockRegistry::get().setPrototypeInterface(prototype.id, std::move(interface));
-        }
-
-        ItemRegistry::get().createPrototypeForBlock(&prototype);
-    }
-
-    CraftingRecipeRegistry::get().addRecipe(CraftingRecipe({CraftingRecipe::RecipeItemRequirement{"block_iron", 5},{},{},{},{},{},{},{},{}}, "crazed",64));
-    CraftingRecipeRegistry::get().addRecipe(CraftingRecipe(
-        {CraftingRecipe::RecipeItemRequirement{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1}}
-        , "block_crazed",1));
+    AddGameMode<GameModeSurvival>();
+    selected_game_mode = 0;
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
@@ -347,13 +332,13 @@ void MainScene::updateStructureDisplay(){
         wireframeRenderer.setCube(1,glm::vec3(min) - 0.005f, glm::vec3{0.01,0.01,0.01} + glm::vec3(size),{0,0.1,0.1});
     }
     else{
-        if(!selected_structure) return;
-        wireframeRenderer.setCube(
-            1,
-            glm::vec3(cursor_state.blockUnderCursorPosition) - 0.005f, 
-            glm::vec3{0.01,0.01,0.01} + glm::vec3(selected_structure->getSize()),
-            {0,0.3,0.2}
-        );
+        //if(!selected_structure) return;
+        //wireframeRenderer.setCube(
+        //    1,
+        //    glm::vec3(cursor_state.blockUnderCursorPosition) - 0.005f, 
+        //    glm::vec3{0.01,0.01,0.01} + glm::vec3(selected_structure->getSize()),
+         //   {0,0.3,0.2}
+        //);
     }
 }
 
@@ -388,9 +373,6 @@ void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
         else if(camFOV > maxFOV) camFOV = maxFOV;
 
         camera.adjustFOV(camFOV);
-    }
-    else{
-        int scroll = abs(yoffset) / yoffset;
     }
 }
 
@@ -470,27 +452,9 @@ void MainScene::open(GLFWwindow* window){
         game_state->getPlayerHotbar().addItem(id);
     }
 
-    inventory->setInventory(&game_state->getPlayerInventory());
-    hotbar->setInventory(&game_state->getPlayerHotbar());
-
-    auto& player = game_state->getPlayer();
-
-    player.onCollision = [this](Entity* self, Entity* collided_with){
-        if(!collided_with->getData() || collided_with->getData()->type != EntityData::DROPPED_ITEM) return;
-        
-        const auto& data = dynamic_pointer_cast<DroppedItem>(collided_with->getData());
-        //const auto* data = reinterpret_cast<const DroppedItem::Data*>(collided_with->getData());
-        this->game_state->giveItemToPlayer(data->getItem());
-
-        this->update_hotbar = true;
-    };
+    HandleGamemodeEvent(&GameMode::Open);
 
     terrain_manager.setGameState(game_state.get());
-
-    if(player.getPosition().x == 0.0f && player.getPosition().z == 0.0f){
-        int height = terrain_manager.getWorldGenerator().getHeightAt({0,0,0});
-        player.setPosition({0,height + 5,0});
-    }
     //Entity e = Entity(player.getPosition() + glm::vec3{5,0,5}, glm::vec3(1,1,1));
     //e.setModel(std::make_shared<GenericModel>("resources/models/130/scene.gltf"));
     //game_state->addEntity(e);g
@@ -557,11 +521,6 @@ void MainScene::render(){
     glm::vec3 camPosition = game_state->getPlayer().getPosition() + camOffset;
 
     camera.setPosition(camPosition);
-
-    if(update_hotbar){
-        hotbar->update();
-        update_hotbar = false;
-    } 
 
     //timer.timestamp("Updated ui");
     processMouseMovement();
@@ -709,74 +668,12 @@ void MainScene::physicsUpdate(){
 
         game_state->updateEntities(deltatime);
 
-        if(isActiveLayer("default")){
-            auto* in_hand_slot = hotbar->getSelectedSlot();
-            if(in_hand_slot && in_hand_slot->hasItem()){
-                auto* prototype = in_hand_slot->getItem()->getPrototype();
-                if(prototype && prototype->getModel()){
-                    glm::vec3 item_offset = camera.getDirection() * 0.5f - camera.getLeft() + camera.getRelativeUp() * 0.4f;
-                    prototype->getModel()->requestDraw(camera.getPosition() + item_offset, {1,1,1}, {0,-camera.getYaw(),camera.getPitch()}, {-0.5,-0.5,0}, {Model::Y,Model::Z,Model::X});
-                }
-            }
-        }
-        
+        HandleGamemodeEvent(&GameMode::PhysicsUpdate);
+
         Model::SwapAll();
     }
 
     threadsStopped++;
-}
-
-void UICrosshair::getRenderingInformation(UIRenderBatch& batch){
-    auto color = getAttribute(&UIFrame::Style::textColor);
-
-    // Left
-    batch.Rectangle(
-        transform.x,
-        transform.y + transform.height / 2 - thickness / 2,
-        transform.width / 2 - part_margin,
-        thickness,
-        color
-    );
-    // Right
-    batch.Rectangle(
-        transform.x + transform.width / 2 + part_margin,
-        transform.y + transform.height / 2 - thickness / 2,
-        transform.width / 2 - part_margin,
-        thickness,
-        color
-    );
-
-    // Top
-    batch.Rectangle(
-        transform.x + transform.width / 2 - thickness / 2,
-        transform.y,
-        thickness,
-        transform.height / 2 - part_margin,
-        color
-    );
-    
-    //Bottom
-    batch.Rectangle(
-        transform.x + transform.width  / 2 - thickness / 2,
-        transform.y + transform.height / 2 + part_margin,
-        thickness,
-        transform.height / 2 - part_margin,
-        color
-    );
-}
-
-void UIHotbar::getRenderingInformation(UIRenderBatch& batch){
-    InventoryDisplay::getRenderingInformation(batch);
-
-    batch.BorderedRectangle(
-        transform.x + selected_slot * slot_size,
-        transform.y,
-        slot_size,
-        slot_size,
-        UIColor{0,0,0,0},
-        UISideSizes{3,3,3,3},
-        UIColor{180,180,180}
-    );
 }
 
 void UILoading::getRenderingInformation(UIRenderBatch& batch){

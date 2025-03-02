@@ -63,7 +63,7 @@ class UIWindow{
         void setCurrentLayer(std::string name) {currentLayer = name;};
         std::string getCurrentLayerName(){return currentLayer;}
 
-        void addExternalLayer(std::shared_ptr<UILayer> layer){
+        void addLayer(std::shared_ptr<UILayer> layer){
             if(!layer) return;
             layers[layer->name] = layer;
         }

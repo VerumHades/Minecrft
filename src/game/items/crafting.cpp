@@ -3,6 +3,10 @@
 CraftingInterface::CraftingInterface(const std::string& name, ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr){
     ui_layer = std::make_shared<UILayer>();
     ui_layer->name = name;
+}
+
+CraftingInterface::CraftingInterface(const std::shared_ptr<UILayer>& layer, ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr):
+ ui_layer(layer){
 
     crafting_display = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
     crafting_display->onStateUpdate = [this](){

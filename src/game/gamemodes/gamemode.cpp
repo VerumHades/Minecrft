@@ -14,9 +14,13 @@ bool GameMode::isActiveLayerLocal(const std::string& name, GameModeState& state)
 
 UILayer& GameMode::getLayerLocal(const std::string& name){
     if(!ui_layers.contains(name)){
-        ui_layers.at(name) = std::make_shared<UILayer>();
+        ui_layers[name] = std::make_shared<UILayer>();
         ui_layers.at(name)->name = getLocalLayerName(name);
     }
 
     return *ui_layers.at(name);
+}
+
+UILayer& GameMode::GetBaseLayer(){
+    return getLayerLocal("base");
 }
