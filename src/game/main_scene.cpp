@@ -1,23 +1,5 @@
 #include <game/main_scene.hpp>
 
-
-template <typename T>
-static inline void swapToOrder(T& a, T& b){
-    if(a > b){
-        T temp = a;
-        a = b;
-        b = temp;
-    }
-}
-
-static inline std::tuple<glm::ivec3, glm::ivec3> pointsToRegion(glm::ivec3 min, glm::ivec3 max){
-    swapToOrder(min.x,max.x);
-    swapToOrder(min.y,max.y);
-    swapToOrder(min.z,max.z);
-    
-    return {min,max};
-}
-
 void MainScene::initialize(){
     fpsLock = false;
  
@@ -26,17 +8,9 @@ void MainScene::initialize(){
 
     UICore::get().loadWindowFromXML(*getWindow(), "resources/templates/game.xml");
     
-    this->getUILayer("default").cursorMode = GLFW_CURSOR_DISABLED;
     //this->getUILayer("chat").eventLocks = {true, true, true, true};
     //this->getUILayer("menu").eventLocks = {true, true, true, true};
     //this->getUILayer("settings").eventLocks = {true, true, true, true};
-    this->getUILayer("structure_capture").cursorMode = GLFW_CURSOR_DISABLED;
-
-    this->setUILayer("default");
-
-    fps_label = std::make_shared<UILabel>();
-    fps_label->setPosition(10_px,10_px);
-    addElement(fps_label);
 
     std::array<std::string,6> skyboxPaths = {
         "resources/skybox/stars/right.png",
@@ -49,74 +23,12 @@ void MainScene::initialize(){
 
     ItemRegistry::get().addPrototype(ItemPrototype("diamond","resources/textures/diamond.png"));
     ItemRegistry::get().addPrototype(ItemPrototype("crazed","resources/textures/crazed.png"));
-
     
-    structure_capture_start_label = getElementById<UILabel>("start_label");
-    structure_capture_end_label   = getElementById<UILabel>("end_label");
-    
-    getElementById<UIFrame>("submit")->onClicked = [this](){
-        auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
-        glm::ivec3 size = (max - min) + glm::ivec3(1,1,1);
-
-        Structure structure = Structure::capture(min, size, game_state->getTerrain());
-
-        const std::string& name = getElementById<UIInput>("structure_name")->getText();
-
-        auto path = Paths::Get(Paths::GAME_STRUCTURES);
-        if(path) structure.serialize().saveToFile(path.value() / fs::path(name + ".structure"));
-
-        setUILayer("structure_capture"); 
-
-        if(!this->structure_selection->hasOption(name)) this->structure_selection->addOption(name);
-    };
-
-    structure_selection = std::make_shared<UISelection>();
-    structure_selection->setPosition(10_px,10_px);
-    structure_selection->setSize(200_px,300_px);
-    structure_selection->setAttribute(&UIFrame::Style::backgroundColor, {10,10,10});
-    structure_selection->setAttribute(&UIFrame::Style::textColor, {220,220,220});
-    structure_selection->setAttribute(&UIFrame::Style::fontSize, 16_px);
-
-    structure_selection->onSelected = [this](const std::string& name){
-        auto structures_path = Paths::Get(Paths::GAME_STRUCTURES);
-
-        auto structure_name_label = getElementById<UILabel>("selected_structure");
-        
-        if(!structures_path){
-            structure_name_label->setText("Error: Structure file missing.");
-            structure_name_label->update();
-            return;
-        }
-
-        auto bt = ByteArray::FromFile(structures_path.value() / name);
-
-        structure_name_label->setText("Selected structure:" + name);
-        structure_name_label->update();
-
-        selected_structure = std::make_shared<Structure>(Structure::deserialize(bt));
-        this->updateStructureDisplay();
-    };
-
-    auto structures_path = Paths::Get(Paths::GAME_STRUCTURES);
-    if(structures_path){
-        for (const auto& entry: fs::directory_iterator(structures_path.value())){
-            auto& path = entry.path();
-            if(!entry.is_regular_file()) continue;
-
-            structure_selection->addOption(path.stem().string());
-        }
-    }
-
-    setUILayer("structure_capture");
-    addElement(structure_selection);
     setUILayer("generation");
-
     generation_progress = std::make_shared<UILoading>();
     generation_progress->setPosition(TValue::Center(), TValue::Center());
     generation_progress->setSize(TValue::Pixels(600), TValue::Pixels(200));
     addElement(generation_progress);
-
-    setUILayer("default");
 
     skyboxProgram.use();
     skybox.load(skyboxPaths);
@@ -135,7 +47,7 @@ void MainScene::initialize(){
     gBufferProgram.setSamplerSlot("gAlbedoSpec", 2);
     gBufferProgram.setSamplerSlot("AmbientOcclusion", 3);
 
-    blur_program.setSamplerSlot("input", 0);
+    //blur_program.setSamplerSlot("input", 0);
 
     camera.setPosition(0.0f,160.0f,0.0f);
 
@@ -208,7 +120,8 @@ void MainScene::initialize(){
     mouse_settings->appendChild(sensitivity_slider);
 
     AddGameMode<GameModeSurvival>();
-    selected_game_mode = 0;
+    AddGameMode<GameModeStructureCapture>();
+    selected_game_mode = 1;
 }
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
@@ -223,22 +136,15 @@ void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
     //if(isActiveLayer("inventory")){
     HandleGamemodeEvent(&GameMode::MouseMoved, mouseX, mouseY);
 
-    //}
-    if(isActiveLayer("default") || isActiveLayer("structure_capture")){
-        this->mouseX = mouseX;
-        this->mouseY = mouseY;
-        mouseMoved = true;
-    }
-}
-
-void MainScene::processMouseMovement(){
-    if(!mouseMoved) return;
-    else mouseMoved = false;
+    this->mouseX = mouseX;
+    this->mouseY = mouseY;
 
     float xoffset = (float)mouseX - lastMouseX;
     float yoffset = lastMouseY - (float)mouseY; // Reversed since y-coordinates go from bottom to top
     lastMouseX = (int)mouseX;
     lastMouseY = (int)mouseY;
+
+    if(getCurrentUILayer().cursorMode != GLFW_CURSOR_DISABLED) return;
 
     float real_sensitivity = static_cast<float>(sensitivity) / 100.0f;
 
@@ -275,96 +181,12 @@ void MainScene::processMouseMovement(){
 
 void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     HandleGamemodeEvent(&GameMode::MouseEvent, button, action, mods);
-
-    /*
-    
-         else if(isActiveLayer("structure_capture")){
-        if(structure_menu_mode == CAPTURE){
-            if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
-                structureCaptured = false;
-                structureCaptureStart = cursor_state.blockUnderCursorPosition;
-                updateStructureDisplay();
-            }
-            else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
-                structureCaptureEnd = cursor_state.blockUnderCursorPosition;
-                structureCaptured = true;
-                updateStructureDisplay();
-            }
-        }
-        else{
-            if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
-                if(selected_structure){
-                    auto positions = selected_structure->place(cursor_state.blockUnderCursorPosition, game_state->getTerrain());
-                    for(auto& position: positions)
-                        regenerateChunkMesh(game_state->getTerrain().getChunk(position), {1,1,1});
-                }
-            }
-        }
-    }
-
-    */
-}
-
-template <typename T>
-static inline std::string vecToString(T vec, const std::string& separator = " "){
-    return std::to_string(vec.x) + separator + std::to_string(vec.y) + separator + std::to_string(vec.z);
-}
-
-void MainScene::updateStructureDisplay(){
-    auto mode_label = getElementById<UILabel>("mode");
-    mode_label->setText(
-        "Current mode: " + std::string(structure_menu_mode == CAPTURE ? "Capture" : "Place")
-    );
-    structure_capture_start_label->setText(
-        "Capture start: " + vecToString(structureCaptureStart)
-    );
-    structure_capture_end_label->setText(
-        "Capture end: " + vecToString(structureCaptureEnd)
-    );
-    structure_capture_start_label->update();
-    structure_capture_end_label->update();
-    mode_label->update();
-
-    if(structure_menu_mode == CAPTURE){
-        auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
-        glm::ivec3 size = (max - min) + glm::ivec3(1,1,1);
-
-        wireframeRenderer.setCube(1,glm::vec3(min) - 0.005f, glm::vec3{0.01,0.01,0.01} + glm::vec3(size),{0,0.1,0.1});
-    }
-    else{
-        //if(!selected_structure) return;
-        //wireframeRenderer.setCube(
-        //    1,
-        //    glm::vec3(cursor_state.blockUnderCursorPosition) - 0.005f, 
-        //    glm::vec3{0.01,0.01,0.01} + glm::vec3(selected_structure->getSize()),
-         //   {0,0.3,0.2}
-        //);
-    }
-}
-
-void MainScene::updateStructureSavingDisplay(){
-    auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
-    glm::ivec3 size = max - min;
-
-    auto save_size_label = getElementById<UILabel>("save_size");
-    auto blocks_total_label = getElementById<UILabel>("blocks_total");
-
-    save_size_label->setText(
-        "Size: " + vecToString(size, "x")
-    );
-
-    blocks_total_label->setText(
-        "Blocks total: " + std::to_string(size.x * size.y * size.z)
-    );
-
-    save_size_label->update();
-    blocks_total_label->update();
 }
 
 void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
     HandleGamemodeEvent(&GameMode::MouseScroll, xoffset, yoffset);
 
-    if(!isActiveLayer("default")) return;
+    if(getCurrentUILayer().cursorMode != GLFW_CURSOR_DISABLED) return;
 
     if(inputManager.isActive(SCROLL_ZOOM)){
         camFOV -= (float) yoffset * 5.0f;
@@ -379,9 +201,7 @@ void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
 void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){    
     HandleGamemodeEvent(&GameMode::KeyEvent, key, scancode, action, mods);
 
-    if(isActiveLayer("default")){
-        inputManager.keyEvent(window,key,scancode,action,mods);
-
+    if(getCurrentUILayer().cursorMode == GLFW_CURSOR_DISABLED){
         if(key == GLFW_KEY_M && action == GLFW_PRESS){
             lineMode = !lineMode;
             if(!lineMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -391,48 +211,24 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
         if(key == GLFW_KEY_K && action == GLFW_PRESS){
             updateVisibility = 1;
         }
-    }
-    else if(isActiveLayer("structure_capture")){
+
         inputManager.keyEvent(window,key,scancode,action,mods);
-
-        if(key == GLFW_KEY_UP && action == GLFW_PRESS){
-            structure_selection->selectNext();
-            structure_selection->update();
-        }
-        else if(key == GLFW_KEY_DOWN && action == GLFW_PRESS){
-            structure_selection->selectPrevious();
-            structure_selection->update();
-        }
-
-        if(key == GLFW_KEY_M && action == GLFW_PRESS){
-            structure_menu_mode = structure_menu_mode == CAPTURE ? PLACE : CAPTURE;
-            updateStructureDisplay();
-        }
     }
 
-    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS && !isActiveLayer("generation")){
-        if(!isActiveLayer("default")) 
-            this->setUILayer("default");
+
+
+    if(
+        key == GLFW_KEY_ESCAPE && action == GLFW_PRESS
+    ){
+        if(!isActiveLayer(GetCurrentBaseLayer().name)) 
+            ResetToBaseLayer();
         else
             this->setUILayer("menu");
     }
-    else if(key == GLFW_KEY_TAB && action == GLFW_PRESS){
-        if(!isActiveLayer("inventory")) setUILayer("inventory");
-        else setUILayer("default");
-    }
-    else if(key == GLFW_KEY_N && action == GLFW_PRESS){
-        if(!isActiveLayer("structure_capture") && !isActiveLayer("structure_saving")){
-            this->setUILayer("structure_capture");
-            UICore::get().setFocus(structure_selection);
-        }
-        else if(!isActiveLayer("structure_saving")){
-            this->setUILayer("structure_saving");
-            UICore::get().setFocus(getElementById<UIFrame>("structure_name"));
-            updateStructureSavingDisplay();
-        }
-    }
-    else if(key == GLFW_KEY_B && action == GLFW_PRESS){
-        indexer = {};
+    else if(key == GLFW_KEY_G && action == GLFW_PRESS){
+        selected_game_mode = (selected_game_mode + 1) % game_modes.size();
+        HandleGamemodeEvent(&GameMode::Open);
+        ResetToBaseLayer();
     }
 }
 
@@ -452,6 +248,7 @@ void MainScene::open(GLFWwindow* window){
         game_state->getPlayerHotbar().addItem(id);
     }
 
+    gamemodeState.game_state = game_state.get();
     HandleGamemodeEvent(&GameMode::Open);
 
     terrain_manager.setGameState(game_state.get());
@@ -465,8 +262,7 @@ void MainScene::open(GLFWwindow* window){
     std::cout << "Threads started" << std::endl;
     physicsThread.detach();
 
-    this->setUILayer("default");
-    //pregenThread.detach();
+    ResetToBaseLayer();
 }
 
 void MainScene::close(GLFWwindow* window){
@@ -480,6 +276,8 @@ void MainScene::close(GLFWwindow* window){
     terrain_manager.unloadAll();
     terrain_manager.setGameState(nullptr);
 
+    gamemodeState.game_state = nullptr;
+
     game_state->unload();
     game_state = nullptr;
 }
@@ -490,17 +288,12 @@ void MainScene::render(){
     deltatime = (float)(current - last);
     last = current;
 
-    fps_label->setText(std::to_string(1.0f / deltatime) + "FPS");
-    fps_label->update();
+    HandleGamemodeEvent(&GameMode::Render, deltatime);
 
     if(terrain_manager.isGenerating()){
         if(!isActiveLayer("generation")) setUILayer("generation");
-        //std::string value = "";
-        //for(auto& segment: terrain_manager.getGenerationCountsLeft()){
-        //    value += " " + std::to_string(segment);
-        //}
+
         generation_progress->setValues(&terrain_manager.getGenerationCountsLeft());
-        //generation_progress_label->setText(value);
         generation_progress->calculateTransforms();
         generation_progress->update();
 
@@ -509,21 +302,15 @@ void MainScene::render(){
     }
     else if(isActiveLayer("generation")){
         generation_progress->setValues(nullptr);
-        setUILayer("default");
+        ResetToBaseLayer();
     }
-    //timer.timestamp("Updated fps label");
     if(terrain_manager.uploadPendingMeshes()) updateVisibility = 1;
-    //timer.timestamp("Uploaded meshes.");
 
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 
     glm::vec3 camPosition = game_state->getPlayer().getPosition() + camOffset;
-
     camera.setPosition(camPosition);
-
-    //timer.timestamp("Updated ui");
-    processMouseMovement();
 
     if(updateVisibility > 0){
         terrain_manager.getMeshRegistry().updateDrawCalls(camera.getPosition(), camera.getFrustum());
@@ -531,7 +318,6 @@ void MainScene::render(){
     }
 
     /*const int chunk_bound_distance = 4;
-    const int chunk_bound_diameter = (chunk_bound_distance + 1) * 2;
 
     int counter = 10;
     for(int x = -chunk_bound_distance; x <= chunk_bound_distance; x++) 
@@ -540,12 +326,12 @@ void MainScene::render(){
         glm::ivec3 position = (glm::ivec3{x,y,z} + glm::ivec3{glm::floor(game_state->getPlayer().getPosition() / (float)CHUNK_SIZE)})  * CHUNK_SIZE;
         wireframeRenderer.setCube(counter++, position, glm::vec3{CHUNK_SIZE}, glm::vec3{0.1,0.5,0.5});
     }*/
-    //timer.timestamp("Updated visibility");
 
-    //timer.timestamp("Rendered to shadow map.");
 
     gBuffer.bind();
         glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
+
+        if (lineMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         block_texture_array->bind(0);
 
@@ -565,28 +351,13 @@ void MainScene::render(){
         // Draw models
         modelProgram.updateUniforms();
         Model::DrawAll();
-        //ItemRegistry::get().drawItemModels();
-
-
-
-        //int start_index = 20;
-        //wireframeRenderer.setCubes(start_index);
-        //world->drawEntityColliders(wireframeRenderer, start_index);
 
         wireframeRenderer.draw();
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     gBuffer.unbind();
 
     //timer.timestamp("Rendered to gBuffer.");
-
-    /*auto& gTextures = gBuffer.getTextures();
-    ssao.render(gTextures[0],gTextures[1], fullscreen_quad);
-    
-    blured_ssao_framebuffer.bind(); 
-        ssao.getResultTexture().bind(0);
-        blur_program.updateUniforms();
-
-        fullscreen_quad.render();
-    blured_ssao_framebuffer.unbind();*/
     
     gBufferProgram.updateUniforms();
     
@@ -594,9 +365,8 @@ void MainScene::render(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     gBuffer.bindTextures();
-    //blured_ssao_framebuffer.getTextures()[0].bind(3);
-
-    fullscreen_quad.render();
+    
+        fullscreen_quad.render();
 
     gBuffer.unbindTextures();
     //timer.timestamp("Rendered to screen.");
@@ -636,33 +406,48 @@ void MainScene::physicsUpdate(){
 
         auto& player = game_state->getPlayer();
 
-        bool moving = false;
-        if(inputManager.isActive(STRAFE_RIGHT )){
-            player.accelerate(-leftDir * camAcceleration, deltatime);
-            moving = true;
-        }
-        if(inputManager.isActive(STRAFE_LEFT  )){
-            player.accelerate( leftDir * camAcceleration, deltatime);
-            moving = true;
-        }
-        if(inputManager.isActive(MOVE_BACKWARD)){
-            player.accelerate(-horizontalDir * camAcceleration, deltatime);
-            moving = true;
-        }
-        if(inputManager.isActive(MOVE_FORWARD )){
-            player.accelerate( horizontalDir * camAcceleration, deltatime);
-            moving = true;
-        }
+        if(!CurrentGameMode() || (!CurrentGameMode()->NoClip())){
+            player.setGravity(true);
+            bool moving = false; 
+            if(inputManager.isActive(STRAFE_RIGHT )){
+                player.accelerate(-leftDir * camAcceleration, deltatime);
+                moving = true;
+            }
+            if(inputManager.isActive(STRAFE_LEFT  )){
+                player.accelerate( leftDir * camAcceleration, deltatime);
+                moving = true;
+            }
+            if(inputManager.isActive(MOVE_BACKWARD)){
+                player.accelerate(-horizontalDir * camAcceleration, deltatime);
+                moving = true;
+            }
+            if(inputManager.isActive(MOVE_FORWARD )){
+                player.accelerate( horizontalDir * camAcceleration, deltatime);
+                moving = true;
+            }
 
-        if(!moving) player.decellerate(camAcceleration,deltatime);
-        //if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * 0.2f);
-        //if(inputManager.isActive(MOVE_UP)) player.accelerate(camera.getUp() * 0.2f);
-        if(inputManager.isActive(MOVE_DOWN)) player.accelerate(-camera.getUp() * 2.0f, deltatime);
-        if(
-            inputManager.isActive(MOVE_UP)
-            && game_state->entityCollision(player, {0,-0.1f,0})
-            && player.getVelocity().y == 0
-        ) player.accelerate(camera.getUp() * 10.0f, 1.0);
+            if(!moving) player.decellerate(camAcceleration,deltatime);
+            //if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * 0.2f);
+            //if(inputManager.isActive(MOVE_UP)) player.accelerate(camera.getUp() * 0.2f);
+            if(inputManager.isActive(MOVE_DOWN)) player.accelerate(-camera.getUp() * 2.0f, deltatime);
+            if(
+                inputManager.isActive(MOVE_UP)
+                && game_state->entityCollision(player, {0,-0.1f,0})
+                && player.getVelocity().y == 0
+            ) player.accelerate(camera.getUp() * 10.0f, 1.0);
+        }
+        else{
+            player.setGravity(false);
+            if(inputManager.isActive(STRAFE_RIGHT )) player.setPosition(player.getPosition() + -leftDir * camAcceleration * deltatime);
+            if(inputManager.isActive(STRAFE_LEFT  )) player.setPosition(player.getPosition() +  leftDir * camAcceleration * deltatime);
+            if(inputManager.isActive(MOVE_BACKWARD)) player.setPosition(player.getPosition() + -horizontalDir * camAcceleration * deltatime);
+            if(inputManager.isActive(MOVE_FORWARD )) player.setPosition(player.getPosition() +  horizontalDir * camAcceleration * deltatime);
+            
+            if(inputManager.isActive(MOVE_DOWN)) 
+                player.setPosition(player.getPosition() + -camera.getUp() * camAcceleration * deltatime);
+            if(inputManager.isActive(MOVE_UP))
+                player.setPosition(player.getPosition() +  camera.getUp() * camAcceleration * deltatime);
+        }
 
         if(!game_state->getTerrain().getChunk(camWorldPosition)) continue;
 
@@ -698,3 +483,4 @@ void UILoading::getRenderingInformation(UIRenderBatch& batch){
         i++;
     }
 }
+

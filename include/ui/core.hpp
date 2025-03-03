@@ -35,7 +35,7 @@ class UILayer{
         std::unordered_map<std::string, std::shared_ptr<UIFrame>> idRegistry;
         
     public:
-        uint cursorMode =  GLFW_CURSOR_NORMAL;
+        uint cursorMode = GLFW_CURSOR_NORMAL;
         UIEventLock eventLocks = {};
         std::string name = "none";
         std::function<void()> onEntered;
@@ -60,23 +60,29 @@ class UIWindow{
         std::string currentLayer = "default";
 
     public:
-        void setCurrentLayer(std::string name) {currentLayer = name;};
+        void setCurrentLayer(const std::string& name) {currentLayer = name;};
         std::string getCurrentLayerName(){return currentLayer;}
 
         void addLayer(std::shared_ptr<UILayer> layer){
             if(!layer) return;
             layers[layer->name] = layer;
         }
+        bool hasLayer(const std::string& name){
+            return layers.contains(name);
+        }
         UILayer& getCurrentLayer() {
             return getLayer(currentLayer);
         }
-        UILayer& getLayer(std::string name) {
-            if(layers.contains(name)) return *layers.at(name);
+        UILayer& getLayer(const std::string& name) {
+            return *getLayerPointer(name);
+        }
+        std::shared_ptr<UILayer>& getLayerPointer(const std::string& name){
+            if(layers.contains(name)) return layers.at(name);
             
             auto& layer = layers[name];
             layer = std::make_shared<UILayer>();
             layer->name = name;
-            return *layer;
+            return layer;
         }
 };
 #include <ui/loader.hpp>

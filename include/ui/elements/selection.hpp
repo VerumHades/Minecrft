@@ -19,5 +19,5 @@ class UISelection: public UIFrame{
         void selectNext();
         void selectPrevious();
 
-
+        void clear();
 };

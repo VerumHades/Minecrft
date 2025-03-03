@@ -41,7 +41,8 @@
 #include <game/models/generic_model.hpp>
 
 #include <game/gamemodes/gamemode.hpp>
-#include <game/gamemodes/gamemode_survival.hpp>
+#include <game/gamemodes/survival.hpp>
+#include <game/gamemodes/structure_capture.hpp>
 
 #include <indexing.hpp>
 #include <path_config.hpp>
@@ -56,6 +57,9 @@
 class UIHotbar;
 class UILoading;
 
+/*
+    Never make two instances of this class or weird things are going to happen!
+*/
 class MainScene: public Scene{
     private:
         PerspectiveCamera camera = PerspectiveCamera("player");
@@ -70,11 +74,7 @@ class MainScene: public Scene{
         ShaderProgram terrainProgram = ShaderProgram("resources/shaders/terrain.vs","resources/shaders/terrain.fs");
         ShaderProgram skyboxProgram  = ShaderProgram("resources/shaders/graphical/skybox.vs", "resources/shaders/graphical/skybox.fs");
         ShaderProgram gBufferProgram = ShaderProgram("resources/shaders/graphical/deffered_shading/gbuffer.vs","resources/shaders/graphical/deffered_shading/gbuffer.fs");
-        ShaderProgram blur_program = ShaderProgram("resources/shaders/graphical/quad.vs","resources/shaders/graphical/blur.fs");
-        
-        //std::unique_ptr<ThreadPool> threadPool;
 
-        ThreadPool threadPool{1};
         GLSkybox skybox{};
         std::unique_ptr<GameState> game_state;
 
@@ -83,20 +83,29 @@ class MainScene: public Scene{
         TerrainManager terrain_manager{};
 
         std::unique_ptr<GLTextureArray> block_texture_array = nullptr;
-        
-        std::shared_ptr<UILabel> fps_label;
         std::shared_ptr<UILoading> generation_progress;
-        std::shared_ptr<UILabel> structure_capture_start_label;
-        std::shared_ptr<UILabel> structure_capture_end_label;
 
         std::string worldPath = "saves";
 
         std::vector<std::shared_ptr<GameMode>> game_modes;
         int selected_game_mode = -1;
 
+        GameModeState gamemodeState = {
+            game_state.get(),
+            wireframeRenderer,
+            inputManager,
+            camera,
+            terrain_manager,
+            *this,
+            [this](Chunk* chunk, glm::ivec3 position){
+                terrain_manager.regenerateChunkMesh(chunk, position);
+                updateVisibility = 1;
+            }
+        };
+
         template <typename T, typename ...Args>
         void AddGameMode(Args... args){
-            auto mode = std::make_shared<T>(args...);
+            auto mode = std::make_shared<T>(gamemodeState,args...);
             int temp = selected_game_mode;
             
             selected_game_mode = game_modes.size();
@@ -107,42 +116,39 @@ class MainScene: public Scene{
         }
 
         template <typename FuncName, typename ...Args>
-        void HandleGamemodeEvent(FuncName func, Args... args){
-            if(selected_game_mode < 0 || selected_game_mode >= game_modes.size()) return;
-            if(!game_state) return;
-
-            GameModeState state = GameModeState{
-                game_state.get(),
-                wireframeRenderer,
-                inputManager,
-                camera,
-                terrain_manager,
-                [this](const std::string& name){
-                    this->setUILayer(name);
-                },
-                [this](const std::string& name){
-                    return this->isActiveLayer(name);
-                },
-                [this](const std::shared_ptr<UILayer>& layer){
-                    this->getWindow()->addLayer(layer);
-                },
-                [this](Chunk* chunk, glm::ivec3 position){
-                    terrain_manager.regenerateChunkMesh(chunk, position);
-                    updateVisibility = 1;
-                }
-            };
-
-            (*(game_modes.at(selected_game_mode)).*func)(state, args...);
+        void HandleGamemodeEventSelective(GameMode* game_mode, FuncName func, Args... args){
+            (game_mode->*func)(args...);
         }
 
-        int renderDistance = 8;
+        template <typename FuncName, typename ...Args>
+        void HandleGamemodeEvent(FuncName func, Args... args){
+            if(selected_game_mode < 0 || static_cast<size_t>(selected_game_mode) >= game_modes.size()) return;
+            
+            HandleGamemodeEventSelective(game_modes.at(selected_game_mode).get(), func, args...);
+        }
+
+        GameMode* CurrentGameMode(){
+            if(selected_game_mode < 0 || static_cast<size_t>(selected_game_mode) >= game_modes.size()) return nullptr;
+            return game_modes.at(selected_game_mode).get();
+        }
+
+        UILayer& GetCurrentBaseLayer(){
+            if(!CurrentGameMode()) return getUILayer("default");
+            return CurrentGameMode()->GetBaseLayer();
+        }
+
+        void ResetToBaseLayer(){
+            setUILayer(GetCurrentBaseLayer().name);
+        }
+
+        int renderDistance = 4;
         int selectedBlock = 4;
 
         bool allGenerated = false;
         bool running = false;
         int threadsStopped = 0;
         
-        bool lineMode = true;
+        bool lineMode = false;
         bool menuOpen = false;
         //int sunDistance = ((CHUNK_SIZE * renderDistance) / 2) ;
         int sunDistance = 100;
@@ -176,35 +182,17 @@ class MainScene: public Scene{
         Font testFont = Font("resources/fonts/JetBrainsMono[wght].ttf", 24);
 
         void physicsUpdate();
-        void processMouseMovement();
-
         void updateLoadedLocations(glm::ivec3 old_location, glm::ivec3 new_location);
 
         double last = glfwGetTime();
         double current = glfwGetTime();
         double deltatime;
 
-        glm::ivec3 structureCaptureStart = {0,0,0};
-        glm::ivec3 structureCaptureEnd   = {0,0,0};
-        bool structureCaptured = false;
-
         float targetTPS = 240;
         float tickTime = 1.0f / targetTPS;
 
         double last_tick_time;
         Uniform<float> interpolation_time = Uniform<float>("model_interpolation_time");
-        
-        enum StructureMenuMode{
-            CAPTURE,
-            PLACE
-        } structure_menu_mode;
-
-        std::shared_ptr<Structure> selected_structure = nullptr;
-
-        std::shared_ptr<UISelection> structure_selection;
-
-        void updateStructureDisplay();
-        void updateStructureSavingDisplay();
         
     public:
         MainScene(){}

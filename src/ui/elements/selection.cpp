@@ -2,7 +2,16 @@
 
 UISelection::UISelection(){
     onKeyEvent = [this](int key, int scancode, int action, int mods){
-        if(action == GLFW_PRESS && key == GLFW_KEY_ENTER && onSelected) onSelected(options[selected]);
+        if(key == GLFW_KEY_UP && action == GLFW_PRESS){
+            selectNext();
+            update();
+        }
+        else if(key == GLFW_KEY_DOWN && action == GLFW_PRESS){
+            selectPrevious();
+            update();
+        }
+        else if(action == GLFW_PRESS && key == GLFW_KEY_ENTER && onSelected) 
+            onSelected(options[selected]);
     };
 
     setFocusable(true);
@@ -17,9 +26,14 @@ void UISelection::addOption(const std::string& option){
 }
 void UISelection::selectNext(){
     selected = (selected + 1) % options.size();
+    update();
 }
 void UISelection::selectPrevious(){
     selected = (selected - 1 + options.size()) % options.size();
+    update();
+}
+void UISelection::clear(){
+    options.clear();
 }
 
 void UISelection::getRenderingInformation(UIRenderBatch& batch) {

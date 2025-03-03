@@ -1,6 +1,6 @@
-#include <game/gamemodes/gamemode_survival.hpp>
+#include <game/gamemodes/survival.hpp>
 
-GameModeSurvival::GameModeSurvival(): GameMode("survival"){
+void GameModeSurvival::Initialize(){
     held_item_slot = std::make_shared<ItemSlot>(itemTextureAtlas);
 
     inventory = std::make_shared<InventoryDisplay>(itemTextureAtlas, held_item_slot);
@@ -15,9 +15,10 @@ GameModeSurvival::GameModeSurvival(): GameMode("survival"){
         TValue::Bottom(20_px)
     );
 
-    getLayerLocal("inventory").addElement(inventory);
-    getLayerLocal("inventory").addElement(hotbar);
-    getLayerLocal("inventory").addElement(held_item_slot);
+    auto& inventory_layer = getLayerLocal("inventory");
+    inventory_layer.addElement(inventory);
+    inventory_layer.addElement(hotbar);
+    inventory_layer.addElement(held_item_slot);
 
 
     auto crosshair = std::make_shared<UICrosshair>();
@@ -25,17 +26,20 @@ GameModeSurvival::GameModeSurvival(): GameMode("survival"){
     crosshair->setPosition(TValue::Center(), TValue::Center());
     crosshair->setAttribute(&UIFrame::Style::textColor, {255,255,255});
 
-    GetBaseLayer().addElement(crosshair);
-    GetBaseLayer().addElement(hotbar);
-}
-
-void GameModeSurvival::Initialize(GameModeState& state){
+    fps_label = std::make_shared<UILabel>();
+    fps_label->setPosition(10_px,10_px);
+    
+    auto& base_layer = GetBaseLayer();
+    base_layer.addElement(fps_label);
+    base_layer.addElement(crosshair);
+    base_layer.addElement(hotbar);
+    base_layer.cursorMode = GLFW_CURSOR_DISABLED;
+    
     for(auto& prototype: BlockRegistry::get().prototypes()){
         if(prototype.id == 0) continue; // Dont make air
         
         if(prototype.name == "crafting"){
-            auto interface = std::make_unique<CraftingInterface>(prototype.name + "_interface", itemTextureAtlas, held_item_slot);
-            state.addLayer(interface->getLayer());
+            auto interface = std::make_unique<CraftingInterface>(state.scene.getWindow()->getLayerPointer(prototype.name + "_interface"), itemTextureAtlas, held_item_slot);
 
             BlockRegistry::get().setPrototypeInterface(prototype.id, std::move(interface));
         }
@@ -49,7 +53,7 @@ void GameModeSurvival::Initialize(GameModeState& state){
         , "block_crazed",1));
 }
 
-void GameModeSurvival::Open(GameModeState& state){
+void GameModeSurvival::Open(){
     if(!state.game_state) return;
     auto& game_state = *state.game_state;
 
@@ -58,7 +62,7 @@ void GameModeSurvival::Open(GameModeState& state){
 
     auto& player = game_state.getPlayer();
 
-    player.onCollision = [this, state](Entity* self, Entity* collided_with){
+    player.onCollision = [this](Entity* self, Entity* collided_with){
         if(!collided_with->getData() || collided_with->getData()->type != EntityData::DROPPED_ITEM) return;
         
         const auto& data = dynamic_pointer_cast<DroppedItem>(collided_with->getData());
@@ -74,18 +78,21 @@ void GameModeSurvival::Open(GameModeState& state){
     }
 }
 
-void GameModeSurvival::Render(GameModeState& state){
+void GameModeSurvival::Render(double deltatime){
+    fps_label->setText(std::to_string(1.0f / deltatime) + "FPS");
+    fps_label->update();
+
     if(update_hotbar){
         hotbar->update();
         update_hotbar = false;
     }
 }
 
-void GameModeSurvival::KeyEvent(GameModeState& state, int key, int scancode, int action, int mods){
+void GameModeSurvival::KeyEvent(int key, int scancode, int action, int mods){
     if(!state.game_state) return;
     auto& game_state = *state.game_state;
     
-    if(isActiveLayerLocal("base", state)){
+    if(IsBaseLayerActive()){
         if(key == GLFW_KEY_Q && action == GLFW_PRESS){
             auto* slot = hotbar->getSelectedSlot();
             if(!slot || !slot->hasItem()) return;
@@ -102,7 +109,7 @@ void GameModeSurvival::KeyEvent(GameModeState& state, int key, int scancode, int
         }
     }
 }
-void GameModeSurvival::MouseEvent(GameModeState& state, int button, int action, int mods){
+void GameModeSurvival::MouseEvent(int button, int action, int mods){
     if(!state.game_state) return;
     auto& game_state = *state.game_state;
     
@@ -110,7 +117,7 @@ void GameModeSurvival::MouseEvent(GameModeState& state, int button, int action, 
 
     auto& player = game_state.getPlayer();
 
-    if(isActiveLayerLocal("base", state)){
+    if(IsBaseLayerActive()){
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS ){  
             auto* block_prototype = BlockRegistry::get().getPrototype(cursor_state.blockUnderCursor->id);
             if(!block_prototype) return;
@@ -136,8 +143,8 @@ void GameModeSurvival::MouseEvent(GameModeState& state, int button, int action, 
         else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
             auto* block_prototype = BlockRegistry::get().getPrototype(cursor_state.blockUnderCursor->id);
             if(block_prototype && block_prototype->interface){
-                block_prototype->interface->open(cursor_state.blockUnderCursor->metadata, &game_state);
-                state.setUILayer(block_prototype->interface->getName());
+                block_prototype->interface->open(cursor_state.blockUnderCursor->metadata, state.game_state);
+                state.scene.setUILayer(block_prototype->interface->getName());
                 return;
             }
 
@@ -167,10 +174,10 @@ void GameModeSurvival::MouseEvent(GameModeState& state, int button, int action, 
         }
     }
    
-    updateCursor(state);
+    UpdateCursor();
 }
 
-void GameModeSurvival::MouseMoved(GameModeState& state, int mouseX, int mouseY){
+void GameModeSurvival::MouseMoved(int mouseX, int mouseY){
     if(held_item_slot){
         held_item_slot->setPosition(
             TValue::Pixels(mouseX),
@@ -180,35 +187,16 @@ void GameModeSurvival::MouseMoved(GameModeState& state, int mouseX, int mouseY){
         held_item_slot->update();
     }
     
-    updateCursor(state);
+    UpdateCursor();
 }
 
-void GameModeSurvival::MouseScroll(GameModeState& state, double xoffset, double yoffset){
+void GameModeSurvival::MouseScroll(double xoffset, double yoffset){
     int scroll = abs(yoffset) / yoffset;
     hotbar->selectSlot(hotbar->getSelectedSlotNumber() - scroll);
     hotbar->update();
 }
 
-void GameModeSurvival::updateCursor(GameModeState& state){
-    if(!state.game_state) return;
-    auto& game_state = *state.game_state;
-    
-    const glm::vec3& camDirection = state.camera.getDirection();
-    const glm::vec3& camPosition = state.camera.getPosition();
-
-    RaycastResult hit = game_state.getTerrain().raycast(camPosition,camDirection,10);
- 
-    cursor_state.blockUnderCursor = game_state.getTerrain().getBlock(hit.position);
-    cursor_state.blockUnderCursorPosition = hit.position;
-    cursor_state.blockUnderCursorEmpty = hit.lastPosition;
-
-    if(!cursor_state.blockUnderCursor || cursor_state.blockUnderCursor->id == BLOCK_AIR_INDEX) state.wireframe_renderer.removeCube(0);
-    else state.wireframe_renderer.setCube(0,glm::vec3(hit.position) - 0.005f, {1.01,01.01,1.01},{0,0,0});
-    
-    //wireframeRenderer.setCube(1,glm::vec3(hit.lastPosition) - 0.005f, {1.01,01.01,1.01},{1.0,0,0});
-}
-
-void GameModeSurvival::PhysicsUpdate(GameModeState& state){
+void GameModeSurvival::PhysicsUpdate(){
     auto* in_hand_slot = hotbar->getSelectedSlot();
     if(in_hand_slot && in_hand_slot->hasItem()){
         auto* prototype = in_hand_slot->getItem()->getPrototype();

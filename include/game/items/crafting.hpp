@@ -69,7 +69,6 @@ class CraftingInterface: public BlockInterface{
         CraftingRecipe* current_recipe = nullptr;
 
     public:
-        CraftingInterface(const std::string& name, ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr);
         CraftingInterface(const std::shared_ptr<UILayer>& layer, ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr);
 
         void open(std::shared_ptr<BlockMetadata> metadata, GameState* game_state) override;

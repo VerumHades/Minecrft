@@ -1,10 +1,5 @@
 #include <game/items/crafting.hpp>
 
-CraftingInterface::CraftingInterface(const std::string& name, ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr){
-    ui_layer = std::make_shared<UILayer>();
-    ui_layer->name = name;
-}
-
 CraftingInterface::CraftingInterface(const std::shared_ptr<UILayer>& layer, ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr):
  ui_layer(layer){
 

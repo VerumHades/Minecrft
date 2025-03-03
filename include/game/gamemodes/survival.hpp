@@ -2,7 +2,8 @@
 
 #include <ui/elements.hpp>
 
-#include <game/gamemodes/gamemode.hpp>
+#include <game/gamemodes/interactable_base.hpp>
+
 #include <game/items/item.hpp>
 #include <game/items/item_renderer.hpp>
 #include <game/items/crafting.hpp>
@@ -11,37 +12,33 @@
 
 class UIHotbar;
 
-class GameModeSurvival: public GameMode{
+class GameModeSurvival: public GameModeInteractable{
     private:
-        struct CursorState{
-            glm::ivec3 blockUnderCursorPosition = {0,0,0};
-            glm::vec3 blockUnderCursorEmpty = {0,0,0}; // Block before the selected block, air where a block will be placed
-            Block* blockUnderCursor = nullptr;
-        } cursor_state;
-
-        void updateCursor(GameModeState& state);
-
         std::shared_ptr<ItemSlot> held_item_slot;
         std::shared_ptr<InventoryDisplay> inventory;
         std::shared_ptr<UIHotbar> hotbar;
+
+        std::shared_ptr<UILabel> fps_label;
 
         std::atomic<bool> update_hotbar = false;
 
         ItemTextureAtlas itemTextureAtlas{};
 
     public:
-        GameModeSurvival();
+        GameModeSurvival(GameModeState& state): GameModeInteractable(state, "survival"){
 
-        void Initialize(GameModeState& state) override;
+        }
+
+        void Initialize() override;
         
-        void Open(GameModeState& state) override;
-        void Render(GameModeState& state) override;
-        void PhysicsUpdate(GameModeState& state) override;
+        void Open() override;
+        void Render(double deltatime) override;
+        void PhysicsUpdate() override;
 
-        void KeyEvent(GameModeState& state, int key, int scancode, int action, int mods) override;
-        void MouseEvent(GameModeState& state, int button, int action, int mods) override;
-        void MouseMoved(GameModeState& state, int xoffset, int yoffset) override;
-        void MouseScroll(GameModeState& state, double xoffset, double yoffset) override;
+        void KeyEvent(int key, int scancode, int action, int mods) override;
+        void MouseEvent(int button, int action, int mods) override;
+        void MouseMoved(int xoffset, int yoffset) override;
+        void MouseScroll(double xoffset, double yoffset) override;
 };      
 
 class UICrosshair: public UIFrame{

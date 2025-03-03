@@ -6,6 +6,7 @@
 #include <game/game_state.hpp>
 #include <game/input.hpp>
 #include <game/terrain_manager.hpp>
+#include <scene.hpp>
 
 #include <rendering/camera.hpp>
 
@@ -20,37 +21,50 @@ struct GameModeState{
     KeyInputManager<ControllActions>& input_manager;
     const PerspectiveCamera& camera;
     TerrainManager& terrain_manager;
-    const std::function<void(const std::string& name)>& setUILayer;
-    const std::function<bool(const std::string& name)>& isActiveLayer;
-    const std::function<void(const std::shared_ptr<UILayer>& layer)>& addLayer;
-    const std::function<void(Chunk* chunk, const glm::ivec3& position)>& regenerateChunkMesh;
+    Scene& scene;
+    std::function<void(Chunk* chunk, const glm::ivec3 position)> regenerateChunkMesh;
 };
+
+#define UNWRAP_PROP(name,type) type name = state.name
+
+#define UNWRAP_STATE() \
+UNWRAP_PROP(game_state         , auto*); \
+UNWRAP_PROP(wireframe_renderer , auto&);\
+UNWRAP_PROP(input_manager      , auto&);\
+UNWRAP_PROP(camera             , const auto&);\
+UNWRAP_PROP(terrain_manager    , auto&);\
+UNWRAP_PROP(scene              , auto&);\
+UNWRAP_PROP(regenerateChunkMesh, auto&);\
 
 class GameMode{
     private:
-        std::unordered_map<std::string, std::shared_ptr<UILayer>> ui_layers;
         std::string name;
-
         std::string getLocalLayerName(const std::string& name);
 
     protected:
-        UILayer& getLayerLocal(const std::string& name);
-        bool isActiveLayerLocal(const std::string& name, GameModeState& state);
+        std::string base_layer_override = "";
+        GameModeState& state;
 
+        UILayer& getLayerLocal(const std::string& name);
+        bool isActiveLayerLocal(const std::string& name);
+        bool IsBaseLayerActive();
+        
     public:
-        GameMode(const std::string& name);
+        GameMode(GameModeState& state, const std::string& name);
 
         UILayer& GetBaseLayer();
 
-        virtual void Initialize(GameModeState& state) = 0;
+        virtual bool NoClip() { return false; }
 
-        virtual void Open(GameModeState& state) = 0;
-        virtual void Render(GameModeState& state) = 0;
-        virtual void PhysicsUpdate(GameModeState& state) = 0;
+        virtual void Initialize() = 0;
 
-        virtual void KeyEvent(GameModeState& state, int key, int scancode, int action, int mods) = 0;
-        virtual void MouseEvent(GameModeState& state, int button, int action, int mods) = 0;
-        virtual void MouseMoved(GameModeState& state, int xoffset, int yoffset) = 0;
-        virtual void MouseScroll(GameModeState& state, double xoffset, double yoffset) = 0;
+        virtual void Open() = 0;
+        virtual void Render(double deltatime) = 0;
+        virtual void PhysicsUpdate() = 0;
+
+        virtual void KeyEvent(int key, int scancode, int action, int mods) = 0;
+        virtual void MouseEvent(int button, int action, int mods) = 0;
+        virtual void MouseMoved(int xoffset, int yoffset) = 0;
+        virtual void MouseScroll(double xoffset, double yoffset) = 0;
 };
 

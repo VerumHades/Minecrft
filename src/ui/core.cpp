@@ -178,7 +178,6 @@ void UICore::keyEvent(GLFWwindow* window, int key, int scancode, int action, int
 void UICore::resetStates(){
     if(underHover){
         underHover->setHover(false);
-        //if(underHover->onMouseLeave) underHover->onMouseLeave();
     }
     if(inFocus){
         inFocus->setFocus(false);
