@@ -119,6 +119,21 @@ void MainScene::initialize(){
     
     mouse_settings->appendChild(sensitivity_slider);
 
+    auto graphics_settings = getElementById<UIFrame>("render_distance_container");
+
+    auto render_distance_slider = std::make_shared<UISlider>();
+    render_distance_slider->setValuePointer(&renderDistance);
+    render_distance_slider->setSize({PERCENT,60},{PERCENT,100});
+    render_distance_slider->setMin(4);
+    render_distance_slider->setMax(64);
+    render_distance_slider->setDisplayValue(true);
+    render_distance_slider->setIdentifiers({"render_distance_slider"});
+    render_distance_slider->onMove = [this](){
+        update_render_distance = true;
+    };
+    
+    graphics_settings->appendChild(render_distance_slider);
+
     AddGameMode<GameModeSurvival>();
     AddGameMode<GameModeStructureCapture>();
     selected_game_mode = 1;
@@ -172,8 +187,6 @@ void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
     }
 
     camera.setRotation(camPitch, camYaw);
-
-    //std::cout << "Camera rotated: " << camPitch << " " << camYaw << std::endl;
 
     terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
@@ -393,10 +406,11 @@ void MainScene::physicsUpdate(){
         last_tick_time = current;
 
         glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
-        if(glm::distance(glm::vec3(camWorldPosition),glm::vec3(lastCamWorldPosition)) >= 2){ // Crossed chunks
+        if(glm::distance(glm::vec3(camWorldPosition),glm::vec3(lastCamWorldPosition)) >= 2 || update_render_distance){ // Crossed chunks
             //std::cout << "New chunk position: " << camWorldPosition.x << " " << camWorldPosition.y << " " << camWorldPosition.z << std::endl;
             updateLoadedLocations(lastCamWorldPosition, camWorldPosition);
             lastCamWorldPosition = camWorldPosition;
+            update_render_distance = false;
         }
 
 

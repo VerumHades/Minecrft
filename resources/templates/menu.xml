@@ -39,7 +39,17 @@
     </new_world_menu>
     <settings>
         <image class="background_image" src="resources/textures/ui/background_2.png"></image>
-        <scrollable class="middle_frame" id="settings_scrollable">
+        <scrollable class="amiddle_frame" id="settings_scrollable">
+            <frame class = "settings_section">
+                <label class="settings_section_title">Graphics</label>
+                <frame class = "settings_section_content" width="100%">
+                    <frame id="render_distance_container" class="controlls_member">
+                        <label>Render distance:</label>
+                        
+                    </frame>
+                </frame>
+            </frame>
+
             <frame class = "settings_section">
                 <label class="settings_section_title">Keybinds</label>
                 <frame class = "settings_section_content" width="100%" id="keybind_container">

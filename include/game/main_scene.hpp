@@ -90,6 +90,8 @@ class MainScene: public Scene{
         std::vector<std::shared_ptr<GameMode>> game_modes;
         int selected_game_mode = -1;
 
+        std::atomic<bool> update_render_distance = false;
+
         GameModeState gamemodeState = {
             game_state.get(),
             wireframeRenderer,
