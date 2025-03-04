@@ -51,6 +51,11 @@ class KeyInputManager{
             else if(action == GLFW_RELEASE) actionStates[boundKeys[key].action] = false;
         }
 
+        void reset(){
+            for(auto& [action, state]: actionStates)
+                state = false;
+        }
+
         const std::unordered_map<int, Keybind>& getBoundKeys() const {return boundKeys;}
 };
 

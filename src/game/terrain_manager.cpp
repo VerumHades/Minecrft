@@ -80,7 +80,12 @@ void TerrainManager::loadRegion(glm::ivec3 around, int render_distance){
 }
 
 void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){
-    if(!game_state || generating_meshes) return;
+    if(!game_state) return;
+
+    if(generating_meshes){
+        stop_mesh_generation = true;
+        while(generating_meshes) {}
+    }
 
     auto& terrain = game_state->getTerrain();
     
@@ -91,6 +96,8 @@ void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){
 
         while(indexer.getCurrentDistance() < render_distance)
         {
+            if(stop_mesh_generation) break;
+
             glm::ivec3 chunkPosition = indexer.get() + around;
             indexer.next();
 
@@ -107,6 +114,7 @@ void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){
         
         while(indexer.getCurrentDistance() < render_distance){
             if(stop_mesh_generation) break;
+
             if(has_priority_meshes && priority_count > 0){
                 mesh_generator.syncGenerateAsyncUploadMesh(priority_mesh_queue[(priority_count--) - 1], BitField3D::NONE);
                 continue;
@@ -124,6 +132,8 @@ void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){
 
             mesh_generator.syncGenerateAsyncUploadMesh(chunk, level);
         }
+
+        stop_mesh_generation = false;
         generating_meshes = false;
     });
 
