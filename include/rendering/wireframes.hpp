@@ -10,13 +10,13 @@ class WireframeCubeRenderer{
     private:
         GLVertexArray vao;
 
-        const size_t maxCubes = 2048 * 4;
+        const size_t maxCubes = 1024;
         size_t cubes = 0;
         GLBuffer<float, GL_ARRAY_BUFFER        > instanceBuffer;
         GLBuffer<float, GL_ARRAY_BUFFER        > vertexBuffer;
         GLBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> indexBuffer;
 
-        ShaderProgram wireframeProgram = ShaderProgram("resources/shaders/graphical/wireframe/cube_wireframe.vs", "resources/shaders/graphical/wireframe/cube_wireframe.fs");
+        ShaderProgram wireframeProgram = ShaderProgram("resources/shaders/graphical/cubes/cube_wireframe.vs", "resources/shaders/graphical/cubes/cube_wireframe.fs");
     public:
         WireframeCubeRenderer();
 

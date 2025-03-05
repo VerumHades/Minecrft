@@ -62,6 +62,10 @@ class FunctionalUniform: public UniformBase{
             glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(mat));
         }
 
+        void setUniformValue(const float& vec, int32_t location) {
+            glUniform1f(location, vec);
+        }
+
         void setUniformValue(const glm::vec3& vec, int32_t location) {
             glUniform3fv(location, 1, glm::value_ptr(vec));
         }

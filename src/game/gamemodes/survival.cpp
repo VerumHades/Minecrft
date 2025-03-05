@@ -51,6 +51,10 @@ void GameModeSurvival::Initialize(){
     CraftingRecipeRegistry::get().addRecipe(CraftingRecipe(
         {CraftingRecipe::RecipeItemRequirement{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1}}
         , "block_crazed",1));
+
+    onCursorTargetChange = [this](){
+        mining_delay = 1.0f;
+    };
 }
 
 void GameModeSurvival::Open(){
@@ -86,6 +90,98 @@ void GameModeSurvival::Render(double deltatime){
         hotbar->update();
         update_hotbar = false;
     }
+
+    if(!state.game_state) return;
+    auto& game_state = *state.game_state;
+    
+    if(!cursor_state.blockUnderCursor || cursor_state.blockUnderCursor->id == BLOCK_AIR_INDEX) return;
+
+    if(mining) state.cube_renderer.setCube(0, cursor_state.blockUnderCursorPosition, 5 - static_cast<int>(5.0f * mining_delay));
+    else state.cube_renderer.removeCube(0);
+
+    if(IsBaseLayerActive()){
+        if (state.input_manager.isDown(GLFW_MOUSE_BUTTON_LEFT)){  
+            
+            if(mining_delay <= 0.0f){
+                BreakBlockUnderCursor();
+                mining_delay = 1.0f;
+                UpdateCursor();
+            }
+            else mining_delay -= deltatime;
+
+            mining = true;
+        }
+        else mining = false;
+    }
+}
+
+void GameModeSurvival::BreakBlockUnderCursor(){
+    if(!state.game_state) return;
+    auto& game_state = *state.game_state;
+    
+    if(!cursor_state.blockUnderCursor || cursor_state.blockUnderCursor->id == BLOCK_AIR_INDEX) return;
+
+    auto* block_prototype = BlockRegistry::get().getPrototype(cursor_state.blockUnderCursor->id);
+    if(!block_prototype) return;
+    auto* item_prototype = ItemRegistry::get().getPrototype("block_" + block_prototype->name);
+    if(!item_prototype) return;
+
+    Entity entity = DroppedItem::create(glm::vec3(cursor_state.blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5), ItemRegistry::get().createItem(item_prototype));
+    entity.accelerate({
+        static_cast<float>(std::rand() % 200) / 100.0f - 1.0f,
+        0.6f,
+        static_cast<float>(std::rand() % 200) / 100.0f - 1.0f
+    }, 1.0f);
+    game_state.addEntity(entity);
+    //auto& selected_slot = hotbar->getSelectedSlot();
+    //inventory->addItem();
+
+    game_state.getTerrain().setBlock(cursor_state.blockUnderCursorPosition, {BLOCK_AIR_INDEX});
+
+    auto chunk = game_state.getTerrain().getChunkFromBlockPosition(cursor_state.blockUnderCursorPosition);
+    if(!chunk) return;
+    state.regenerateChunkMesh(chunk, game_state.getTerrain().getGetChunkRelativeBlockPosition(cursor_state.blockUnderCursorPosition));
+}
+
+void GameModeSurvival::PlaceBlock(){
+    if(!state.game_state) return;
+    auto& game_state = *state.game_state;
+    
+    if(!cursor_state.blockUnderCursor || cursor_state.blockUnderCursor->id == BLOCK_AIR_INDEX) return;
+
+    auto* block_prototype = BlockRegistry::get().getPrototype(cursor_state.blockUnderCursor->id);
+            
+    if(block_prototype && block_prototype->interface){
+        block_prototype->interface->open(cursor_state.blockUnderCursor->metadata, state.game_state);
+        state.scene.setUILayer(block_prototype->interface->getName());
+        return;
+    }
+
+    auto& player = game_state.getPlayer();
+
+    glm::ivec3 blockPosition = glm::floor(cursor_state.blockUnderCursorEmpty);
+
+    auto* selected_slot = hotbar->getSelectedSlot();
+    if(!selected_slot || !selected_slot->hasItem()) return;
+
+    auto* prototype = selected_slot->getItem()->getPrototype();
+    if(!prototype || !prototype->isBlock()) return;
+
+    game_state.getTerrain().setBlock(blockPosition, {prototype->getBlockID()});
+    if(
+        game_state.entityCollision(player, player.getVelocity()) ||
+        game_state.entityCollision(player)
+    ){
+        game_state.getTerrain().setBlock(blockPosition, {BLOCK_AIR_INDEX});
+        return;
+    }
+
+    selected_slot->decreaseQuantity(1);
+    hotbar->update();
+
+    auto* chunk = game_state.getTerrain().getChunkFromBlockPosition(blockPosition);
+    if(!chunk) return;
+    state.regenerateChunkMesh(chunk, game_state.getTerrain().getGetChunkRelativeBlockPosition(blockPosition));
 }
 
 void GameModeSurvival::KeyEvent(int key, int scancode, int action, int mods){
@@ -110,71 +206,10 @@ void GameModeSurvival::KeyEvent(int key, int scancode, int action, int mods){
     }
 }
 void GameModeSurvival::MouseEvent(int button, int action, int mods){
-    if(!state.game_state) return;
-    auto& game_state = *state.game_state;
-    
-    if(!cursor_state.blockUnderCursor || cursor_state.blockUnderCursor->id == BLOCK_AIR_INDEX) return;
-
-    auto& player = game_state.getPlayer();
-
-    if(IsBaseLayerActive()){
-        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS ){  
-            auto* block_prototype = BlockRegistry::get().getPrototype(cursor_state.blockUnderCursor->id);
-            if(!block_prototype) return;
-            auto* item_prototype = ItemRegistry::get().getPrototype("block_" + block_prototype->name);
-            if(!item_prototype) return;
-            
-            Entity entity = DroppedItem::create(glm::vec3(cursor_state.blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5), ItemRegistry::get().createItem(item_prototype));
-            entity.accelerate({
-                static_cast<float>(std::rand() % 200) / 100.0f - 1.0f,
-                0.6f,
-                static_cast<float>(std::rand() % 200) / 100.0f - 1.0f
-            }, 1.0f);
-            game_state.addEntity(entity);
-            //auto& selected_slot = hotbar->getSelectedSlot();
-            //inventory->addItem();
-
-            game_state.getTerrain().setBlock(cursor_state.blockUnderCursorPosition, {BLOCK_AIR_INDEX});
-
-            auto chunk = game_state.getTerrain().getChunkFromBlockPosition(cursor_state.blockUnderCursorPosition);
-            if(!chunk) return;
-            state.regenerateChunkMesh(chunk, game_state.getTerrain().getGetChunkRelativeBlockPosition(cursor_state.blockUnderCursorPosition));
-        }
-        else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
-            auto* block_prototype = BlockRegistry::get().getPrototype(cursor_state.blockUnderCursor->id);
-            if(block_prototype && block_prototype->interface){
-                block_prototype->interface->open(cursor_state.blockUnderCursor->metadata, state.game_state);
-                state.scene.setUILayer(block_prototype->interface->getName());
-                return;
-            }
-
-            glm::ivec3 blockPosition = glm::floor(cursor_state.blockUnderCursorEmpty);
-
-            auto* selected_slot = hotbar->getSelectedSlot();
-            if(!selected_slot || !selected_slot->hasItem()) return;
-
-            auto* prototype = selected_slot->getItem()->getPrototype();
-            if(!prototype || !prototype->isBlock()) return;
-
-            game_state.getTerrain().setBlock(blockPosition, {prototype->getBlockID()});
-            if(
-                game_state.entityCollision(player, player.getVelocity()) ||
-                game_state.entityCollision(player)
-            ){
-                game_state.getTerrain().setBlock(blockPosition, {BLOCK_AIR_INDEX});
-                return;
-            }
-
-            selected_slot->decreaseQuantity(1);
-            hotbar->update();
-
-            auto* chunk = game_state.getTerrain().getChunkFromBlockPosition(blockPosition);
-            if(!chunk) return;
-            state.regenerateChunkMesh(chunk, game_state.getTerrain().getGetChunkRelativeBlockPosition(blockPosition));
-        }
+    if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
+        PlaceBlock();
+        UpdateCursor();
     }
-   
-    UpdateCursor();
 }
 
 void GameModeSurvival::MouseMoved(int mouseX, int mouseY){
@@ -196,8 +231,9 @@ void GameModeSurvival::MouseScroll(double xoffset, double yoffset){
     hotbar->update();
 }
 
-void GameModeSurvival::PhysicsUpdate(){
+void GameModeSurvival::PhysicsUpdate(double deltatime){
     auto* in_hand_slot = hotbar->getSelectedSlot();
+    
     if(in_hand_slot && in_hand_slot->hasItem()){
         auto* prototype = in_hand_slot->getItem()->getPrototype();
         if(prototype && prototype->getModel()){

@@ -37,7 +37,7 @@ class GameModeStructureCapture: public GameModeInteractable{
         
         void Open() override;
         void Render(double deltatime) override;
-        void PhysicsUpdate() override;
+        void PhysicsUpdate(double deltatime) override;
 
         void KeyEvent(int key, int scancode, int action, int mods) override;
         void MouseEvent(int button, int action, int mods) override;

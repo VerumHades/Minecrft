@@ -136,7 +136,7 @@ void GameModeStructureCapture::MouseScroll(double xoffset, double yoffset){
     
 }
 
-void GameModeStructureCapture::PhysicsUpdate(){
+void GameModeStructureCapture::PhysicsUpdate(double deltatime){
     
 }
 

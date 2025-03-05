@@ -12,6 +12,16 @@ void MainScene::initialize(){
     //this->getUILayer("menu").eventLocks = {true, true, true, true};
     //this->getUILayer("settings").eventLocks = {true, true, true, true};
 
+    std::vector<std::string> freeCubeTextures = {
+        "resources/textures/block_breaking/level0.png",
+        "resources/textures/block_breaking/level1.png",
+        "resources/textures/block_breaking/level2.png",
+        "resources/textures/block_breaking/level3.png",
+        "resources/textures/block_breaking/level4.png",
+        "resources/textures/block_breaking/level5.png"
+    };
+    cubeRenderer.loadTextures(freeCubeTextures);
+
     std::array<std::string,6> skyboxPaths = {
         "resources/skybox/stars/right.png",
         "resources/skybox/stars/left.png",
@@ -194,6 +204,7 @@ void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
 
 void MainScene::mouseEvent(GLFWwindow* window, int button, int action, int mods){
     HandleGamemodeEvent(&GameMode::MouseEvent, button, action, mods);
+    inputManager.mouseEvent(window,button,action,mods);
 }
 
 void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
@@ -325,6 +336,8 @@ void MainScene::render(){
     glm::vec3 camPosition = game_state->getPlayer().getPosition() + camOffset;
     camera.setPosition(camPosition);
 
+    //cubeRenderer.setCube(0, game_state->getPlayer().getPosition() + camera.getDirection() * 2.0f, 0);
+
     if(updateVisibility > 0){
         terrain_manager.getMeshRegistry().updateDrawCalls(camera.getPosition(), camera.getFrustum());
         updateVisibility = 0;
@@ -366,6 +379,7 @@ void MainScene::render(){
         Model::DrawAll();
 
         wireframeRenderer.draw();
+        cubeRenderer.draw();
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     gBuffer.unbind();
@@ -465,9 +479,9 @@ void MainScene::physicsUpdate(){
 
         if(!game_state->getTerrain().getChunk(camWorldPosition)) continue;
 
-        game_state->updateEntities(deltatime);
+        HandleGamemodeEvent(&GameMode::PhysicsUpdate, deltatime);
 
-        HandleGamemodeEvent(&GameMode::PhysicsUpdate);
+        game_state->updateEntities(deltatime);
 
         Model::SwapAll();
     }

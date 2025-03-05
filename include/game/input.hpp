@@ -25,6 +25,7 @@ class KeyInputManager{
 
         std::unordered_map<int, Keybind> boundKeys;
         std::unordered_map<T, bool> actionStates;
+        std::unordered_map<int, bool> mouseStates;
 
     public:
         KeyInputManager(){
@@ -44,15 +45,26 @@ class KeyInputManager{
             if(actionStates.count(action) == 0) return false;
             return actionStates[action];
         }
+
+        bool isDown(int mouse_key){
+            if(!mouseStates.contains(mouse_key)) return false;
+            return mouseStates.at(mouse_key);
+        }
         
         void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
             if(boundKeys.count(key) == 0) return;
             if(action == GLFW_PRESS) actionStates[boundKeys[key].action] = true;
             else if(action == GLFW_RELEASE) actionStates[boundKeys[key].action] = false;
         }
+        void mouseEvent(GLFWwindow* window, int button, int action, int mods){
+            mouseStates[button] = action == GLFW_PRESS;
+        }
 
         void reset(){
             for(auto& [action, state]: actionStates)
+                state = false;
+
+            for(auto& [action, state]: mouseStates)
                 state = false;
         }
 

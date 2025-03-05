@@ -18,8 +18,8 @@ class InstancedMesh{
         }; 
 
         enum Direction{
-            Forward = 1,
-            Backward = -1
+            Forward = 0,
+            Backward = 1
         };
         const static size_t instance_data_size = 12;
 

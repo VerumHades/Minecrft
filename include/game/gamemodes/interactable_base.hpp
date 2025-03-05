@@ -9,6 +9,8 @@ class GameModeInteractable: public GameMode{
             glm::vec3 blockUnderCursorEmpty = {0,0,0}; // Block before the selected block, air where a block will be placed
             Block* blockUnderCursor = nullptr;
         } cursor_state;
+
+        std::function<void()> onCursorTargetChange;
         
         void UpdateCursor();
 

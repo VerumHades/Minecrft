@@ -18,7 +18,6 @@ in float Occlusion;
 
 uniform sampler2DArray textureArray;
 uniform sampler2D shadowMap;
-uniform vec3 sun_direction;
 //uniform sampler3D lightArray;
 
 void main()

@@ -21,8 +21,14 @@ class GameModeSurvival: public GameModeInteractable{
         std::shared_ptr<UILabel> fps_label;
 
         std::atomic<bool> update_hotbar = false;
+        
+        bool mining = false;
+        float mining_delay = 1.0f;
 
         ItemTextureAtlas itemTextureAtlas{};
+
+        void BreakBlockUnderCursor();
+        void PlaceBlock();
 
     public:
         GameModeSurvival(GameModeState& state): GameModeInteractable(state, "survival"){
@@ -33,7 +39,7 @@ class GameModeSurvival: public GameModeInteractable{
         
         void Open() override;
         void Render(double deltatime) override;
-        void PhysicsUpdate() override;
+        void PhysicsUpdate(double deltatime) override;
 
         void KeyEvent(int key, int scancode, int action, int mods) override;
         void MouseEvent(int button, int action, int mods) override;

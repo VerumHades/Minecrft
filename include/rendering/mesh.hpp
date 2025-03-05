@@ -36,7 +36,8 @@ class LoadedMesh{
 
         const auto& getVertexBuffer(){return vertex_buffer;};
         const auto& getIndexBuffer(){return index_buffer;};
-        std::array<GLVertexArray,3>& getVAO() {return vaos;};
+        std::array<GLVertexArray,3>& getVAOs() {return vaos;};
+        GLVertexArray& getVAO() {return vaos[0];};
 };
 
 class Mesh{
@@ -52,7 +53,9 @@ class Mesh{
 
         void addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height);
         void addQuadFace(std::array<glm::vec3, 4> vertices, glm::vec3 normal, bool clockwise,
-            std::vector<float> metadata = {}, std::array<glm::vec2, 4> textureCoordinates = {glm::vec2{0, 0},{1, 0},{1, 1},{0, 1}});
+            std::vector<float> metadata, std::array<glm::vec2, 4> textureCoordinates = {glm::vec2{0, 0},{1, 0},{1, 1},{0, 1}});
+
+        void addQuadFace(std::array<glm::vec3, 4> vertices, glm::vec3 normal, bool clockwise);
 
         std::vector<float>& getVertices() {return this->vertices;}
         std::vector<uint>& getIndices() {return this->indices;}

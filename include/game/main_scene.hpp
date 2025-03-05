@@ -16,6 +16,7 @@
 #include <rendering/gbuffer.hpp>
 #include <rendering/opengl/quad.hpp>
 #include <rendering/ssao.hpp>
+#include <rendering/cubes.hpp>
 
 #include <parsing/block_loader.hpp>
 
@@ -79,6 +80,7 @@ class MainScene: public Scene{
         std::unique_ptr<GameState> game_state;
 
         WireframeCubeRenderer wireframeRenderer{};
+        CubeRenderer cubeRenderer;
         
         TerrainManager terrain_manager{};
 
@@ -95,6 +97,7 @@ class MainScene: public Scene{
         GameModeState gamemodeState = {
             game_state.get(),
             wireframeRenderer,
+            cubeRenderer,
             inputManager,
             camera,
             terrain_manager,

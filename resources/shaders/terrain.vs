@@ -51,7 +51,7 @@ void main()
     FragPos = viewPos.xyz;
     gl_Position = player_camera_projection_matrix * viewPos;
 
-    int index = int(0);
+    int index = int(aInstaceType) * 2 + int(aInstanceDirection);
 
     Normal = Normals[index];
 

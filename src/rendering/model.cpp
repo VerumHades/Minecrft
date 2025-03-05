@@ -26,8 +26,8 @@ void Model::CleanupAll(){
 void Model::addMesh(Mesh& mesh){
     auto loaded_mesh = mesh.load();
 
-    for(int i = 0;i < loaded_mesh->getVAO().size();i++){
-        auto& vao = loaded_mesh->getVAO()[i];
+    for(int i = 0;i < loaded_mesh->getVAOs().size();i++){
+        auto& vao = loaded_mesh->getVAOs()[i];
         vao.attachBuffer(&instance_buffers[i], {{VEC4,VEC4,VEC4,VEC4}, true}, 0);
         vao.attachBuffer(&instance_buffers[(i + 2) % 3], {{VEC4,VEC4,VEC4,VEC4}, true}, 1);
     }
@@ -85,8 +85,8 @@ void Model::drawAllRequests(){
     for(auto& mesh: loaded_meshes){
         if(mesh->getTexture()) mesh->getTexture()->bind(0);
         
-        mesh->getVAO()[selected].bind();
+        mesh->getVAOs()[selected].bind();
         glDrawElementsInstanced(GL_TRIANGLES, mesh->indicesTotal(), GL_UNSIGNED_INT, 0, request_buffer.size() / request_size);
-        mesh->getVAO()[selected].unbind();
+        mesh->getVAOs()[selected].unbind();
     }
 }
