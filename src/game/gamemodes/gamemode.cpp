@@ -12,6 +12,9 @@ bool GameMode::isActiveLayerLocal(const std::string& name){
     return state.scene.isActiveLayer(getLocalLayerName(name));
 }
 
+void GameMode::setLayerLocal(const std::string& name){
+    state.scene.setUILayer(getLocalLayerName(name));
+}
 UILayer& GameMode::getLayerLocal(const std::string& name){
     return state.scene.getUILayer(getLocalLayerName(name));
 }

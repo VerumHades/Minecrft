@@ -10,7 +10,7 @@ ItemPrototype* ItemRegistry::addPrototype(ItemPrototype prototype){
     return prototypes.at(prototype.name).get();
 }
 
-ItemPrototype* ItemRegistry::getPrototype(std::string name){
+ItemPrototype* ItemRegistry::getPrototype(const std::string& name){
     if(!prototypes.contains(name)) return nullptr;
     return prototypes.at(name).get();
 }
@@ -48,15 +48,15 @@ void Item::serialize(ByteArray& to){
     to.append(name);
     to.append<int>(quantity);
 }
-ItemID Item::deserialize(ByteArray& from){
+ItemRef Item::deserialize(ByteArray& from){
     std::string name = from.sread();
     int quantity = from.read<int>();
 
-    ItemID id = ItemRegistry::get().createItem(name);
+    ItemRef item = Item::Create(name);
 
-    if(id == NO_ITEM) return id;
-    ItemRegistry::get().getItem(id)->setQuantity(quantity);
-    return id;
+    if(!item) return NO_ITEM;
+    item->setQuantity(quantity);
+    return item;
 }
 
 ItemPrototype* ItemRegistry::createPrototypeForBlock(const BlockRegistry::BlockPrototype* prototype){
@@ -68,36 +68,20 @@ ItemPrototype* ItemRegistry::createPrototypeForBlock(const BlockRegistry::BlockP
     return addPrototype({prototype_name, prototype});
 }
 
-bool ItemRegistry::prototypeExists(std::string name){
+bool ItemRegistry::prototypeExists(const std::string& name){
     return prototypes.contains(name);
 }
 
-static size_t itemID = NO_ITEM;
-ItemID ItemRegistry::createItem(ItemPrototype* prototype){
-    size_t id = itemID;
-    if(id == NO_ITEM){
-        itemID = 1;
-        id = 1;
-    }
-    itemID++;
-
-    items.try_emplace(id,prototype);
-    return id;
-}  
-ItemID ItemRegistry::createItem(std::string prototype_name){
-    auto prototype = getPrototype(prototype_name);
-    if(!prototype) return NO_ITEM;
-    return createItem(getPrototype(prototype_name));
+ItemRef Item::Create(const std::string& name){
+    auto* prototype = ItemRegistry::get().getPrototype(name);
+    if(!prototype) return nullptr;
+    return Create(prototype);
 }
 
-Item* ItemRegistry::getItem(ItemID id){
-    if(id == NO_ITEM) return nullptr;
-    if(!items.contains(id)) return nullptr;
-    return &items.at(id);
+ItemRef Item::Create(ItemPrototype* prototype){
+    return std::make_shared<Item>(prototype);
 }
-void ItemRegistry::deleteItem(ItemID id){
-    if(items.contains(id)) items.erase(id);
-}
+
 
 bool LogicalItemSlot::takeItemFrom(LogicalItemSlot& source, int quantity){
     bool source_has_item = source.hasItem();
@@ -135,7 +119,7 @@ bool LogicalItemSlot::moveItemTo(LogicalItemSlot& destination, int quantity){
     return destination.takeItemFrom(*this, quantity);
 }
 
-ItemID LogicalItemSlot::getPortion(int quantity){
+ItemRef LogicalItemSlot::getPortion(int quantity){
     if(!hasItem()) return NO_ITEM;
 
     Item& source_item = *getItem();
@@ -145,19 +129,19 @@ ItemID LogicalItemSlot::getPortion(int quantity){
     int source_quantity = source_item.getQuantity();
     if(quantity == -1) quantity = source_quantity;
 
-    ItemID output_id = NO_ITEM;
+    ItemRef output = NO_ITEM;
 
     if(source_quantity <= quantity){
-        output_id = item;
+        output = item;
         item = NO_ITEM;
     }
     else{
         source_item.setQuantity(source_quantity - quantity);
 
-        output_id = ItemRegistry::get().createItem(source_item.getPrototype());
-        ItemRegistry::get().getItem(output_id)->setQuantity(quantity);
+        output = Item::Create(source_item.getPrototype());
+        output->setQuantity(quantity);
     }
-    return output_id;
+    return output;
 }
 
 int LogicalItemSlot::decreaseQuantity(int number){
@@ -175,12 +159,11 @@ int LogicalItemSlot::decreaseQuantity(int number){
     }
 }
 void LogicalItemSlot::clear(){
-    ItemRegistry::get().deleteItem(item);
     item = NO_ITEM;
 }
 
 bool LogicalItemSlot::swap(LogicalItemSlot& slot){
-    ItemID other = slot.item;
+    ItemRef other = slot.item;
     slot.item = item;
     item = other;
     return true;
@@ -189,9 +172,9 @@ bool LogicalItemSlot::swap(LogicalItemSlot& slot){
 LogicalItemInventory::LogicalItemInventory(int slots_horizontaly, int slots_verticaly): slots(slots_horizontaly * slots_verticaly),
 slots_horizontaly(slots_horizontaly), slots_verticaly(slots_verticaly){}
 
-bool LogicalItemInventory::addItem(ItemID item_id){
-    auto* item = ItemRegistry::get().getItem(item_id);
+bool LogicalItemInventory::addItem(ItemRef item){
     if(!item) return false;
+
     auto* prototype = item->getPrototype();
     if(!prototype) return false;
     //std::cout << "Adding item " << prototype << std::endl;
@@ -207,11 +190,11 @@ bool LogicalItemInventory::addItem(ItemID item_id){
             continue;
         }
 
-        if(slot->addItem(item_id)) return true;
+        if(slot->addItem(item)) return true;
     }
 
     if(first_empty_slot)
-        return first_empty_slot->addItem(item_id );
+        return first_empty_slot->addItem(item);
 
     return false;
 }
@@ -259,13 +242,11 @@ LogicalItemInventory LogicalItemInventory::deserialize(ByteArray& from){
 }
 
 void DroppedItem::serialize(ByteArray& array){
-    Item* item = ItemRegistry::get().getItem(this->item);
     if(!item) return;
     item->serialize(array);
 }
 
 void DroppedItem::setup(Entity* entity){
-    Item* item = ItemRegistry::get().getItem(this->item);
     if(!item) return;
 
     entity->setModel(item->getPrototype()->getModel());
@@ -277,8 +258,7 @@ void DroppedItem::setup(Entity* entity){
 }
 
 std::shared_ptr<EntityData> DroppedItem::deserializeData(ByteArray& array){
-    ItemID item = Item::deserialize(array);
-    return std::make_shared<DroppedItem>(item);
+    return std::make_shared<DroppedItem>(Item::deserialize(array));
 }
 
 void DroppedItem::update(GameState* state){

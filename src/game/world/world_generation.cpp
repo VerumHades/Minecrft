@@ -132,7 +132,13 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
     //static const int count = CHUNK_SIZE / ChunkDefinition::size;
     auto& heightMap = getHeightmapFor(position);
     
-    if(isChunkSkipable(chunk, position)) return;
+    if(heightMap.lowest - 1 > position.y * CHUNK_SIZE + CHUNK_SIZE){
+        chunk->fill({stone});
+        return;
+    }
+    if(heightMap.highest < position.y * CHUNK_SIZE){
+        return;
+    }
 
     for(int x = 0; x < CHUNK_SIZE; x++) 
     for(int y = 0; y < CHUNK_SIZE; y++) 

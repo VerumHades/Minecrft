@@ -7,6 +7,7 @@
 #include <game/game_state.hpp>
 #include <atomic>
 #include <indexing.hpp>
+#include <thread>
 
 class TerrainManager{
     private:
@@ -17,6 +18,8 @@ class TerrainManager{
         GameState* game_state = nullptr;
 
         void generateRegion(glm::ivec3 around, int render_distance);
+
+        std::atomic<bool> loading_region = false;
 
         std::atomic<bool> generating_meshes = false;
         std::atomic<bool> has_priority_meshes = false;
@@ -31,7 +34,6 @@ class TerrainManager{
         int priority_count = 0;
         
         void meshRegion(glm::ivec3 around, int render_distance);
-        
         //void loadChunk(const glm::ivec3& position);
         //void unloadChunk(const glm::ivec3& position);
 
@@ -41,7 +43,7 @@ class TerrainManager{
         void unloadAll(){ mesh_registry.clear(); }
 
         bool uploadPendingMeshes();
-        void loadRegion(glm::ivec3 around, int render_distance);
+        bool loadRegion(glm::ivec3 around, int render_distance);
 
         void regenerateChunkMesh(Chunk* chunk);
         void regenerateChunkMesh(Chunk* chunk,glm::vec3 blockCoords);

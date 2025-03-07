@@ -12,27 +12,6 @@ void TerrainManager::generateRegion(glm::ivec3 around, int render_distance){
     std::array<std::queue<Chunk*>, thread_count> generation_queues;
     int queue_index = 0;
 
-    //world->getWorldGenerator().generateChunkRegion(*world, {0,0,0});
-
-    //ScopeTimer timer("Generated chunks");
-    
-    /*for(int x = -pregenDistance; x <= pregenDistance; x++) 
-    for(int z = -pregenDistance; z <= pregenDistance; z++)
-    for(int y = -pregenDistance; y <= pregenDistance; y++) 
-    {
-        glm::ivec3 chunkPosition = glm::ivec3(x,y,z) + around;
-
-        if(terrain.getChunk(chunkPosition)) continue;
-        auto* chunk = terrain.createEmptyChunk(chunkPosition);
-
-        if(world_stream.hasChunkAt(chunkPosition)){
-            world_stream.load(chunk);
-            return;
-        }
-
-        world_generator.generateTerrainChunk(chunk, chunkPosition);
-    }*/
-
     int total = 0;
     for(int x = -pregenDistance; x <= pregenDistance; x++) 
     for(int z = -pregenDistance; z <= pregenDistance; z++)
@@ -72,11 +51,24 @@ void TerrainManager::generateRegion(glm::ivec3 around, int render_distance){
     generating_world = false;
 }
 
-void TerrainManager::loadRegion(glm::ivec3 around, int render_distance){
-    if(!game_state || !game_state->world_stream) return;
+bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance){
+    if(!game_state || !game_state->world_stream) return false;
+    if(loading_region) return false;
 
-    generateRegion(around, render_distance);
-    meshRegion(around,render_distance);
+    loading_region = true;
+    std::thread th([this, around, render_distance](){
+        generateRegion(around, render_distance);
+        meshRegion(around,render_distance);
+        loading_region = false;
+    });
+
+    th.detach();
+    return true;
+}
+
+BitField3D::SimplificationLevel calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition){
+    int distance = glm::clamp(glm::distance(glm::vec3(around), glm::vec3(chunkPosition)) / 3.0f, 0.0f, 7.0f);
+    return static_cast<BitField3D::SimplificationLevel>(distance - 1);
 }
 
 void TerrainManager::meshRegion(glm::ivec3 around, int render_distance){

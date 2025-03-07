@@ -37,6 +37,7 @@ class GameMode{
         GameModeState& state;
 
         UILayer& getLayerLocal(const std::string& name);
+        void setLayerLocal(const std::string& name);
         bool isActiveLayerLocal(const std::string& name);
         bool IsBaseLayerActive();
         

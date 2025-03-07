@@ -12,11 +12,13 @@
 #include <game/items/block_model.hpp>
 #include <rendering/bitworks.hpp>
 
+#include <memory>
+
 class ItemTextureAtlas;
 class Item;
 
-using ItemID = size_t;
-#define NO_ITEM 0ULL
+using ItemRef = std::shared_ptr<Item>;
+#define NO_ITEM nullptr;
 
 class ItemPrototype{
     private:
@@ -63,43 +65,38 @@ class Item{
         Item& operator= (const Item&) = delete;
     
     public:
-        // DO NOT USE, USE createItem from ItemRegistry instead!
+        // DO NOT USE
         Item(ItemPrototype* prototype_ptr): prototype(prototype_ptr) {}
+
+        static ItemRef Create(const std::string& name);
+        static ItemRef Create(ItemPrototype* prototype);
 
         ItemPrototype* getPrototype() {return prototype;}
         int getQuantity(){ return quantity; }
         void setQuantity(int number) {quantity = number;}
 
         void serialize(ByteArray& to);
-        static ItemID deserialize(ByteArray& from);
+        static std::shared_ptr<Item> deserialize(ByteArray& from);
 };
 
 class ItemRegistry{
     private:
         std::unordered_map<std::string, std::unique_ptr<ItemPrototype>> prototypes = {};
-        std::unordered_map<size_t, Item> items = {};
 
         ItemRegistry(){}
     public:
         ItemPrototype* addPrototype(ItemPrototype prototype);
-        ItemPrototype* getPrototype(std::string name);
+        ItemPrototype* getPrototype(const std::string& name);
 
         ItemPrototype* createPrototypeForBlock(const BlockRegistry::BlockPrototype* prototype);
-        
-        bool prototypeExists(std::string name);
-
-        ItemID createItem(std::string prototype_name);
-        ItemID createItem(ItemPrototype* prototype);
-
-        void deleteItem(ItemID id);
-        Item* getItem(ItemID id);
+        bool prototypeExists(const std::string& name);
 
         static ItemRegistry& get();
 };
 
 class LogicalItemSlot{
     private:
-        ItemID item = NO_ITEM;
+        ItemRef item;
         bool block_placing = false;
 
     public:
@@ -108,9 +105,9 @@ class LogicalItemSlot{
         bool moveItemTo(LogicalItemSlot& destination, int quantity = -1);
         bool swap(LogicalItemSlot& slot);
 
-        bool addItem(ItemID id){
+        bool addItem(ItemRef item){
             LogicalItemSlot slot;
-            slot.setItem(id);
+            slot.setItem(item);
 
             return takeItemFrom(slot);
         }
@@ -128,10 +125,10 @@ class LogicalItemSlot{
             Takes a portion of the items in the slot and returns an id of an item that has exactly that quantity or less if there was not enough,
             automatically clears and manages the slot
         */
-        ItemID getPortion(int quantity = -1);
+        ItemRef getPortion(int quantity = -1);
 
-        Item* getItem() {return ItemRegistry::get().getItem(item);}
-        void setItem(ItemID id) {item = id;}
+        Item* getItem() {return item.get();}
+        void setItem(ItemRef item) {this->item = item;}
 };
 
 class LogicalItemInventory{
@@ -149,7 +146,7 @@ class LogicalItemInventory{
             return &slots[x + y * slots_horizontaly];
         }
 
-        bool setItem(int x, int y, ItemID item) {
+        bool setItem(int x, int y, ItemRef item) {
             auto* slot = getSlot(x,y);
             if(!slot) return false;
             
@@ -163,7 +160,7 @@ class LogicalItemInventory{
             slot->clear();
         }
 
-        bool addItem(ItemID item);
+        bool addItem(ItemRef item);
 
         int getWidth() const {return slots_horizontaly;}
         int getHeight() const {return slots_verticaly;}
@@ -176,22 +173,21 @@ class LogicalItemInventory{
 
 class DroppedItem: public EntityData{
     private:
-        ItemID item;
+        ItemRef item;
 
     public:
-        DroppedItem(ItemID item): item(item){type = DROPPED_ITEM;}
+        DroppedItem(ItemRef item): item(item){type = DROPPED_ITEM;}
 
         void serialize(ByteArray& array) override;
         void update(GameState* state) override;
-        ItemID getItem(){return item;}
+        ItemRef getItem(){return item;}
 
         void setup(Entity* entity) override;
 
-        static Entity create(glm::vec3 position, ItemID item_id){
-            Item* item = ItemRegistry::get().getItem(item_id);
+        static Entity create(glm::vec3 position, ItemRef item){
             if(!item) return {};
 
-            return Entity(position, glm::vec3{0.4,0.4,0.4}, std::make_shared<DroppedItem>(item_id));
+            return Entity(position, glm::vec3{0.4,0.4,0.4}, std::make_shared<DroppedItem>(item));
         }
         static std::shared_ptr<EntityData> deserializeData(ByteArray& array);
 };

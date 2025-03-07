@@ -141,7 +141,7 @@ void GameModeSurvival::BreakBlockUnderCursor(){
     auto* item_prototype = ItemRegistry::get().getPrototype("block_" + block_prototype->name);
     if(!item_prototype) return;
 
-    Entity entity = DroppedItem::create(glm::vec3(cursor_state.blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5), ItemRegistry::get().createItem(item_prototype));
+    Entity entity = DroppedItem::create(glm::vec3(cursor_state.blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5), Item::Create(item_prototype));
     entity.accelerate({
         static_cast<float>(std::rand() % 200) / 100.0f - 1.0f,
         0.6f,
@@ -211,13 +211,14 @@ void GameModeSurvival::KeyEvent(int key, int scancode, int action, int mods){
             auto* item_prototype = slot->getItem()->getPrototype();
             if(!item_prototype) return;
             
-            auto entity = DroppedItem::create(state.camera.getPosition() + state.camera.getDirection() * 0.5f, ItemRegistry::get().createItem(item_prototype));
+            auto entity = DroppedItem::create(state.camera.getPosition() + state.camera.getDirection() * 0.5f, Item::Create(item_prototype));
             entity.accelerate(state.camera.getDirection(),1.0f);
             game_state.addEntity(entity);
 
             slot->decreaseQuantity(1);
             hotbar->update();
         }
+        else if(key == GLFW_KEY_TAB && action == GLFW_PRESS) setLayerLocal("inventory");
     }
 }
 void GameModeSurvival::MouseEvent(int button, int action, int mods){

@@ -69,7 +69,7 @@ void GameState::loadEntities(){
     }
 }
 
-void GameState::giveItemToPlayer(ItemID item){
+void GameState::giveItemToPlayer(ItemRef item){
     if(!player_hotbar.addItem(item))
             player_inventory.addItem(item);
 }
@@ -85,12 +85,15 @@ void GameState::drawEntity(Entity& entity){
 }
 
 bool GameState::entityCollision(Entity& checked_entity, const glm::vec3& offset){
+    if(checked_entity.shouldGetDestroyed()) return false;
+
     auto& checked_collider = checked_entity.getCollider();
     auto position = checked_entity.getPosition() + offset;
 
     if(terrain.collision(position, &checked_collider)) return true;
 
     for(auto& entity: entities){
+        if(entity.shouldGetDestroyed()) continue;
         if(&entity == &checked_entity) continue;
 
         auto& entity_collider = entity.getCollider();

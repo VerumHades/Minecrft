@@ -263,14 +263,14 @@ void MainScene::open(GLFWwindow* window){
     
     game_state = std::make_unique<GameState>(worldPath);
 
-    for(auto& prototype: BlockRegistry::get().prototypes()){
+    /*for(auto& prototype: BlockRegistry::get().prototypes()){
         if(prototype.id == BLOCK_AIR_INDEX) continue; // Dont make air
 
         auto* ptype = ItemRegistry::get().createPrototypeForBlock(&prototype);
-        ItemID id = ItemRegistry::get().createItem(ptype);
-        ItemRegistry::get().getItem(id)->setQuantity(256);
-        game_state->getPlayerHotbar().addItem(id);
-    }
+        ItemRef item = Item::Create(ptype);
+        item->setQuantity(256);
+        game_state->getPlayerHotbar().addItem(item);
+    }*/
 
     gamemodeState.game_state = game_state.get();
     HandleGamemodeEvent(&GameMode::Open);

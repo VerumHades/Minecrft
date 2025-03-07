@@ -19,7 +19,7 @@ CraftingInterface::CraftingInterface(const std::shared_ptr<UILayer>& layer, Item
 
         auto* slot = result_inventory->getSlot(0,0);
         slot->clear();
-        ItemID item = ItemRegistry::get().createItem(current_recipe->result_prototype_name);
+        ItemRef item = Item::Create(current_recipe->result_prototype_name);
         slot->setItem(item);
         if(slot->hasItem()) slot->getItem()->setQuantity(current_recipe->result_amount);
 
