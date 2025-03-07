@@ -53,7 +53,18 @@ void GameModeSurvival::Initialize(){
         , "block_crazed",1));
 
     onCursorTargetChange = [this](){
-        mining_delay = 1.0f;
+        auto* block_prototype = BlockRegistry::get().getPrototype(cursor_state.blockUnderCursor->id);
+        if(!block_prototype){
+            mining_delay = 1.0f;
+            mining_delay_max = 1.0f;
+            return;
+        }
+
+        float mining_power = 1;
+        
+        can_break = mining_power + 1 >= block_prototype->hardness;
+        mining_delay_max = static_cast<float>(block_prototype->hardness) / mining_power;
+        mining_delay = mining_delay_max;
     };
 }
 
@@ -96,15 +107,19 @@ void GameModeSurvival::Render(double deltatime){
     
     if(!cursor_state.blockUnderCursor || cursor_state.blockUnderCursor->id == BLOCK_AIR_INDEX) return;
 
-    if(mining) state.cube_renderer.setCube(0, cursor_state.blockUnderCursorPosition, 5 - static_cast<int>(5.0f * mining_delay));
+    if(mining) 
+        state.cube_renderer.setCube(
+            0, cursor_state.blockUnderCursorPosition, 
+            5 - static_cast<int>(5.0f * (mining_delay / mining_delay_max))
+        );
     else state.cube_renderer.removeCube(0);
 
     if(IsBaseLayerActive()){
-        if (state.input_manager.isDown(GLFW_MOUSE_BUTTON_LEFT)){  
-            
+        if (state.input_manager.isDown(GLFW_MOUSE_BUTTON_LEFT) && can_break){  
+
             if(mining_delay <= 0.0f){
                 BreakBlockUnderCursor();
-                mining_delay = 1.0f;
+                mining_delay = mining_delay_max;
                 UpdateCursor();
             }
             else mining_delay -= deltatime;

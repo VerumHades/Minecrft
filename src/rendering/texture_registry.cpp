@@ -12,6 +12,10 @@ void TextureRegistry::addTexture(std::string name, const std::string& path){
     };
 }
 
+std::tuple<size_t,bool> TextureRegistry::getTextureIndexChecked(std::string name){
+    if(!textures.contains(name)) return {0,false};
+    return {textures.at(name).index, true};
+}
 size_t TextureRegistry::getTextureIndex(std::string name){
     if(!textures.contains(name)) return 0;
     return textures.at(name).index;

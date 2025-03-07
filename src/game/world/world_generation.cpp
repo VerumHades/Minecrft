@@ -113,21 +113,26 @@ void WorldGenerator::prepareHeightMaps(glm::ivec3 around, int distance){
     }
 }
 
-void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
-    //static const int count = CHUNK_SIZE / ChunkDefinition::size;
+bool WorldGenerator::isChunkSkipable(Chunk* chunk, const glm::ivec3 position){
     auto& heightMap = getHeightmapFor(position);
-
     auto stone = BlockRegistry::get().getIndexByName("stone");
-    auto grass = BlockRegistry::get().getIndexByName("grass");
-    auto blue_wool = BlockRegistry::get().getIndexByName("blue_wool");
 
     if(heightMap.lowest - 1 > position.y * CHUNK_SIZE + CHUNK_SIZE){
         chunk->fill({stone});
-        return;
+        return true;
     }
     if(heightMap.highest < position.y * CHUNK_SIZE){
-        return;
+        return true;
     }
+
+    return false;
+}
+
+void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
+    //static const int count = CHUNK_SIZE / ChunkDefinition::size;
+    auto& heightMap = getHeightmapFor(position);
+    
+    if(isChunkSkipable(chunk, position)) return;
 
     for(int x = 0; x < CHUNK_SIZE; x++) 
     for(int y = 0; y < CHUNK_SIZE; y++) 

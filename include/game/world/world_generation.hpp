@@ -26,22 +26,27 @@ class Chunk;
 class Terrain;
 
 class WorldGenerator{
-    private:
-        FastNoiseLite noise;
-        int seed;
-
+    public:
         struct Heightmap{
             std::array<std::array<int,CHUNK_SIZE>, CHUNK_SIZE> heights;
             int lowest = INT32_MAX;
             int highest = INT32_MIN;
         };
 
+        BlockID stone = BlockRegistry::get().getIndexByName("stone");
+        BlockID grass = BlockRegistry::get().getIndexByName("grass");
+        BlockID blue_wool = BlockRegistry::get().getIndexByName("blue_wool");    
+
+        bool isChunkSkipable(Chunk* chunk, const glm::ivec3 position);
+        Heightmap& getHeightmapFor(glm::ivec3 position);
+    private:
+        FastNoiseLite noise;
+        int seed;
+
         std::unordered_map<glm::ivec3, std::unique_ptr<WorldGenerator::Heightmap>, IVec3Hash, IVec3Equal>& getHeightMaps(){
             static std::unordered_map<glm::ivec3, std::unique_ptr<WorldGenerator::Heightmap>, IVec3Hash, IVec3Equal> height_maps{};
             return height_maps;
         }
-        
-        Heightmap& getHeightmapFor(glm::ivec3 position);
 
         std::shared_ptr<Structure> tree;
                     

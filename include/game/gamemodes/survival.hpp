@@ -23,7 +23,9 @@ class GameModeSurvival: public GameModeInteractable{
         std::atomic<bool> update_hotbar = false;
         
         bool mining = false;
+        bool can_break = false;
         float mining_delay = 1.0f;
+        float mining_delay_max = 1.0f;
 
         ItemTextureAtlas itemTextureAtlas{};
 

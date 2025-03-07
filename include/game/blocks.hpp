@@ -11,6 +11,9 @@
 #include <rendering/bitworks.hpp>
 #include <game/colliders.hpp>
 
+#include <tinyxml2.h>
+
+
 class GameState;
 
 #define CHUNK_SIZE 64
@@ -59,22 +62,26 @@ class BlockRegistry: public TextureRegistry{
 
             std::unique_ptr<BlockInterface> interface = nullptr;
             std::unique_ptr<BlockBehaviour> behaviour = nullptr;
+
+            int hardness = 1;
         };
 
     private:
         std::vector<BlockPrototype> blocks{};
         
         BlockRegistry(){
-            blocks.push_back({
-                BLOCK_AIR_INDEX,
-                "air",
-                {},
-                true,
-                true,
-                {},
-                FULL_BLOCK
-            });
+            BlockPrototype prototype{};
+            
+            prototype.id = BLOCK_AIR_INDEX;
+            prototype.name = "air";
+            prototype.transparent = true;
+
+            blocks.push_back(std::move(prototype));
         }
+
+        void processAttribute(tinyxml2::XMLElement* element, BlockPrototype& prototype, bool& found_colliders);
+        RectangularCollider parseCollider(tinyxml2::XMLElement* element);
+        void loadTexture(const char* name, int index, BlockPrototype& prototype);
 
     public:
 
@@ -102,6 +109,7 @@ class BlockRegistry: public TextureRegistry{
         size_t registeredBlocksTotal(){return blocks.size();}
         const std::vector<BlockPrototype>& prototypes() {return blocks;};
 
+        bool loadPrototypesFromFile(const std::string& path);
         static BlockRegistry& get();
 };
 

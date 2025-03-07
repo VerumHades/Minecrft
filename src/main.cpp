@@ -201,8 +201,8 @@ int main() {
 
         BlockRegistry::get().setTextureSize(160,160);
         BlockRegistry::get().loadFromFolder("resources/textures");
-        BlockLoader::loadFromFile("resources/blocks.config");
-    
+        BlockRegistry::get().loadPrototypesFromFile("resources/blocks.xml");
+
         sceneManager.createScene<MenuScene>("menu");
         sceneManager.createScene<MainScene>("game");
 

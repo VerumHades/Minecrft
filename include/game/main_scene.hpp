@@ -18,8 +18,6 @@
 #include <rendering/ssao.hpp>
 #include <rendering/cubes.hpp>
 
-#include <parsing/block_loader.hpp>
-
 #include <ui/core.hpp>
 #include <ui/font.hpp>
 #include <ui/loader.hpp>
