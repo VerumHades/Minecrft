@@ -136,7 +136,7 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
         chunk->fill({stone});
         return;
     }
-    if(heightMap.highest < position.y * CHUNK_SIZE){
+    if(heightMap.highest + CHUNK_SIZE < position.y * CHUNK_SIZE){
         return;
     }
 

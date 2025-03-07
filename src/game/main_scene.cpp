@@ -420,7 +420,7 @@ void MainScene::physicsUpdate(){
         last_tick_time = current;
 
         glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
-        if(glm::distance(glm::vec3(camWorldPosition),glm::vec3(lastCamWorldPosition)) >= 1 || update_render_distance){ // Crossed chunks
+        if(glm::distance(glm::vec3(camWorldPosition),glm::vec3(lastCamWorldPosition)) >= 2 || update_render_distance){ // Crossed chunks
             //std::cout << "New chunk position: " << camWorldPosition.x << " " << camWorldPosition.y << " " << camWorldPosition.z << std::endl;
             updateLoadedLocations(lastCamWorldPosition, camWorldPosition);
             lastCamWorldPosition = camWorldPosition;

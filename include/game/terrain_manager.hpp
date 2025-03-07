@@ -20,6 +20,7 @@ class TerrainManager{
         void generateRegion(glm::ivec3 around, int render_distance);
 
         std::atomic<bool> loading_region = false;
+        std::atomic<bool> stop_loading_region = false;
 
         std::atomic<bool> generating_meshes = false;
         std::atomic<bool> has_priority_meshes = false;
@@ -34,8 +35,11 @@ class TerrainManager{
         int priority_count = 0;
         
         void meshRegion(glm::ivec3 around, int render_distance);
+        BitField3D::SimplificationLevel calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition);
         //void loadChunk(const glm::ivec3& position);
         //void unloadChunk(const glm::ivec3& position);
+
+        bool HandlePriorityMeshes();
 
     public:
         TerrainManager() {}
@@ -49,7 +53,10 @@ class TerrainManager{
         void regenerateChunkMesh(Chunk* chunk,glm::vec3 blockCoords);
 
         void setGameState(GameState* state){
-            if(state == nullptr) stopMeshGeneration();
+            if(state == nullptr){
+                stopMeshGeneration();
+                stopRegionLoading();
+            }
             game_state = state;
             if(state == nullptr) mesh_generator.setWorld(nullptr);
             else{
@@ -65,6 +72,14 @@ class TerrainManager{
             }
             stop_mesh_generation = false;
         };
+
+        void stopRegionLoading(){
+            stop_loading_region = true;
+            while(loading_region) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            }
+            stop_loading_region = false;
+        }
 
         ChunkMeshRegistry& getMeshRegistry(){ return mesh_registry; }
 
