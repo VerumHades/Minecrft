@@ -17,6 +17,9 @@ class GameState{
 
         LogicalItemInventory player_inventory{10,5};
         LogicalItemInventory player_hotbar{9,1};
+        
+        LogicalItemInventory player_crafting_inventory{2,2};
+        LogicalItemInventory player_crafting_inventory_result{1,1};
 
         FileSaveStructure save_structure;
         
@@ -60,6 +63,8 @@ class GameState{
         Entity& getPlayer(){return entities.front();}
         LogicalItemInventory& getPlayerInventory(){return player_inventory;};
         LogicalItemInventory& getPlayerHotbar(){return player_hotbar;}
+        LogicalItemInventory& getPlayerCraftingInventory(){return player_crafting_inventory;};
+        LogicalItemInventory& getPlayerCraftingResultInventory(){return player_crafting_inventory_result;}
         Terrain& getTerrain(){return terrain;}
         WorldStream* getWorldStream(){return world_stream;}
 };

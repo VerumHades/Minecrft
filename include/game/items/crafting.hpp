@@ -9,6 +9,7 @@
 
 class CraftingRecipeRegistry;
 class CraftingInterface;
+class CraftingDisplay;
 
 class CraftingRecipe{
     public:
@@ -33,6 +34,7 @@ class CraftingRecipe{
 
         friend class CraftingRecipeRegistry;
         friend class CraftingInterface;
+        friend class CraftingDisplay;
 
         static std::string GenerateTagMember(const std::string& item_name, int slotX, int slotY, bool shapeless);
         void GenerateTag();
@@ -67,12 +69,23 @@ class CraftingMetadata: public BlockMetadata{
         void serialize(ByteArray& to) override;
 };
 
+class CraftingDisplay: public UIFrame{
+    private:
+        std::shared_ptr<InventoryDisplay> crafting_display;
+        std::shared_ptr<InventoryDisplay> result_display;
+
+        CraftingRecipe* current_recipe = nullptr;
+    public:
+        CraftingDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr);
+        void setInventories(LogicalItemInventory* crafting_inventory, LogicalItemInventory* result_inventory);
+        
+};
+
 class CraftingInterface: public BlockInterface{
     private:
         std::shared_ptr<UILayer> ui_layer;
 
-        std::shared_ptr<InventoryDisplay> crafting_display;
-        std::shared_ptr<InventoryDisplay> result_display;
+        std::shared_ptr<CraftingDisplay> crafting_display;
         std::shared_ptr<InventoryDisplay> player_inventory;
         std::shared_ptr<InventoryDisplay> player_hotbar;
 

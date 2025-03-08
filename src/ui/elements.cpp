@@ -90,7 +90,7 @@ bool UIFrame::pointWithinBounds(glm::vec2 point, UITransform t, int padding){
 }
 
 bool UIFrame::pointWithin(glm::vec2 point, int padding){
-    return pointWithinBounds(point, transform, padding);
+    return pointWithinBounds(point, viewportTransform, padding);
 }
 
 void UIFrame::getRenderingInformation(UIRenderBatch& batch){

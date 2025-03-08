@@ -1,8 +1,7 @@
 #include <game/items/crafting.hpp>
 
-CraftingInterface::CraftingInterface(const std::shared_ptr<UILayer>& layer, ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr):
- ui_layer(layer){
 
+CraftingDisplay::CraftingDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr){
     crafting_display = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
     crafting_display->onStateUpdate = [this](){
         result_display->update();
@@ -26,7 +25,7 @@ CraftingInterface::CraftingInterface(const std::shared_ptr<UILayer>& layer, Item
         result_display->update();
     };
     
-    result_display   = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
+    result_display  = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
     result_display->setLockPlacing(true);
     result_display->setAttribute(&UIFrame::Style::margin, UISideSizesT(TValue(PIXELS, 0),TValue(PIXELS, 0),TValue(PIXELS, 0),TValue(PIXELS,40)));
     result_display->onStateUpdate = crafting_display->onStateUpdate;
@@ -66,6 +65,22 @@ CraftingInterface::CraftingInterface(const std::shared_ptr<UILayer>& layer, Item
         crafting_display->update();
     };
 
+    setLayout(std::make_shared<UIFlexLayout>(UIFlexLayout::HORIZONTAL));
+    setSize(TValue(FIT_CONTENT,0),TValue(PIXELS,200));
+
+    appendChild(crafting_display);
+    appendChild(result_display);
+}
+
+void CraftingDisplay::setInventories(LogicalItemInventory* crafting_inventory, LogicalItemInventory* result_inventory){
+    crafting_display->setInventory(crafting_inventory);
+    result_display->setInventory(result_inventory);
+}
+
+CraftingInterface::CraftingInterface(const std::shared_ptr<UILayer>& layer, ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr):
+ ui_layer(layer){
+
+    crafting_display = std::make_shared<CraftingDisplay>(textureAtlas, held_item_ptr);
     player_inventory = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
     
     player_hotbar = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
@@ -75,26 +90,13 @@ CraftingInterface::CraftingInterface(const std::shared_ptr<UILayer>& layer, Item
     );
 
     auto frame = std::make_shared<UIFrame>();
-    frame->setPosition(TValue::Pixels(0),TValue::Pixels(0));
-    frame->setSize(TValue(PERCENT,100),TValue(PERCENT,100));
+    frame->setPosition(TValue::Center(), TValue::Center());
+    frame->setSize(TValue::Pixels(600), TValue::Pixels(400));
     frame->setLayout(std::make_shared<UIFlexLayout>());
 
-    auto upper_frame = std::make_shared<UIFrame>();
-    upper_frame->setLayout(std::make_shared<UIFlexLayout>(UIFlexLayout::HORIZONTAL));
-    upper_frame->setAttribute(&UIFrame::Style::margin, UISideSizesT(TValue(PIXELS, 200),TValue(PIXELS, 0),TValue(PIXELS, 0),TValue(PIXELS,0)));
-    upper_frame->setSize(TValue(FIT_CONTENT,0),TValue(PIXELS,200));
-
-    upper_frame->appendChild(crafting_display);
-    upper_frame->appendChild(result_display);
-
-    auto lower_frame = std::make_shared<UIFrame>();
-    lower_frame->setLayout(std::make_shared<UIFlexLayout>(UIFlexLayout::HORIZONTAL));
-    lower_frame->setSize(TValue(FIT_CONTENT,0),TValue(PERCENT,50));
-    
-    lower_frame->appendChild(player_inventory);
-
-    frame->appendChild(upper_frame);
-    frame->appendChild(lower_frame);
+    frame->appendChild(crafting_display);
+    player_inventory->setAttribute(&UIFrame::Style::margin, {TValue::Pixels(40),TValue::Pixels(0),TValue::Pixels(0),TValue::Pixels(0)});
+    frame->appendChild(player_inventory);
     
     ui_layer->addElement(frame);
     ui_layer->addElement(player_hotbar);
@@ -105,8 +107,7 @@ CraftingInterface::CraftingInterface(const std::shared_ptr<UILayer>& layer, Item
 void CraftingInterface::open(std::shared_ptr<BlockMetadata> metadata, GameState* game_state){
     if(metadata){
         if(auto result = std::dynamic_pointer_cast<CraftingMetadata>(metadata)){
-            crafting_display->setInventory(&result->crafting_field);
-            result_display->setInventory(&result->result_slot);
+            crafting_display->setInventories(&result->crafting_field, &result->result_slot);
         }
     }
     player_inventory->setInventory(&game_state->getPlayerInventory());
@@ -247,7 +248,6 @@ bool CraftingRecipeRegistry::LoadRecipesFromXML(const std::string& path){
         );
 
         recipe.GenerateTag();
-        std::cout << recipe.tag << std::endl;
 
         CraftingRecipeRegistry::get().addRecipe(recipe);
     }

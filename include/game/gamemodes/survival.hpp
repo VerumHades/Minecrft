@@ -16,6 +16,7 @@ class GameModeSurvival: public GameModeInteractable{
     private:
         std::shared_ptr<ItemSlot> held_item_slot;
         std::shared_ptr<InventoryDisplay> inventory;
+        std::shared_ptr<CraftingDisplay> inventory_crafting;
         std::shared_ptr<UIHotbar> hotbar;
 
         std::shared_ptr<UILabel> fps_label;

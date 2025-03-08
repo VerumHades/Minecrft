@@ -3,11 +3,24 @@
 void GameModeSurvival::Initialize(){
     held_item_slot = std::make_shared<ItemSlot>(itemTextureAtlas);
 
+    auto frame = std::make_shared<UIFrame>();
+    frame->setPosition(
+        TValue::Center(),
+        TValue::Center()
+    );
+    frame->setSize(TValue{PERCENT, 50},TValue{FIT_CONTENT, 0});
+    frame->setLayout(std::make_shared<UIFlexLayout>(UIFlexLayout::VERTICAL));
+
     inventory = std::make_shared<InventoryDisplay>(itemTextureAtlas, held_item_slot);
     inventory->setPosition(
-        {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}},
-        {OPERATION_MINUS, {PERCENT,50}, {MY_PERCENT,50}}
+        TValue::Center(),
+        TValue::Center()
     );
+
+    inventory_crafting = std::make_shared<CraftingDisplay>(itemTextureAtlas, held_item_slot);
+    
+    frame->appendChild(inventory_crafting);
+    frame->appendChild(inventory);
 
     hotbar = std::make_shared<UIHotbar>(itemTextureAtlas, held_item_slot);
     hotbar->setPosition(
@@ -16,10 +29,9 @@ void GameModeSurvival::Initialize(){
     );
 
     auto& inventory_layer = getLayerLocal("inventory");
-    inventory_layer.addElement(inventory);
+    inventory_layer.addElement(frame);
     inventory_layer.addElement(hotbar);
     inventory_layer.addElement(held_item_slot);
-
 
     auto crosshair = std::make_shared<UICrosshair>();
     crosshair->setSize(60_px,60_px);
@@ -69,6 +81,7 @@ void GameModeSurvival::Open(){
 
     inventory->setInventory(&game_state.getPlayerInventory());
     hotbar->setInventory(&game_state.getPlayerHotbar());
+    inventory_crafting->setInventories(&game_state.getPlayerCraftingInventory(), &game_state.getPlayerCraftingResultInventory());
 
     auto& player = game_state.getPlayer();
 

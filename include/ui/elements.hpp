@@ -113,8 +113,8 @@ class UIFrame{
 
         TValue x = TNONE;
         TValue y = TNONE;
-        TValue width  = {AUTO,0};
-        TValue height = {AUTO,0};
+        TValue width  = {FIT_CONTENT,0};
+        TValue height = {FIT_CONTENT,0};
 
         int zIndex = 0;
         
