@@ -62,7 +62,7 @@ class WorldGenerator{
 
         void prepareHeightMaps(glm::ivec3 around, int distance);
 
-        std::thread threadedQueueGeneration(std::queue<Chunk*>& queue, std::atomic<int>* progress_report);
+        std::thread threadedQueueGeneration(std::queue<Chunk*>& queue, std::atomic<int>& progress_report, std::atomic<bool>& stop);
         void generateTerrainChunk(Chunk* chunk, glm::ivec3 position);
 
         void setSeed(int seed) {

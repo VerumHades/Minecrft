@@ -314,20 +314,6 @@ void MainScene::render(){
 
     HandleGamemodeEvent(&GameMode::Render, deltatime);
 
-    if(terrain_manager.isGenerating()){
-        if(!isActiveLayer("generation")) setUILayer("generation");
-
-        generation_progress->setValues(&terrain_manager.getGenerationCountsLeft());
-        generation_progress->calculateTransforms();
-        generation_progress->update();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        return;
-    }
-    else if(isActiveLayer("generation")){
-        generation_progress->setValues(nullptr);
-        ResetToBaseLayer();
-    }
     if(terrain_manager.uploadPendingMeshes()) updateVisibility = 1;
 
     glEnable(GL_DEPTH_TEST);

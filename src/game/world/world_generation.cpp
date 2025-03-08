@@ -171,19 +171,20 @@ void WorldGenerator::generateTerrainChunk(Chunk* chunk, glm::ivec3 position){
     }
 }   
 
-std::thread WorldGenerator::threadedQueueGeneration(std::queue<Chunk*>& queue, std::atomic<int>* progress_report){
+std::thread WorldGenerator::threadedQueueGeneration(std::queue<Chunk*>& queue, std::atomic<int>& progress_report, std::atomic<bool>& stop){
     static int id = 0;
     int myid = id++;
 
-    std::thread thread = std::thread([this, &queue, myid, progress_report] {
+    std::thread thread = std::thread([this, &queue, myid, &progress_report, &stop] {
         int count = 50;
         while(!queue.empty()){
+            if(stop) return;
             auto chunk = queue.front();
             queue.pop();
 
             this->generateTerrainChunk(chunk, chunk->getWorldPosition());
             if(count <= 0){
-                if(progress_report) progress_report->store(queue.size());
+                progress_report.store(queue.size());
                 count = 50;
             }
             else count--;

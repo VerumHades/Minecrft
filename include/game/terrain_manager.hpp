@@ -17,16 +17,10 @@ class TerrainManager{
         
         GameState* game_state = nullptr;
 
-        void generateRegion(glm::ivec3 around, int render_distance);
-
         std::atomic<bool> loading_region = false;
         std::atomic<bool> stop_loading_region = false;
 
-        std::atomic<bool> generating_meshes = false;
         std::atomic<bool> has_priority_meshes = false;
-
-        std::atomic<bool> generating_world = false;
-        std::atomic<bool> stop_mesh_generation = false;
 
         static const int thread_count = 8;
         std::array<std::atomic<int>, thread_count> generation_left;
@@ -34,7 +28,6 @@ class TerrainManager{
         std::array<Chunk*, 4> priority_mesh_queue{};
         int priority_count = 0;
         
-        void meshRegion(glm::ivec3 around, int render_distance);
         BitField3D::SimplificationLevel calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition);
         //void loadChunk(const glm::ivec3& position);
         //void unloadChunk(const glm::ivec3& position);
@@ -53,10 +46,8 @@ class TerrainManager{
         void regenerateChunkMesh(Chunk* chunk,glm::vec3 blockCoords);
 
         void setGameState(GameState* state){
-            if(state == nullptr){
-                stopMeshGeneration();
+            if(state == nullptr)
                 stopRegionLoading();
-            }
             game_state = state;
             if(state == nullptr) mesh_generator.setWorld(nullptr);
             else{
@@ -65,18 +56,10 @@ class TerrainManager{
             }
         }
 
-        void stopMeshGeneration() {
-            stop_mesh_generation = true;
-            while(generating_meshes) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            }
-            stop_mesh_generation = false;
-        };
-
         void stopRegionLoading(){
             stop_loading_region = true;
             while(loading_region) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
             stop_loading_region = false;
         }
@@ -84,6 +67,5 @@ class TerrainManager{
         ChunkMeshRegistry& getMeshRegistry(){ return mesh_registry; }
 
         std::array<std::atomic<int>, thread_count>& getGenerationCountsLeft(){ return generation_left; }
-        const std::atomic<bool>& isGenerating() { return generating_world; };
         WorldGenerator& getWorldGenerator() { return world_generator; }
 };
