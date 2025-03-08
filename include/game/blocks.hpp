@@ -12,7 +12,7 @@
 #include <game/colliders.hpp>
 
 #include <tinyxml2.h>
-
+#include <xml_extras.hpp>
 
 class GameState;
 

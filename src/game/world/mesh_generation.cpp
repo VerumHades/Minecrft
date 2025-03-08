@@ -389,107 +389,107 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
     /*
         Mesh chunk faces
     */
+   BlockBitPlanes planesXforward = {};
+   BlockBitPlanes planesXbackward = {};
 
-    BlockBitPlanes planesXforward = {};
-    BlockBitPlanes planesXbackward = {};
+   BlockBitPlanes planesYforward = {};
+   BlockBitPlanes planesYbackward = {};
 
-    BlockBitPlanes planesYforward = {};
-    BlockBitPlanes planesYbackward = {};
+   BlockBitPlanes planesZforward = {};
+   BlockBitPlanes planesZbackward = {};
 
-    BlockBitPlanes planesZforward = {};
-    BlockBitPlanes planesZbackward = {};
+    if(!group->isEmpty()){
+        for(int layer = 0; layer < size - 1;layer++){
+            planesXforward.clear();
+            planesXbackward.clear();
 
-    for(int layer = 0; layer < size - 1;layer++){
-        planesXforward.clear();
-        planesXbackward.clear();
+            planesYforward.clear();
+            planesYbackward.clear();
 
-        planesYforward.clear();
-        planesYbackward.clear();
+            planesZforward.clear();
+            planesZbackward.clear();
+            
+            for(int row = 0;row < size;row++){
+                for(auto& field_layer: group->getLayers()){
+                    auto& [type,block,_field] = field_layer;
 
-        planesZforward.clear();
-        planesZbackward.clear();
-        
-        for(int row = 0;row < size;row++){
-            for(auto& field_layer: group->getLayers()){
-                auto& [type,block,_field] = field_layer;
+                    auto* definition = BlockRegistry::get().getPrototype(type);
+                    if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
+                    auto& field = *field_layer.field().getSimplifiedWithNone(simplification_level);
+                    auto* rotatedField = field.getTransposed();
+
+                    auto& solidField   = *group->getSolidField().getSimplifiedWithNone(simplification_level);
+                    auto* solidRotated = solidField.getTransposed();
+
+                    if(!definition->transparent){
+                        uint64_t allFacesX = (field.getRow(layer,row) | field.getRow(layer + 1,row)) & (solidField.getRow(layer,row) ^ solidField.getRow(layer + 1,row));
+                        planesXforward .setRow((size_t) type, row, solidField.getRow(layer,row)     & allFacesX);
+                        planesXbackward.setRow((size_t) type, row, solidField.getRow(layer + 1,row) & allFacesX);
+
+                        uint64_t allFacesY = (field.getRow(row,layer) | field.getRow(row,layer + 1)) & (solidField.getRow(row,layer) ^ solidField.getRow(row,layer + 1));
+                        planesYforward .setRow((size_t) type, row, solidField.getRow(row,layer)     & allFacesY);
+                        planesYbackward.setRow((size_t) type, row, solidField.getRow(row,layer + 1) & allFacesY);
+
+                        uint64_t allFacesZ = (rotatedField->getRow(layer,row) | rotatedField->getRow(layer + 1,row)) & (solidRotated->getRow(layer,row) ^ solidRotated->getRow(layer + 1,row));
+                        planesZforward .setRow((size_t) type, row, solidRotated->getRow(layer,row)     & allFacesZ);
+                        planesZbackward.setRow((size_t) type, row, solidRotated->getRow(layer + 1,row) & allFacesZ);
+                    }
+                    else{
+                        uint64_t allFacesX = (field.getRow(layer,row) ^ field.getRow(layer + 1,row)) & ~(solidField.getRow(layer,row) | solidField.getRow(layer + 1,row));
+                        planesXforward .setRow((size_t) type, row, field.getRow(layer,row) & allFacesX);
+                        planesXbackward.setRow((size_t) type, row, field.getRow(layer + 1,row) & allFacesX);
+
+                        uint64_t allFacesY = (field.getRow(row,layer) ^ field.getRow(row,layer + 1)) & ~(solidField.getRow(row,layer) | solidField.getRow(row,layer + 1));
+                        planesYforward .setRow((size_t) type, row, field.getRow(row,layer)     & allFacesY);
+                        planesYbackward.setRow((size_t) type, row, field.getRow(row,layer + 1) & allFacesY);
+
+                        uint64_t allFacesZ = (rotatedField->getRow(layer,row) ^ rotatedField->getRow(layer + 1,row)) & ~(solidRotated->getRow(layer,row) | solidRotated->getRow(layer + 1,row));
+                        planesZforward .setRow((size_t) type, row, rotatedField->getRow(layer,row)     & allFacesZ);
+                        planesZbackward.setRow((size_t) type, row, rotatedField->getRow(layer + 1,row) & allFacesZ);
+                    }
+                }
+            }
+
+            for(auto& type: group->getPresentTypes()){
                 auto* definition = BlockRegistry::get().getPrototype(type);
                 if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
+                //std::cout << "Solving plane: " << getBlockTypeName(type) << std::endl;
+                //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
 
-                auto& field = *field_layer.field().getSimplifiedWithNone(simplification_level);
-                auto* rotatedField = field.getTransposed();
+                proccessOccludedFaces(planesXforward .getPlanes()[static_cast<size_t>(type)], occlusionPlanesX[layer + 1], InstancedMesh::X_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, layer);
+                proccessOccludedFaces(planesXbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesX[layer    ], InstancedMesh::X_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer);
 
-                auto& solidField   = *group->getSolidField().getSimplifiedWithNone(simplification_level);
-                auto* solidRotated = solidField.getTransposed();
+                proccessOccludedFaces(planesYforward .getPlanes()[static_cast<size_t>(type)], occlusionPlanesY[layer + 1], InstancedMesh::Y_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, layer);
+                proccessOccludedFaces(planesYbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesY[layer    ], InstancedMesh::Y_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer);
 
-                if(!definition->transparent){
-                    uint64_t allFacesX = (field.getRow(layer,row) | field.getRow(layer + 1,row)) & (solidField.getRow(layer,row) ^ solidField.getRow(layer + 1,row));
-                    planesXforward .setRow((size_t) type, row, solidField.getRow(layer,row)     & allFacesX);
-                    planesXbackward.setRow((size_t) type, row, solidField.getRow(layer + 1,row) & allFacesX);
-
-                    uint64_t allFacesY = (field.getRow(row,layer) | field.getRow(row,layer + 1)) & (solidField.getRow(row,layer) ^ solidField.getRow(row,layer + 1));
-                    planesYforward .setRow((size_t) type, row, solidField.getRow(row,layer)     & allFacesY);
-                    planesYbackward.setRow((size_t) type, row, solidField.getRow(row,layer + 1) & allFacesY);
-
-                    uint64_t allFacesZ = (rotatedField->getRow(layer,row) | rotatedField->getRow(layer + 1,row)) & (solidRotated->getRow(layer,row) ^ solidRotated->getRow(layer + 1,row));
-                    planesZforward .setRow((size_t) type, row, solidRotated->getRow(layer,row)     & allFacesZ);
-                    planesZbackward.setRow((size_t) type, row, solidRotated->getRow(layer + 1,row) & allFacesZ);
-                }
-                else{
-                    uint64_t allFacesX = (field.getRow(layer,row) ^ field.getRow(layer + 1,row)) & ~(solidField.getRow(layer,row) | solidField.getRow(layer + 1,row));
-                    planesXforward .setRow((size_t) type, row, field.getRow(layer,row) & allFacesX);
-                    planesXbackward.setRow((size_t) type, row, field.getRow(layer + 1,row) & allFacesX);
-
-                    uint64_t allFacesY = (field.getRow(row,layer) ^ field.getRow(row,layer + 1)) & ~(solidField.getRow(row,layer) | solidField.getRow(row,layer + 1));
-                    planesYforward .setRow((size_t) type, row, field.getRow(row,layer)     & allFacesY);
-                    planesYbackward.setRow((size_t) type, row, field.getRow(row,layer + 1) & allFacesY);
-
-                    uint64_t allFacesZ = (rotatedField->getRow(layer,row) ^ rotatedField->getRow(layer + 1,row)) & ~(solidRotated->getRow(layer,row) | solidRotated->getRow(layer + 1,row));
-                    planesZforward .setRow((size_t) type, row, rotatedField->getRow(layer,row)     & allFacesZ);
-                    planesZbackward.setRow((size_t) type, row, rotatedField->getRow(layer + 1,row) & allFacesZ);
-                }
+                proccessOccludedFaces(planesZforward .getPlanes()[static_cast<size_t>(type)], occlusionPlanesZ[layer + 1], InstancedMesh::Z_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, layer);
+                proccessOccludedFaces(planesZbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesZ[layer    ], InstancedMesh::Z_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer);
             }
         }
 
-        for(auto& type: group->getPresentTypes()){
-            auto* definition = BlockRegistry::get().getPrototype(type);
-            if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
-            //std::cout << "Solving plane: " << getBlockTypeName(type) << std::endl;
-            //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
-
-            proccessOccludedFaces(planesXforward .getPlanes()[static_cast<size_t>(type)], occlusionPlanesX[layer + 1], InstancedMesh::X_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, layer);
-            proccessOccludedFaces(planesXbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesX[layer    ], InstancedMesh::X_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer);
-
-            proccessOccludedFaces(planesYforward .getPlanes()[static_cast<size_t>(type)], occlusionPlanesY[layer + 1], InstancedMesh::Y_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, layer);
-            proccessOccludedFaces(planesYbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesY[layer    ], InstancedMesh::Y_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer);
-
-            proccessOccludedFaces(planesZforward .getPlanes()[static_cast<size_t>(type)], occlusionPlanesZ[layer + 1], InstancedMesh::Z_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, layer);
-            proccessOccludedFaces(planesZbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesZ[layer    ], InstancedMesh::Z_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer);
-        }
-    }
-
-    ////timer.timestamp("Inner faces");
-    
-    /*
-        Mesh billboards
-    */
-
-    for(auto& field_layer: group->getLayers()){
-        auto& [type,block,_field] = field_layer;
-        auto& field = field_layer.field();
+        ////timer.timestamp("Inner faces");
         
-        auto* definition = BlockRegistry::get().getPrototype(type);
-        if(!definition || definition->render_type != BlockRegistry::BILLBOARD) continue;
+        /*
+            Mesh billboards
+        */
 
-        for(int x = 0;x < size;x++) for(int y = 0;y < size;y++) for(int z = 0;z < size;z++){
-            if(!field.get(x,y,z)) continue;
+        for(auto& field_layer: group->getLayers()){
+            auto& [type,block,_field] = field_layer;
+            auto& field = field_layer.field();
+            
+            auto* definition = BlockRegistry::get().getPrototype(type);
+            if(!definition || definition->render_type != BlockRegistry::BILLBOARD) continue;
 
-            glm::vec3 position = glm::vec3{x,y,z} + world_position;
+            for(int x = 0;x < size;x++) for(int y = 0;y < size;y++) for(int z = 0;z < size;z++){
+                if(!field.get(x,y,z)) continue;
 
-            solidMesh->addQuadFace(position,1,1,definition->textures[0], InstancedMesh::BILLBOARD, InstancedMesh::Forward, {0,0,0,0});
+                glm::vec3 position = glm::vec3{x,y,z} + world_position;
+
+                solidMesh->addQuadFace(position,1,1,definition->textures[0], InstancedMesh::BILLBOARD, InstancedMesh::Forward, {0,0,0,0});
+            }
         }
     }
-
     ////timer.timestamp("Billboards");
     /*
         Mesh cross chunk faces

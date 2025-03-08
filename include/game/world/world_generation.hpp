@@ -17,8 +17,6 @@
 #include <game/world/region_lookup.hpp>
 #include <game/structure.hpp>
 
-#include <parsing/source_template.hpp>
-
 #include <vec_hash.hpp>
 #include <game/world/region_lookup.hpp>
 

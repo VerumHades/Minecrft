@@ -75,4 +75,9 @@
         <texture>blue_wool</texture>
         <render_type>FULL_BLOCK</render_type>
     </blue_wool>
+    <oak_plank>
+        <texture>oak_plank</texture>
+        <render_type>FULL_BLOCK</render_type>
+        <hardness>2</hardness>
+    </oak_plank>
 </blocks>

@@ -33,7 +33,7 @@ bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance){
                     loading_region = false;
                     return;
                 }
-                
+
                 if(HandlePriorityMeshes()) continue;
                 
                 glm::ivec3 chunkPosition = generation_indexer.get() + around;
@@ -66,7 +66,10 @@ bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance){
                j++;
             }
 
-            for(auto& thread: threads) thread.join();
+            for(auto& thread: threads){
+                while(thread.joinable()) 
+                thread.join();
+            }
             if(stop_loading_region){
                 loading_region = false;
                 return;
@@ -84,7 +87,7 @@ bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance){
                 meshing_indexer.next();
 
                 auto* chunk = terrain.getChunk(chunkPosition);
-                if(!chunk || chunk->isEmpty()) continue;
+                if(!chunk) continue;
 
                 auto level = calculateSimplificationLevel(around,chunkPosition);
 

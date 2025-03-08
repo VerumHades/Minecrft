@@ -47,11 +47,6 @@ void GameModeSurvival::Initialize(){
         ItemRegistry::get().createPrototypeForBlock(&prototype);
     }
 
-    CraftingRecipeRegistry::get().addRecipe(CraftingRecipe({CraftingRecipe::RecipeItemRequirement{"block_iron", 5},{},{},{},{},{},{},{},{}}, "crazed",64));
-    CraftingRecipeRegistry::get().addRecipe(CraftingRecipe(
-        {CraftingRecipe::RecipeItemRequirement{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1},{"crazed", 1}}
-        , "block_crazed",1));
-
     onCursorTargetChange = [this](){
         auto* block_prototype = BlockRegistry::get().getPrototype(cursor_state.blockUnderCursor->id);
         if(!block_prototype){

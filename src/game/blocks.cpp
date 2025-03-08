@@ -126,32 +126,15 @@ using namespace tinyxml2;
 )
 
 RectangularCollider BlockRegistry::parseCollider(tinyxml2::XMLElement* element){
-    RectangularCollider collider{};
-
-    static const std::unordered_map<std::string, size_t> attributes = {
-        {"x", offsetof(RectangularCollider,x)},
-        {"y", offsetof(RectangularCollider,y)},
-        {"z", offsetof(RectangularCollider,z)},
-        {"width", offsetof(RectangularCollider,width)},
-        {"height", offsetof(RectangularCollider,height)},
-        {"depth", offsetof(RectangularCollider,depth)},
-    };
-
-    for_each_child_as(element, attribute)
-    {
-        auto* attribute_name = attribute->Name();
-        
-        if(!attributes.contains(attribute_name)){
-            std::cerr << "Invalid attribute name for collider: " << attribute_name <<  std::endl;
-            continue;
-        } 
-        auto offset = attributes.at(attribute_name);
-
-        float value;
-        if (attribute->QueryFloatText(&value) == XML_SUCCESS) 
-            *(float*)((unsigned char*)&collider + offset) = value;
-        else std::cerr << "Invalid value for collider attribute: '" << attribute_name << "'."; 
-    }
+    RectangularCollider collider = 
+        XMLExtras::Load<RectangularCollider>(element, {
+            {"x", offsetof(RectangularCollider,x), XType::FLOAT},
+            {"y", offsetof(RectangularCollider,y), XType::FLOAT},
+            {"z", offsetof(RectangularCollider,z), XType::FLOAT},
+            {"width", offsetof(RectangularCollider,width), XType::FLOAT},
+            {"height", offsetof(RectangularCollider,height), XType::FLOAT},
+            {"depth", offsetof(RectangularCollider,depth), XType::FLOAT}
+        });
 
     return collider;
 }
@@ -190,7 +173,7 @@ void BlockRegistry::processAttribute(tinyxml2::XMLElement* element, BlockPrototy
     }
     else if(attribute_name == "colliders"){
         for_each_child_as(element, collider){
-            if(collider->Name() == "default_collider") prototype.colliders.push_back({0, 0, 0, 1.0f, 1.0f, 1.0f});
+            if(std::string(collider->Name()) == "default_collider") prototype.colliders.push_back({0, 0, 0, 1.0f, 1.0f, 1.0f});
             else prototype.colliders.push_back(parseCollider(collider));
         }
         found_colliders = true;

@@ -12,25 +12,34 @@ class CraftingInterface;
 
 class CraftingRecipe{
     public:
-        struct RecipeItemRequirement{
-            bool required;
-            int amount;
-            std::string name;
+        struct ItemRequirement{
+            int slotX = 0;
+            int slotY = 0;
 
-            RecipeItemRequirement(): required(0), amount(0), name(""){}
-            RecipeItemRequirement(const std::string& name, int amount): required(true), amount(amount), name(name){}
+            int amount = 0;
+            std::string name = "";
+
+            ItemRequirement(const std::string& name, int amount, int slotX, int slotY): slotX(slotX), slotY(slotY), amount(amount), name(name){}
+            ItemRequirement(const std::string& name, int amount): slotX(0), slotY(0), amount(amount), name(name){}
+            ItemRequirement() {}
         };
     private:
         std::string tag = "";
 
-        std::array<RecipeItemRequirement, 9> required_items;
+        std::vector<ItemRequirement> required_items;
         std::string result_prototype_name;
         int result_amount = 1;
+        bool shapeless = false;
 
         friend class CraftingRecipeRegistry;
         friend class CraftingInterface;
+
+        static std::string GenerateTagMember(const std::string& item_name, int slotX, int slotY, bool shapeless);
+        void GenerateTag();
+
+        CraftingRecipe() {}
     public:
-        CraftingRecipe(const std::array<RecipeItemRequirement, 9>& required_items, const std::string& result_prototype_name, int result_amount);
+        CraftingRecipe(const std::vector<ItemRequirement>& required_items, const std::string& result_prototype_name, int result_amount, bool shapeless = false);
 };
 
 class CraftingRecipeRegistry{
@@ -47,6 +56,7 @@ class CraftingRecipeRegistry{
             return registry;
         }
 
+        static bool LoadRecipesFromXML(const std::string& path);
 };
 
 class CraftingMetadata: public BlockMetadata{

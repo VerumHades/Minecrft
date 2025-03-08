@@ -1,0 +1,39 @@
+<recipes>
+    <recipe>
+        <shapeless>true</shapeless>
+        <result>block_oak_plank</result>
+        <result_amount>4</result_amount>
+        <items>
+            <item>
+                <name>block_oak_log</name>
+                <amount>1</amount>
+            </item>
+        </items>
+    </recipe>
+    <recipe>
+        <result>block_crafting</result>
+        <result_amount>1</result_amount>
+        <items>
+            <item>
+                <slotX>0</slotX> <slotY>0</slotY>
+                <name>block_oak_plank</name>
+                <amount>1</amount>
+            </item>
+            <item>
+                <slotX>1</slotX> <slotY>0</slotY>
+                <name>block_oak_plank</name>
+                <amount>1</amount>
+            </item>
+            <item>
+                <slotX>0</slotX> <slotY>1</slotY>
+                <name>block_oak_plank</name>
+                <amount>1</amount>
+            </item>
+            <item>
+                <slotX>1</slotX> <slotY>1</slotY>
+                <name>block_oak_plank</name>
+                <amount>1</amount>
+            </item>
+        </items>
+    </recipe>
+</recipes>
