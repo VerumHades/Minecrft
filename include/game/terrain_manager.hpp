@@ -5,9 +5,12 @@
 #include <game/world/terrain.hpp>
 #include <game/world/world_generation.hpp>
 #include <game/game_state.hpp>
+
 #include <atomic>
 #include <indexing.hpp>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 
 class TerrainManager{
     private:
@@ -17,20 +20,40 @@ class TerrainManager{
         
         GameState* game_state = nullptr;
 
-        std::atomic<bool> loading_region = false;
-        std::atomic<bool> stop_loading_region = false;
-
-        std::atomic<bool> has_priority_meshes = false;
-
         static const int thread_count = 8;
         std::array<std::atomic<int>, thread_count> generation_left;
 
+        std::atomic<bool> has_priority_meshes = false;
         std::array<Chunk*, 4> priority_mesh_queue{};
         int priority_count = 0;
         
         BitField3D::SimplificationLevel calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition);
         //void loadChunk(const glm::ivec3& position);
         //void unloadChunk(const glm::ivec3& position);
+
+        std::atomic<bool> stop_generating_region = false;
+        std::atomic<bool> generating_region = false;
+        std::atomic<int> generated_distance = 0;
+        bool GenerateRegion(const glm::ivec3& around, int render_distance);
+
+        void StopGeneratingRegion(){
+            if(!generating_region) return;
+            
+            stop_generating_region = true;
+            while(generating_region) {}
+            stop_generating_region = false;
+        }
+
+        std::atomic<bool> stop_meshing_region = false;
+        std::atomic<bool> meshing_region = false;
+        bool MeshRegion(const glm::ivec3& around, int render_distance);
+
+        void StopMeshingRegion(){
+            if(!meshing_region) return;
+            stop_meshing_region = true;
+            while(meshing_region) {}
+            stop_meshing_region = false;
+        }
 
         bool HandlePriorityMeshes();
 
@@ -46,8 +69,11 @@ class TerrainManager{
         void regenerateChunkMesh(Chunk* chunk,glm::vec3 blockCoords);
 
         void setGameState(GameState* state){
-            if(state == nullptr)
-                stopRegionLoading();
+            if(state == nullptr){
+                StopGeneratingRegion();
+                StopMeshingRegion();
+            }
+
             game_state = state;
             if(state == nullptr) mesh_generator.setWorld(nullptr);
             else{
@@ -56,13 +82,6 @@ class TerrainManager{
             }
         }
 
-        void stopRegionLoading(){
-            stop_loading_region = true;
-            while(loading_region) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
-            stop_loading_region = false;
-        }
 
         ChunkMeshRegistry& getMeshRegistry(){ return mesh_registry; }
 

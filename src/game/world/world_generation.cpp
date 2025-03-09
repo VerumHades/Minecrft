@@ -178,7 +178,7 @@ std::thread WorldGenerator::threadedQueueGeneration(std::queue<Chunk*>& queue, s
     std::thread thread = std::thread([this, &queue, myid, &progress_report, &stop] {
         int count = 50;
         while(!queue.empty()){
-            if(stop) return;
+            if(stop) break;
             auto chunk = queue.front();
             queue.pop();
 
@@ -190,6 +190,7 @@ std::thread WorldGenerator::threadedQueueGeneration(std::queue<Chunk*>& queue, s
             else count--;
         }
     });
+
 
     return thread;
 }
