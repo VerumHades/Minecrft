@@ -2,11 +2,13 @@
     <dirt>
         <texture>dirt</texture>
         <render_type>FULL_BLOCK</render_type>
+        <material>dirt</material>
     </dirt>
     <stone>
         <texture>stone</texture>
         <render_type>FULL_BLOCK</render_type>
         <hardness>3</hardness>
+        <material>stone</material>
     </stone>
     <grass>
         <textures>
@@ -18,6 +20,7 @@
             <texture>grass_side</texture>
         </textures>
         <render_type>FULL_BLOCK</render_type>
+        <material>dirt</material>
     </grass>
     <oak_log>
         <textures>
@@ -29,25 +32,26 @@
             <texture>oak_log</texture>
         </textures>
         <render_type>FULL_BLOCK</render_type>
+        <material>wood</material>
+        <hardness>2</hardness>
     </oak_log>
-    <crazed>
-        <texture>crazed</texture>
-        <render_type>FULL_BLOCK</render_type>
-    </crazed>
     <iron>
         <texture>iron</texture>
         <render_type>FULL_BLOCK</render_type>
         <hardness>3</hardness>
+        <material>metal</material>
     </iron>
     <oak_leaves>
         <texture>oak_leaves</texture>
         <render_type>FULL_BLOCK</render_type>
         <transparent>true</transparent>
+        <material>leaves</material>
     </oak_leaves>
     <grass_billboard>
         <texture>grass_bilboard</texture>
         <render_type>BILLBOARD</render_type>
         <transparent>true</transparent>
+        <material>leaves</material>
     </grass_billboard>
     <crafting>
         <textures>
@@ -59,6 +63,8 @@
             <texture>crafting_side</texture>
         </textures>
         <render_type>FULL_BLOCK</render_type>
+        <material>wood</material>
+        <hardness>2</hardness>
     </crafting>
     <barrel>
         <textures>
@@ -70,14 +76,18 @@
             <texture>barrel_side</texture>
         </textures>
         <render_type>FULL_BLOCK</render_type>
+        <material>wood</material>
+        <hardness>2</hardness>
     </barrel>
     <blue_wool>
         <texture>blue_wool</texture>
         <render_type>FULL_BLOCK</render_type>
+        <material>leaves</material>
     </blue_wool>
     <oak_plank>
         <texture>oak_plank</texture>
         <render_type>FULL_BLOCK</render_type>
         <hardness>2</hardness>
+        <material>wood</material>
     </oak_plank>
 </blocks>

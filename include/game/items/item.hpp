@@ -11,6 +11,7 @@
 #include <game/blocks.hpp>
 #include <game/items/block_model.hpp>
 #include <rendering/bitworks.hpp>
+#include <path_config.hpp>
 
 #include <memory>
 
@@ -21,6 +22,11 @@ using ItemRef = std::shared_ptr<Item>;
 #define NO_ITEM nullptr;
 
 class ItemPrototype{
+    public:
+        struct ToolEffectiveness{
+            std::string material_name;
+            int mining_power;
+        };
     private:
         std::string name = "undefined";
 
@@ -35,6 +41,7 @@ class ItemPrototype{
         std::array<std::string,3> texture_paths = {"","",""};
         
         std::shared_ptr<Model> model;
+        std::vector<ToolEffectiveness> effective_againist_materials{};
 
         friend class ItemRegistry;
         friend class ItemTextureAtlas;
@@ -51,6 +58,7 @@ class ItemPrototype{
         BlockID getBlockID(){return block_id;}
         const std::string& getName(){return name;}
         std::shared_ptr<Model>& getModel() {return model;}
+        const std::vector<ToolEffectiveness>& getToolEffectiveness() {return effective_againist_materials;}
 };
 
 class Item{
@@ -92,6 +100,7 @@ class ItemRegistry{
         bool prototypeExists(const std::string& name);
 
         static ItemRegistry& get();
+        static bool LoadFromXML(const std::string& path);
 };
 
 class LogicalItemSlot{

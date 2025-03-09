@@ -8,8 +8,8 @@ CraftingDisplay::CraftingDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr
         if(!crafting_display->getInventory()) return;
         if(!result_display->getInventory()) return;
 
-        current_recipe = CraftingRecipeRegistry::get().getCraftingFor(*crafting_display->getInventory());
-        
+        std::tie(current_recipe, recipe_offset_x, recipe_offset_y) = CraftingRecipeRegistry::get().getCraftingFor(*crafting_display->getInventory());
+
         auto* result_inventory = result_display->getInventory();
         if(!current_recipe){
             result_inventory->getSlot(0,0)->clear();
@@ -41,8 +41,8 @@ CraftingDisplay::CraftingDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr
 
         if(current_recipe->shapeless){
             for(auto& requirement: current_recipe->required_items){
-                for(int y = 0;y < inventory->getHeight();y++)
                 for(int x = 0;x < inventory->getWidth();x++)
+                for(int y = 0;y < inventory->getHeight();y++)
                 {
                     auto* slot = inventory->getSlot(x,y);
     
@@ -56,12 +56,12 @@ CraftingDisplay::CraftingDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr
         }
         else{
             for(auto& requirement: current_recipe->required_items){
-                auto* slot = inventory->getSlot(requirement.slotX,requirement.slotY);
+                auto* slot = inventory->getSlot(requirement.slotX + recipe_offset_x,requirement.slotY + recipe_offset_y);
                 
                 slot->decreaseQuantity(requirement.amount);
             }
         }
-        current_recipe = CraftingRecipeRegistry::get().getCraftingFor(*crafting_display->getInventory());
+        std::tie(current_recipe, recipe_offset_x, recipe_offset_y) = CraftingRecipeRegistry::get().getCraftingFor(*crafting_display->getInventory());
         crafting_display->update();
     };
 
@@ -131,7 +131,19 @@ CraftingRecipe::CraftingRecipe(const std::vector<CraftingRecipe::ItemRequirement
 
 void CraftingRecipe::GenerateTag(){
     tag = "";
-    for(auto& requirement: required_items)
+    std::vector<CraftingRecipe::ItemRequirement> elems(required_items.begin(), required_items.end());
+    
+    struct
+    {
+        bool operator()(ItemRequirement a, ItemRequirement b) const {
+            if(a.slotY == b.slotY) return a.slotX < b.slotX;
+            return a.slotY < b.slotY;
+        }
+    } customLess;
+
+    std::sort(elems.begin(), elems.end(), customLess);
+
+    for(auto& requirement: elems)
         tag += GenerateTagMember(requirement.name, requirement.slotX, requirement.slotY, shapeless);
 }
 
@@ -139,10 +151,22 @@ void CraftingRecipeRegistry::addRecipe(const CraftingRecipe& recipe){
     recipes.emplace(recipe.tag,recipe);
 }
 
-CraftingRecipe* CraftingRecipeRegistry::getCraftingFor(LogicalItemInventory& inventory){
+std::tuple<CraftingRecipe*, int, int> CraftingRecipeRegistry::getCraftingFor(LogicalItemInventory& inventory){
     std::string tag = "";
     std::string shapeless_tag = "";
 
+    int xOffset = std::numeric_limits<int>::max();
+    int yOffset = std::numeric_limits<int>::max();
+
+    for(int y = 0;y < inventory.getHeight();y++)
+    for(int x = 0;x < inventory.getWidth();x++)
+    {
+        auto* slot = inventory.getSlot(x,y);
+        if(slot && slot->getItem() && slot->getItem()->getPrototype()){
+            xOffset = std::min(x, xOffset);
+            yOffset = std::min(y, yOffset);
+        }
+    }
 
     for(int y = 0;y < inventory.getHeight();y++)
     for(int x = 0;x < inventory.getWidth();x++)
@@ -151,8 +175,11 @@ CraftingRecipe* CraftingRecipeRegistry::getCraftingFor(LogicalItemInventory& inv
         if(slot && slot->getItem() && slot->getItem()->getPrototype()){
             auto* prototype = slot->getItem()->getPrototype();
 
-            tag += CraftingRecipe::GenerateTagMember(prototype->getName(), x, y, false);
-            shapeless_tag += CraftingRecipe::GenerateTagMember(prototype->getName(), x, y, true);
+            int rx = x - xOffset;
+            int ry = y - yOffset;
+
+            tag += CraftingRecipe::GenerateTagMember(prototype->getName(), rx, ry, false);
+            shapeless_tag += CraftingRecipe::GenerateTagMember(prototype->getName(), rx, ry, true);
         }
     }
 
@@ -160,12 +187,12 @@ CraftingRecipe* CraftingRecipeRegistry::getCraftingFor(LogicalItemInventory& inv
         auto& recipe = recipes.at(tag);
 
         for(auto& requirement: recipe.required_items){
-            auto* slot = inventory.getSlot(requirement.slotX,requirement.slotY);
+            auto* slot = inventory.getSlot(requirement.slotX + xOffset,requirement.slotY + yOffset);
 
-            if(slot->getItem()->getQuantity() < requirement.amount) return nullptr;
+            if(slot->getItem()->getQuantity() < requirement.amount) return {nullptr,0,0};
         }
 
-        return &recipe;
+        return {&recipe,xOffset,yOffset};
     }    
     if(recipes.contains(shapeless_tag)){
         auto& recipe = recipes.at(shapeless_tag);
@@ -184,18 +211,18 @@ CraftingRecipe* CraftingRecipeRegistry::getCraftingFor(LogicalItemInventory& inv
                 if(
                     slot->getItem()->getQuantity() < requirement.amount ||
                     slot->getItem()->getPrototype()->getName() != requirement.name
-                ) return nullptr;
+                ) return {nullptr,0,0};
 
                 found = true;
             }
 
-            if(!found) return nullptr;
+            if(!found) return {nullptr,0,0};
         }
 
-        return &recipe;
+        return {&recipe,xOffset,yOffset};
     }
 
-    return nullptr;
+    return {nullptr,0,0};
 }
 
 bool CraftingRecipeRegistry::LoadRecipesFromXML(const std::string& path){

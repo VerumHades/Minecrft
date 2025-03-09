@@ -6,6 +6,8 @@
 #include <ui/core.hpp>
 #include <game/game_state.hpp>
 #include <unordered_map>
+#include <limits>
+#include <algorithm>
 
 class CraftingRecipeRegistry;
 class CraftingInterface;
@@ -51,7 +53,7 @@ class CraftingRecipeRegistry{
         CraftingRecipeRegistry() {}
     public:
         void addRecipe(const CraftingRecipe& recipe);
-        CraftingRecipe* getCraftingFor(LogicalItemInventory& inventory);
+        std::tuple<CraftingRecipe*, int, int> getCraftingFor(LogicalItemInventory& inventory);
 
         static CraftingRecipeRegistry& get(){
             static CraftingRecipeRegistry registry{};
@@ -75,6 +77,8 @@ class CraftingDisplay: public UIFrame{
         std::shared_ptr<InventoryDisplay> result_display;
 
         CraftingRecipe* current_recipe = nullptr;
+        int recipe_offset_x = 0;
+        int recipe_offset_y = 0;
     public:
         CraftingDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr<ItemSlot> held_item_ptr);
         void setInventories(LogicalItemInventory* crafting_inventory, LogicalItemInventory* result_inventory);

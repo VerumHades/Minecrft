@@ -41,6 +41,58 @@ ItemPrototype::ItemPrototype(std::string name, std::string texture_path): name(n
     model = std::make_shared<SpriteModel>(texture_path);
 }
 
+bool ItemRegistry::LoadFromXML(const std::string& path){
+    XMLDocument doc;
+
+    if (doc.LoadFile(path.c_str()) != XML_SUCCESS) {
+        std::cerr << "Error loading block XML file." << std::endl;
+        return false;
+    }
+
+    XMLElement* root = doc.FirstChildElement("items");
+    if (!root) {
+        std::cerr << "No root blocks element found." << std::endl;
+        return false;
+    }
+
+    xml_for_each_child_as(root, item_definition)
+    {
+        std::string name = "undefined_item";
+        std::string texture_path = "texture_path";
+        std::vector<ItemPrototype::ToolEffectiveness> effectiveness{};
+
+        xml_for_each_child_as(item_definition, item_attribute){
+            std::string attr_name = item_attribute->Name();
+            
+            if(attr_name == "name"){
+                const char* text = item_attribute->GetText();
+                if(!text) continue;
+                name = text;
+            }
+            else if(attr_name == "texture"){
+                const char* text = item_attribute->GetText();
+                if(!text) continue;
+                texture_path  = (fs::path("resources/textures") / text).string();
+            }
+            else if(attr_name == "effective_againist_materials"){
+                xml_for_each_child_as(item_attribute, material_effectiveness){
+                    effectiveness.push_back(
+                        XMLExtras::Load<ItemPrototype::ToolEffectiveness>(material_effectiveness, {
+                            {"name", offsetof(ItemPrototype::ToolEffectiveness, material_name), XType::STRING},
+                            {"mining_power", offsetof(ItemPrototype::ToolEffectiveness, mining_power), XType::INT},
+                        }
+                    ));
+                }
+            }
+        }
+        auto prototype = ItemPrototype(name,texture_path);
+        prototype.effective_againist_materials = effectiveness;
+        ItemRegistry::get().addPrototype(prototype);
+    }
+
+    return true;
+}
+
 
 void Item::serialize(ByteArray& to){
     auto* prototype = getPrototype();

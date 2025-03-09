@@ -68,6 +68,15 @@ void GameModeSurvival::Initialize(){
         }
 
         float mining_power = 1;
+
+        auto* slot = hotbar->getSelectedSlot();
+        if(slot && slot->getItem() && slot->getItem()->getPrototype()){
+            for(auto& effectiveness: slot->getItem()->getPrototype()->getToolEffectiveness()){
+                if(effectiveness.material_name != block_prototype->material_name) continue;
+                mining_power = effectiveness.mining_power;
+                break;
+            }
+        }
         
         can_break = mining_power + 1 >= block_prototype->hardness;
         mining_delay_max = static_cast<float>(block_prototype->hardness) / mining_power;

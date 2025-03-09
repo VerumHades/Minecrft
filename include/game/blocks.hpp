@@ -64,6 +64,7 @@ class BlockRegistry: public TextureRegistry{
             std::unique_ptr<BlockBehaviour> behaviour = nullptr;
 
             int hardness = 1;
+            std::string material_name;
         };
 
     private:

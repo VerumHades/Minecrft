@@ -31,8 +31,8 @@ void MainScene::initialize(){
         "resources/skybox/stars/back.png"
     };  
 
-    ItemRegistry::get().addPrototype(ItemPrototype("diamond","resources/textures/diamond.png"));
-    ItemRegistry::get().addPrototype(ItemPrototype("crazed","resources/textures/crazed.png"));
+    //ItemRegistry::get().addPrototype(ItemPrototype("diamond","resources/textures/diamond.png"));
+    //ItemRegistry::get().addPrototype(ItemPrototype("crazed","resources/textures/crazed.png"));
     
     setUILayer("generation");
     generation_progress = std::make_shared<UILoading>();

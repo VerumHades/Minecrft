@@ -203,6 +203,7 @@ int main() {
         BlockRegistry::get().loadFromFolder("resources/textures");
         BlockRegistry::get().loadPrototypesFromFile("resources/blocks.xml");
         CraftingRecipeRegistry::get().LoadRecipesFromXML("resources/recipes.xml");
+        ItemRegistry::LoadFromXML("resources/items.xml");
 
         sceneManager.createScene<MenuScene>("menu");
         sceneManager.createScene<MainScene>("game");

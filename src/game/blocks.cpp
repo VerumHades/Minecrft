@@ -203,6 +203,11 @@ void BlockRegistry::processAttribute(tinyxml2::XMLElement* element, BlockPrototy
         if(element->QueryIntText(&value) == XML_SUCCESS) prototype.hardness = value;
         else std::cerr << "Invalid value for block hardness." << std::endl;
     }
+    else if(attribute_name == "material"){
+        auto* name_ptr = element->GetText();
+        if(!name_ptr) return;
+        prototype.material_name = name_ptr;
+    }
     else std::cerr << "Invalid block defintion attribute: '" << attribute_name << "'." <<std::endl;
 }
 
