@@ -13,6 +13,7 @@
 #include <list>
 #include <coherency.hpp>
 #include <memory>
+#include <mutex>
 
 using CompressedArray = std::vector<uint64_t>;
 
@@ -150,12 +151,16 @@ class BitFieldCache{
         BitFieldCache(){
             cached_fields = std::vector<TCacheMember>(max_cached);
         }
+
+        std::mutex mutex;
             
     public:
         /*
             Returns the next cache spot, zeroes out the field
         */
         TCacheMember* next(size_t id){
+            std::lock_guard<std::mutex> lock(mutex);
+
             next_spot = (next_spot + 1) % (max_cached - 1);
             auto& member = cached_fields[next_spot];
 
@@ -205,6 +210,8 @@ class CompressedBitFieldCache{
             cached_fields = std::vector<CCacheMember>(max_cached);
         }
         size_t next_spot = 0;
+
+        std::mutex mutex;
     public:
         CCacheMember* next(std::shared_ptr<CompressedArray> compressed_data);
 

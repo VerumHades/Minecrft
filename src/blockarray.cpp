@@ -39,7 +39,7 @@ void SparseBlockArray::fill(const Block& block){
     layers.clear();
 
     if(block.id == BLOCK_AIR_INDEX){
-         solid_field.get()->fill(0);
+        solid_field.get()->fill(0);
         return;
     }
 

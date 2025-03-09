@@ -12,7 +12,8 @@ enum ControllActions{
     STRAFE_RIGHT,
     MOVE_UP,
     MOVE_DOWN,
-    SCROLL_ZOOM
+    SCROLL_ZOOM,
+    SPRINT
 };
 
 template <typename T>

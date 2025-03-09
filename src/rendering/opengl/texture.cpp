@@ -204,11 +204,12 @@ void GLTextureArray::loadFromFiles(std::vector<std::string>& filenames, int laye
 void GLTextureArray::putImage(int x, int y, int layer, const Image& image){
     bind(0);
 
+
     glPixelStorei(GL_UNPACK_ALIGNMENT, image.getChannels());
     glTexSubImage3D(
         GL_TEXTURE_2D_ARRAY, 0, 
         x, y, layer, 
-        std::min(x + image.getWidth(), layer_width), std::min(y + image.getHeight(), layer_height), 1, 
+        image.getWidth(), image.getHeight(), 1, 
         GL_RGBA, GL_UNSIGNED_BYTE, 
         image.getData()
     );

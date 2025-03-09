@@ -21,6 +21,8 @@ class GameState{
         LogicalItemInventory player_crafting_inventory{2,2};
         LogicalItemInventory player_crafting_inventory_result{1,1};
 
+        int player_health = 20;
+
         FileSaveStructure save_structure;
         
         WorldStream* world_stream;
@@ -67,4 +69,5 @@ class GameState{
         LogicalItemInventory& getPlayerCraftingResultInventory(){return player_crafting_inventory_result;}
         Terrain& getTerrain(){return terrain;}
         WorldStream* getWorldStream(){return world_stream;}
+        int& getPlayerHealth(){return player_health;}
 };

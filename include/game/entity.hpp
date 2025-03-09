@@ -60,6 +60,7 @@ class Entity{
         Entity(): Entity(glm::vec3{0,0,0},{1,1,1}){}
 
         std::function<void(Entity*, Entity*)> onCollision;
+        std::function<void(Entity*)> onTerrainCollision;
         bool destroy = false;
 
         void accelerate(glm::vec3 direction, float deltatime);

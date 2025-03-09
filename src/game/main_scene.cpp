@@ -82,7 +82,8 @@ void MainScene::initialize(){
     inputManager.bindKey(GLFW_KEY_D    , STRAFE_RIGHT , "Strafe right");
     inputManager.bindKey(GLFW_KEY_SPACE, MOVE_UP      , "Jump");
     inputManager.bindKey(GLFW_KEY_LEFT_CONTROL, MOVE_DOWN, "Move down when flying");
-    inputManager.bindKey(GLFW_KEY_LEFT_SHIFT, SCROLL_ZOOM, "Hold to zoom");
+    inputManager.bindKey(GLFW_KEY_LEFT_SHIFT, SPRINT, "Sprint");
+    inputManager.bindKey(GLFW_KEY_C, SCROLL_ZOOM, "Hold to zoom");
 
     auto settingsFrame = getElementById<UIFrame>("keybind_container");
 
@@ -240,7 +241,6 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
     }
 
 
-
     if(
         key == GLFW_KEY_ESCAPE && action == GLFW_PRESS
     ){
@@ -250,9 +250,7 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
             this->setUILayer("menu");
     }
     else if(key == GLFW_KEY_G && action == GLFW_PRESS){
-        selected_game_mode = (selected_game_mode + 1) % game_modes.size();
-        HandleGamemodeEvent(&GameMode::Open);
-        ResetToBaseLayer();
+        SetGameMode((selected_game_mode + 1) % game_modes.size());
     }
 }
 
@@ -276,6 +274,8 @@ void MainScene::open(GLFWwindow* window){
     HandleGamemodeEvent(&GameMode::Open);
 
     terrain_manager.setGameState(game_state.get());
+
+    
     //Entity e = Entity(player.getPosition() + glm::vec3{5,0,5}, glm::vec3(1,1,1));
     //e.setModel(std::make_shared<GenericModel>("resources/models/130/scene.gltf"));
     //game_state->addEntity(e);g
@@ -286,7 +286,7 @@ void MainScene::open(GLFWwindow* window){
     std::cout << "Threads started" << std::endl;
     physicsThread.detach();
 
-    ResetToBaseLayer();
+    SetGameMode(0);
 }
 
 void MainScene::close(GLFWwindow* window){
@@ -421,26 +421,28 @@ void MainScene::physicsUpdate(){
         auto& player = game_state->getPlayer();
 
         if(!CurrentGameMode() || (!CurrentGameMode()->NoClip())){
+            float speed = camAcceleration;
+
             player.setGravity(true);
             bool moving = false; 
             if(inputManager.isActive(STRAFE_RIGHT )){
-                player.accelerate(-leftDir * camAcceleration, deltatime);
+                player.accelerate(-leftDir * speed, deltatime);
                 moving = true;
             }
             if(inputManager.isActive(STRAFE_LEFT  )){
-                player.accelerate( leftDir * camAcceleration, deltatime);
+                player.accelerate( leftDir * speed, deltatime);
                 moving = true;
             }
             if(inputManager.isActive(MOVE_BACKWARD)){
-                player.accelerate(-horizontalDir * camAcceleration, deltatime);
+                player.accelerate(-horizontalDir * speed, deltatime);
                 moving = true;
             }
             if(inputManager.isActive(MOVE_FORWARD )){
-                player.accelerate( horizontalDir * camAcceleration, deltatime);
+                player.accelerate( horizontalDir * speed, deltatime);
                 moving = true;
             }
 
-            if(!moving) player.decellerate(camAcceleration,deltatime);
+            if(!moving) player.decellerate(speed,deltatime);
             //if(boundKeys[1].isDown) player.accelerate(-camera.getUp() * 0.2f);
             //if(inputManager.isActive(MOVE_UP)) player.accelerate(camera.getUp() * 0.2f);
             if(inputManager.isActive(MOVE_DOWN)) player.accelerate(-camera.getUp() * 2.0f, deltatime);

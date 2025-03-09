@@ -91,7 +91,7 @@ CraftingInterface::CraftingInterface(const std::shared_ptr<UILayer>& layer, Item
 
     auto frame = std::make_shared<UIFrame>();
     frame->setPosition(TValue::Center(), TValue::Center());
-    frame->setSize(TValue::Pixels(600), TValue::Pixels(400));
+    frame->setSize(TValue::Pixels(600), TValue::Pixels(600));
     frame->setLayout(std::make_shared<UIFlexLayout>());
 
     frame->appendChild(crafting_display);

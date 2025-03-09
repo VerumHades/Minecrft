@@ -90,7 +90,10 @@ bool GameState::entityCollision(Entity& checked_entity, const glm::vec3& offset)
     auto& checked_collider = checked_entity.getCollider();
     auto position = checked_entity.getPosition() + offset;
 
-    if(terrain.collision(position, &checked_collider)) return true;
+    if(terrain.collision(position, &checked_collider)){
+        if(checked_entity.onTerrainCollision) checked_entity.onTerrainCollision(&checked_entity);
+        return true;
+    }
 
     for(auto& entity: entities){
         if(entity.shouldGetDestroyed()) continue;

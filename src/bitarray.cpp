@@ -287,6 +287,8 @@ void BitField3D::decompress(std::array<uint64_t, 64 * 64>& destination, Compress
 }
 
 CCacheMember* CompressedBitFieldCache::next(std::shared_ptr<CompressedArray> new_compressed_data){
+    std::lock_guard<std::mutex> lock(mutex);
+    
     next_spot = (next_spot + 1) % (max_cached - 1);
 
     auto& member = cached_fields[next_spot];

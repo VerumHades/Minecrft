@@ -28,9 +28,17 @@ void GameModeSurvival::Initialize(){
         TValue::Bottom(20_px)
     );
 
+    health_bar = std::make_shared<HealthBar>(nullptr);
+    health_bar->setPosition(
+        TValue::Center(),
+        TValue::Bottom(100_px)
+    );
+    health_bar->setSize(TValue::Pixels(320),TValue::Pixels(32));
+        
     auto& inventory_layer = getLayerLocal("inventory");
     inventory_layer.addElement(frame);
     inventory_layer.addElement(hotbar);
+    inventory_layer.addElement(health_bar);
     inventory_layer.addElement(held_item_slot);
 
     auto crosshair = std::make_shared<UICrosshair>();
@@ -45,6 +53,7 @@ void GameModeSurvival::Initialize(){
     base_layer.addElement(fps_label);
     base_layer.addElement(crosshair);
     base_layer.addElement(hotbar);
+    base_layer.addElement(health_bar);
     base_layer.cursorMode = GLFW_CURSOR_DISABLED;
     
     for(auto& prototype: BlockRegistry::get().prototypes()){
@@ -91,8 +100,16 @@ void GameModeSurvival::Open(){
     inventory->setInventory(&game_state.getPlayerInventory());
     hotbar->setInventory(&game_state.getPlayerHotbar());
     inventory_crafting->setInventories(&game_state.getPlayerCraftingInventory(), &game_state.getPlayerCraftingResultInventory());
+    health_bar->setHealth(&game_state.getPlayerHealth());
 
     auto& player = game_state.getPlayer();
+
+    player.onTerrainCollision = [this](Entity* self){
+        if(self->getVelocity().y < -15.0f){
+            state.game_state->getPlayerHealth() += self->getVelocity().y / 5;
+            update_healthbar = true;
+        }
+    };
 
     player.onCollision = [this](Entity* self, Entity* collided_with){
         if(!collided_with->getData() || collided_with->getData()->type != EntityData::DROPPED_ITEM) return;
@@ -121,6 +138,26 @@ void GameModeSurvival::Render(double deltatime){
 
     if(!state.game_state) return;
     auto& game_state = *state.game_state;
+
+    if(update_healthbar){
+        if(game_state.getPlayerHealth() <= 0){
+            auto& player = game_state.getPlayer();
+            game_state.getPlayerHealth() = 20;
+            
+            DropAllInventoryItems(player.getPosition(),&game_state.getPlayerInventory());
+            DropAllInventoryItems(player.getPosition(),&game_state.getPlayerHotbar());
+            DropAllInventoryItems(player.getPosition(),&game_state.getPlayerCraftingInventory());
+            DropAllInventoryItems(player.getPosition(),&game_state.getPlayerCraftingResultInventory());
+            
+            int height = state.terrain_manager.getWorldGenerator().getHeightAt({0,0,0});
+            game_state.getPlayer().setPosition({0,height + 5,0});
+
+            hotbar->update();
+        }
+
+        health_bar->update();
+        update_healthbar = false;
+    }
     
     if(!cursor_state.blockUnderCursor || cursor_state.blockUnderCursor->id == BLOCK_AIR_INDEX) return;
 
@@ -137,6 +174,7 @@ void GameModeSurvival::Render(double deltatime){
             if(mining_delay <= 0.0f){
                 BreakBlockUnderCursor();
                 mining_delay = mining_delay_max;
+                state.cube_renderer.removeCube(0);
                 UpdateCursor();
             }
             else mining_delay -= deltatime;
@@ -144,6 +182,28 @@ void GameModeSurvival::Render(double deltatime){
             mining = true;
         }
         else mining = false;
+    }
+}
+
+void GameModeSurvival::DropItem(const glm::vec3& position, ItemRef item){
+    if(!state.game_state) return;
+
+    Entity entity = DroppedItem::create(position, item);
+    entity.accelerate({
+        static_cast<float>(std::rand() % 200) / 100.0f - 1.0f,
+        0.6f,
+        static_cast<float>(std::rand() % 200) / 100.0f - 1.0f
+    }, 1.0f);
+    state.game_state->addEntity(entity);
+}
+
+void GameModeSurvival::DropAllInventoryItems(const glm::vec3& position, LogicalItemInventory* inventory){
+    if(!inventory) return;
+    for(auto& slot: inventory->getItemSlots()){
+        if(slot.getItem()){
+            DropItem(position, slot.getItem());
+            slot.clear();
+        }
     }
 }
 
@@ -158,13 +218,8 @@ void GameModeSurvival::BreakBlockUnderCursor(){
     auto* item_prototype = ItemRegistry::get().getPrototype("block_" + block_prototype->name);
     if(!item_prototype) return;
 
-    Entity entity = DroppedItem::create(glm::vec3(cursor_state.blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5), Item::Create(item_prototype));
-    entity.accelerate({
-        static_cast<float>(std::rand() % 200) / 100.0f - 1.0f,
-        0.6f,
-        static_cast<float>(std::rand() % 200) / 100.0f - 1.0f
-    }, 1.0f);
-    game_state.addEntity(entity);
+    DropItem(glm::vec3(cursor_state.blockUnderCursorPosition) + glm::vec3(0.5,0.5,0.5), Item::Create(item_prototype));
+
     //auto& selected_slot = hotbar->getSelectedSlot();
     //inventory->addItem();
 
@@ -235,8 +290,11 @@ void GameModeSurvival::KeyEvent(int key, int scancode, int action, int mods){
             slot->decreaseQuantity(1);
             hotbar->update();
         }
-        else if(key == GLFW_KEY_TAB && action == GLFW_PRESS) setLayerLocal("inventory");
+        else if((key == GLFW_KEY_TAB || key == GLFW_KEY_E) && action == GLFW_PRESS) setLayerLocal("inventory");
     }
+    else if(isActiveLayerLocal("inventory") && (key == GLFW_KEY_TAB || key == GLFW_KEY_E) && action == GLFW_PRESS) state.scene.setUILayer(GetBaseLayer().name);
+
+
 }
 void GameModeSurvival::MouseEvent(int button, int action, int mods){
     if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
@@ -262,6 +320,8 @@ void GameModeSurvival::MouseScroll(double xoffset, double yoffset){
     int scroll = abs(yoffset) / yoffset;
     hotbar->selectSlot(hotbar->getSelectedSlotNumber() - scroll);
     hotbar->update();
+
+    onCursorTargetChange();
 }
 
 void GameModeSurvival::PhysicsUpdate(double deltatime){
@@ -327,4 +387,39 @@ void UIHotbar::getRenderingInformation(UIRenderBatch& batch){
         UISideSizes{3,3,3,3},
         UIColor{180,180,180}
     );
+}
+
+HealthBar::HealthBar(int* health): health(health){
+    dedicated_texture_array = std::make_shared<GLTextureArray>();
+    dedicated_texture_array->setup(32 * 3, 32, 1);
+
+    dedicated_texture_array->putImage(0, 0,0,Image::LoadWithSize("resources/textures/ui/heart_full.png",32,32));
+    dedicated_texture_array->putImage(32,0,0,Image::LoadWithSize("resources/textures/ui/heart_half_empty.png",32,32));
+    dedicated_texture_array->putImage(64,0,0,Image::LoadWithSize("resources/textures/ui/heart_empty.png",32,32));
+}
+
+void HealthBar::getRenderingInformation(UIRenderBatch& batch){
+    int hearts_total = max_health / 2;
+    int single_heart_width = transform.width / hearts_total;
+
+    const float texture_step = 1.0f / 3.0f;
+    
+    int hp = 10;
+    if(health) hp = *health;
+
+    for(int i = 0;i < hearts_total;i++){
+        int texture_index = 2 - ((hp > 0) + (hp > 1));
+        hp -= 2;
+        
+        batch.Texture(
+            transform.x + single_heart_width * i,
+            transform.y,
+            single_heart_width,
+            transform.height,
+            UIRegion{
+                {texture_step * static_cast<float>(texture_index),0},
+                {texture_step * static_cast<float>(texture_index) + texture_step,1}
+            }
+        );
+    }
 }

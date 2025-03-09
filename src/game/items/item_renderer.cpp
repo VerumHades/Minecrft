@@ -121,7 +121,7 @@ void ItemSlot::getRenderingInformation(UIRenderBatch& batch){
     );*/
 
     if(!item_slot.hasItem()) return;
-    auto* item = item_slot.getItem();
+    auto item = item_slot.getItem();
     auto* prototype = item->getPrototype();
     if(!prototype) return;
 
@@ -239,7 +239,7 @@ void InventoryDisplay::getRenderingInformation(UIRenderBatch& batch){
     for(int x = 0;x < inventory->getWidth();x++){
         auto* slot = inventory->getSlot(x,y);
 
-        auto* item = slot->getItem();
+        auto item = slot->getItem();
         if(!item) continue;
         auto* prototype = item->getPrototype();
         if(!prototype) continue;

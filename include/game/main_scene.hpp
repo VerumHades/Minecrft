@@ -140,6 +140,13 @@ class MainScene: public Scene{
             return CurrentGameMode()->GetBaseLayer();
         }
 
+        void SetGameMode(int index)
+        {
+            selected_game_mode = index;
+            HandleGamemodeEvent(&GameMode::Open);
+            ResetToBaseLayer();
+        }
+
         void ResetToBaseLayer(){
             setUILayer(GetCurrentBaseLayer().name);
         }

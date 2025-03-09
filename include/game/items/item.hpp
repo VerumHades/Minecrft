@@ -136,7 +136,7 @@ class LogicalItemSlot{
         */
         ItemRef getPortion(int quantity = -1);
 
-        Item* getItem() {return item.get();}
+        ItemRef getItem() {return item;}
         void setItem(ItemRef item) {this->item = item;}
 };
 
