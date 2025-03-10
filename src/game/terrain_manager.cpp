@@ -12,7 +12,7 @@ bool TerrainManager::GenerateRegion(const glm::ivec3& around, int render_distanc
     
     generated_distance = 0;
 
-    for(int i = 1;i < render_distance + 2;i++){
+    for(int i = 1;i < render_distance + 1;i++){
         //std::array<std::queue<Chunk*>, thread_count> generation_queues;
         //int queue_index = 0;
 
@@ -46,7 +46,7 @@ bool TerrainManager::GenerateRegion(const glm::ivec3& around, int render_distanc
             //queue_index = (queue_index + 1) % thread_count;
         }
 
-        generated_distance = i - 2;
+        generated_distance = i - 1;
         ///std::array<std::thread, thread_count> threads;            
 
         //int j = 0;
