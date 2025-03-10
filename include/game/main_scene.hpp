@@ -151,7 +151,7 @@ class MainScene: public Scene{
             setUILayer(GetCurrentBaseLayer().name);
         }
 
-        int renderDistance = 4;
+        int renderDistance = 6;
         int selectedBlock = 4;
 
         bool allGenerated = false;
