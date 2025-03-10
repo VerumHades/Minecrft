@@ -18,17 +18,6 @@ class Pool{
         Pool( const Pool& ) = delete; // non construction-copyable
         Pool& operator=( const Pool& ) = delete; // non copyable
 
-        class PoolIndex{
-            private:
-                size_t index;
-                Pool<T>* parent;
-
-            public:
-                T* operator->() {
-                    return &target;
-                }
-        };
-
         std::shared_ptr<T> Add(const auto& element){
             if(next_draw_index.empty()){
                 size_t size = elements.size();
