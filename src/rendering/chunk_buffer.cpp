@@ -106,7 +106,7 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
 
     if(region->transform.level == 1){ // The region is directly drawable
         if(!region->loaded_mesh){
-            std::cerr << "A loaded region has to have a  mesh!" << std::endl;
+            LogError("A loaded region has to have a  mesh!");
             return;
         }
 
@@ -167,6 +167,6 @@ void ChunkMeshRegistry::draw(){
 }
 
 void ChunkMeshRegistry::clear(){
-    mesh_buffer.clearDrawCalls();
     regions.clear();
+    mesh_buffer = {};
 }

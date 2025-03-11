@@ -71,7 +71,7 @@ TValue parseTValue(std::string source){
 
         return TValue(unit, value);  
     }
-    std::cerr << "Failed to parse value '" << source << "'"<< std::endl;
+    LogError("Failed to parse value '{}'", source);
     return TNONE;
 }
 
@@ -120,7 +120,7 @@ std::shared_ptr<UIFrame> UILoader::createElement(XMLElement* source) {
 
         return el; 
     }
-    std::cerr << "No tag '" << source->Name() << "' found!" << std::endl;
+    LogError("No tag '{}' found!", source->Name());
     return nullptr; 
 }
 
@@ -132,7 +132,7 @@ std::shared_ptr<UIFrame> UILoader::processElement(XMLElement* source){
     if(source->Name() && std::string(source->Name()) == "style"){
         auto path = source->Attribute("src");
         if(!path){
-            std::cerr << "Style missing source path." << std::endl;
+            LogError("Style missing source path.");
             return nullptr;
         }
 
@@ -160,13 +160,13 @@ bool UILoader::loadWindowFromXML(UIWindow& window, const std::string& path){
     XMLDocument doc;
 
     if (doc.LoadFile(path.c_str()) != XML_SUCCESS) {
-        std::cerr << "Error loading ui XML file." << std::endl;
+        LogError("Error loading ui XML file.");
         return false;
     }
 
     XMLElement* root = doc.FirstChildElement("window");
     if (!root) {
-        std::cerr << "No root window element found." << std::endl;
+        LogError("No root window element found.");
         return false;
     }
 

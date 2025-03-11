@@ -81,7 +81,7 @@ bool Allocator::free(size_t start, std::string fail_prefix){
 }
 
 
-bool Allocator::splitTakenBlock(size_t at, const std::vector<size_t>& sizes){
+/*bool Allocator::splitTakenBlock(size_t at, const std::vector<size_t>& sizes){
     // Make sure the block exists
     if(!takenBlocks.contains(at)) {
         std::cerr << "Cannot split non-existing block: " << at << std::endl;
@@ -119,7 +119,7 @@ bool Allocator::splitTakenBlock(size_t at, const std::vector<size_t>& sizes){
     }
 
     return true;
-}
+}*/
 
 size_t Allocator::getTakenBlockSize(size_t at){
     if(!takenBlocks.contains(at)) return 0;

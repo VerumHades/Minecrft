@@ -12,12 +12,14 @@ class Paths {
     public:
         enum Configured{
             GAME_SAVES,
-            GAME_STRUCTURES
+            GAME_STRUCTURES,
+            LOG_PATH
         };
     private:
         std::unordered_map<Configured, path> configured_paths = {
             {GAME_SAVES, "saves"},
-            {GAME_STRUCTURES, "structures"}
+            {GAME_STRUCTURES, "structures"},
+            {LOG_PATH, "logs"}
         };
         std::optional<path> save_path = std::nullopt;
         Paths(){}

@@ -42,7 +42,7 @@ bool ByteArray::operator== (const ByteArray& array){
 bool ByteArray::saveToFile(fs::path path){
     std::fstream file(path, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
     if (!file) {
-        std::cerr << "Failed to open file '" << path << "'." << std::endl;
+        LogError("Failed to open file '{}'.", path.string());
         return false;
     }
 
@@ -52,7 +52,7 @@ bool ByteArray::saveToFile(fs::path path){
 ByteArray ByteArray::FromFile(fs::path path){
     std::fstream file(path, std::ios::in | std::ios::binary);
     if (!file) {
-        std::cerr << "Failed to open file '" << path << "'." << std::endl;
+        LogError("Failed to open file '{}'.", path.string());
         return {};
     }
     

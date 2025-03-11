@@ -15,21 +15,8 @@
 #include <test_scene.hpp>
 
 #include <path_config.hpp>
-
-/*void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
-    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
-        if(menuOpen){
-            UICore.setScene("main");
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
-        else{
-            UICore.setScene("internal_default");
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-        menuOpen = !menuOpen;
-    }
-    UICore.keyEvent(key,action);
-}*/
+#include <logging.hpp>
+#include <format> 
 
 void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
                             GLenum severity, GLsizei length,
@@ -69,44 +56,8 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
 	default:                             severity_ = "<SEVERITY>";   break;
 	}
 
-	printf("%d: GL %s %s (%s): %s\n",
-		   id, severity_, type_, source_, message);
+    LogOpengl("{}: GL {} {} ({}): {}", id, severity_, type_, source_, message);
 }
-
-void printOpenGLLimits() {
-    GLint maxWorkGroupCount[3]; // [X, Y, Z]
-    GLint maxWorkGroupSize[3];  // [X, Y, Z]
-    GLint maxInvocations;       // Total invocations per work group
-    GLint maxSharedMemorySize;  // Total shared memory size for compute shaders
-    
-    // Query GL_MAX_COMPUTE_WORK_GROUP_COUNT
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &maxWorkGroupCount[0]);
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &maxWorkGroupCount[1]);
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &maxWorkGroupCount[2]);
-    
-    // Query GL_MAX_COMPUTE_WORK_GROUP_SIZE
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &maxWorkGroupSize[0]);
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &maxWorkGroupSize[1]);
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &maxWorkGroupSize[2]);
-    
-    // Query GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS
-    glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &maxInvocations);
-    
-    // Query GL_MAX_COMPUTE_SHARED_MEMORY_SIZE
-    glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &maxSharedMemorySize);
-    
-    // Output the queried values
-    std::cout << "GL_MAX_COMPUTE_WORK_GROUP_COUNT:" << std::endl;
-    std::cout << "  X: " << maxWorkGroupCount[0] << ", Y: " << maxWorkGroupCount[1] << ", Z: " << maxWorkGroupCount[2] << std::endl;
-    
-    std::cout << "GL_MAX_COMPUTE_WORK_GROUP_SIZE:" << std::endl;
-    std::cout << "  X: " << maxWorkGroupSize[0] << ", Y: " << maxWorkGroupSize[1] << ", Z: " << maxWorkGroupSize[2] << std::endl;
-    
-    std::cout << "GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS: " << maxInvocations << std::endl;
-    
-    std::cout << "GL_MAX_COMPUTE_SHARED_MEMORY_SIZE: " << maxSharedMemorySize << " bytes" << std::endl;
-}
-
 
 SceneManager* s;
 int main() {
@@ -114,7 +65,7 @@ int main() {
 
     /* Initialize the library */
     if (!glfwInit()) {
-        std::cout << "Failed to initialize glfw!" << std::endl;
+        LogError("Failed to initialize glfw!");
         return -1;
     }
 
@@ -129,7 +80,7 @@ int main() {
     window = glfwCreateWindow(1920, 1080, "Hello Terrain", NULL, NULL);
 
     if (!window) {
-        std::cout << "Failed to initialize glfw window!" << std::endl;
+        LogError("Failed to initialize glfw window!");
         glfwTerminate();
         return -1;
     }
@@ -139,12 +90,12 @@ int main() {
     
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cout << "Failed to initialize glad!" << std::endl;
+        LogError("Failed to initialize glad!");
         return -1;
     }
-    std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
-    
-    //printOpenGLLimits();
+    const GLubyte* version = glGetString(GL_VERSION);
+    std::string versionStr(reinterpret_cast<const char*>(version));
+    LogInfo("OpenGL version: ", versionStr);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -156,12 +107,9 @@ int main() {
     //glEnable(GL_FRAMEBUFFER_SRGB);
     glEnable(GL_MULTISAMPLE);  // Redundant perhaps
     //glDepthMask(GL_FALSE);
-    
-    /*
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, NULL);
-    */
 
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
         s->resize(window, width, height); // Call resize on the instance

@@ -9,7 +9,7 @@ void Scene::addElement(std::shared_ptr<UIFrame> element){
 /*
     Sets the current selected ui layer
 */
-void Scene::setUILayer(std::string name){
+void Scene::setUILayer(const std::string& name){
     UICore::get().stopDrawingAll();
     UICore::get().getWindow(windowID)->setCurrentLayer(name);
 
@@ -23,7 +23,7 @@ void Scene::setUILayer(std::string name){
     if(layer.onEntered) layer.onEntered();
 }
 
-bool Scene::isActiveLayer(std::string name){
+bool Scene::isActiveLayer(const std::string& name){
     return getCurrentUILayer().name == name;
 }
 
@@ -34,7 +34,7 @@ UIWindow* Scene::getWindow(){
 UILayer& Scene::getCurrentUILayer(){
     return UICore::get().getWindow(windowID)->getCurrentLayer();
 }
-UILayer& Scene::getUILayer(std::string name){
+UILayer& Scene::getUILayer(const std::string& name){
     return UICore::get().getWindow(windowID)->getLayer(name);
 }
 
@@ -61,24 +61,24 @@ SceneManager::SceneManager(GLFWwindow* window): window(window){
 
 Scene* SceneManager::getCurrentScene(){
     if(scenes.count(currentScene) == 0){
-        std::cout << "No scene: " << currentScene << " exists. It will crash." << std::endl;
+        LogError("No scene '{}' exists. This is a critical error.", currentScene);
         throw std::runtime_error("Scene manager has to have a valid active scene!");
     }
 
     return scenes.at(currentScene).get();
 }
 
-Scene* SceneManager::getScene(std::string name){
+Scene* SceneManager::getScene(const std::string& name){
     if(scenes.count(name) == 0){
-        std::cout << "No scene: " << currentScene << " exists." << std::endl;
+        LogError("No scene '{}' exists. This is a critical error.", name);
     }
 
     return scenes.at(name).get();
 }
 
-void SceneManager::addScene(std::string name, std::unique_ptr<Scene> scene){
+void SceneManager::addScene(const std::string& name, std::unique_ptr<Scene> scene){
     if(scenes.count(name) != 0){
-        std::cout << "Scene under name: " << currentScene << " already exists." << std::endl;
+        LogWarning("Scene '{}' already exists. ", name);
         return;
     }
 
@@ -87,7 +87,7 @@ void SceneManager::addScene(std::string name, std::unique_ptr<Scene> scene){
     scenes[name]->windowID = UICore::get().createWindow();
 }
 
-void SceneManager::setScene(std::string name){
+void SceneManager::setScene(const std::string& name){
     if(currentScene != name) {
         getCurrentScene()->close(window);
     }

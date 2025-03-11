@@ -41,12 +41,10 @@ void BlockRegistry::addFullBlock(std::string name, std::array<std::string,6> tex
     for(auto& name: texture_names){
         auto* texture = getTextureByName(name);
         if(!texture) {
-            std::cerr << "Invalid texture name: " << name << std::endl;
+            LogError("Invalid texture name: ", name);
             return;
         }
         texture_paths[i] = texture->path;
-        //std::cout << texture_paths[i] << " " << name << std::endl;
-
         textures[i++] = getTextureIndex(name);
     }
 
@@ -141,13 +139,13 @@ RectangularCollider BlockRegistry::parseCollider(tinyxml2::XMLElement* element){
 
 void BlockRegistry::loadTexture(const char* name, int index, BlockPrototype& prototype){
     if(!name){
-        std::cerr << "Missing texture name." << std::endl;
+        LogError("Missing texture name.");
         return;
     }
     
     auto [texture_index, exists] = getTextureIndexChecked(name);
     if(!exists){
-        std::cerr << "Texture: '" << name << "' doesnt exist." << std::endl;
+        LogError("Texture: '{}' doesnt exist.", name);
         return;
     }
 
@@ -167,7 +165,7 @@ void BlockRegistry::processAttribute(tinyxml2::XMLElement* element, BlockPrototy
         if      (type_name == "FULL_BLOCK") prototype.render_type = FULL_BLOCK;
         else if (type_name == "BILLBOARD") prototype.render_type = BILLBOARD;
         else {
-            std::cerr << "Invalid block type: '" << type_name << "'.";
+            LogError("Invalid block type: '{}'.", type_name);
             return;
         }
     }
@@ -181,7 +179,7 @@ void BlockRegistry::processAttribute(tinyxml2::XMLElement* element, BlockPrototy
     else if(attribute_name == "transparent"){
         bool value;
         if(element->QueryBoolText(&value) == XML_SUCCESS) prototype.transparent = value;
-        else std::cerr << "Invalid value for block transparency." << std::endl;
+        else LogError("Invalid value for block transparency.");
     }
     else if(attribute_name == "textures"){
         prototype.single_texture = false;
@@ -201,27 +199,27 @@ void BlockRegistry::processAttribute(tinyxml2::XMLElement* element, BlockPrototy
         int value;
 
         if(element->QueryIntText(&value) == XML_SUCCESS) prototype.hardness = value;
-        else std::cerr << "Invalid value for block hardness." << std::endl;
+        else LogError("Invalid value for block hardness.");
     }
     else if(attribute_name == "material"){
         auto* name_ptr = element->GetText();
         if(!name_ptr) return;
         prototype.material_name = name_ptr;
     }
-    else std::cerr << "Invalid block defintion attribute: '" << attribute_name << "'." <<std::endl;
+    else LogError("Invalid block defintion attribute: '{}'", attribute_name);
 }
 
 bool BlockRegistry::loadPrototypesFromFile(const std::string& path){
     XMLDocument doc;
 
     if (doc.LoadFile(path.c_str()) != XML_SUCCESS) {
-        std::cerr << "Error loading block XML file." << std::endl;
+        LogError("Error loading block XML file.");
         return false;
     }
 
     XMLElement* root = doc.FirstChildElement("blocks");
     if (!root) {
-        std::cerr << "No root blocks element found." << std::endl;
+        LogError("No root blocks element found.");
         return false;
     }
 

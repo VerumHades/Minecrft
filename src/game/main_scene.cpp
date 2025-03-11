@@ -283,7 +283,6 @@ void MainScene::open(GLFWwindow* window){
     //std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
 
-    std::cout << "Threads started" << std::endl;
     physicsThread.detach();
 
     SetGameMode(0);
@@ -407,7 +406,7 @@ void MainScene::physicsUpdate(){
 
         glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
         if(glm::distance(glm::vec3(camWorldPosition),glm::vec3(lastCamWorldPosition)) >= 2 || update_render_distance){ // Crossed chunks
-            //std::cout << "New chunk position: " << camWorldPosition.x << " " << camWorldPosition.y << " " << camWorldPosition.z << std::endl;
+
             updateLoadedLocations(lastCamWorldPosition, camWorldPosition);
             lastCamWorldPosition = camWorldPosition;
             update_render_distance = false;

@@ -229,13 +229,13 @@ bool CraftingRecipeRegistry::LoadRecipesFromXML(const std::string& path){
     XMLDocument doc;
 
     if (doc.LoadFile(path.c_str()) != XML_SUCCESS) {
-        std::cerr << "Error loading block XML file." << std::endl;
+        LogError("Error loading recipe XML file.");
         return false;
     }
 
     XMLElement* root = doc.FirstChildElement("recipes");
     if (!root) {
-        std::cerr << "No root blocks element found." << std::endl;
+        LogError("No root recipes element found.");
         return false;
     }
 
@@ -268,9 +268,7 @@ bool CraftingRecipeRegistry::LoadRecipesFromXML(const std::string& path){
                         );
                     }
                 }
-                else{
-                    std::cout << "Unrecognized attribute for recipe in xml: " << name << std::endl;
-                }
+                else LogError("Unrecognized attribute for recipe in xml: '{}'", name);
             }
         );
 

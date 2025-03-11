@@ -124,7 +124,7 @@ class ShaderUniformLinker{
             if(get().uniforms.contains(name)){
                 FunctionalUniform<T>* ptr = dynamic_cast<FunctionalUniform<T>*>(get().uniforms.at(name).uniform.get());
                 if(!ptr){
-                    std::cerr << "Existing uniform has different type that the one fetched." << std::endl;
+                    LogError("Existing uniform '{}' has different type that the one fetched.", name);
                     return nullptr;
                 }
                 return ptr;
@@ -212,7 +212,7 @@ class ShaderProgram{
             use();
             int location = getUniformLocation(name);
             if(location == -1){
-                std::cerr << "No sample under name '" << name << "' found." << std::endl;
+                LogError("No sampler under name '{}' found.", name);
                 return;
             }
             ShaderUniformLinker::get().ignore(name);
@@ -224,7 +224,6 @@ class ShaderProgram{
         void use(){
             if(programInUse == program) return;
             programInUse = program;
-            //if(!glIsProgram(this->program)) std::cout << "Invalid program?" << std::endl;
             glUseProgram(this->program);
         }
         void updateUniforms();

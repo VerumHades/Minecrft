@@ -27,11 +27,11 @@ void saveRedComponentTexture(GLuint textureID, int width, int height, const char
 
 Font::Font(std::string filepath, int size): size(size){
     if (FT_Init_FreeType(&ft)) {
-        std::cerr << "Could not init FreeType Library" << std::endl;
+        LogError("Could not init FreeType Library");
         throw std::runtime_error("");
     }
     if (FT_New_Face(ft, filepath.c_str(), 0, &face)) {
-        std::cerr << "Failed to load font: " << filepath << std::endl;
+        LogError("Failed to load font '{}'", filepath);
         throw std::runtime_error("");
     }
 
@@ -64,7 +64,7 @@ void Font::createAtlas(){
 
     for (unsigned char c = 0; c < 128; c++) {
         if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-            std::cout << "Failed to load Glyph" << std::endl;
+            LogError("Failed to load Glyph for '{}'", c);
             continue;
         }
 

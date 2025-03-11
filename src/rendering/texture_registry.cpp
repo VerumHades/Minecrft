@@ -2,7 +2,7 @@
 
 void TextureRegistry::addTexture(std::string name, const std::string& path){   
     if(textures.contains(name)){
-        std::cerr << "Duplicate texture name '" << name << "'" << std::endl;
+        LogWarning("Duplicate texture name '{}'", name);
         return;
     }
     textures[name] = {

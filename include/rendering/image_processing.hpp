@@ -6,6 +6,8 @@
 #include <cstring>
 #include <vector>
 
+#include <logging.hpp>
+
 class Image{
     private:
         std::vector<unsigned char> data;

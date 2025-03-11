@@ -325,12 +325,12 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
 
     auto solidMesh = std::make_unique<InstancedMesh>();
     if(!group){
-        std::cerr << "Empty group" << std::endl;
+        LogError("Missing chunk when generating mesh.");
         return solidMesh;
     }
 
     if(!world){
-        std::cerr << "No world assigned, quitting mesh generation." << std::endl;
+        LogError( "No world assigned, quitting mesh generation.");
         return solidMesh;
     }
 
@@ -346,7 +346,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
 
     
     if(!nextX || !nextY || !nextZ || !forwardX || !forwardY || !forwardZ){
-        std::cerr << "Mesh generating when chunks are missing?" << std::endl;
+        LogError("Mesh generating when chunks are missing?");
         return solidMesh;
     }
     

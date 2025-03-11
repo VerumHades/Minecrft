@@ -79,7 +79,7 @@ UIColor parseColor(std::string source) {
         return {r, g, b, a};
     }
 
-    std::cerr << "Invalid color string: " << source << std::endl;
+    LogError("Invalid color string: ", source);
     return {255, 0, 0};  
 }
 
@@ -110,7 +110,7 @@ UISideSizesT parseSideSizes(std::string source){
         split_source.size() != 2 &&
         split_source.size() != 1
     ){  
-        std::cerr << "Invalid arguments for size parsing: " << source << std::endl;
+        LogError("Invalid arguments for size parsing: ", source);
         return output;
     }
 
@@ -150,14 +150,14 @@ UIStyle::UIStyle(){
             "background-image", [](auto element, auto value, auto state){
                 remove_spaces(value);
                 if(value.size() < 2){
-                    std::cerr << "Invalid value for background image: " << value << std::endl;
+                    LogError("Invalid value for background image: ", value);
                     return;
                 }
 
                 value = value.substr(1,value.size() - 2); // Remove string ""
                 auto image = UICore::LoadImage(value);
                 if(!image){
-                    std::cerr << "Failed to load image (background-image): " << value << std::endl;
+                    LogError("Failed to load image (background-image): ", value);
                     return;
                 }
 
@@ -171,7 +171,7 @@ UIStyle::UIStyle(){
                 if     (value == "center") element->setAttribute(&UIFrame::Style::textPosition, UIFrame::Style::CENTER, state);
                 else if(value == "left"  ) element->setAttribute(&UIFrame::Style::textPosition, UIFrame::Style::LEFT  , state);
                 else if(value == "right" ) element->setAttribute(&UIFrame::Style::textPosition, UIFrame::Style::RIGHT , state);
-                else std::cerr << "Invalid text-align: " << value << std::endl;
+                else LogError("Invalid text-align: ", value);
             }
         },
         {
@@ -189,9 +189,9 @@ UIStyle::UIStyle(){
                 if(auto flex_frame = std::dynamic_pointer_cast<UIFlexLayout>(element->getLayout())){
                     if     (value == "column") flex_frame->setDirection(UIFlexLayout::VERTICAL);
                     else if(value == "row")    flex_frame->setDirection(UIFlexLayout::HORIZONTAL);
-                    else std::cerr << value << " is not a valid flex direction. Use 'column' or 'row'." << std::endl;
+                    else LogError("'{}' is not a valid flex direction. Use 'column' or 'row'.", value);
                 }
-                else std::cerr << "Settings flex properties for an element that doesnt use a flex layout?" << std::endl;
+                else LogError("Settings flex properties for an element that doesnt use a flex layout?");
             }
         },
 
@@ -205,7 +205,7 @@ UIStyle::UIStyle(){
             auto split_source = split(value, " ");
 
             if(split_source.size() != 2){
-                std::cerr << "Invalid values for 'translate'." << std::endl;
+                LogError("Invalid values for 'translate'.");
                 return;
             }
 
@@ -239,7 +239,7 @@ std::vector<UIStyle::UIStyleQueryAttribute> UIStyle::parseQueryAttributes(std::s
         std::smatch match = *i;
         
         if(attributeApplyFunctions.count(match[1]) == 0) {
-            std::cerr << "Unsuported attribute in css file: " << match[1] << std::endl;
+            LogWarning("Unsuported attribute in css file: ", match[1].str());
             continue;
         }
 
@@ -263,7 +263,7 @@ UIStyle::UIStyleSelector UIStyle::parseQuerySelector(std::string source){
         value = matches[3];
         state = matches[5]; 
     } else {
-        std::cerr << "Invalid selector: " << source << std::endl; 
+        LogError("Invalid selector: ", source); 
         return {};
     }
 
@@ -293,7 +293,7 @@ void UIStyle::parseQuery(std::string selectors, std::string source){
             auto selector = parseQuerySelector(selector_string);
             
             if(selector.type == UIStyleSelector::NONE){
-                std::cerr << "Invalid selector: '" << selector_string << "'." << std::endl; 
+                LogError("Invalid selector '{}'", selector_string); 
                 continue;
             }
             selectors.insert(selectors.begin(), selector);

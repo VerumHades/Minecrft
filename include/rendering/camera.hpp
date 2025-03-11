@@ -21,7 +21,6 @@ struct Volume
 
 class Camera{
     public:
-        //~Camera() {std::cout << "Camera destroyed:" << this << std::endl;}
         virtual void setModelPosition(const glm::vec3& position) = 0;
         virtual void setModelRotation(const glm::vec3& rotation) = 0;
         virtual const glm::vec3& getPosition() const = 0;

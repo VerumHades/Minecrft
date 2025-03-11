@@ -45,13 +45,13 @@ bool ItemRegistry::LoadFromXML(const std::string& path){
     XMLDocument doc;
 
     if (doc.LoadFile(path.c_str()) != XML_SUCCESS) {
-        std::cerr << "Error loading block XML file." << std::endl;
+        LogError("Error loading items XML file.");
         return false;
     }
 
     XMLElement* root = doc.FirstChildElement("items");
     if (!root) {
-        std::cerr << "No root blocks element found." << std::endl;
+        LogError("No root items element found.");
         return false;
     }
 

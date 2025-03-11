@@ -78,7 +78,7 @@ int UIFrame::getValueInPixels(TValue value, bool horizontal){
             }
             else return (( horizontal ? UICore::get().getScreenWidth() : UICore::get().getScreenHeight() )  / 100.0f) * value.value;
         default:
-            std::cerr << "Invalid TValue?" << std::endl;
+            LogError("Invalid TValue?");
             return 0;
     }
 }
@@ -446,12 +446,12 @@ void UIFrame::clearChildren(){
 
 UIImage::UIImage(std::string path){
     dedicated_texture_array = UICore::LoadImage(path);
-    if(!dedicated_texture_array) std::cerr << "Failed to load image '" << path << "'" << std::endl;
+    if(!dedicated_texture_array) LogError("Failed to load image '{}'", path);
 }
 
 UIImage::UIImage(const Image& image){
     dedicated_texture_array = UICore::LoadImage(image);
-    if(!dedicated_texture_array) std::cerr << "Failed to load image." << std::endl;
+    if(!dedicated_texture_array) LogError("Failed to load image.");
 }
 
 void UIImage::getRenderingInformation(UIRenderBatch& batch){

@@ -176,7 +176,7 @@ void GLTextureArray::loadFromFiles(std::vector<std::string>& filenames, int laye
         Image texture_image = Image::LoadWithSize(filenames[i], layerWidth, layerHeight);
 
         if (!texture_image.isLoaded()) {
-            std::cout << "Failed to load texture: " << filenames[i] << std::endl;
+            LogError("Failed to load texture '{}'", filenames[i]);
             throw std::runtime_error("Failed to load texture '%s'\n");
         }
 
@@ -272,13 +272,13 @@ void GLSkybox::load(const std::array<std::string, 6>& filenames){
         data = stbi_load(filenames[i].c_str(), &width, &height, &nrChannels, 0);
 
         if (!data) {
-            std::cout << "Failed to load texture: " <<  filenames[i] << std::endl;
+            LogError("Failed to load texture '{}'", filenames[i]);
             throw std::runtime_error("Failed to load texture when creating skybox.");
         }
        // std::cout << "Loaded " << filenames[i] << " successfully! Channels:" << nrChannels << std::endl;
 
         if(nrChannels != 4 && nrChannels != 3){
-            std::cout << "Invalid channels in skybox texture: " << nrChannels << std::endl;
+            LogError("Invalid channels in skybox texture: '{}'", nrChannels);
             throw std::runtime_error("Invalid channels in skybox texture.");
         }
 
@@ -373,7 +373,7 @@ void DynamicTextureArray::addTexture(const std::string& path){
     data = stbi_load(path.c_str(), &width, &height, &nrChannels, 4);
 
     if (!data) {
-        std::cout << "Failed to load texture: " << path << std::endl;
+        LogError("Failed to load texture '{}'", path);
         throw std::runtime_error("Failed to load texture.\n");
     }
 

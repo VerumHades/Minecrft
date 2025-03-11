@@ -6,7 +6,7 @@ GenericModel::GenericModel(const std::string& path, float pixel_perfect_sampling
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) 
     {
-        std::cerr << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
+        LogError("ASSIMP: {}", importer.GetErrorString());
         return;
     }
     directory = path.substr(0, path.find_last_of('/'));

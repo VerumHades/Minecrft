@@ -72,7 +72,7 @@ class Allocator{
         /*
             Splits a block into subblocks
         */
-        bool splitTakenBlock(size_t at, const std::vector<size_t>& sizes);
+        //bool splitTakenBlock(size_t at, const std::vector<size_t>& sizes);
 
         /*
             Returns the size of a taken block, if the position is invalid returns 0

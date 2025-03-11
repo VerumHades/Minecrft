@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <chrono>
 #include <iostream>
+#include <logging.hpp>
 using uint = unsigned int;
 
 class ScopeTimer{

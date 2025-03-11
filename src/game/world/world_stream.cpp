@@ -44,7 +44,7 @@ void WorldStream::loadTable(){
 
     ByteArray tableData;
     if(!tableData.read(stream())){
-        std::cout << "Terrain file table corrupted, repairing" << std::endl;
+        LogWarning("Terrain file table invalid, automatically overwriten.");
         saveTable();
         return;
     }
@@ -99,7 +99,7 @@ size_t WorldStream::moveChunk(size_t from, size_t to){
     
     ByteArray fromData;
     if(!fromData.read(stream())){
-        std::cout << "No chunk at: " << from << std::endl;
+        LogError("No chunk at: {}", from);
         return 10000;
     }
 
@@ -223,7 +223,8 @@ void WorldStream::load(Chunk* chunk){
     ByteArray source;
     
     if(!source.read(stream())){
-        std::cout << "Corrupted chunk:" << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
+        auto& world_pos =chunk->getWorldPosition();
+        LogError("Corrupted chunk record for {}x{}x{}", world_pos.x, world_pos.y, world_pos.z);
         return;
     }
     

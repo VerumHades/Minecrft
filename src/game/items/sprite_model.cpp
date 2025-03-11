@@ -40,7 +40,7 @@ std::unique_ptr<Mesh> SpriteModel::generateFaces(){
     image_data = stbi_load(sprite_path.c_str(), &width, &height, &original_channels, 4);
 
     if (!image_data) {
-        std::cout << "Failed to load image: " << stbi_failure_reason() << std::endl;
+        LogError("Failed to load image: {}", stbi_failure_reason());
         return nullptr;
     }
     auto mesh = std::make_unique<Mesh>(createMesh());

@@ -7,6 +7,8 @@
 #include <iostream>
 #include <functional>
 
+#include <logging.hpp>
+
 using namespace tinyxml2;
 
 #define xml_for_each_child_as(of, child_name) for ( \
@@ -28,7 +30,7 @@ namespace XMLExtras{
     };
 
     #define XML_ATTR_TYPE_CASE(type, query_name) \
-    if(element->query_name((type*)((unsigned char*)&instance + attribute.offset)) != tinyxml2::XML_SUCCESS) std::cerr << "Element " << attribute.name << " failed to parse." << std::endl;
+    if(element->query_name((type*)((unsigned char*)&instance + attribute.offset)) != tinyxml2::XML_SUCCESS) LogError("Element '{}' failed to parse.", attribute.name);
 
     template <typename T>
     bool ParseAttribute(tinyxml2::XMLElement* element, const AttributeDefinition& attribute, T& instance){

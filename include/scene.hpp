@@ -21,10 +21,10 @@ class Scene{
 
     public:
         Scene(){}
-        void setUILayer(std::string name);
+        void setUILayer(const std::string& name);
         UILayer& getCurrentUILayer();
-        UILayer& getUILayer(std::string name);
-        bool isActiveLayer(std::string name);
+        UILayer& getUILayer(const std::string& name);
+        bool isActiveLayer(const std::string& name);
         void addElement(std::shared_ptr<UIFrame> element);
         UIWindow* getWindow();
         
@@ -58,7 +58,7 @@ class SceneManager{
         SceneManager(GLFWwindow* window);
 
         template <typename T>
-        T* createScene(std::string name){
+        T* createScene(const std::string& name){
             auto scene = std::make_unique<T>();
             T* scene_ptr = scene.get();
             addScene(name, std::move(scene));
@@ -66,9 +66,9 @@ class SceneManager{
             return scene_ptr;
         }
         
-        void addScene(std::string name, std::unique_ptr<Scene> scene);
-        void setScene(std::string name);
-        Scene* getScene(std::string name);
+        void addScene(const std::string& name, std::unique_ptr<Scene> scene);
+        void setScene(const std::string& name);
+        Scene* getScene(const std::string& name);
         Scene* getCurrentScene();
         void setWindow(GLFWwindow* window) {this->window = window;}
 

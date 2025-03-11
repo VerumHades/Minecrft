@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 
-import os, platform, argparse, shutil
+import os, platform, argparse, shutil, time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-r', '--remake', action='store_true')
@@ -25,6 +25,9 @@ root_director = os.getcwd()
 build_type = "Debug" if args.debug else args.build_type
 build_directory = os.path.join("build", build_type)
 
+print(f"Selected build type: {build_type}")
+print(f"Selected build directory: {build_directory}")
+
 os.makedirs(build_directory, exist_ok=True)
     
 if args.clear_build:
@@ -32,18 +35,27 @@ if args.clear_build:
     os.makedirs(build_directory, exist_ok=True) 
     
 os.chdir(build_directory)
+print("Verified build directory")
+
 platform_is_windows = platform.system().lower() == "windows"
+
+print(f"Platform is: {platform.system().lower()}")
+
+def command(command):
+    print(f"Running command: {command}")
+    return os.system(command)
 
 def os_command(linux,windows, prefix = ""):
     if platform_is_windows:
-        os.system(prefix + windows)
+        return command(prefix + windows)
     else:
-        os.system(prefix + linux)
+        return command(prefix + linux)
 
 
 suffixus = "-DCMAKE_CXX_FLAGS=\"-DWINDOWS_PACKAGED_BUILD\"" if args.package else ""
 
 if args.remake:
+    print("Remaking...")
     os_command(
         f"cmake {root_director} -DCMAKE_BUILD_TYPE={build_type} {suffixus}",
         f"cmake {root_director} -DCMAKE_COLOR_MAKEFILE=ON -G \"Unix Makefiles\" -DCMAKE_BUILD_TYPE={build_type} {suffixus}"
@@ -54,12 +66,20 @@ os.chdir(root_director)
 prefix = "gdb -ex run " if args.debug or args.with_debuger else "" 
 #prefix =  ""
 
-build_exit_code = os.system(f"cmake --build {build_directory} -j 8")
+start_time = time.time()
+
+build_exit_code = command(f"cmake --build {build_directory} -j 8")
 if build_exit_code != 0:
     print("Build failed.")
     exit()
+    
+end_time = time.time()
+elapsed_time = end_time - start_time
+print(f"Time to build: {elapsed_time} seconds")
 
 if args.package:
+    start_time = time.time()
+    
     os.chdir(build_directory)
     
     file_path = 'CPackConfig.cmake'
@@ -74,6 +94,10 @@ if args.package:
             file.write(line)
         
     os.system(f"cpack --config {file_path}")    
+    
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Time to package: {elapsed_time} seconds")
     
 elif not args.no_run:
     os_command(

@@ -7,6 +7,7 @@
 #include <ui/color.hpp>
 #include <typeinfo>
 #include <iostream>
+#include <logging.hpp>
 
 class UIFrame;
 class UICore;
@@ -107,7 +108,7 @@ class UILoader{
             tinyxml2::XMLDocument doc;
 
             if (doc.Parse(source.c_str()) != tinyxml2::XML_SUCCESS) {
-                std::cerr << "Parsing of source for element failed: " << source << std::endl;
+                LogError("Parsing of source for element failed: ", source);
                 return nullptr;
             }
 
@@ -116,7 +117,7 @@ class UILoader{
             if(auto result = std::dynamic_pointer_cast<T>(element))
                 return result;
             else{
-                std::cerr  << "Resulting element type does not match the one required." << std::endl;
+                LogError("Resulting element type does not match the one required.");
                 return nullptr;
             }
         }
@@ -124,14 +125,14 @@ class UILoader{
         template <typename T>
         std::shared_ptr<T> getElementById(const std::string& id){
             if(!elements_with_ids.contains(id)){
-                std::cerr << "No element under id '" << id << "' found."<< std::endl;
+                LogError("No element under id '{}' found.", id);
                 return nullptr;
             }
             
             if(auto result = std::dynamic_pointer_cast<T>(elements_with_ids[id]))
                 return result;
             else{
-                std::cerr  << "Resulting element type does not match the one required:" << typeid(T).name() << std::endl;
+                LogError("Resulting element type does not match the one required '{}'", typeid(T).name());
                 return nullptr;
             }
         }

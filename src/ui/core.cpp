@@ -14,7 +14,7 @@ UICore::UICore(){
     loader().registerElement("image", [](auto* source) -> std::shared_ptr<UIFrame> {
         const char* content = source->Attribute("src");
         if(!content){
-            std::cerr << "Image element requires a 'src'." << std::endl;
+            LogError("Image element requires a 'src'.");
             return std::make_shared<UIFrame>();
         }
         return std::make_shared<UIImage>(content); 

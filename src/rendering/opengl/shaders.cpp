@@ -16,7 +16,7 @@ uint compileShader(const char* source, int type, std::string filename = ""){
         char* errorLog = (char*) calloc(maxLength, sizeof(char));
         glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]);
 
-        std::cout << "Error when compiling shader:" << errorLog << ((filename != "") ? "In file: " + filename : "") << std::endl;
+        LogError("Error when compiling shader ({}): {}", ((filename != "") ? "In file: " + filename : ""), errorLog);
         free(errorLog);
 
         // Provide the infolog in whatever manor you deem best.
@@ -31,7 +31,7 @@ uint compileShader(const char* source, int type, std::string filename = ""){
 std::string ShaderProgram::getSource(const std::string& path){
     std::ifstream file(path);  // Open the file
     if (!file.is_open()) {              // Check if the file is open
-        std::cerr << "Failed to open shader file: " << path << std::endl;
+        LogError("Failed to open file: '{}'", path);
         return "";
     }
          
@@ -123,13 +123,13 @@ void ShaderUniformLinker::addProgram(ShaderProgram* program){
         std::string name = std::string(name_buffer);
         if(name.ends_with("]")){ // For array uniforms
             name = name.substr(0, name.size() - 3);
-            std::cout << "Changed name: " << name <<  std::endl;
+            LogInfo("Changed name for uniform (for linking purposes) to '{}'", name);
         }
 
         int location = glGetUniformLocation(program->getID(), name.c_str());
 
         if(location == -1) {
-            std::cerr << "Reported uniform '" << name << "' not found." << std::endl;
+            LogError("Reported uniform '{}'", name);
             continue;
         }
 
