@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <glad/glad.h>
+
 #include <fstream>
 #include <ctime>  // For time functions
 #include <string>
@@ -11,7 +13,9 @@
 #include <filesystem>
 #include <sstream>
 #include <cstring>
+#include <cxxabi.h>
 
+#include <cpptrace/cpptrace.hpp>
 #include <path_config.hpp>
 
 #define LOG_ERROR
@@ -19,7 +23,6 @@
 #define LOG_MESSAGE
 #define LOG_INFO
 #define LOG_OPENGL
-
 
 #ifdef LOG_MESSAGE
     #define LogMessage(...) Logging::Message("MESSAGE", std::format(__VA_ARGS__), __LINE__, __FILE__)
@@ -69,4 +72,7 @@ class Logging{
     public:
         static void SetPath(const fs::path& path);
         static void Message(const std::string& descriptor, const std::string& message, int line, const char* file);
+        static void SaveTrace();
 };
+
+void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,const GLchar *message, const void *param);

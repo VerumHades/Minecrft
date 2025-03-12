@@ -90,6 +90,13 @@ target_compile_options(assimp PRIVATE
     -w  # Suppress all warnings
 )
 
+include(FetchContent)
+FetchContent_Declare(
+  cpptrace
+  GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
+  GIT_TAG        v0.8.2 # <HASH or TAG>
+)
+FetchContent_MakeAvailable(cpptrace)
 #set_target_properties(assimp PROPERTIES MAP_IMPORTED_CONFIG_DEBUG Release)
 
 # Declare FreeType as a dependency
@@ -114,9 +121,19 @@ file(GLOB_RECURSE SOURCES
 add_executable(majnkraft ${SOURCES})
 
 # Link libraries
-target_link_libraries(majnkraft PRIVATE glfw OpenGL::GL glm::glm glad freetype tinyxml2 lua assimp)
-
+target_link_libraries(majnkraft PRIVATE glfw OpenGL::GL glm::glm glad freetype tinyxml2 lua assimp cpptrace::cpptrace)
 target_compile_options(majnkraft PRIVATE -Wall)
+
+# Needed for shared library builds on windows:  copy cpptrace.dll to the same directory as the
+# executable for your_target
+if(WIN32)
+  add_custom_command(
+    TARGET majnkraft POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:cpptrace::cpptrace>
+    $<TARGET_FILE_DIR:majnkraft>
+  )
+endif()
 
 install(
   FILES $<TARGET_RUNTIME_DLLS:majnkraft>
