@@ -138,6 +138,8 @@ int main() {
             }
             last = current;
 
+            //std::cout << "VRAM usage:" << GLBufferStatistics::getMemoryUsage() << std::endl;
+
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

@@ -33,9 +33,6 @@ class GLBinding{
         }
 };
 
-void checkGLError(const char *file, int line);
-#define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
-
 #ifdef GL_DIAGNOSTICS
 
 template <typename T, int type>
