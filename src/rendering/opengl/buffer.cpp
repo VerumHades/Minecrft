@@ -12,9 +12,9 @@ void GLVertexFormat::apply(uint& slot){
     for(auto& current_size: bindings){
         uintptr_t pointer = size_to_now * sizeof(float);
 
-        glVertexAttribPointer(slot, (int) current_size, GL_FLOAT, GL_FALSE, (int)stride, (void*)pointer);
-        glEnableVertexAttribArray(slot);
-        if(per_instance) glVertexAttribDivisor(slot, 1);
+        GL_CALL( glVertexAttribPointer(slot, (int) current_size, GL_FLOAT, GL_FALSE, (int)stride, (void*)pointer));
+        GL_CALL( glEnableVertexAttribArray(slot));
+        if(per_instance) GL_CALL( glVertexAttribDivisor(slot, 1));
 
         size_to_now += current_size;
         slot++;
@@ -43,10 +43,10 @@ void GLDrawCallBuffer::bind(){
 
 
 GLVertexArray::GLVertexArray(){
-    glGenVertexArrays(1,  &vao_id);
+    GL_CALL( glGenVertexArrays(1,  &vao_id));
 }
 GLVertexArray::~GLVertexArray(){
-    glDeleteVertexArrays(1,  &vao_id);
+    GL_CALL( glDeleteVertexArrays(1,  &vao_id));
 }
 
 size_t GLVertexArray::attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format, int index){
@@ -80,9 +80,9 @@ void GLVertexArray::update(){
     unbind();
 }
 void GLVertexArray::bind() const {
-    glBindVertexArray(vao_id);
+    GL_CALL( glBindVertexArray(vao_id));
 }
 void GLVertexArray::unbind() const {
-    glBindVertexArray(0);
+    GL_CALL( glBindVertexArray(0));
 }
 

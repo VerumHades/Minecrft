@@ -193,9 +193,27 @@ class ShaderProgram{
             this->program = glCreateProgram();
         }
         ~ShaderProgram(){
-            glDeleteProgram(this->program);
+            GL_CALL( glDeleteProgram(this->program));
             ShaderUniformLinker::get().removeProgram(this);
         }
+
+        ShaderProgram(const ShaderProgram& other) = delete;
+        ShaderProgram& operator=(const ShaderProgram& other) = delete;
+
+        ShaderProgram(ShaderProgram&& other) noexcept {
+            program = other.program;
+            other.program = -1;
+        }
+
+        ShaderProgram& operator=(ShaderProgram&& other) noexcept {
+            if (this != &other) {
+                glDeleteProgram(this->program);
+                program = other.program;
+                other.program = -1;
+            }
+            return *this;
+        }
+
         ShaderProgram(std::string vertex_shader_path, std::string fragment_shader_path): ShaderProgram() {
             addShader(vertex_shader_path, GL_VERTEX_SHADER);
             addShader(fragment_shader_path, GL_FRAGMENT_SHADER);
@@ -224,7 +242,7 @@ class ShaderProgram{
         void use(){
             if(programInUse == program) return;
             programInUse = program;
-            glUseProgram(this->program);
+            GL_CALL( glUseProgram(this->program));
         }
         void updateUniforms();
 

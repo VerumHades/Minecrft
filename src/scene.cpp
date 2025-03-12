@@ -14,7 +14,7 @@ void Scene::setUILayer(const std::string& name){
     UICore::get().getWindow(windowID)->setCurrentLayer(name);
 
     auto& layer = getCurrentUILayer();
-    glfwSetInputMode(sceneManager->getGLFWWindow(), GLFW_CURSOR, layer.cursorMode);
+    GL_CALL( glfwSetInputMode(sceneManager->getGLFWWindow(), GLFW_CURSOR, layer.cursorMode));
     sceneManager->setEventLocks(layer.eventLocks);
     
     UICore::get().resetStates();
@@ -100,7 +100,7 @@ void SceneManager::setScene(const std::string& name){
 }
 
 void SceneManager::resize(GLFWwindow* window, int width, int height){
-    glViewport(0,0,width,height);
+    GL_CALL( glViewport(0,0,width,height));
     getCurrentScene()->resize(window,width,height);
     UICore::get().resize(width,height);
 }

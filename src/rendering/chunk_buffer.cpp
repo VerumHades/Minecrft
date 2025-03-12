@@ -48,6 +48,7 @@ std::string formatSize(size_t bytes) {
 
 
 ChunkMeshRegistry::ChunkMeshRegistry(){
+    mesh_buffer = std::make_unique<InstancedMeshBuffer>();
     actualRegionSizes.push_back(1);
     for(int i = 1;i < maxRegionLevel;i++){
         actualRegionSizes.push_back(pow(2, i));
@@ -62,7 +63,7 @@ bool ChunkMeshRegistry::addMesh(InstancedMesh* mesh, const glm::ivec3& pos){
     
     MeshRegion* region = createRegion(transform);
    
-    region->loaded_mesh = mesh_buffer.loadMesh(*mesh);
+    region->loaded_mesh = mesh_buffer->loadMesh(*mesh);
     
     return true;
 }
@@ -136,7 +137,7 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
 }
 
 void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum){
-    mesh_buffer.clearDrawCalls();
+    mesh_buffer->clearDrawCalls();
 
     int max_level_size_in_chunks = getRegionSizeForLevel(maxRegionLevel);
 
@@ -159,14 +160,14 @@ void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& fru
         processRegionForDrawing(frustum, region);
     }   
 
-    mesh_buffer.flushDrawCalls();
+    mesh_buffer->flushDrawCalls();
 }
 
 void ChunkMeshRegistry::draw(){
-    mesh_buffer.render();
+    mesh_buffer->render();
 }
 
 void ChunkMeshRegistry::clear(){
     regions.clear();
-    mesh_buffer = {};
+    mesh_buffer = std::make_unique<InstancedMeshBuffer>();
 }

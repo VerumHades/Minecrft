@@ -199,7 +199,7 @@ void InstancedMeshBuffer::render(){
     for(auto& info: render_information){
         info.vao.bind();
         info.draw_call_buffer.bind();
-        glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, info.draw_call_buffer.count(), sizeof(GLDrawCallBuffer::DrawCommand));
+        GL_CALL( glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, info.draw_call_buffer.count(), sizeof(GLDrawCallBuffer::DrawCommand)));
         info.vao.unbind();
     }
 }

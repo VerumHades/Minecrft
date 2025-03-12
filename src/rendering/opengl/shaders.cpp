@@ -2,26 +2,26 @@
 
 uint compileShader(const char* source, int type, std::string filename = ""){
     uint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &source, NULL);
-    glCompileShader(shader);
+    GL_CALL( glShaderSource(shader, 1, &source, NULL));
+    GL_CALL( glCompileShader(shader));
 
     int isCompiled = 0;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
+    GL_CALL( glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled));
     if(isCompiled == GL_FALSE)
     {
         int maxLength = 0;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+        GL_CALL( glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength));
 
         // The maxLength includes the NULL character
         char* errorLog = (char*) calloc(maxLength, sizeof(char));
-        glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]);
+        GL_CALL( glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]));
 
         LogError("Error when compiling shader ({}): {}", ((filename != "") ? "In file: " + filename : ""), errorLog);
         free(errorLog);
 
         // Provide the infolog in whatever manor you deem best.
         // Exit with failure.
-        glDeleteShader(shader); // Don't leak the shader.
+        GL_CALL( glDeleteShader(shader)); // Don't leak the shader.
         throw std::runtime_error("");
     }
 
@@ -57,14 +57,14 @@ int ShaderProgram::getUniformLocation(std::string name){
 
 void ShaderProgram::compile(){
     for(int i = 0;i < this->shaders.size();i++){
-        glAttachShader(this->program, this->shaders[i]);
+        GL_CALL( glAttachShader(this->program, this->shaders[i]));
     }
 
-    glLinkProgram(this->program);
-    glUseProgram(this->program);
+    GL_CALL( glLinkProgram(this->program));
+    GL_CALL( glUseProgram(this->program));
     
     for(int i = 0;i < this->shaders.size();i++){
-        glDeleteShader(this->shaders[i]);
+        GL_CALL( glDeleteShader(this->shaders[i]));
     }
 
     ShaderUniformLinker::get().addProgram(this);
@@ -107,7 +107,7 @@ void ShaderUniformLinker::addProgram(ShaderProgram* program){
     
     program->use();
     GLint numUniforms = 0;
-    glGetProgramiv(program->getID(), GL_ACTIVE_UNIFORMS, &numUniforms);
+    GL_CALL( glGetProgramiv(program->getID(), GL_ACTIVE_UNIFORMS, &numUniforms));
 
     linked_program.to_be_linked.reserve(numUniforms);
     linked_program.linked.reserve(numUniforms);
@@ -118,7 +118,7 @@ void ShaderUniformLinker::addProgram(ShaderProgram* program){
         GLint size = 0;
         GLenum type = 0;
 
-        glGetActiveUniform(program->getID(), i, sizeof(name_buffer), &nameLength, &size, &type, name_buffer);
+        GL_CALL( glGetActiveUniform(program->getID(), i, sizeof(name_buffer), &nameLength, &size, &type, name_buffer));
 
         std::string name = std::string(name_buffer);
         if(name.ends_with("]")){ // For array uniforms

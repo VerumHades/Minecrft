@@ -45,8 +45,8 @@ GLSSAO::GLSSAO(){
 
 void GLSSAO::render(GLTexture2D& gPositionTexture, GLTexture2D& gNormalTexture, GLFullscreenQuad& quad){
     framebuffer.bind();
-    glDisable(GL_DEPTH_TEST);
-    glViewport(0,0,framebuffer.getWidth(), framebuffer.getHeight());
+    GL_CALL( glDisable(GL_DEPTH_TEST));
+    GL_CALL( glViewport(0,0,framebuffer.getWidth(), framebuffer.getHeight()));
     
     shader_program.updateUniforms();
     gPositionTexture.bind(0);

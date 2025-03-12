@@ -54,43 +54,49 @@ int main() {
     }
     const GLubyte* version = glGetString(GL_VERSION);
     std::string versionStr(reinterpret_cast<const char*>(version));
-    LogInfo("OpenGL version: ", versionStr);
+    LogInfo("OpenGL version: {}", versionStr);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
+    // Check if OpenGL 4.6 is supported
+    int major = 0, minor = 0;
+    sscanf(reinterpret_cast<const char*>(version), "%d.%d", &major, &minor);
+
+    if (major >= 4 && minor >= 6) {
+        
+    } else LogWarning("Version of Opengl 4.6 is not supported. This is a pretty serious issue, maybe update drivers?");
+
+
+    GL_CALL( glEnable(GL_DEPTH_TEST));
+    GL_CALL( glDepthFunc(GL_LEQUAL));
     
-    glEnable(GL_CULL_FACE);  // Enable backface culling
-    glCullFace(GL_BACK);     // Cull back faces
-    glFrontFace(GL_CCW);     // Set counterclockwise winding order as front*/
+    GL_CALL( glEnable(GL_CULL_FACE));  // Enable backface culling
+    GL_CALL( glCullFace(GL_BACK));     // Cull back faces
+    GL_CALL( glFrontFace(GL_CCW));     // Set counterclockwise winding order as front*/
 
     //glEnable(GL_FRAMEBUFFER_SRGB);
-    glEnable(GL_MULTISAMPLE);  // Redundant perhaps
+    GL_CALL( glEnable(GL_MULTISAMPLE));  // Redundant perhaps
     //glDepthMask(GL_FALSE);
-    glEnable(GL_DEBUG_OUTPUT);
-    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(GLDebugMessageCallback, NULL);
+    GL_CALL( glEnable(GL_DEBUG_OUTPUT));
+    GL_CALL( glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS));
+    GL_CALL( glDebugMessageCallback(GLDebugMessageCallback, NULL));
 
-    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height){
         s->resize(window, width, height); // Call resize on the instance
     });
-    glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y) {
+    glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y){
         s->mouseMove(window, static_cast<int>(x), static_cast<int>(y));
     });
-    glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
+    glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods){
         s->mouseEvent(window, button, action, mods);
     });
-    glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
+    glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset){
         s->scrollEvent(window, xoffset, yoffset);
     });
-    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods){
         s->keyEvent(window, key, scancode, action, mods);
     });
-    glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int codepoint) {
+    glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int codepoint){
         s->keyTypedEvent(window, codepoint);
     });
-
-
-    glLineWidth(2.0f);
     
     {
         SceneManager sceneManager{window};
@@ -140,8 +146,8 @@ int main() {
 
             //std::cout << "VRAM usage:" << GLBufferStatistics::getMemoryUsage() << std::endl;
 
-            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            GL_CALL( glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
+            GL_CALL( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
             sceneManager.render();
 

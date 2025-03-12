@@ -11,6 +11,7 @@ Image::Image(const std::string& path){
    
     if (!data) {
         LogError("Failed to load image (Image): '{}' error: {}", path, stbi_failure_reason());
+        this->data = std::vector<unsigned char>(width * height * nrChannels, 255);
         loaded = false;
         return;
     }
@@ -140,6 +141,8 @@ Image Image::pixelPerfectUpscale(Image& input, int width, int height){
 
 Image Image::LoadWithSize(const std::string& path, int width, int height){
     Image image{path};
+
+    if(!image.loaded) return Image{width,height, 4};
 
     if(image.width == width && image.height == height) return image;
     if(image.width > width) return perfectPixelReduce(image, width, height);

@@ -87,7 +87,7 @@ class GLBuffer {
             GLBufferStatistics::get().registered.emplace(this);
             #endif
 
-            glGenBuffers(1, &opengl_buffer_id);
+            GL_CALL( glGenBuffers(1, &opengl_buffer_id));
         }
         ~GLBuffer(){
             if(!invalidated) cleanup();
@@ -98,6 +98,30 @@ class GLBuffer {
             insert(0,data.size(), data.data());
         }
 
+        // Delete the copy constructor to make it non-copyable
+        GLBuffer(const GLBuffer& other) = delete;
+
+        // Delete the copy assignment operator to make it non-copyable
+        GLBuffer& operator=(const GLBuffer& other) = delete;
+
+        GLBuffer(GLBuffer&& other) noexcept {
+            opengl_buffer_id = other.opengl_buffer_id;
+            other.opengl_buffer_id = 0; // Null out the source pointer to indicate "moved-from"
+            other.invalidated = true;
+        }
+
+        GLBuffer& operator=(GLBuffer&& other) noexcept {
+            if (this != &other) {
+                cleanup();
+                invalidated = false;
+                opengl_buffer_id = other.opengl_buffer_id;  // Steal the resource
+                other.opengl_buffer_id = 0; // Null out the source pointer to indicate "moved-from"
+                other.invalidated = true;
+            }
+            return *this;
+        }
+
+
         /*
             Creates the actual buffer of some size
         */
@@ -105,7 +129,7 @@ class GLBuffer {
             if(size == 0) return;
 
             bind();
-            glBufferData(type, size * sizeof(T), data, GL_DYNAMIC_DRAW);
+            GL_CALL( glBufferData(type, size * sizeof(T), data, GL_DYNAMIC_DRAW));
             buffer_size = size;
 
             initialized = true;
@@ -120,7 +144,7 @@ class GLBuffer {
             if(at + size > buffer_size) return false; // Dont overflow
 
             bind();
-            glBufferSubData(type, at * sizeof(T), size * sizeof(T), data);
+            GL_CALL( glBufferSubData(type, at * sizeof(T), size * sizeof(T), data));
 
             return true;
         }
@@ -131,15 +155,15 @@ class GLBuffer {
         void get(T* destination, size_t size, size_t offset = 0) const{
             if(!initialized) throw std::runtime_error("Getting data from an uninitialized buffer.");
 
-            glGetBufferSubData(type, offset * sizeof(T), size * sizeof(T), destination);
+            GL_CALL( glGetBufferSubData(type, offset * sizeof(T), size * sizeof(T), destination));
         }
 
         void bind() const{
-            glBindBuffer(type, opengl_buffer_id);
+            GL_CALL( glBindBuffer(type, opengl_buffer_id));
         }
 
         void bindBase(uint slot) const{
-            glBindBufferBase(type, slot, opengl_buffer_id);
+            GL_CALL( glBindBufferBase(type, slot, opengl_buffer_id));
         }
 
         #ifdef GL_DIAGNOSTICS
@@ -155,7 +179,7 @@ class GLBuffer {
         }
 
         void cleanup(){
-            glDeleteBuffers(1, &opengl_buffer_id);
+            GL_CALL( glDeleteBuffers(1, &opengl_buffer_id));
             invalidated = true;
             
             #ifdef GL_DIAGNOSTICS
@@ -282,9 +306,9 @@ class GLPersistentBuffer{
     
     public:
         GLPersistentBuffer(size_t size, uint type): type(type), size(size){
-            glGenBuffers(1, &buffer_id);
-            glBindBuffer(type, buffer_id);
-            glBufferStorage(type, size, nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+            GL_CALL( glGenBuffers(1, &buffer_id));
+            GL_CALL( glBindBuffer(type, buffer_id));
+            GL_CALL( glBufferStorage(type, size, nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
 
             _data = static_cast<T*>(glMapBufferRange(type, 0, size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
 
@@ -294,7 +318,7 @@ class GLPersistentBuffer{
         }
 
         ~GLPersistentBuffer(){
-            glDeleteBuffers(1, &buffer_id);
+            GL_CALL( glDeleteBuffers(1, &buffer_id));
         }
 
         uint getID() {return buffer_id;}
@@ -351,56 +375,6 @@ class GLCoherentBuffer: public CoherentList<T> {
         }
 };
 
-/*
-    A buffer that keeps all elements aligned in one contiguous block
-
-template <typename T, int type>
-class GLAlignedBuffer: public GLBuffer<T,type>{
-    private:
-        uint buffer_id;
-        size_t buffer_size = 0;
-        size_t pseudo_size = 0; // Last element
-
-       
-            Resizes the buffer, retains current data (if new size is smaller the excess data is lost)
-       
-        void resize(size_t new_size){
-            if(new_size == buffer_size) return; // Already the set size
-
-            uint new_buffer_id;
-            glGenBuffers(1, &new_buffer_id);
-            
-            if(buffer_size > 0){
-                size_t copy_size = std::min(new_size, buffer_size);
-
-                glBindBuffer(GL_COPY_READ_BUFFER, buffer_id);
-                glBindBuffer(GL_COPY_WRITE_BUFFER, new_buffer_id);
-
-                glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, copy_size * sizeof(T));
-
-                glBindBuffer(GL_COPY_READ_BUFFER, 0);
-                glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-            }
-
-            buffer_id = new_buffer_id;
-            buffer_size = new_size;
-        }
-
-    public:
-        GLVector(){
-            glGenBuffers(1, &buffer_id);
-        }
-        ~GLVector(){
-            glDeleteBuffers(1, &buffer_id);
-        }
-
-        void push_back(T element){
-
-        }
-
-        size_t size() { return buffer_size; }
-};*/
-
 enum GLVertexValueType{
     FLOAT = 1,
     VEC2 = 2,
@@ -441,6 +415,24 @@ class GLVertexArray{
     public:
         GLVertexArray();
         ~GLVertexArray();
+
+        GLVertexArray(const GLVertexArray& other) = delete;
+        GLVertexArray& operator=(const GLVertexArray& other) = delete;
+
+        GLVertexArray(GLVertexArray&& other) noexcept {
+            vao_id = other.vao_id;
+            other.vao_id = 0; // Null out the source pointer to indicate "moved-from"
+        }
+
+        GLVertexArray& operator=(GLVertexArray&& other) noexcept {
+            if (this != &other) {
+                GL_CALL( glDeleteVertexArrays(1,  &vao_id));
+                vao_id = other.vao_id;  // Steal the resource
+                other.vao_id = 0; // Null out the source pointer to indicate "moved-from"
+            }
+            return *this;
+        }
+
         size_t attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format, int index = -1);
 
         void attachBuffer(GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>* buffer);

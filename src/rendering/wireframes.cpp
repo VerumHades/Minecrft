@@ -51,5 +51,5 @@ void WireframeCubeRenderer::draw(){
     GLBinding vao_binding(vao);
 
     wireframeProgram.updateUniforms();
-    glDrawElementsInstanced(GL_LINES, indexBuffer.size(), GL_UNSIGNED_INT, 0, cubes);
+    GL_CALL( glDrawElementsInstanced(GL_LINES, indexBuffer.size(), GL_UNSIGNED_INT, 0, cubes));
 }

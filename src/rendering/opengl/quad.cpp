@@ -17,6 +17,6 @@ GLFullscreenQuad::GLFullscreenQuad(){
 void GLFullscreenQuad::render(){
     vao.bind();
     quad_buffer.bind();
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    GL_CALL( glDrawArrays(GL_TRIANGLE_STRIP, 0, 4));
     vao.unbind();
 }

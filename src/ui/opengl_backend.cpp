@@ -29,10 +29,10 @@ void UIOpenglBackend::setupRender(){
         needs_update = false;
     }
 
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    GL_CALL( glDisable(GL_CULL_FACE));
+    GL_CALL( glDisable(GL_DEPTH_TEST));
+    GL_CALL( glEnable(GL_BLEND));
+    GL_CALL( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
     //glEnable(GL_SCISSOR_TEST);
     //glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -43,10 +43,10 @@ void UIOpenglBackend::setupRender(){
 }
 
 void UIOpenglBackend::cleanupRender(){
-    glDisable(GL_SCISSOR_TEST);
-    glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    GL_CALL( glDisable(GL_SCISSOR_TEST));
+    GL_CALL( glDisable(GL_BLEND));
+    GL_CALL( glEnable(GL_DEPTH_TEST));
+    GL_CALL( glEnable(GL_CULL_FACE));
     vao.unbind();
 }
 
@@ -130,7 +130,7 @@ void UIOpenglBackend::renderBatch(std::list<UIBackend::Batch>::iterator batch_it
         batch_iter->clipRegion.max.x - batch_iter->clipRegion.min.x,
         batch_iter->clipRegion.max.y - batch_iter->clipRegion.min.y
     );*/
-    glDrawElements(GL_TRIANGLES, batch_iter->index_size, GL_UNSIGNED_INT, reinterpret_cast<const void*>(batch_iter->index_start * sizeof(uint)));
+    GL_CALL( glDrawElements(GL_TRIANGLES, batch_iter->index_size, GL_UNSIGNED_INT, reinterpret_cast<const void*>(batch_iter->index_start * sizeof(uint))));
 };
 
 void UIOpenglBackend::processTextCommand(UIRenderCommand& command, float*& vertices, uint*& indices, int& index_offset){

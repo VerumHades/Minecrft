@@ -112,23 +112,23 @@ DepthCamera::DepthCamera(std::string name):
 {
     program.use();
 
-    glGenFramebuffers(1, &depthMapFBO);  
+    GL_CALL( glGenFramebuffers(1, &depthMapFBO));  
 
     texture = std::make_unique<GLDepthTexture>(SHADOW_WIDTH, SHADOW_HEIGHT);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    GL_CALL( glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO));
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture->getID(), 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);  
+    GL_CALL( glDrawBuffer(GL_NONE));
+    GL_CALL( glReadBuffer(GL_NONE));
+    GL_CALL( glBindFramebuffer(GL_FRAMEBUFFER, 0));  
 }
 
 void DepthCamera::prepareForRender(){
     program.updateUniforms();
     program.use();
-    glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-    glClear(GL_DEPTH_BUFFER_BIT);
+    GL_CALL( glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT));
+    GL_CALL( glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO));
+    GL_CALL( glClear(GL_DEPTH_BUFFER_BIT));
 }
 
 void DepthCamera::setModelPosition(const glm::vec3& position_){

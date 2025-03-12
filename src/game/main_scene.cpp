@@ -18,7 +18,8 @@ void MainScene::initialize(){
         "resources/textures/block_breaking/level2.png",
         "resources/textures/block_breaking/level3.png",
         "resources/textures/block_breaking/level4.png",
-        "resources/textures/block_breaking/level5.png"
+        "resources/textures/block_breaking/level5.png",
+        "resources/textures/block_cursor.png"
     };
     cubeRenderer.loadTextures(freeCubeTextures);
 
@@ -315,8 +316,8 @@ void MainScene::render(){
 
     if(terrain_manager.uploadPendingMeshes()) updateVisibility = 1;
 
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
+    GL_CALL( glEnable(GL_DEPTH_TEST));
+    GL_CALL( glDisable(GL_CULL_FACE));
 
     glm::vec3 camPosition = game_state->getPlayer().getPosition() + camOffset;
     camera.setPosition(camPosition);
@@ -340,14 +341,14 @@ void MainScene::render(){
 
 
     gBuffer.bind();
-        glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight());
+        GL_CALL( glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight()));
 
         if (lineMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         block_texture_array->bind(0);
 
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        GL_CALL( glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
+        GL_CALL( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
         // Draw skybox
         skyboxProgram.updateUniforms();
@@ -366,15 +367,15 @@ void MainScene::render(){
         wireframeRenderer.draw();
         cubeRenderer.draw();
 
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        GL_CALL( glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
     gBuffer.unbind();
 
     //timer.timestamp("Rendered to gBuffer.");
     
     gBufferProgram.updateUniforms();
     
-    glViewport(0, 0, gBuffer.getWidth(), gBuffer.getHeight());
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    GL_CALL( glViewport(0, 0, gBuffer.getWidth(), gBuffer.getHeight()));
+    GL_CALL( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
     gBuffer.bindTextures();
     

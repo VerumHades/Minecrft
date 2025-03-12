@@ -17,6 +17,6 @@ void GameModeInteractable::UpdateCursor(){
 
     if(last != cursor_state.blockUnderCursorPosition && onCursorTargetChange && cursor_state.blockUnderCursor) onCursorTargetChange();
       
-    if(!cursor_state.blockUnderCursor || cursor_state.blockUnderCursor->id == BLOCK_AIR_INDEX) state.wireframe_renderer.removeCube(0);
-    else state.wireframe_renderer.setCube(0,glm::vec3(hit.position) - 0.005f, {1.01,01.01,1.01},{0,0,0});
+    if(!cursor_state.blockUnderCursor || cursor_state.blockUnderCursor->id == BLOCK_AIR_INDEX) state.cube_renderer.removeCube(1);
+    else state.cube_renderer.setCube(1,glm::vec3(hit.position) - 0.005f, 6);
 }

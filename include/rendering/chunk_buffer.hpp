@@ -105,7 +105,7 @@ class ChunkMeshRegistry{
         */
         void processRegionForDrawing(Frustum& frustum, MeshRegion* region);
 
-        InstancedMeshBuffer mesh_buffer;
+        std::unique_ptr<InstancedMeshBuffer> mesh_buffer{};
 
     public:
         ChunkMeshRegistry();

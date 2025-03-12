@@ -65,5 +65,5 @@ void CubeRenderer::draw(){
     loaded_texture->bind(0);
 
     program.updateUniforms();
-    glDrawElementsInstanced(GL_TRIANGLES, loaded_mesh->getIndexBuffer().size(), GL_UNSIGNED_INT, 0, cubes);
+    GL_CALL( glDrawElementsInstanced(GL_TRIANGLES, loaded_mesh->getIndexBuffer().size(), GL_UNSIGNED_INT, 0, cubes));
 }

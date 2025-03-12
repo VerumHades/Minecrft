@@ -21,6 +21,24 @@ class BindableTexture{
         BindableTexture();
         virtual ~BindableTexture();
     public:
+        BindableTexture(const BindableTexture& other) = delete;
+        BindableTexture& operator=(const BindableTexture& other) = delete;
+
+        BindableTexture(BindableTexture&& other) noexcept {
+            texture = other.texture;
+            other.texture = 0;
+        }
+
+        BindableTexture& operator=(BindableTexture&& other) noexcept {
+            if (this != &other) {
+                glDeleteTextures(1, &this->texture);
+                texture = other.texture;
+                other.texture = 0;
+            }
+            return *this;
+        }
+
+
         void bind(int unit) const;
         void unbind(int unit) const;
         void parameter(int identifier, int value);

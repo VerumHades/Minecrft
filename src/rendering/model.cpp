@@ -86,7 +86,7 @@ void Model::drawAllRequests(){
         if(mesh->getTexture()) mesh->getTexture()->bind(0);
         
         mesh->getVAOs()[selected].bind();
-        glDrawElementsInstanced(GL_TRIANGLES, mesh->indicesTotal(), GL_UNSIGNED_INT, 0, request_buffer.size() / request_size);
+        GL_CALL( glDrawElementsInstanced(GL_TRIANGLES, mesh->indicesTotal(), GL_UNSIGNED_INT, 0, request_buffer.size() / request_size));
         mesh->getVAOs()[selected].unbind();
     }
 }

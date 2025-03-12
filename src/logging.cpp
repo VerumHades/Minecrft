@@ -161,5 +161,6 @@ void CheckGLError(const char *file, int line){
         }
 
         Logging::Message("OPENGL_ERROR",errorString,line,file);
+        Logging::SaveTrace();
     }
 }
