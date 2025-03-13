@@ -43,6 +43,7 @@ class Terrain{
         bool setBlock(const glm::ivec3& position, const Block& index);
 
         Chunk* createEmptyChunk(glm::ivec3 position);
+        void addChunk(const glm::ivec3& position, std::unique_ptr<Chunk> chunk);
         void removeChunk(const glm::ivec3& position);
 
         Chunk* getChunk(glm::ivec3 position) const;

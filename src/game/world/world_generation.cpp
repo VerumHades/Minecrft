@@ -191,6 +191,5 @@ std::thread WorldGenerator::threadedQueueGeneration(std::queue<Chunk*>& queue, s
         }
     });
 
-
     return thread;
 }

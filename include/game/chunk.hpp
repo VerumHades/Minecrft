@@ -45,6 +45,7 @@ class Chunk: public SparseBlockArray{
         Chunk(glm::ivec3 worldPosition): SparseBlockArray(), worldPosition(worldPosition) { }
 
         const glm::ivec3& getWorldPosition() const { return worldPosition; }
+        void setWorldPosition(const glm::ivec3& position){ worldPosition = position; } 
 
         void serialize(ByteArray& output_array) override;
         ByteArray serialize() override;
