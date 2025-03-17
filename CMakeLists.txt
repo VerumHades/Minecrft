@@ -102,7 +102,7 @@ FetchContent_MakeAvailable(cpptrace)
 # Declare FreeType as a dependency
 FetchContent_Declare(
     freetype
-    GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype.git
+    GIT_REPOSITORY https://github.com/freetype/freetype
     GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable(freetype)

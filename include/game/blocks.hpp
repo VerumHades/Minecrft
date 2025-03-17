@@ -8,7 +8,7 @@
 #include <array>
 
 #include <rendering/texture_registry.hpp>
-#include <rendering/bitworks.hpp>
+#include <structure/bitworks.hpp>
 #include <game/colliders.hpp>
 
 #include <tinyxml2.h>

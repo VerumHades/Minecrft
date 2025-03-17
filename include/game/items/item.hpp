@@ -10,7 +10,7 @@
 #include <game/items/sprite_model.hpp>
 #include <game/blocks.hpp>
 #include <game/items/block_model.hpp>
-#include <rendering/bitworks.hpp>
+#include <structure/bitworks.hpp>
 #include <path_config.hpp>
 
 #include <memory>

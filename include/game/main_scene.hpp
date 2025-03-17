@@ -15,7 +15,6 @@
 #include <rendering/texture_registry.hpp>
 #include <rendering/gbuffer.hpp>
 #include <rendering/opengl/quad.hpp>
-#include <rendering/ssao.hpp>
 #include <rendering/cubes.hpp>
 
 #include <ui/core.hpp>

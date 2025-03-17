@@ -20,15 +20,11 @@
 #include <path_config.hpp>
 
 
-#ifdef A
-
 #define LOG_ERROR
 #define LOG_WARNING
 #define LOG_MESSAGE
 #define LOG_INFO
 #define LOG_OPENGL
-
-#endif
 
 
 #ifdef LOG_MESSAGE
@@ -44,7 +40,7 @@
 #endif
 
 #ifdef LOG_ERROR
-    #define LogError(...) {Logging::Get().Message("ERROR", std::format(__VA_ARGS__), __LINE__, __FILE__); Logging::Get().SaveTrace(); }
+    #define LogError(...) {Logging::Get().Message("ERROR", std::format(__VA_ARGS__), __LINE__, __FILE__); }
 #else
     #define LogError(...)
 #endif

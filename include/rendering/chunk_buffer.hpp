@@ -3,7 +3,6 @@
 #include <vec_hash.hpp>
 
 #include <rendering/instanced_mesh.hpp>
-#include <rendering/allocator.hpp>
 #include <rendering/opengl/buffer.hpp>
 #include <rendering/culling.hpp>
 #include <rendering/wireframes.hpp>

@@ -11,7 +11,7 @@
 #include <map>
 #include <list>
 
-#include <rendering/allocator.hpp>
+#include <structure/allocator.hpp>
 #include <coherency.hpp>
 #include <general.hpp>
 

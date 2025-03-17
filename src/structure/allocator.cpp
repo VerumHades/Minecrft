@@ -1,4 +1,4 @@
-#include <rendering/allocator.hpp>
+#include <structure/allocator.hpp>
 
 
 Allocator::Allocator(size_t memsize, std::function<bool(size_t)>&& requestMemory) :  memsize(memsize), requestMemory(requestMemory) {

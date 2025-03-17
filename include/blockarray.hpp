@@ -2,7 +2,7 @@
 
 #include <bitarray.hpp>
 #include <game/blocks.hpp>
-#include <rendering/bitworks.hpp>
+#include <structure/bitworks.hpp>
 #include <vec_hash.hpp>
 class SparseBlockArray{
     protected:

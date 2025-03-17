@@ -33,4 +33,4 @@ struct RectangularCollider {
     static RectangularCollider deserialize(ByteArray& array);
 };
 
-#include <rendering/bitworks.hpp>
+#include <structure/bitworks.hpp>

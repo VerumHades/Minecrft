@@ -11,7 +11,6 @@
 #include <game/main_scene.hpp>
 #include <game/menu_scene.hpp>
 
-#include <rendering/allocator.hpp>
 #include <test_scene.hpp>
 
 #include <path_config.hpp>
@@ -60,7 +59,7 @@ int main() {
     int major = 0, minor = 0;
     sscanf(reinterpret_cast<const char*>(version), "%d.%d", &major, &minor);
 
-    if (major >= 4 && minor >= 3) {
+    if (major >= 4 && minor >= 6) {
         
     } else LogWarning("Version of Opengl 4.6 is not supported. This is a pretty serious issue, maybe update drivers?");
 

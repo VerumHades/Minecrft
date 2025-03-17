@@ -5,7 +5,7 @@
 #include <rendering/model.hpp>
 #include <stb_image.h>
 #include <memory>
-#include <rendering/bitworks.hpp>
+#include <structure/bitworks.hpp>
 #include <unordered_set>
 #include <vec_hash.hpp>
 #include <bitset>
