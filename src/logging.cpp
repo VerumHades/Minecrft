@@ -137,7 +137,7 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
 
     LogOpengl("{}: GL {} {} ({}): {}", id, severity_, type_, source_, message);
 
-    if(severity == GL_DEBUG_SEVERITY_HIGH || severity == GL_DEBUG_SEVERITY_MEDIUM) Logging::Get().SaveTrace();
+    //if(severity == GL_DEBUG_SEVERITY_HIGH || severity == GL_DEBUG_SEVERITY_MEDIUM) Logging::Get().SaveTrace();
 }
 
 void CheckGLError(const char *file, int line){
@@ -156,6 +156,5 @@ void CheckGLError(const char *file, int line){
         }
 
         Logging::Get().Message("OPENGL_ERROR",errorString,line,file);
-        Logging::Get().SaveTrace();
     }
 }

@@ -60,10 +60,11 @@ int main() {
     int major = 0, minor = 0;
     sscanf(reinterpret_cast<const char*>(version), "%d.%d", &major, &minor);
 
-    if (major >= 4 && minor >= 6) {
+    if (major >= 4 && minor >= 3) {
         
     } else LogWarning("Version of Opengl 4.6 is not supported. This is a pretty serious issue, maybe update drivers?");
 
+    if(glfwExtensionSupported("GL_ARB_multi_draw_indirect") != GLFW_TRUE) LogError("Missing dependency, glMultiDrawElementsIndirect will not work.");
 
     GL_CALL( glEnable(GL_DEPTH_TEST));
     GL_CALL( glDepthFunc(GL_LEQUAL));
