@@ -72,7 +72,7 @@ bool ItemRegistry::LoadFromXML(const std::string& path){
             else if(attr_name == "texture"){
                 const char* text = item_attribute->GetText();
                 if(!text) continue;
-                texture_path  = (fs::path("resources/textures") / text).string();
+                texture_path  = (fs::path("resources/textures/items") / text).string();
             }
             else if(attr_name == "effective_againist_materials"){
                 xml_for_each_child_as(item_attribute, material_effectiveness){

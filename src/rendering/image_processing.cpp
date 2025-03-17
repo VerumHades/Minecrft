@@ -83,10 +83,6 @@ Image Image::perfectPixelReduce(Image& input, int width, int height){
         memcpy(output.getPixel(x,y), pixel, input.nrChannels);
     }
 
-    //std::cout << "Image: " << input.nrChannels << std::endl;
-
-    //output.save("out_temp.png");
-
     return output;
 }
 

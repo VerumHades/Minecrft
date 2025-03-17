@@ -38,12 +38,6 @@ void ChunkMeshGenerator::syncGenerateAsyncUploadMesh(Chunk* chunk, BitField3D::S
     meshes_pending = true;
 }
 
-bool ChunkMeshGenerator::asyncGenerateAsyncUploadMesh(Chunk* chunk, BitField3D::SimplificationLevel simplification_level, ThreadPool& pool){
-    return pool.deploy([this, chunk, simplification_level](){
-        syncGenerateAsyncUploadMesh(chunk, simplification_level);
-    });
-}
-
 void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegistry& buffer, BitField3D::SimplificationLevel simplification_level){
     auto world_position = chunk->getWorldPosition();
     auto solid_mesh = generateChunkMesh(world_position, chunk, simplification_level);

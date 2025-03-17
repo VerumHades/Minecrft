@@ -63,43 +63,38 @@ void Logging::deleteOldLogs(const fs::path& directory, int daysThreshold) {
 }
 
 void Logging::Message(const std::string& descriptor, const std::string& message, int line, const char* file){
-    auto& instance = Get();
-    if(!instance.outfile.is_open()) return;
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if(!outfile.is_open()) return;
     
     std::time_t now = std::time(0);  // Get current system time
     std::tm* localTime = std::localtime(&now);  // Convert to local time
 
-    instance.outfile << std::put_time(localTime, "%Y-%m-%d %H:%M:%S \"") << file << "\" [at line " << line << "] <" << descriptor << "> " << message << std::endl;
+    outfile << std::put_time(localTime, "%Y-%m-%d %H:%M:%S \"") << file << "\" [at line " << line << "] <" << descriptor << "> " << message << std::endl;
 }
 
 void Logging::SetPath(const fs::path& path){
-    auto& instance = Get();
-    instance.outfile.open(path);
+    std::lock_guard<std::mutex> lock(mtx);
 
-    if(!instance.outfile.is_open()){
+    outfile.open(path);
+
+    if(!outfile.is_open()){
         std::cerr << "Failed to open log file '" << path << "'." << std::endl;
     }
 };
 
-std::string demangle(const char* name) {
-    int status = 0;
-    char* demangled = abi::__cxa_demangle(name, nullptr, nullptr, &status);
-    std::string result = (status == 0) ? demangled : name;
-    free(demangled);
-    return result;
-}
-
 void Logging::SaveTrace(){
-    auto& instance = Get();
-    if(!instance.outfile.is_open()) return;
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if(!outfile.is_open()) return;
 
     auto trace = cpptrace::generate_trace();
     
-    instance.outfile << "------------ Stack trace ---------------" << std::endl;
+    outfile << "------------ Stack trace ---------------" << std::endl;
     for (const auto& frame : trace) {
-        instance.outfile << frame << "\n";
+        outfile << frame << "\n";
     }
-    instance.outfile << "----------------------------------------" << std::endl;
+    outfile << "----------------------------------------" << std::endl;
 }
 
 void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
@@ -142,7 +137,7 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
 
     LogOpengl("{}: GL {} {} ({}): {}", id, severity_, type_, source_, message);
 
-    if(severity == GL_DEBUG_SEVERITY_HIGH || severity == GL_DEBUG_SEVERITY_MEDIUM) Logging::SaveTrace();
+    if(severity == GL_DEBUG_SEVERITY_HIGH || severity == GL_DEBUG_SEVERITY_MEDIUM) Logging::Get().SaveTrace();
 }
 
 void CheckGLError(const char *file, int line){
@@ -160,7 +155,7 @@ void CheckGLError(const char *file, int line){
             default:                               errorString = "Unknown error"; break;
         }
 
-        Logging::Message("OPENGL_ERROR",errorString,line,file);
-        Logging::SaveTrace();
+        Logging::Get().Message("OPENGL_ERROR",errorString,line,file);
+        Logging::Get().SaveTrace();
     }
 }

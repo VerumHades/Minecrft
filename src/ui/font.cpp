@@ -78,11 +78,14 @@ void Font::createAtlas(){
         // Update row height to fit this glyph
         rowHeight = std::max(rowHeight, static_cast<int>(face->glyph->bitmap.rows));
 
-        GL_CALL( glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-        // Upload glyph bitmap to the atlas texture
-        glTexSubImage2D(GL_TEXTURE_2D, 0, xOffset, yOffset,
-                        face->glyph->bitmap.width, face->glyph->bitmap.rows,
-                        GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
+        if(!face->glyph->bitmap.buffer) LogWarning("No pixel buffer for glyph: {}", c);
+        else {
+            GL_CALL( glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+            // Upload glyph bitmap to the atlas texture
+            glTexSubImage2D(GL_TEXTURE_2D, 0, xOffset, yOffset,
+                            face->glyph->bitmap.width, face->glyph->bitmap.rows,
+                            GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
+        }
 
         //CHECK_GL_ERROR();
         // Store texture coordinates and other metrics for later rendering

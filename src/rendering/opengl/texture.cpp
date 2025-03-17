@@ -62,7 +62,6 @@ void GLTexture2D::loadData(const Image& image){
     GL_CALL( glPixelStorei(GL_UNPACK_ALIGNMENT, channels));
     if(!image.getData()){
         LogError("Invalid image being loaded into texture?");
-        Logging::SaveTrace();
     }
     glTexImage2D(GL_TEXTURE_2D, 0, format, image.getWidth(), image.getHeight(), 0, format, GL_UNSIGNED_BYTE, image.getData());
     GL_CALL( glGenerateMipmap(GL_TEXTURE_2D));
@@ -133,7 +132,6 @@ void GLTexture2D::putImage(int x, int y, const Image& image){
 
     if(!image.getData()){
         LogError("Invalid image being loaded into texture?");
-        Logging::SaveTrace();
     }
     
     GL_CALL( glPixelStorei(GL_UNPACK_ALIGNMENT, image.getChannels()));

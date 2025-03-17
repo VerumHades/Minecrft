@@ -86,13 +86,6 @@ class ChunkMeshGenerator{
         bool loadMeshFromQueue(ChunkMeshRegistry&  buffer, size_t limit = 1);
 
         /*
-            Launches a thread if possible, the when the mesh is generated sends it to the worlds mesh loading queue,
-
-            ISNT RESPONSIBLE FOR ACTUALLY UPLOADING THE MESH
-        */
-        bool asyncGenerateAsyncUploadMesh(Chunk* chunk, BitField3D::SimplificationLevel simplification_level, ThreadPool& pool);
-
-        /*
             When the mesh is generated sends it to the worlds mesh loading queue,
 
             ISNT RESPONSIBLE FOR ACTUALLY UPLOADING THE MESH
