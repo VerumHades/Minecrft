@@ -5,7 +5,7 @@ void ChunkMeshGenerator::addToChunkMeshLoadingQueue(glm::ivec3 position, std::un
     std::lock_guard<std::mutex> lock(meshLoadingMutex);
     meshLoadingQueue.push({position,std::move(mesh)});
 }
-bool ChunkMeshGenerator::loadMeshFromQueue(ChunkMeshRegistry&  buffer, size_t limit){
+bool ChunkMeshGenerator::loadMeshFromQueue(RegionCuller&  buffer, size_t limit){
     if(!meshes_pending) return false;
 
     std::lock_guard<std::mutex> lock(meshLoadingMutex);
@@ -32,17 +32,19 @@ void ChunkMeshGenerator::syncGenerateAsyncUploadMesh(Chunk* chunk, BitField3D::S
     auto start = std::chrono::high_resolution_clock::now();
 
     auto world_position = chunk->getWorldPosition();
-    auto solid_mesh = generateChunkMesh(world_position, chunk, simplification_level);
+    auto mesh = std::make_unique<InstancedMesh>();
+    generateChunkMesh(world_position, reinterpret_cast<MeshInterface*>(mesh.get()), chunk, simplification_level);
 
-    addToChunkMeshLoadingQueue(world_position, std::move(solid_mesh));
+    addToChunkMeshLoadingQueue(world_position, std::move(mesh));
     meshes_pending = true;
 }
 
-void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegistry& buffer, BitField3D::SimplificationLevel simplification_level){
+void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, RegionCuller& buffer, BitField3D::SimplificationLevel simplification_level){
     auto world_position = chunk->getWorldPosition();
-    auto solid_mesh = generateChunkMesh(world_position, chunk, simplification_level);
+    auto mesh = std::make_unique<InstancedMesh>();
+    generateChunkMesh(world_position, reinterpret_cast<MeshInterface*>(mesh.get()), chunk, simplification_level);
 
-    buffer.addMesh(solid_mesh.get(), chunk->getWorldPosition());
+    buffer.addMesh(mesh.get(), chunk->getWorldPosition());
 }
 
 /*
@@ -244,10 +246,10 @@ std::vector<ChunkMeshGenerator::OccludedPlane>& ChunkMeshGenerator::calculatePla
 
 static inline void processFaces(
     const std::vector<ChunkMeshGenerator::Face>& faces,
-    InstancedMesh::FaceType face_type,
-    InstancedMesh::Direction direction,
+    MeshInterface::FaceType face_type,
+    MeshInterface::Direction direction,
     BlockRegistry::BlockPrototype* type,
-    InstancedMesh* mesh, 
+    MeshInterface* mesh, 
     glm::vec3 world_position,
     int layer,
     std::array<float, 4>& occlusion
@@ -257,7 +259,7 @@ static inline void processFaces(
     int normal;
     bool clockwise;
 
-    bool texture_index = direction == InstancedMesh::Backward;
+    bool texture_index = direction == MeshInterface::Backward;
 
     mesh->preallocate(faces.size(), face_type);
     for(auto& face: faces){
@@ -265,13 +267,13 @@ static inline void processFaces(
         int faceHeight = face.height;
 
         switch(face_type){
-            case InstancedMesh::X_ALIGNED:
+            case MeshInterface::X_ALIGNED:
                 face_position = glm::vec3(layer + 1, face.y + face.height, face.x) + world_position;
 
                 texture = type->single_texture ? type->textures[0] : type->textures[4 + texture_index ];
 
                 break;
-            case InstancedMesh::Y_ALIGNED:
+            case MeshInterface::Y_ALIGNED:
                 face_position = glm::vec3(face.y              , layer + 1, face.x              ) + world_position;
 
                 faceWidth = face.height;
@@ -279,7 +281,7 @@ static inline void processFaces(
 
                 texture = type->single_texture ? type->textures[0] : type->textures[texture_index];
                 break;
-            case InstancedMesh::Z_ALIGNED:
+            case MeshInterface::Z_ALIGNED:
                 face_position = glm::vec3(face.x              , face.y + face.height, layer + 1) + world_position;
   
                 texture = type->single_texture ? type->textures[0] : type->textures[2 + texture_index ];
@@ -294,10 +296,10 @@ void ChunkMeshGenerator::proccessOccludedFaces(
     BitPlane<64>& source_plane,
     OcclusionPlane& occlusion_plane,
     
-    InstancedMesh::FaceType face_type,
-    InstancedMesh::Direction direction,
+    MeshInterface::FaceType face_type,
+    MeshInterface::Direction direction,
     BlockRegistry::BlockPrototype* type,
-    InstancedMesh* mesh, 
+    MeshInterface* mesh, 
     glm::vec3 world_position,
     int layer
 ){
@@ -312,20 +314,15 @@ void ChunkMeshGenerator::proccessOccludedFaces(
     agregateTypes##axis.insert(group->getPresentTypes().begin(), group->getPresentTypes().end());
 
 
-std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 worldPosition, Chunk* group, BitField3D::SimplificationLevel simplification_level){
-    //ScopeTimer timer("Generated mesh");
-
-    //simplification_level = BitField3D::NONE;
-
-    auto solidMesh = std::make_unique<InstancedMesh>();
+void ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, MeshInterface* solidMesh, Chunk* group, BitField3D::SimplificationLevel simplification_level){
     if(!group){
         LogError("Missing chunk when generating mesh.");
-        return solidMesh;
+        return;
     }
 
     if(!world){
         LogError( "No world assigned, quitting mesh generation.");
-        return solidMesh;
+        return;
     }
 
     group->current_simplification = simplification_level;
@@ -341,7 +338,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
     
     if(!nextX || !nextY || !nextZ || !forwardX || !forwardY || !forwardZ){
         LogError("Mesh generating when chunks are missing?");
-        return solidMesh;
+        return;
     }
     
     //this->solidMesh->setVertexFormat(VertexFormat({3,1,2,1,1}));  // Unused
@@ -451,14 +448,14 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
                 //std::cout << "Solving plane: " << getBlockTypeName(type) << std::endl;
                 //for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
 
-                proccessOccludedFaces(planesXforward .getPlanes()[static_cast<size_t>(type)], occlusionPlanesX[layer + 1], InstancedMesh::X_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, layer);
-                proccessOccludedFaces(planesXbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesX[layer    ], InstancedMesh::X_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer);
+                proccessOccludedFaces(planesXforward .getPlanes()[static_cast<size_t>(type)], occlusionPlanesX[layer + 1], MeshInterface::X_ALIGNED, MeshInterface::Forward , definition, solidMesh, world_position, layer);
+                proccessOccludedFaces(planesXbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesX[layer    ], MeshInterface::X_ALIGNED, MeshInterface::Backward, definition, solidMesh, world_position, layer);
 
-                proccessOccludedFaces(planesYforward .getPlanes()[static_cast<size_t>(type)], occlusionPlanesY[layer + 1], InstancedMesh::Y_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, layer);
-                proccessOccludedFaces(planesYbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesY[layer    ], InstancedMesh::Y_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer);
+                proccessOccludedFaces(planesYforward .getPlanes()[static_cast<size_t>(type)], occlusionPlanesY[layer + 1], MeshInterface::Y_ALIGNED, MeshInterface::Forward , definition, solidMesh, world_position, layer);
+                proccessOccludedFaces(planesYbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesY[layer    ], MeshInterface::Y_ALIGNED, MeshInterface::Backward, definition, solidMesh, world_position, layer);
 
-                proccessOccludedFaces(planesZforward .getPlanes()[static_cast<size_t>(type)], occlusionPlanesZ[layer + 1], InstancedMesh::Z_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, layer);
-                proccessOccludedFaces(planesZbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesZ[layer    ], InstancedMesh::Z_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, layer);
+                proccessOccludedFaces(planesZforward .getPlanes()[static_cast<size_t>(type)], occlusionPlanesZ[layer + 1], MeshInterface::Z_ALIGNED, MeshInterface::Forward , definition, solidMesh, world_position, layer);
+                proccessOccludedFaces(planesZbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesZ[layer    ], MeshInterface::Z_ALIGNED, MeshInterface::Backward, definition, solidMesh, world_position, layer);
             }
         }
 
@@ -480,7 +477,7 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
 
                 glm::vec3 position = glm::vec3{x,y,z} + world_position;
 
-                solidMesh->addQuadFace(position,1,1,definition->textures[0], InstancedMesh::BILLBOARD, InstancedMesh::Forward, {0,0,0,0});
+                solidMesh->addQuadFace(position,1,1,definition->textures[0], MeshInterface::BILLBOARD, MeshInterface::Forward, {0,0,0,0});
             }
         }
     }
@@ -591,17 +588,16 @@ std::unique_ptr<InstancedMesh> ChunkMeshGenerator::generateChunkMesh(glm::ivec3 
         auto* definition = BlockRegistry::get().getPrototype(type);
         if(!definition || definition->render_type != BlockRegistry::FULL_BLOCK) continue;
 
-        processFaces(greedyMeshPlane(planesXforward .getPlanes()[static_cast<size_t>(type)]), InstancedMesh::X_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, occlusion);
-        processFaces(greedyMeshPlane(planesXbackward.getPlanes()[static_cast<size_t>(type)]), InstancedMesh::X_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, -1, occlusion);
+        processFaces(greedyMeshPlane(planesXforward .getPlanes()[static_cast<size_t>(type)]), MeshInterface::X_ALIGNED, MeshInterface::Backward, definition, solidMesh, world_position, -1, occlusion);
+        processFaces(greedyMeshPlane(planesXbackward.getPlanes()[static_cast<size_t>(type)]), MeshInterface::X_ALIGNED, MeshInterface::Forward , definition, solidMesh, world_position, -1, occlusion);
 
-        processFaces(greedyMeshPlane(planesYforward .getPlanes()[static_cast<size_t>(type)]), InstancedMesh::Y_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, occlusion);
-        processFaces(greedyMeshPlane(planesYbackward.getPlanes()[static_cast<size_t>(type)]), InstancedMesh::Y_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, -1, occlusion);
+        processFaces(greedyMeshPlane(planesYforward .getPlanes()[static_cast<size_t>(type)]), MeshInterface::Y_ALIGNED, MeshInterface::Backward, definition, solidMesh, world_position, -1, occlusion);
+        processFaces(greedyMeshPlane(planesYbackward.getPlanes()[static_cast<size_t>(type)]), MeshInterface::Y_ALIGNED, MeshInterface::Forward , definition, solidMesh, world_position, -1, occlusion);
 
-        processFaces(greedyMeshPlane(planesZforward .getPlanes()[static_cast<size_t>(type)]), InstancedMesh::Z_ALIGNED, InstancedMesh::Backward, definition, solidMesh.get(), world_position, -1, occlusion);
-        processFaces(greedyMeshPlane(planesZbackward.getPlanes()[static_cast<size_t>(type)]), InstancedMesh::Z_ALIGNED, InstancedMesh::Forward , definition, solidMesh.get(), world_position, -1, occlusion);
+        processFaces(greedyMeshPlane(planesZforward .getPlanes()[static_cast<size_t>(type)]), MeshInterface::Z_ALIGNED, MeshInterface::Backward, definition, solidMesh, world_position, -1, occlusion);
+        processFaces(greedyMeshPlane(planesZbackward.getPlanes()[static_cast<size_t>(type)]), MeshInterface::Z_ALIGNED, MeshInterface::Forward , definition, solidMesh, world_position, -1, occlusion);
     }
-    //std::cout << "Vertices:" << solidMesh.get()->getIndices().size() << std::endl;
+    //std::cout << "Vertices:" << solidMesh->getIndices().size() << std::endl;
     
     solidMesh->shrink();
-    return solidMesh;
 }

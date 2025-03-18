@@ -1,4 +1,4 @@
-#include <rendering/chunk_buffer.hpp>
+#include <rendering/region_culler.hpp>
 
 
 
@@ -29,33 +29,14 @@ MeshRegion* MeshRegion::getSubregion(uint x, uint y, uint z){
     return  registry.getRegion({subregion_position, subregion_level});
 }
 
-std::string formatSize(size_t bytes) {
-    const char* suffixes[] = {"B", "KB", "MB", "GB", "TB"};
-    size_t suffixIndex = 0;
-    double size = static_cast<double>(bytes);
-
-    // Loop to reduce size and find appropriate suffix
-    while (size >= 1024 && suffixIndex < 4) {  // Up to TB
-        size /= 1024;
-        ++suffixIndex;
-    }
-
-    // Format size with 2 decimal places
-    std::ostringstream out;
-    out << std::fixed << std::setprecision(2) << size << " " << suffixes[suffixIndex];
-    return out.str();
-}
-
-
-ChunkMeshRegistry::ChunkMeshRegistry(){
-    mesh_buffer = std::make_unique<InstancedMeshBuffer>();
+RegionCuller::RegionCuller(){
     actualRegionSizes.push_back(1);
     for(int i = 1;i < maxRegionLevel;i++){
         actualRegionSizes.push_back(pow(2, i));
     }
 }
 
-bool ChunkMeshRegistry::addMesh(InstancedMesh* mesh, const glm::ivec3& pos){
+bool RegionCuller::addMesh(MeshInterface* mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
 
     if(mesh->empty()) return true;    
@@ -63,12 +44,12 @@ bool ChunkMeshRegistry::addMesh(InstancedMesh* mesh, const glm::ivec3& pos){
     
     MeshRegion* region = createRegion(transform);
    
-    region->loaded_mesh = mesh_buffer->loadMesh(*mesh);
+    region->loaded_mesh = mesh_loader->loadMesh(*mesh);
     
     return true;
 }
 
-bool ChunkMeshRegistry::updateMesh(InstancedMesh* mesh, const glm::ivec3& pos){
+bool RegionCuller::updateMesh(MeshInterface* mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
 
     if(!getRegion(transform)) return false; // InstancedMesh region doesn't exist
@@ -80,7 +61,7 @@ bool ChunkMeshRegistry::updateMesh(InstancedMesh* mesh, const glm::ivec3& pos){
     return true;
 }   
 
-MeshRegion* ChunkMeshRegistry::createRegion(MeshRegion::Transform transform){
+MeshRegion* RegionCuller::createRegion(MeshRegion::Transform transform){
     if(transform.level > maxRegionLevel) return nullptr; // Over the max region level
 
     regions.emplace(transform, MeshRegion(transform, *this));
@@ -96,9 +77,8 @@ MeshRegion* ChunkMeshRegistry::createRegion(MeshRegion::Transform transform){
 
 
 const int halfChunkSize = (CHUNK_SIZE / 2);
-void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* region){
-    //if(region->draw_commands.size() == 0 && region->transform.level != 1) return; // No meshes are present, no point in searching
-    
+void RegionCuller::processRegionForDrawing(Frustum& frustum, MeshRegion* region){
+
     int level_size_in_chunks = getRegionSizeForLevel(region->transform.level);
     int level_size_in_blocks = level_size_in_chunks * CHUNK_SIZE; 
     
@@ -114,15 +94,6 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
         region->loaded_mesh->addDrawCall();
         return;
     }
-    /*else{
-        size_t draw_calls_size = region->draw_commands.size();
-        drawCallBuffer->appendData(region->draw_commands.data(), draw_calls_size);
-
-        draw_call_counter += draw_calls_size;
-
-        return;
-    }*/
-
 
     for(int x = 0; x < 2; x++)
     for(int y = 0; y < 2; y++) 
@@ -136,8 +107,8 @@ void ChunkMeshRegistry::processRegionForDrawing(Frustum& frustum, MeshRegion* re
     
 }
 
-void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum){
-    mesh_buffer->clearDrawCalls();
+void RegionCuller::updateDrawCalls(const glm::ivec3& camera_position, Frustum& frustum){
+    mesh_loader->clearDrawCalls();
 
     int max_level_size_in_chunks = getRegionSizeForLevel(maxRegionLevel);
 
@@ -160,14 +131,13 @@ void ChunkMeshRegistry::updateDrawCalls(glm::ivec3 camera_position, Frustum& fru
         processRegionForDrawing(frustum, region);
     }   
 
-    mesh_buffer->flushDrawCalls();
+    mesh_loader->flushDrawCalls();
 }
 
-void ChunkMeshRegistry::draw(){
-    mesh_buffer->render();
+void RegionCuller::draw(){
+    mesh_loader->render();
 }
 
-void ChunkMeshRegistry::clear(){
+void RegionCuller::clear(){
     regions.clear();
-    mesh_buffer = std::make_unique<InstancedMeshBuffer>();
 }

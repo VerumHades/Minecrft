@@ -1,6 +1,6 @@
 #include <rendering/instanced_mesh.hpp>
 
-void InstancedMesh::addQuadFace(glm::vec3 position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion){
+void InstancedMesh::addQuadFace(const glm::vec3& position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion){
     std::array<float, InstancedMesh::instance_data_size> data = {
         position.x,
         position.y,

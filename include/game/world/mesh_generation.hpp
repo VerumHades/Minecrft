@@ -2,12 +2,14 @@
 
 #include <mutex>
 #include <game/world/terrain.hpp>
-#include <rendering/instanced_mesh.hpp>
-#include <rendering/chunk_buffer.hpp>
+#include <rendering/mesh_spec.hpp>
+#include <rendering/region_culler.hpp>
 #include <blockarray.hpp>
 #include <glm/glm.hpp>
 #include <bit>
 #include <atomic>
+
+
 
 class ChunkMeshGenerator{
     public:
@@ -38,7 +40,7 @@ class ChunkMeshGenerator{
 
     private:
         std::vector<Face>& greedyMeshPlane(BitPlane<64> rows, int start = 0, int end = 64);
-        std::unique_ptr<InstancedMesh> generateChunkMesh(glm::ivec3 position, Chunk* group, BitField3D::SimplificationLevel simplification_level);
+        void generateChunkMesh(const glm::ivec3& position, MeshInterface* output, Chunk* group, BitField3D::SimplificationLevel simplification_level);
 
         std::mutex meshLoadingMutex;
         
@@ -71,10 +73,10 @@ class ChunkMeshGenerator{
             BitPlane<64>& source_plane,
             OcclusionPlane& occlusion_plane,
             
-            InstancedMesh::FaceType face_type,
-            InstancedMesh::Direction direction,
+            MeshInterface::FaceType face_type,
+            MeshInterface::Direction direction,
             BlockRegistry::BlockPrototype* type,
-            InstancedMesh* mesh, 
+            MeshInterface* mesh, 
             glm::vec3 world_position,
             int layer
         );
@@ -83,7 +85,7 @@ class ChunkMeshGenerator{
     
     public:
         ChunkMeshGenerator(){}
-        bool loadMeshFromQueue(ChunkMeshRegistry&  buffer, size_t limit = 1);
+        bool loadMeshFromQueue(RegionCuller&  buffer, size_t limit = 1);
 
         /*
             When the mesh is generated sends it to the worlds mesh loading queue,
@@ -95,7 +97,7 @@ class ChunkMeshGenerator{
         /*
             Generates and uploads the newly generated chunk mesh right away
         */
-        void syncGenerateSyncUploadMesh(Chunk* chunk, ChunkMeshRegistry& buffer, BitField3D::SimplificationLevel simplification_level);
+        void syncGenerateSyncUploadMesh(Chunk* chunk, RegionCuller& buffer, BitField3D::SimplificationLevel simplification_level);
 
         void setWorld(Terrain* world){this->world = world;}
 };

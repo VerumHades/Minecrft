@@ -7,20 +7,10 @@
 #include <coherency.hpp>
 #include <rendering/opengl/buffer.hpp>
 #include <memory>
+#include <rendering/mesh_spec.hpp>
 
-class InstancedMesh{
+class InstancedMesh: public MeshInterface{
     public:
-        enum FaceType{
-            X_ALIGNED = 0,
-            Y_ALIGNED = 1,
-            Z_ALIGNED = 2,
-            BILLBOARD  = 3
-        }; 
-
-        enum Direction{
-            Forward = 0,
-            Backward = 1
-        };
         const static size_t instance_data_size = 12;
 
     private:
@@ -28,11 +18,11 @@ class InstancedMesh{
     
     public:
         InstancedMesh(){}
-        void addQuadFace(glm::vec3 position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion);
-        void preallocate(size_t size, FaceType type);
+        void addQuadFace(const glm::vec3& position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion) override;
+        void preallocate(size_t size, FaceType type) override;
         const std::vector<float>& getInstanceData(FaceType type);
-        bool empty();
-        void shrink();
+        bool empty() override;
+        void shrink() override;
 };
 
 class InstancedMeshBuffer{
@@ -54,7 +44,7 @@ class InstancedMeshBuffer{
                 void addDrawCall();
                 void render();
                 void update(InstancedMesh& mesh);
-            void destroy();
+                void destroy();
                 bool isValid(){return valid;}
         };
         

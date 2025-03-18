@@ -15,7 +15,7 @@
 
 struct TransformHash;
 struct TransformEqual;
-class ChunkMeshRegistry;
+class RegionCuller;
 
 class MeshRegion{
     private:
@@ -31,10 +31,10 @@ class MeshRegion{
             uint level = 1;
         } transform;
 
-        ChunkMeshRegistry& registry;
-        MeshRegion(Transform& transform, ChunkMeshRegistry& registry): transform(transform), registry(registry) {}
+        RegionCuller& registry;
+        MeshRegion(Transform& transform, RegionCuller& registry): transform(transform), registry(registry) {}
 
-        std::unique_ptr<InstancedMeshBuffer::LoadedMesh> loaded_mesh = nullptr;
+        std::unique_ptr<LoadedMeshInterface> loaded_mesh = nullptr;
 
         /*
             Returns a pointer to the regions parent, if the region has no parents return nullptr
@@ -66,7 +66,7 @@ class MeshRegion{
 
         friend struct TransformHash;
         friend struct TransformEqual;
-        friend class ChunkMeshRegistry;
+        friend class RegionCuller;
 
 };
 
@@ -87,7 +87,7 @@ struct TransformEqual {
     }
 };
 
-class ChunkMeshRegistry{
+class RegionCuller{
     private:
         // Highest region level, no regions higher than maxRegionLevel will be registered or created
         const static uint maxRegionLevel = 5;
@@ -104,10 +104,12 @@ class ChunkMeshRegistry{
         */
         void processRegionForDrawing(Frustum& frustum, MeshRegion* region);
 
-        std::unique_ptr<InstancedMeshBuffer> mesh_buffer{};
+        std::unique_ptr<MeshLoaderInterface> mesh_loader = nullptr;
 
     public:
-        ChunkMeshRegistry();
+        RegionCuller();
+
+        void SetMeshLoader(std::unique_ptr<MeshLoaderInterface> loader){ mesh_loader = std::move(loader); }
 
         void clear();
         bool isChunkLoaded(const glm::ivec3& pos){
@@ -119,19 +121,19 @@ class ChunkMeshRegistry{
 
             Takes the camera position in world coordinates
         */
-        void updateDrawCalls(glm::ivec3 camera_position, Frustum& frustum);
+        void updateDrawCalls(const glm::ivec3& camera_position, Frustum& frustum);
 
         /*
             Uploads the mesh as a level 1 region. (All parents are automatically created if they dont already exist)
 
             Empty meshes will be ingnored. But registered as empty regions.
         */
-        bool addMesh(InstancedMesh* mesh, const glm::ivec3& pos);
+        bool addMesh(MeshInterface* mesh, const glm::ivec3& pos);
 
         /*
             Updates a mesh, splits regions if old mesh is a part of them
         */
-        bool updateMesh(InstancedMesh* mesh, const glm::ivec3& pos);
+        bool updateMesh(MeshInterface* mesh, const glm::ivec3& pos);
 
         /*
             Creates a region and all its parents if they dont already exist.

@@ -1,6 +1,6 @@
 #pragma once 
 
-#include <rendering/chunk_buffer.hpp>
+#include <rendering/region_culler.hpp>
 #include <game/world/mesh_generation.hpp>
 #include <game/world/terrain.hpp>
 #include <game/world/world_generation.hpp>
@@ -15,7 +15,7 @@
 class TerrainManager{
     private:
         ChunkMeshGenerator mesh_generator;
-        ChunkMeshRegistry mesh_registry;
+        RegionCuller mesh_registry;
         WorldGenerator world_generator;
         
         GameState* game_state = nullptr;
@@ -83,7 +83,7 @@ class TerrainManager{
         }
 
 
-        ChunkMeshRegistry& getMeshRegistry(){ return mesh_registry; }
+        RegionCuller& getMeshRegistry(){ return mesh_registry; }
 
         std::array<std::atomic<int>, thread_count>& getGenerationCountsLeft(){ return generation_left; }
         WorldGenerator& getWorldGenerator() { return world_generator; }

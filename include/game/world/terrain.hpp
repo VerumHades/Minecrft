@@ -15,7 +15,7 @@
 #include <fstream>
 #include <string>
 
-#include <rendering/chunk_buffer.hpp>
+#include <rendering/region_culler.hpp>
 
 #include <game/entity.hpp>
 #include <game/chunk.hpp>

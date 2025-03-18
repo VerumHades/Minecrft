@@ -150,6 +150,14 @@ class GLBuffer {
         }
 
         /*
+            Inserts or resizes to fit the content
+        */
+        bool insert_or_resize(T* data, size_t size){
+            if(buffer_size < size) initialize(size, data);
+            else insert(0,size,data);
+        }
+
+        /*
             Writes the buffers contents into the destination
         */
         void get(T* destination, size_t size, size_t offset = 0) const{
