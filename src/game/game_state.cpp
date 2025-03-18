@@ -202,32 +202,3 @@ void GameState::updateEntities(float deltatime){
         stream->save(*chunk);
     }
 }*/
-
-void GameState::drawEntityColliders(WireframeCubeRenderer& renderer, size_t start_index){
-    /*for(auto& [region_position,entities]: entity_regions){
-        renderer.setCube(
-            start_index++,
-            region_position * entity_region_size, 
-            glm::vec3{entity_region_size},
-            {1.0,0.0,1.0}
-        );
-        for(auto& entity: entities){
-            auto& collider = entity->getCollider();
-            renderer.setCube(
-                start_index++,
-                glm::vec3{collider.x, collider.y, collider.z} + entity->getPosition(), 
-                glm::vec3{collider.width, collider.height, collider.depth},
-                {1.0,1.0,0}
-            );
-        }
-    }*/
-
-    /*for(auto& region_position: getPlayer().getRegionPositions()){
-        renderer.setCube(
-            start_index++,
-            region_position * entity_region_size, 
-            glm::vec3{entity_region_size},
-            {1.0,0.0,1.0}
-        );
-    }*/
-}

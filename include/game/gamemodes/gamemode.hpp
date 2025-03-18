@@ -6,13 +6,16 @@
 #include <game/game_state.hpp>
 #include <game/input.hpp>
 #include <game/terrain_manager.hpp>
-#include <scene.hpp>
 
 #include <rendering/camera.hpp>
 #include <rendering/cubes.hpp>
+#include <rendering/wireframes.hpp>
 
 #include <ui/core.hpp>
 #include <ui/elements.hpp>
+
+
+#include <scene.hpp>
 
 class Chunk;
 

@@ -153,8 +153,9 @@ class GLBuffer {
             Inserts or resizes to fit the content
         */
         bool insert_or_resize(T* data, size_t size){
-            if(buffer_size < size) initialize(size, data);
-            else insert(0,size,data);
+            if(!initialized || buffer_size < size) initialize(size, data);
+            else return insert(0,size,data);
+            return true;
         }
 
         /*

@@ -44,12 +44,7 @@ void MainScene::initialize(){
     skyboxProgram.use();
     skybox.load(skyboxPaths);
     
-    terrainProgram.use();
-    
     block_texture_array = BlockRegistry::get().load();
-
-    terrainProgram.setSamplerSlot("textureArray", 0);
-    terrainProgram.setSamplerSlot("shadowMap", 1);
 
     modelProgram.setSamplerSlot("textureIn",0);
 
@@ -68,7 +63,6 @@ void MainScene::initialize(){
         0  // Z position (cosine component)
     });
 
-    terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
 
     camera.setModelPosition({0,0,0});
@@ -155,7 +149,6 @@ void MainScene::resize(GLFWwindow* window, int width, int height){
     camera.resizeScreen(width, height, camFOV);
     gBuffer = GBuffer(width,height);
     
-    terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
 }
 
@@ -200,7 +193,6 @@ void MainScene::mouseMove(GLFWwindow* window, int mouseX, int mouseY){
 
     camera.setRotation(camPitch, camYaw);
 
-    terrainProgram.updateUniforms();
     skyboxProgram.updateUniforms();
 }
 
@@ -356,7 +348,6 @@ void MainScene::render(){
         // ====
 
         // Draw terrain
-        terrainProgram.updateUniforms();
         terrain_manager.getMeshRegistry().draw();
 
         //interpolation_time = (current - last_tick_time) / tickTime;

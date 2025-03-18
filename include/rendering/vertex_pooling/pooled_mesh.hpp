@@ -39,26 +39,26 @@ class PooledMesh: public MeshInterface{
         void shrink() override;
 };
 
-class PooledMeshRegistry{
+class PooledMeshLoader: public MeshLoaderInterface{
     public:
-        class LoadedMesh{
+        class LoadedMesh: public LoadedMeshInterface{
             private:
-                PooledMeshRegistry& creator;
+                PooledMeshLoader& creator;
                 bool valid = true;
                 std::array<CoherentList<uint32_t>::RegionIterator, 4> loaded_regions = {}; 
                 std::array<bool, 4> has_region = {};
 
-                friend class PooledMeshRegistry;
+                friend class PooledMeshLoader;
 
             public:
-                LoadedMesh(PooledMeshRegistry& creator): creator(creator) {}
+                LoadedMesh(PooledMeshLoader& creator): creator(creator) {}
 
                 //~LoadedMesh() {destroy();}
                 // Adds the meshes draw call to the next batch
-                void addDrawCall(const glm::ivec3& position);
-                void update(PooledMesh& mesh);
-            void destroy();
-                bool isValid(){return valid;}
+                void addDrawCall(const glm::ivec3& position) override;
+                void update(MeshInterface* mesh) override;
+                void destroy() override;
+                bool isValid() override {return valid;}
         };
         
     private:
@@ -84,10 +84,10 @@ class PooledMeshRegistry{
         void updateMesh(LoadedMesh& loaded_mesh, PooledMesh& new_mesh);
                 
     public:
-        PooledMeshRegistry();
+        PooledMeshLoader();
 
-        std::unique_ptr<LoadedMesh> loadMesh(PooledMesh& mesh);
-        void render();
-        void clearDrawCalls();
-        void flushDrawCalls();
+        std::unique_ptr<LoadedMeshInterface> loadMesh(MeshInterface* mesh) override;
+        void render() override;
+        void clearDrawCalls() override;
+        void flushDrawCalls() override;
 };

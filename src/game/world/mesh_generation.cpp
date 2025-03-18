@@ -1,7 +1,7 @@
 #include <game/world/mesh_generation.hpp>
 
 
-void ChunkMeshGenerator::addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<InstancedMesh> mesh){
+void ChunkMeshGenerator::addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<MeshInterface> mesh){
     std::lock_guard<std::mutex> lock(meshLoadingMutex);
     meshLoadingQueue.push({position,std::move(mesh)});
 }
@@ -28,21 +28,19 @@ bool ChunkMeshGenerator::loadMeshFromQueue(RegionCuller&  buffer, size_t limit){
     return true;
 }
 
-void ChunkMeshGenerator::syncGenerateAsyncUploadMesh(Chunk* chunk, BitField3D::SimplificationLevel simplification_level){
+void ChunkMeshGenerator::syncGenerateAsyncUploadMesh(Chunk* chunk, std::unique_ptr<MeshInterface> mesh, BitField3D::SimplificationLevel simplification_level){
     auto start = std::chrono::high_resolution_clock::now();
 
     auto world_position = chunk->getWorldPosition();
-    auto mesh = std::make_unique<InstancedMesh>();
-    generateChunkMesh(world_position, reinterpret_cast<MeshInterface*>(mesh.get()), chunk, simplification_level);
+    generateChunkMesh(world_position, mesh.get(), chunk, simplification_level);
 
     addToChunkMeshLoadingQueue(world_position, std::move(mesh));
     meshes_pending = true;
 }
 
-void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, RegionCuller& buffer, BitField3D::SimplificationLevel simplification_level){
+void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, RegionCuller& buffer, std::unique_ptr<MeshInterface> mesh, BitField3D::SimplificationLevel simplification_level){
     auto world_position = chunk->getWorldPosition();
-    auto mesh = std::make_unique<InstancedMesh>();
-    generateChunkMesh(world_position, reinterpret_cast<MeshInterface*>(mesh.get()), chunk, simplification_level);
+    generateChunkMesh(world_position, mesh.get(), chunk, simplification_level);
 
     buffer.addMesh(mesh.get(), chunk->getWorldPosition());
 }

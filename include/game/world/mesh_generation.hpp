@@ -1,9 +1,13 @@
 #pragma once
 
-#include <mutex>
+
 #include <game/world/terrain.hpp>
+
 #include <rendering/mesh_spec.hpp>
 #include <rendering/region_culler.hpp>
+#include <rendering/instanced_mesh.hpp>
+
+#include <mutex>
 #include <blockarray.hpp>
 #include <glm/glm.hpp>
 #include <bit>
@@ -46,14 +50,14 @@ class ChunkMeshGenerator{
         
         struct MeshLoadingMember{
             glm::ivec3 position;
-            std::unique_ptr<InstancedMesh> mesh;
+            std::unique_ptr<MeshInterface> mesh;
         };
 
         std::queue<MeshLoadingMember> meshLoadingQueue;
 
         Terrain* world = nullptr; // Points to the world relative to which you generate meshes, doesnt need to be set
 
-        void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<InstancedMesh> mesh);
+        void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<MeshInterface> mesh);
         /*
             Creates separate planes from one plane with occlusion values
         */
@@ -92,12 +96,12 @@ class ChunkMeshGenerator{
 
             ISNT RESPONSIBLE FOR ACTUALLY UPLOADING THE MESH
         */
-        void syncGenerateAsyncUploadMesh(Chunk* chunk, BitField3D::SimplificationLevel simplification_level);
+        void syncGenerateAsyncUploadMesh(Chunk* chunk, std::unique_ptr<MeshInterface> mesh, BitField3D::SimplificationLevel simplification_level);
 
         /*
             Generates and uploads the newly generated chunk mesh right away
         */
-        void syncGenerateSyncUploadMesh(Chunk* chunk, RegionCuller& buffer, BitField3D::SimplificationLevel simplification_level);
+        void syncGenerateSyncUploadMesh(Chunk* chunk, RegionCuller& buffer, std::unique_ptr<MeshInterface> mesh, BitField3D::SimplificationLevel simplification_level);
 
         void setWorld(Terrain* world){this->world = world;}
 };

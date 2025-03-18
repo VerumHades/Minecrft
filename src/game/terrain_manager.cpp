@@ -1,5 +1,9 @@
 #include <game/terrain_manager.hpp>
 
+TerrainManager::TerrainManager(){
+    ResetLoader();
+}
+
 bool TerrainManager::GenerateRegion(const glm::ivec3& around, int render_distance){
     if(!game_state || !game_state->world_stream) return false;
 
@@ -96,7 +100,7 @@ bool TerrainManager::MeshRegion(const glm::ivec3& around, int render_distance){
 
             auto level = calculateSimplificationLevel(around,chunkPosition);
 
-            mesh_generator.syncGenerateAsyncUploadMesh(chunk, level);
+            mesh_generator.syncGenerateAsyncUploadMesh(chunk, std::make_unique<InstancedMesh>(), level);
         }
     }
 
@@ -107,7 +111,7 @@ bool TerrainManager::MeshRegion(const glm::ivec3& around, int render_distance){
 
 bool TerrainManager::HandlePriorityMeshes(){
     if(has_priority_meshes && priority_count > 0){
-        mesh_generator.syncGenerateAsyncUploadMesh(priority_mesh_queue[(priority_count--) - 1], BitField3D::NONE);
+        mesh_generator.syncGenerateAsyncUploadMesh(priority_mesh_queue[(priority_count--) - 1], std::make_unique<InstancedMesh>(), BitField3D::NONE);
         return true;
     }
     else if(has_priority_meshes && priority_count == 0) has_priority_meshes = false;
@@ -139,6 +143,11 @@ bool TerrainManager::uploadPendingMeshes(){
     return mesh_generator.loadMeshFromQueue(mesh_registry, 25);
 }
 
+void TerrainManager::unloadAll(){
+    mesh_registry.clear();
+    ResetLoader();
+}
+
 #define regenMesh(position) { \
     Chunk* temp = game_state->getTerrain().getChunk(position);\
     if(temp) regenerateChunkMesh(temp);\
@@ -159,7 +168,7 @@ void TerrainManager::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
 #undef regenMesh
 
 void TerrainManager::regenerateChunkMesh(Chunk* chunk){
-    if(!meshing_region) mesh_generator.syncGenerateSyncUploadMesh(chunk, mesh_registry, BitField3D::NONE);
+    if(!meshing_region) mesh_generator.syncGenerateSyncUploadMesh(chunk, mesh_registry, std::make_unique<InstancedMesh>(), BitField3D::NONE);
     else if(!has_priority_meshes){
         priority_mesh_queue[priority_count++] = chunk;
     }

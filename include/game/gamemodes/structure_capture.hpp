@@ -2,10 +2,10 @@
 
 
 #include <ui/elements.hpp>
+#include <ui/elements/selection.hpp>
 
 #include <game/gamemodes/interactable_base.hpp>
 
-#include <ui/elements/selection.hpp>
 
 #include <atomic>
 

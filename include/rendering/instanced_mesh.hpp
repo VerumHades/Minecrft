@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <coherency.hpp>
 #include <rendering/opengl/buffer.hpp>
+#include <rendering/opengl/shaders.hpp>
 #include <memory>
 #include <rendering/mesh_spec.hpp>
 
@@ -25,31 +26,33 @@ class InstancedMesh: public MeshInterface{
         void shrink() override;
 };
 
-class InstancedMeshBuffer{
+class InstancedMeshLoader: public MeshLoaderInterface{
     public:
-        class LoadedMesh{
+        class LoadedMesh: public LoadedMeshInterface{
             private:
-                InstancedMeshBuffer& creator;
+                InstancedMeshLoader& creator;
                 bool valid = true;
                 std::array<CoherentList<float>::RegionIterator, 4> loaded_regions = {}; 
                 std::array<bool, 4> has_region = {};
 
-                friend class InstancedMeshBuffer;
+                friend class InstancedMeshLoader;
 
             public:
-                LoadedMesh(InstancedMeshBuffer& creator): creator(creator) {}
+                LoadedMesh(InstancedMeshLoader& creator): creator(creator) {}
 
                 //~LoadedMesh() {destroy();}
                 // Adds the meshes draw call to the next batch
-                void addDrawCall();
+                void addDrawCall(const glm::ivec3& position) override ;
                 void render();
-                void update(InstancedMesh& mesh);
-                void destroy();
-                bool isValid(){return valid;}
+                void update(MeshInterface* mesh) override ;
+                void destroy() override ;
+                bool isValid() override {return valid;}
         };
         
     private:
         static const size_t distinct_face_count = 4;
+
+        ShaderProgram shared_program = ShaderProgram("resources/shaders/terrain.vs","resources/shaders/terrain.fs");
 
         struct RenderableGroup{
             GLCoherentBuffer<float, GL_ARRAY_BUFFER> instance_data{};
@@ -66,10 +69,10 @@ class InstancedMeshBuffer{
         void updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new_mesh);
                 
     public:
-        InstancedMeshBuffer();
+        InstancedMeshLoader();
 
-        std::unique_ptr<LoadedMesh> loadMesh(InstancedMesh& mesh);
-        void render();
-        void clearDrawCalls();
-        void flushDrawCalls();
+        std::unique_ptr<LoadedMeshInterface> loadMesh(MeshInterface* mesh) override;
+        void render() override;
+        void clearDrawCalls() override;
+        void flushDrawCalls() override;
 };

@@ -69,7 +69,6 @@ class MainScene: public Scene{
         GLFullscreenQuad fullscreen_quad;
 
         ShaderProgram modelProgram = ShaderProgram("resources/shaders/graphical/model/model.vs","resources/shaders/graphical/model/model.fs");
-        ShaderProgram terrainProgram = ShaderProgram("resources/shaders/terrain.vs","resources/shaders/terrain.fs");
         ShaderProgram skyboxProgram  = ShaderProgram("resources/shaders/graphical/skybox.vs", "resources/shaders/graphical/skybox.fs");
         ShaderProgram gBufferProgram = ShaderProgram("resources/shaders/graphical/deffered_shading/gbuffer.vs","resources/shaders/graphical/deffered_shading/gbuffer.fs");
 

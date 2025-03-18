@@ -42,7 +42,7 @@ void InstancedMesh::shrink(){
     for(int i = 0;i < 4;i++) instance_data[i].shrink_to_fit();
 }
 
-InstancedMeshBuffer::InstancedMeshBuffer(){
+InstancedMeshLoader::InstancedMeshLoader(){
     std::array<float, 20 * 5> aligned_quad_data = {
         // X aligned face
         0.0f, -1.0f, 0.0f,  0.0f, 1.0f, 
@@ -72,6 +72,8 @@ InstancedMeshBuffer::InstancedMeshBuffer(){
         1.0f, 1.0f, 0.0f,  1.0f, 0.0f, 
     };
 
+    shared_program.setSamplerSlot("textureArray", 0);
+    shared_program.setSamplerSlot("shadowMap", 1);
 
     loaded_face_buffer.initialize(aligned_quad_data.size(), aligned_quad_data.data());
 
@@ -81,27 +83,33 @@ InstancedMeshBuffer::InstancedMeshBuffer(){
     }
 }
 
-void InstancedMeshBuffer::LoadedMesh::destroy(){
+void InstancedMeshLoader::LoadedMesh::destroy(){
     if(!valid) throw std::logic_error("Cannot destroy destroyed mesh.");
     creator.removeMesh(*this);
     valid = false;
 }
 
-void InstancedMeshBuffer::LoadedMesh::update(InstancedMesh& mesh){
+void InstancedMeshLoader::LoadedMesh::update(MeshInterface* mesh_){
     if(!valid) throw std::logic_error("Cannot update destroyed mesh.");
+    
+    auto mesh_ptr = dynamic_cast<InstancedMesh*>(mesh_);
+    if(!mesh_ptr) return;
+
+    auto& mesh = *mesh_ptr;
+
     creator.updateMesh(*this, mesh);
 }
 
-void InstancedMeshBuffer::LoadedMesh::render(){
+void InstancedMeshLoader::LoadedMesh::render(){
     if(!valid) throw std::logic_error("Cannot render destroyed mesh.");
     creator.renderMesh(*this);
 }
 
-void InstancedMeshBuffer::LoadedMesh::addDrawCall(){
+void InstancedMeshLoader::LoadedMesh::addDrawCall(const glm::ivec3& position){
     if(!valid) throw std::logic_error("Cannot add draw call of destroyed mesh.");
     creator.addDrawCall(*this);
 }
-void InstancedMeshBuffer::renderMesh(LoadedMesh& mesh){
+void InstancedMeshLoader::renderMesh(LoadedMesh& mesh){
     for(int i = 0;i < distinct_face_count;i++){
         render_information[i].vao.bind();
 
@@ -129,8 +137,12 @@ void InstancedMeshBuffer::renderMesh(LoadedMesh& mesh){
     }
 }
 
-std::unique_ptr<InstancedMeshBuffer::LoadedMesh> InstancedMeshBuffer::loadMesh(InstancedMesh& mesh){
-    auto loaded_mesh = std::make_unique<InstancedMeshBuffer::LoadedMesh>(*this);
+std::unique_ptr<LoadedMeshInterface> InstancedMeshLoader::loadMesh(MeshInterface* mesh_){
+    auto mesh_ptr = dynamic_cast<InstancedMesh*>(mesh_);
+    if(!mesh_ptr) return nullptr;
+
+    auto& mesh = *mesh_ptr;
+    auto loaded_mesh = std::make_unique<InstancedMeshLoader::LoadedMesh>(*this);
 
     for(int i = 0;i < distinct_face_count;i++){
         auto& component_data = mesh.getInstanceData(static_cast<InstancedMesh::FaceType>(i));
@@ -148,7 +160,7 @@ std::unique_ptr<InstancedMeshBuffer::LoadedMesh> InstancedMeshBuffer::loadMesh(I
     return loaded_mesh;
 }
 
-void InstancedMeshBuffer::addDrawCall(LoadedMesh& mesh){
+void InstancedMeshLoader::addDrawCall(LoadedMesh& mesh){
     for(int i = 0;i < distinct_face_count;i++){
         if(!mesh.has_region[i]) continue;
         
@@ -170,7 +182,7 @@ void InstancedMeshBuffer::addDrawCall(LoadedMesh& mesh){
     }
 }
 
-void InstancedMeshBuffer::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new_mesh){
+void InstancedMeshLoader::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new_mesh){
     for(int i = 0;i < distinct_face_count;i++){
         auto& component_data = new_mesh.getInstanceData(static_cast<InstancedMesh::FaceType>(i));
         if(component_data.size() == 0){
@@ -189,13 +201,15 @@ void InstancedMeshBuffer::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new
     }
 }
 
-void InstancedMeshBuffer::removeMesh(LoadedMesh& mesh){
+void InstancedMeshLoader::removeMesh(LoadedMesh& mesh){
     for(int i = 0;i < distinct_face_count;i++){
         render_information[i].instance_data.remove(mesh.loaded_regions[i]);
     }
 }
 
-void InstancedMeshBuffer::render(){
+void InstancedMeshLoader::render(){
+    shared_program.updateUniforms();
+
     for(auto& info: render_information){
         info.vao.bind();
         info.draw_call_buffer.bind();
@@ -204,11 +218,11 @@ void InstancedMeshBuffer::render(){
     }
 }
 
-void InstancedMeshBuffer::clearDrawCalls(){
+void InstancedMeshLoader::clearDrawCalls(){
     for(auto& info: render_information) info.draw_call_buffer.clear();
 }
 
-void InstancedMeshBuffer::flushDrawCalls(){
+void InstancedMeshLoader::flushDrawCalls(){
     for(auto& info: render_information){
         //std::cout << "Flushed draw calls: " << info.draw_call_buffer.count() << std::endl;
         info.draw_call_buffer.flush();

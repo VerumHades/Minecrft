@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <glm/glm.hpp>
+#include <memory>
 
 class MeshInterface{
     public:
@@ -25,16 +26,15 @@ class MeshInterface{
 
 class LoadedMeshInterface{
     public:
-        virtual void addDrawCall() = 0;
-        virtual void render() = 0;
-        virtual void update(MeshInterface& mesh) = 0;
+        virtual void addDrawCall(const glm::ivec3& position) = 0;
+        virtual void update(MeshInterface* mesh) = 0;
         virtual void destroy() = 0;
         virtual bool isValid() = 0;
 };
 
 class MeshLoaderInterface{
     public:
-        virtual std::unique_ptr<LoadedMeshInterface> loadMesh(MeshInterface& mesh) = 0;
+        virtual std::unique_ptr<LoadedMeshInterface> loadMesh(MeshInterface* mesh) = 0;
         virtual void render() = 0;
         virtual void clearDrawCalls() = 0;
         virtual void flushDrawCalls() = 0;

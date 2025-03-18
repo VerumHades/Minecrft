@@ -34,28 +34,39 @@ void PooledMesh::shrink(){
 }
 
 
-PooledMeshRegistry::PooledMeshRegistry(){
+PooledMeshLoader::PooledMeshLoader(){
     
 }
 
-void PooledMeshRegistry::LoadedMesh::destroy(){
+void PooledMeshLoader::LoadedMesh::destroy(){
     if(!valid) throw std::logic_error("Cannot destroy destroyed mesh.");
     creator.removeMesh(*this);
     valid = false;
 }
 
-void PooledMeshRegistry::LoadedMesh::update(PooledMesh& mesh){
+void PooledMeshLoader::LoadedMesh::update(MeshInterface* mesh_){
     if(!valid) throw std::logic_error("Cannot update destroyed mesh.");
+    
+    auto mesh_ptr = dynamic_cast<PooledMesh*>(mesh_);
+    if(!mesh_ptr) return;
+
+    auto& mesh = *mesh_ptr;
+
     creator.updateMesh(*this, mesh);
 }
 
-void PooledMeshRegistry::LoadedMesh::addDrawCall(const glm::ivec3& position){
+void PooledMeshLoader::LoadedMesh::addDrawCall(const glm::ivec3& position){
     if(!valid) throw std::logic_error("Cannot add draw call of destroyed mesh.");
     creator.addDrawCall(*this, position);
 }
 
-std::unique_ptr<PooledMeshRegistry::LoadedMesh> PooledMeshRegistry::loadMesh(PooledMesh& mesh){
-    auto loaded_mesh = std::make_unique<PooledMeshRegistry::LoadedMesh>(*this);
+std::unique_ptr<LoadedMeshInterface> PooledMeshLoader::loadMesh(MeshInterface* mesh_){
+    auto mesh_ptr = dynamic_cast<PooledMesh*>(mesh_);
+    if(!mesh_ptr) return nullptr;
+
+    auto& mesh = *mesh_ptr;
+
+    auto loaded_mesh = std::make_unique<PooledMeshLoader::LoadedMesh>(*this);
 
     for(int i = 0;i < distinct_face_count;i++){
         auto& component_data = mesh.GetData().Get(static_cast<PooledMesh::FaceType>(i));
@@ -73,7 +84,7 @@ std::unique_ptr<PooledMeshRegistry::LoadedMesh> PooledMeshRegistry::loadMesh(Poo
     return loaded_mesh;
 }
 
-void PooledMeshRegistry::updateMesh(LoadedMesh& loaded_mesh, PooledMesh& new_mesh){
+void PooledMeshLoader::updateMesh(LoadedMesh& loaded_mesh, PooledMesh& new_mesh){
     for(int i = 0;i < distinct_face_count;i++){
         auto& component_data = new_mesh.GetData().Get(static_cast<PooledMesh::FaceType>(i));
         if(component_data.size() == 0){
@@ -92,7 +103,7 @@ void PooledMeshRegistry::updateMesh(LoadedMesh& loaded_mesh, PooledMesh& new_mes
     }
 }
 
-void PooledMeshRegistry::addDrawCall(LoadedMesh& mesh, const glm::ivec3& position){
+void PooledMeshLoader::addDrawCall(LoadedMesh& mesh, const glm::ivec3& position){
     for(int i = 0;i < 3;i++) world_positions.push_back(position[i]);
     updated_world_positions = true;
 
@@ -115,13 +126,13 @@ void PooledMeshRegistry::addDrawCall(LoadedMesh& mesh, const glm::ivec3& positio
     }
 }
 
-void PooledMeshRegistry::removeMesh(LoadedMesh& mesh){
+void PooledMeshLoader::removeMesh(LoadedMesh& mesh){
     for(int i = 0;i < distinct_face_count;i++){
         render_information[i].mesh_data.remove(mesh.loaded_regions[i]);
     }
 }
 
-void PooledMeshRegistry::render(){
+void PooledMeshLoader::render(){
     if(updated_world_positions){
         world_position_buffer.insert_or_resize(world_positions.data(), world_positions.size());
         updated_world_positions = false;
@@ -136,7 +147,7 @@ void PooledMeshRegistry::render(){
     }
 }
 
-void PooledMeshRegistry::clearDrawCalls(){
+void PooledMeshLoader::clearDrawCalls(){
     world_positions.clear();
     for(auto& info: render_information){
         info.draw_starts.clear();
@@ -145,6 +156,6 @@ void PooledMeshRegistry::clearDrawCalls(){
     updated_world_positions = true;
 }
 
-void PooledMeshRegistry::flushDrawCalls(){
+void PooledMeshLoader::flushDrawCalls(){
     
 }

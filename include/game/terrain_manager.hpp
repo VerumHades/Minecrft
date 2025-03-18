@@ -1,10 +1,14 @@
 #pragma once 
 
 #include <rendering/region_culler.hpp>
+#include <rendering/vertex_pooling/pooled_mesh.hpp>
+#include <rendering/instanced_mesh.hpp>
+
 #include <game/world/mesh_generation.hpp>
 #include <game/world/terrain.hpp>
 #include <game/world/world_generation.hpp>
 #include <game/game_state.hpp>
+
 
 #include <atomic>
 #include <indexing.hpp>
@@ -15,7 +19,10 @@
 class TerrainManager{
     private:
         ChunkMeshGenerator mesh_generator;
+        
         RegionCuller mesh_registry;
+        std::unique_ptr<InstancedMeshLoader> mesh_loader;
+
         WorldGenerator world_generator;
         
         GameState* game_state = nullptr;
@@ -57,10 +64,15 @@ class TerrainManager{
 
         bool HandlePriorityMeshes();
 
+        void ResetLoader(){
+            mesh_loader = std::make_unique<InstancedMeshLoader>();
+            mesh_registry.SetMeshLoader(mesh_loader.get());
+        }
+
     public:
-        TerrainManager() {}
+        TerrainManager();
         // Actually deploys meshes
-        void unloadAll(){ mesh_registry.clear(); }
+        void unloadAll();
 
         bool uploadPendingMeshes();
         bool loadRegion(glm::ivec3 around, int render_distance);

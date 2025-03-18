@@ -2,11 +2,8 @@
 
 #include <vec_hash.hpp>
 
-#include <rendering/instanced_mesh.hpp>
-#include <rendering/opengl/buffer.hpp>
 #include <rendering/culling.hpp>
-#include <rendering/wireframes.hpp>
-
+#include <rendering/mesh_spec.hpp>
 
 #include <sstream>    
 #include <iomanip>    
@@ -104,12 +101,12 @@ class RegionCuller{
         */
         void processRegionForDrawing(Frustum& frustum, MeshRegion* region);
 
-        std::unique_ptr<MeshLoaderInterface> mesh_loader = nullptr;
+        MeshLoaderInterface* mesh_loader = nullptr;
 
     public:
         RegionCuller();
 
-        void SetMeshLoader(std::unique_ptr<MeshLoaderInterface> loader){ mesh_loader = std::move(loader); }
+        void SetMeshLoader(MeshLoaderInterface* loader){ mesh_loader = loader; }
 
         void clear();
         bool isChunkLoaded(const glm::ivec3& pos){

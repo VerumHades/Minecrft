@@ -55,8 +55,7 @@ class GameState{
         void addEntity(Entity entity) {
             entities.push_back(entity);
         }
-        void drawEntityColliders(WireframeCubeRenderer& renderer, size_t start_index = 50);
-        
+
         bool entityCollision(Entity& entity, const glm::vec3& offset = {0,0,0});
 
         void giveItemToPlayer(ItemRef item);

@@ -43,8 +43,7 @@ bool RegionCuller::addMesh(MeshInterface* mesh, const glm::ivec3& pos){
     if(getRegion(transform)) return updateMesh(mesh, pos); // InstancedMesh and region already exist
     
     MeshRegion* region = createRegion(transform);
-   
-    region->loaded_mesh = mesh_loader->loadMesh(*mesh);
+    region->loaded_mesh = mesh_loader->loadMesh(mesh);
     
     return true;
 }
@@ -56,7 +55,9 @@ bool RegionCuller::updateMesh(MeshInterface* mesh, const glm::ivec3& pos){
     if(mesh->empty()) return false; // Don't register empty meshes
 
     auto& region = regions.at(transform);
-    region.loaded_mesh->update(*mesh);
+
+    if(region.loaded_mesh) region.loaded_mesh->update(mesh);
+    else region.loaded_mesh = mesh_loader->loadMesh(mesh);
     
     return true;
 }   
@@ -91,7 +92,7 @@ void RegionCuller::processRegionForDrawing(Frustum& frustum, MeshRegion* region)
             return;
         }
 
-        region->loaded_mesh->addDrawCall();
+        region->loaded_mesh->addDrawCall(region->transform.position);
         return;
     }
 
