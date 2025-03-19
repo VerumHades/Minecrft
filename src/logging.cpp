@@ -1,5 +1,7 @@
 #include <logging.hpp>
 
+//%localappdata%/Majnkraft/logs
+
 Logging::Logging(){
     std::time_t now = std::time(0);  // Get current system time
     std::tm* localTime = std::localtime(&now);  // Convert to local time
@@ -71,6 +73,7 @@ void Logging::Message(const std::string& descriptor, const std::string& message,
     std::tm* localTime = std::localtime(&now);  // Convert to local time
 
     outfile << std::put_time(localTime, "%Y-%m-%d %H:%M:%S \"") << file << "\" [at line " << line << "] <" << descriptor << "> " << message << std::endl;
+    //std::cout << std::put_time(localTime, "%Y-%m-%d %H:%M:%S \"") << file << "\" [at line " << line << "] <" << descriptor << "> " << message << std::endl;
 }
 
 void Logging::SetPath(const fs::path& path){
@@ -155,6 +158,6 @@ void CheckGLError(const char *file, int line){
             default:                               errorString = "Unknown error"; break;
         }
 
-        Logging::Get().Message("OPENGL_ERROR",errorString,line,file);
+        //Logging::Get().Message("OPENGL_ERROR",errorString,line,file);
     }
 }

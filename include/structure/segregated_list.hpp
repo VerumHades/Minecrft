@@ -7,7 +7,8 @@ template <typename K, typename T>
 class SegregatedList{
     private:
         std::unordered_map<K, std::vector<T>> groups;
-    
+        const std::vector<T> empty{};
+        
     public:
         void Push(const K& key, const std::vector<T>& values){
             if(!groups.contains(key)) groups[key] = {};
@@ -33,6 +34,7 @@ class SegregatedList{
         }
 
         const std::vector<T>& Get(const K& key) const {
+            if(!groups.contains(key)) return empty;
             return groups.at(key);
         }
 

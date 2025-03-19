@@ -69,7 +69,9 @@ std::unique_ptr<LoadedMeshInterface> PooledMeshLoader::loadMesh(MeshInterface* m
     auto loaded_mesh = std::make_unique<PooledMeshLoader::LoadedMesh>(*this);
 
     for(int i = 0;i < distinct_face_count;i++){
-        auto& component_data = mesh.GetData().Get(static_cast<PooledMesh::FaceType>(i));
+        auto type = static_cast<PooledMesh::FaceType>(i);
+
+        auto& component_data = mesh.GetData().Get(type);
         if(component_data.size() == 0){
             loaded_mesh->has_region[i] = false;
             continue;
@@ -104,25 +106,51 @@ void PooledMeshLoader::updateMesh(LoadedMesh& loaded_mesh, PooledMesh& new_mesh)
 }
 
 void PooledMeshLoader::addDrawCall(LoadedMesh& mesh, const glm::ivec3& position){
-    for(int i = 0;i < 3;i++) world_positions.push_back(position[i]);
+    world_positions.push_back(position.x);
+    world_positions.push_back(position.y);
+    world_positions.push_back(position.z);
+
     updated_world_positions = true;
 
     for(int i = 0;i < distinct_face_count;i++){
         auto& info = render_information[i];
 
-        if(!mesh.has_region[i]){
-            info.draw_starts.push_back(0); // To maintain alignment
-            info.draw_sizes.push_back(0);
+        if(!mesh.has_region[i]){ // Maintain alignment
+            if(legacy_mode){
+                info.draw_starts.push_back(0); 
+                info.draw_sizes.push_back(0);
+            }
+            else{
+                GLDrawCallBuffer::DrawCommand draw_call = {
+                    0, // Count
+                    0, // Number of instances to draw,
+                    0, // First vertex
+                    0 // Instance offset
+                };
+        
+                render_information[i].draw_call_buffer.push(draw_call);
+            }
+
             continue;
         }
         
         size_t instances_total = mesh.loaded_regions[i]->size  / PooledMesh::face_size;
         size_t instance_offset = mesh.loaded_regions[i]->start / PooledMesh::face_size;
 
-        instances_total *= (i == 3) ? 12 : 6; // For billboards
-
-        info.draw_starts.push_back(instance_offset);
-        info.draw_sizes.push_back(instances_total);
+        if(legacy_mode) {
+            info.draw_starts.push_back(instance_offset * 6);
+            info.draw_sizes.push_back(instances_total * 6);
+        }
+        else{
+            GLDrawCallBuffer::DrawCommand draw_call = {
+                instances_total * 6, // CountPin
+                1, // Number of instances to draw,
+                instance_offset * 6, // First vertex
+                0 // Instance offset
+            };
+    
+            render_information[i].draw_call_buffer.push(draw_call);
+        }
     }
 }
 
@@ -133,6 +161,11 @@ void PooledMeshLoader::removeMesh(LoadedMesh& mesh){
 }
 
 void PooledMeshLoader::render(){
+    GL_CALL( glEnable(GL_CULL_FACE));
+
+    dummy_vao.bind();
+    GetProgram().use();
+    
     if(updated_world_positions){
         world_position_buffer.insert_or_resize(world_positions.data(), world_positions.size());
         updated_world_positions = false;
@@ -140,22 +173,42 @@ void PooledMeshLoader::render(){
 
     world_position_buffer.bindBase(0);
 
-    for(auto& info: render_information){
-        info.mesh_data.getBuffer().bindBase(1);
+    for(int i = 0;i < distinct_face_count;i++){
+        auto& info = render_information[i];
 
-        glMultiDrawArrays(GL_TRIANGLES, info.draw_starts.data(), info.draw_sizes.data(), info.draw_starts.size());
+        info.mesh_data.getBuffer().bindBase(1);
+        info.draw_call_buffer.bind();
+        face_type_uniform = i;
+        GetProgram().updateUniforms();
+
+        if(legacy_mode) glMultiDrawArrays(GL_TRIANGLES, info.draw_starts.data(), info.draw_sizes.data(), info.draw_starts.size());
+        else glMultiDrawArraysIndirect(GL_TRIANGLES, 0, info.draw_call_buffer.count(), 0);
     }
+
+    dummy_vao.unbind();
+
+    GL_CALL( glDisable(GL_CULL_FACE));
 }
 
 void PooledMeshLoader::clearDrawCalls(){
     world_positions.clear();
+
     for(auto& info: render_information){
-        info.draw_starts.clear();
-        info.draw_sizes.clear();
+        if(legacy_mode){
+            info.draw_starts.clear();
+            info.draw_sizes.clear();
+        }
+        else info.draw_call_buffer.clear();
     }
+
     updated_world_positions = true;
 }
 
 void PooledMeshLoader::flushDrawCalls(){
-    
+    if(legacy_mode) return;
+
+    for(auto& info: render_information){
+        //std::cout << "Flushed draw calls: " << info.draw_call_buffer.count() << std::endl;
+        info.draw_call_buffer.flush();
+    }
 }

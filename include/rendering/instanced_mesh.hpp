@@ -51,6 +51,7 @@ class InstancedMeshLoader: public MeshLoaderInterface{
         
     private:
         static const size_t distinct_face_count = 4;
+        bool draw_failed = false;
 
         ShaderProgram shared_program = ShaderProgram("resources/shaders/terrain.vs","resources/shaders/terrain.fs");
 
@@ -75,4 +76,5 @@ class InstancedMeshLoader: public MeshLoaderInterface{
         void render() override;
         void clearDrawCalls() override;
         void flushDrawCalls() override;
+        bool DrawFailed() override { return draw_failed; }
 };

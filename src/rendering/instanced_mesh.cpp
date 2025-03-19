@@ -213,7 +213,13 @@ void InstancedMeshLoader::render(){
     for(auto& info: render_information){
         info.vao.bind();
         info.draw_call_buffer.bind();
-        GL_CALL( glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, info.draw_call_buffer.count(), sizeof(GLDrawCallBuffer::DrawCommand)));
+        
+        glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, info.draw_call_buffer.count(), sizeof(GLDrawCallBuffer::DrawCommand));
+
+        GLenum error = glGetError();
+        if(error == GL_INVALID_OPERATION) {
+            draw_failed = true;
+        }
         info.vao.unbind();
     }
 }

@@ -21,7 +21,7 @@ class TerrainManager{
         ChunkMeshGenerator mesh_generator;
         
         RegionCuller mesh_registry;
-        std::unique_ptr<InstancedMeshLoader> mesh_loader;
+        std::unique_ptr<MeshLoaderInterface> mesh_loader;
 
         WorldGenerator world_generator;
         
@@ -64,13 +64,19 @@ class TerrainManager{
 
         bool HandlePriorityMeshes();
 
-        void ResetLoader(){
+        std::function<std::unique_ptr<MeshInterface>()> create_mesh = [](){ return std::make_unique<InstancedMesh>(); };
+        std::function<void(void)> reset_loader = [this](){
             mesh_loader = std::make_unique<InstancedMeshLoader>();
             mesh_registry.SetMeshLoader(mesh_loader.get());
-        }
+        };
+
 
     public:
         TerrainManager();
+        ~TerrainManager(){
+            StopGeneratingRegion();
+            StopMeshingRegion();
+        }
         // Actually deploys meshes
         void unloadAll();
 

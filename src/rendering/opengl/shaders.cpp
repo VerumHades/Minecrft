@@ -17,6 +17,7 @@ uint compileShader(const char* source, int type, std::string filename = ""){
         GL_CALL( glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]));
 
         LogError("Error when compiling shader ({}): {}", ((filename != "") ? "In file: " + filename : ""), errorLog);
+        std::cout << std::format("Error when compiling shader ({}): {}", ((filename != "") ? "In file: " + filename : ""), errorLog) << std::endl;
         free(errorLog);
 
         // Provide the infolog in whatever manor you deem best.

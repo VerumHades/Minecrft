@@ -1,7 +1,7 @@
 #include <game/terrain_manager.hpp>
 
 TerrainManager::TerrainManager(){
-    ResetLoader();
+    reset_loader();
 }
 
 bool TerrainManager::GenerateRegion(const glm::ivec3& around, int render_distance){
@@ -100,7 +100,7 @@ bool TerrainManager::MeshRegion(const glm::ivec3& around, int render_distance){
 
             auto level = calculateSimplificationLevel(around,chunkPosition);
 
-            mesh_generator.syncGenerateAsyncUploadMesh(chunk, std::make_unique<InstancedMesh>(), level);
+            mesh_generator.syncGenerateAsyncUploadMesh(chunk, create_mesh(), level);
         }
     }
 
@@ -111,7 +111,7 @@ bool TerrainManager::MeshRegion(const glm::ivec3& around, int render_distance){
 
 bool TerrainManager::HandlePriorityMeshes(){
     if(has_priority_meshes && priority_count > 0){
-        mesh_generator.syncGenerateAsyncUploadMesh(priority_mesh_queue[(priority_count--) - 1], std::make_unique<InstancedMesh>(), BitField3D::NONE);
+        mesh_generator.syncGenerateAsyncUploadMesh(priority_mesh_queue[(priority_count--) - 1], create_mesh(), BitField3D::NONE);
         return true;
     }
     else if(has_priority_meshes && priority_count == 0) has_priority_meshes = false;
@@ -119,6 +119,14 @@ bool TerrainManager::HandlePriorityMeshes(){
 }
 bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance){
     if(!game_state || !game_state->world_stream) return false;
+
+    if(mesh_loader->DrawFailed()){
+        create_mesh = [](){ return std::make_unique<PooledMesh>(); };
+        reset_loader = [this](){
+            mesh_loader = std::make_unique<PooledMeshLoader>();
+            mesh_registry.SetMeshLoader(mesh_loader.get());
+        };
+    }
 
     StopGeneratingRegion();
     StopMeshingRegion();
@@ -145,7 +153,7 @@ bool TerrainManager::uploadPendingMeshes(){
 
 void TerrainManager::unloadAll(){
     mesh_registry.clear();
-    ResetLoader();
+    reset_loader();
 }
 
 #define regenMesh(position) { \
@@ -168,7 +176,7 @@ void TerrainManager::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){
 #undef regenMesh
 
 void TerrainManager::regenerateChunkMesh(Chunk* chunk){
-    if(!meshing_region) mesh_generator.syncGenerateSyncUploadMesh(chunk, mesh_registry, std::make_unique<InstancedMesh>(), BitField3D::NONE);
+    if(!meshing_region) mesh_generator.syncGenerateSyncUploadMesh(chunk, mesh_registry, create_mesh(), BitField3D::NONE);
     else if(!has_priority_meshes){
         priority_mesh_queue[priority_count++] = chunk;
     }

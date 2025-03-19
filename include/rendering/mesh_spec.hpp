@@ -38,4 +38,5 @@ class MeshLoaderInterface{
         virtual void render() = 0;
         virtual void clearDrawCalls() = 0;
         virtual void flushDrawCalls() = 0;
+        virtual bool DrawFailed() = 0;
 };

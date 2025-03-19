@@ -193,7 +193,7 @@ class ShaderProgram{
             this->program = glCreateProgram();
         }
         ~ShaderProgram(){
-            GL_CALL( glDeleteProgram(this->program));
+            if(this->program != -1) {GL_CALL( glDeleteProgram(this->program))};
             ShaderUniformLinker::get().removeProgram(this);
         }
 
@@ -207,7 +207,7 @@ class ShaderProgram{
 
         ShaderProgram& operator=(ShaderProgram&& other) noexcept {
             if (this != &other) {
-                glDeleteProgram(this->program);
+                if(this->program != -1) {GL_CALL( glDeleteProgram(this->program))};
                 program = other.program;
                 other.program = -1;
             }

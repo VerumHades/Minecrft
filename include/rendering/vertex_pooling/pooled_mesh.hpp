@@ -1,8 +1,12 @@
 #pragma once
 
-#include <rendering/mesh_spec.hpp>
+
 #include <structure/segregated_list.hpp>
+
+#include <rendering/opengl/shaders.hpp>
+#include <rendering/mesh_spec.hpp>
 #include <rendering/opengl/buffer.hpp>
+
 #include <glm/glm.hpp>
 #include <coherency.hpp>
 
@@ -62,15 +66,30 @@ class PooledMeshLoader: public MeshLoaderInterface{
         };
         
     private:
-        static const size_t distinct_face_count = 4;
+        static const size_t distinct_face_count = 3;
+        static ShaderProgram& GetProgram(){
+            static std::unique_ptr<ShaderProgram> program = nullptr;
+            if(!program){
+                program = std::make_unique<ShaderProgram>("resources/shaders/graphical/vertex_pooling/pooling.vs","resources/shaders/graphical/vertex_pooling/pooling.fs");
+                program->setSamplerSlot("textureArray", 0);
+                program->setSamplerSlot("shadowMap", 1);
+            }
+            return *program;
+        }
+
+        Uniform<float> face_type_uniform = Uniform<float>("FaceType");
+
+        bool legacy_mode = true;
+
+        GLVertexArray dummy_vao;
 
         GLBuffer<int32_t, GL_SHADER_STORAGE_BUFFER> world_position_buffer;
-        
         std::vector<int32_t> world_positions = {};
         bool updated_world_positions = false;
 
         struct RenderableGroup{
             GLCoherentBuffer<uint32_t, GL_SHADER_STORAGE_BUFFER> mesh_data{};
+            GLDrawCallBuffer draw_call_buffer{};
 
             std::vector<int> draw_starts = {};
             std::vector<GLsizei> draw_sizes = {};
@@ -90,4 +109,5 @@ class PooledMeshLoader: public MeshLoaderInterface{
         void render() override;
         void clearDrawCalls() override;
         void flushDrawCalls() override;
+        bool DrawFailed() override {return false;}
 };
