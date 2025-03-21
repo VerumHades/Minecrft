@@ -8,6 +8,7 @@
 #include <rendering/opengl/buffer.hpp>
 #include <rendering/opengl/shaders.hpp>
 #include <memory>
+#include <atomic>
 #include <rendering/mesh_spec.hpp>
 
 class InstancedMesh: public MeshInterface{
@@ -52,6 +53,7 @@ class InstancedMeshLoader: public MeshLoaderInterface{
     private:
         static const size_t distinct_face_count = 4;
         bool draw_failed = false;
+        std::atomic<bool> buffer_flush = false;
 
         ShaderProgram shared_program = ShaderProgram("resources/shaders/terrain.vs","resources/shaders/terrain.fs");
 

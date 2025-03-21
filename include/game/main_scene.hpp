@@ -65,7 +65,7 @@ class MainScene: public Scene{
 
         SpiralIndexer3D indexer;
 
-        GBuffer gBuffer = GBuffer(1920,1080);
+        std::shared_ptr<GBuffer> gBuffer;
         GLFullscreenQuad fullscreen_quad;
 
         ShaderProgram modelProgram = ShaderProgram("resources/shaders/graphical/model/model.vs","resources/shaders/graphical/model/model.fs");

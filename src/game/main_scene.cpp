@@ -3,6 +3,8 @@
 void MainScene::initialize(){
     fpsLock = false;
  
+    gBuffer = std::make_shared<GBuffer>(1920,1080);
+
     this->setUILayer("settings");
     addElement(getElementById<UIScrollableFrame>("settings_scrollable"));
 
@@ -147,7 +149,7 @@ void MainScene::initialize(){
 
 void MainScene::resize(GLFWwindow* window, int width, int height){
     camera.resizeScreen(width, height, camFOV);
-    gBuffer = GBuffer(width,height);
+    gBuffer = std::make_shared<GBuffer>(width,height);
     
     skyboxProgram.updateUniforms();
 }
@@ -332,7 +334,7 @@ void MainScene::render(){
     }*/
 
 
-    gBuffer.bind();
+    gBuffer->bind();
         GL_CALL( glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight()));
 
         if (lineMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -359,20 +361,20 @@ void MainScene::render(){
         cubeRenderer.draw();
 
         GL_CALL( glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
-    gBuffer.unbind();
+    gBuffer->unbind();
 
-    //timer.timestamp("Rendered to gBuffer.");
+    //timer.timestamp("Rendered to gBuffer->");
     
     gBufferProgram.updateUniforms();
     
-    GL_CALL( glViewport(0, 0, gBuffer.getWidth(), gBuffer.getHeight()));
+    GL_CALL( glViewport(0, 0, gBuffer->getWidth(), gBuffer->getHeight()));
     GL_CALL( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-    gBuffer.bindTextures();
+    gBuffer->bindTextures();
     
         fullscreen_quad.render();
 
-    gBuffer.unbindTextures();
+    gBuffer->unbindTextures();
     //timer.timestamp("Rendered to screen.");
 }
 
@@ -397,7 +399,7 @@ void MainScene::physicsUpdate(){
         last_tick_time = current;
 
         glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
-        if(glm::distance(glm::vec3(camWorldPosition),glm::vec3(lastCamWorldPosition)) >= 2 || update_render_distance){ // Crossed chunks
+        if(glm::distance(glm::vec2(camWorldPosition.x,camWorldPosition.z),glm::vec2(lastCamWorldPosition.x ,lastCamWorldPosition.z)) >= 2 || update_render_distance){ // Crossed chunks
 
             updateLoadedLocations(lastCamWorldPosition, camWorldPosition);
             lastCamWorldPosition = camWorldPosition;

@@ -9,6 +9,7 @@
 #include <iomanip>    
 #include <string>    
 #include <bitset>
+#include <mutex>
 
 struct TransformHash;
 struct TransformEqual;
@@ -103,6 +104,12 @@ class RegionCuller{
 
         MeshLoaderInterface* mesh_loader = nullptr;
 
+        std::mutex mesh_change_mutex;
+
+
+
+        bool updateMeshUnguarded(MeshInterface* mesh, const glm::ivec3& pos);
+
     public:
         RegionCuller();
 
@@ -131,6 +138,8 @@ class RegionCuller{
             Updates a mesh, splits regions if old mesh is a part of them
         */
         bool updateMesh(MeshInterface* mesh, const glm::ivec3& pos);
+
+        bool removeMesh(const glm::ivec3& pos);
 
         /*
             Creates a region and all its parents if they dont already exist.

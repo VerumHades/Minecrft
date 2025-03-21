@@ -37,18 +37,18 @@ RegionCuller::RegionCuller(){
 }
 
 bool RegionCuller::addMesh(MeshInterface* mesh, const glm::ivec3& pos){
+    std::lock_guard lock(mesh_change_mutex);
     MeshRegion::Transform transform = {pos,1};
 
     if(mesh->empty()) return true;    
-    if(getRegion(transform)) return updateMesh(mesh, pos); // InstancedMesh and region already exist
+    if(getRegion(transform)) return updateMeshUnguarded(mesh, pos); // InstancedMesh and region already exist
     
     MeshRegion* region = createRegion(transform);
     region->loaded_mesh = mesh_loader->loadMesh(mesh);
     
     return true;
 }
-
-bool RegionCuller::updateMesh(MeshInterface* mesh, const glm::ivec3& pos){
+bool RegionCuller::updateMeshUnguarded(MeshInterface* mesh, const glm::ivec3& pos){
     MeshRegion::Transform transform = {pos,1};
 
     if(!getRegion(transform)) return false; // InstancedMesh region doesn't exist
@@ -60,7 +60,27 @@ bool RegionCuller::updateMesh(MeshInterface* mesh, const glm::ivec3& pos){
     else region.loaded_mesh = mesh_loader->loadMesh(mesh);
     
     return true;
+}
+bool RegionCuller::updateMesh(MeshInterface* mesh, const glm::ivec3& pos){
+    std::lock_guard lock(mesh_change_mutex);
+    return updateMeshUnguarded(mesh,pos);
 }   
+bool RegionCuller::removeMesh(const glm::ivec3& pos){
+    std::lock_guard lock(mesh_change_mutex);
+    MeshRegion::Transform transform = {pos,1};
+
+    if(!getRegion(transform)) return false; // InstancedMesh region doesn't exist
+
+    auto& region = regions.at(transform);
+
+    if(region.loaded_mesh){
+        region.loaded_mesh->destroy();
+        region.loaded_mesh = nullptr;
+    }
+    
+    
+    return true;
+}
 
 MeshRegion* RegionCuller::createRegion(MeshRegion::Transform transform){
     if(transform.level > maxRegionLevel) return nullptr; // Over the max region level

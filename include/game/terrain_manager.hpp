@@ -33,6 +33,10 @@ class TerrainManager{
         std::atomic<bool> has_priority_meshes = false;
         std::array<Chunk*, 4> priority_mesh_queue{};
         int priority_count = 0;
+
+
+        int bottom_y = -3;
+        int top_y    =  3;
         
         BitField3D::SimplificationLevel calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition);
         //void loadChunk(const glm::ivec3& position);
@@ -40,7 +44,7 @@ class TerrainManager{
 
         std::atomic<bool> stop_generating_region = false;
         std::atomic<bool> generating_region = false;
-        std::atomic<int> generated_distance = 0;
+        std::atomic<int> generated_count = 0;
         bool GenerateRegion(const glm::ivec3& around, int render_distance);
 
         void StopGeneratingRegion(){
@@ -70,12 +74,30 @@ class TerrainManager{
             mesh_registry.SetMeshLoader(mesh_loader.get());
         };
 
+        std::mutex loaded_column_mutex;
+        std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> loaded_columns;
+        
+        void UnloadChunkColumn(const glm::ivec2& position);
+
+        int unloader_wave_time = 10000; // 30 seconds for each unloader pass
+        std::atomic<bool> stop_unloader = false;
+        std::atomic<bool> unloader_running = false;
+
+        std::atomic<int> unloader_distance = 10;
+        std::atomic<int> unloader_x = 0;
+        std::atomic<int> unloader_z = 0;
+
+        void LaunchChunkUnloader();
+
 
     public:
         TerrainManager();
         ~TerrainManager(){
             StopGeneratingRegion();
             StopMeshingRegion();
+
+            stop_unloader = true;
+            while(unloader_running) {}
         }
         // Actually deploys meshes
         void unloadAll();

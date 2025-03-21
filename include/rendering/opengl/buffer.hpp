@@ -379,7 +379,7 @@ class GLCoherentBuffer: public CoherentList<T> {
         GLCoherentBuffer(){}
         auto& getBuffer() { return buffer; };
         void flush(){
-            if(CoherentList<T>::size() > buffer.size()) buffer.initialize(CoherentList<T>::size(), CoherentList<T>::data());
+            if(CoherentList<T>::size() > buffer.size() || buffer.size() == 0) buffer.initialize(CoherentList<T>::size(), CoherentList<T>::data());
             else buffer.insert(0, CoherentList<T>::size(), CoherentList<T>::data());
         }
 };

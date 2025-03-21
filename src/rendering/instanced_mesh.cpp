@@ -203,11 +203,18 @@ void InstancedMeshLoader::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new
 
 void InstancedMeshLoader::removeMesh(LoadedMesh& mesh){
     for(int i = 0;i < distinct_face_count;i++){
+        if(!mesh.has_region[i]) continue;
+
         render_information[i].instance_data.remove(mesh.loaded_regions[i]);
+        buffer_flush = true;
     }
 }
 
 void InstancedMeshLoader::render(){
+    if(buffer_flush){
+        for(int i = 0;i < distinct_face_count;i++) render_information[i].instance_data.flush();
+        buffer_flush = false;
+    }
     shared_program.updateUniforms();
 
     for(auto& info: render_information){
