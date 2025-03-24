@@ -17,11 +17,13 @@ class Service{
             ModuleFunction function;
         };
 
-        std::unordered_map<std::string, Module> registered_modules;    
+        std::unordered_map<std::string, std::unique_ptr<Module>> registered_modules;    
 
         Module* GetModule(const std::string& name);
+        const Module* GetModule(const std::string& name)  const;
 
     public:
+        Service() = default;
         ~Service();
 
         Service(const Service& other) = delete;
@@ -34,6 +36,8 @@ class Service{
 
         void Start(const std::string& name, bool restart = false);
         void StartAll(bool restart = false);
+
+        bool IsRunning(const std::string& name) const;
 
         void AddModule(const std::string& name, const ModuleFunction& module_function);
 };  

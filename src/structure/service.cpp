@@ -6,7 +6,12 @@ Service::~Service(){
 
 Service::Module* Service::GetModule(const std::string& name){
     if(!registered_modules.contains(name)) return nullptr;
-    return &registered_modules.at(name);
+    return registered_modules.at(name).get();
+}
+
+const Service::Module* Service::GetModule(const std::string& name) const {
+    if(!registered_modules.contains(name)) return nullptr;
+    return registered_modules.at(name).get();
 }
 
 void Service::Stop(const std::string& name, int timeout){
@@ -23,11 +28,13 @@ void Service::StopAll(int timeout){
     for(auto& [name, module]: registered_modules) Stop(name);
 }
 
-void Service::Start(const std::string& name, bool restart = false){
+void Service::Start(const std::string& name, bool restart){
     auto* module = GetModule(name);
     if(!module) return;
+    if(module->running && !restart) return;
+    if(module->running) Stop(name);
 
-    std::thread module_thread([module](){
+    std::thread module_thread([module, name](){
         module->running = true;
         module->function(module->should_stop);
         module->running = false;
@@ -35,16 +42,18 @@ void Service::Start(const std::string& name, bool restart = false){
 
     module_thread.detach();
 }
-void Service::StartAll(bool restart = false){
-    for(auto& [name, module]: registered_modules) Start(name);
+
+void Service::StartAll(bool restart){
+    for(auto& [name, module]: registered_modules) Start(name, restart);
 }
 
 void Service::AddModule(const std::string& name, const ModuleFunction& module_function){
-    for(auto& [name, module]: registered_modules){
-        if(!module.running) continue;
-        LogError("Cannot add module to service when any modules are running.");
-        return;
-    }
+    registered_modules.emplace(name, std::make_unique<Module>(false, false, module_function));
+}
 
-    registered_modules.emplace(name, Module{false, false, module_function});
+bool Service::IsRunning(const std::string& name) const {
+    auto* module = GetModule(name);
+    if(!module) return false;
+
+    return module->running.load();
 }
