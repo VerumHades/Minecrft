@@ -335,6 +335,11 @@ void MainScene::render(){
         wireframeRenderer.setCube(counter++, position, glm::vec3{CHUNK_SIZE}, glm::vec3{0.1,0.5,0.5});
     }*/
 
+    sunDirUniform.setValue({ 
+        cos(glm::radians(sunAngle)), // X position (cosine component)
+        sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
+        0  // Z position (cosine component)
+    });
 
     gBuffer->bind();
         GL_CALL( glViewport(0,0,camera.getScreenWidth(),camera.getScreenHeight()));
@@ -391,9 +396,18 @@ void MainScene::physicsUpdate(){
 
     updateLoadedLocations({},glm::ivec3{game_state->getPlayer().getPosition() / (float)CHUNK_SIZE});
 
+    double last_sun_move_time = glfwGetTime();
+
     while(running){
         current = glfwGetTime();
         deltatime = (float)(current - last_tick_time);
+
+        /*if(current - last_sun_move_time > 0.01){
+            sunAngle = sunAngle + 0.1;
+            if(sunAngle > 360.0f) sunAngle = 0;
+            std::cout << sunAngle << std::endl;
+            last_sun_move_time = glfwGetTime();
+        }*/
 
         //threadPool->deployPendingJobs();
 

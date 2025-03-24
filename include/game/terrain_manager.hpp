@@ -9,6 +9,7 @@
 #include <game/world/world_generation.hpp>
 #include <game/game_state.hpp>
 
+#include <structure/service.hpp>
 
 #include <atomic>
 #include <indexing.hpp>
@@ -19,29 +20,22 @@
 class TerrainManager{
     private:
         ChunkMeshGenerator mesh_generator;
-        
+        WorldGenerator world_generator;
+
         RegionCuller mesh_registry;
         std::unique_ptr<MeshLoaderInterface> mesh_loader;
-
-        WorldGenerator world_generator;
         
         GameState* game_state = nullptr;
-
-        static const int thread_count = 8;
-        std::array<std::atomic<int>, thread_count> generation_left;
 
         std::atomic<bool> has_priority_meshes = false;
         std::array<Chunk*, 4> priority_mesh_queue{};
         int priority_count = 0;
 
-
         int bottom_y = -3;
         int top_y    =  3;
         
         BitField3D::SimplificationLevel calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition);
-        //void loadChunk(const glm::ivec3& position);
-        //void unloadChunk(const glm::ivec3& position);
-
+        
         std::atomic<bool> stop_generating_region = false;
         std::atomic<bool> generating_region = false;
         std::atomic<int> generated_count = 0;
