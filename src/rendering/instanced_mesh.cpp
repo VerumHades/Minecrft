@@ -155,6 +155,8 @@ std::unique_ptr<LoadedMeshInterface> InstancedMeshLoader::loadMesh(MeshInterface
         loaded_mesh->has_region[i] = true;
 
         render_information[i].instance_data.flush();
+
+        updated = true;
     }
 
     return loaded_mesh;
@@ -197,7 +199,7 @@ void InstancedMeshLoader::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new
 
         loaded_mesh.has_region[i] = true;
 
-        render_information[i].instance_data.flush();
+        updated = true;
     }
 }
 
@@ -206,15 +208,12 @@ void InstancedMeshLoader::removeMesh(LoadedMesh& mesh){
         if(!mesh.has_region[i]) continue;
 
         render_information[i].instance_data.remove(mesh.loaded_regions[i]);
-        buffer_flush = true;
+
+        updated = true;
     }
 }
 
 void InstancedMeshLoader::render(){
-    if(buffer_flush){
-        for(int i = 0;i < distinct_face_count;i++) render_information[i].instance_data.flush();
-        buffer_flush = false;
-    }
     shared_program.updateUniforms();
 
     for(auto& info: render_information){
@@ -224,9 +223,8 @@ void InstancedMeshLoader::render(){
         glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, info.draw_call_buffer.count(), sizeof(GLDrawCallBuffer::DrawCommand));
 
         GLenum error = glGetError();
-        if(error == GL_INVALID_OPERATION) {
-            draw_failed = true;
-        }
+        if(error == GL_INVALID_OPERATION) draw_failed = true;
+        
         info.vao.unbind();
     }
 }
@@ -239,5 +237,6 @@ void InstancedMeshLoader::flushDrawCalls(){
     for(auto& info: render_information){
         //std::cout << "Flushed draw calls: " << info.draw_call_buffer.count() << std::endl;
         info.draw_call_buffer.flush();
+        if(updated) info.instance_data.flush();
     }
 }

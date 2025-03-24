@@ -162,6 +162,7 @@ class MainScene: public Scene{
         int sunDistance = 100;
         float sunAngle = 70.0f;
         Uniform<glm::vec3> sunDirUniform = Uniform<glm::vec3>("sun_direction");
+        Uniform<float> fogDensity = Uniform<float>("fog_density");
 
         float camAcceleration = 50.00f;
         float camFOV = 90.0f;

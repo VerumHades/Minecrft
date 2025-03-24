@@ -37,14 +37,15 @@ class WorldGenerator{
 
         bool isChunkSkipable(Chunk* chunk, const glm::ivec3 position);
         Heightmap& getHeightmapFor(glm::ivec3 position);
-    private:
-        FastNoiseLite noise;
-        int seed;
 
         std::unordered_map<glm::ivec3, std::unique_ptr<WorldGenerator::Heightmap>, IVec3Hash, IVec3Equal>& getHeightMaps(){
             static std::unordered_map<glm::ivec3, std::unique_ptr<WorldGenerator::Heightmap>, IVec3Hash, IVec3Equal> height_maps{};
             return height_maps;
         }
+
+    private:
+        FastNoiseLite noise;
+        int seed;
 
         std::shared_ptr<Structure> tree;
                     
@@ -53,7 +54,7 @@ class WorldGenerator{
 
         float getNoiseValueAt(const glm::vec3 position);
 
-        const int water_level = 40;
+        const int water_level = 20;
 
     public:
         WorldGenerator();

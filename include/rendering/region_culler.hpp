@@ -29,10 +29,14 @@ class MeshRegion{
             uint level = 1;
         } transform;
 
+        std::bitset<8> child_registry;
+
         RegionCuller& registry;
         MeshRegion(Transform& transform, RegionCuller& registry): transform(transform), registry(registry) {}
 
         std::unique_ptr<LoadedMeshInterface> loaded_mesh = nullptr;
+
+        void SetChild(uint x, uint y, uint z, bool value);
 
         /*
             Returns a pointer to the regions parent, if the region has no parents return nullptr
@@ -106,8 +110,6 @@ class RegionCuller{
 
         std::mutex mesh_change_mutex;
 
-
-
         bool updateMeshUnguarded(MeshInterface* mesh, const glm::ivec3& pos);
 
     public:
@@ -151,6 +153,19 @@ class RegionCuller{
         MeshRegion* getRegion(MeshRegion::Transform transform) {
             if(!regions.contains(transform)) return nullptr;
             return &regions.at(transform);
+        }
+
+        void removeRegion(MeshRegion::Transform transform){
+            auto* region = getRegion(transform);
+            if(!region) return;
+            
+            auto* parent = region->getParentRegion();
+            if(parent){
+                auto pos = region->getParentRelativePosition();
+                parent->SetChild(pos.x,pos.y,pos.z, false);
+            }
+
+            regions.erase(transform);
         }
 
         /*

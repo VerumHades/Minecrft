@@ -44,7 +44,7 @@ class ChunkMeshGenerator{
 
     private:
         std::vector<Face>& greedyMeshPlane(BitPlane<64> rows, int start = 0, int end = 64);
-        void generateChunkMesh(const glm::ivec3& position, MeshInterface* output, Chunk* group, BitField3D::SimplificationLevel simplification_level);
+        bool generateChunkMesh(const glm::ivec3& position, MeshInterface* output, Chunk* group, BitField3D::SimplificationLevel simplification_level);
 
         std::mutex meshLoadingMutex;
         
@@ -96,12 +96,12 @@ class ChunkMeshGenerator{
 
             ISNT RESPONSIBLE FOR ACTUALLY UPLOADING THE MESH
         */
-        void syncGenerateAsyncUploadMesh(Chunk* chunk, std::unique_ptr<MeshInterface> mesh, BitField3D::SimplificationLevel simplification_level);
+        bool syncGenerateAsyncUploadMesh(Chunk* chunk, std::unique_ptr<MeshInterface> mesh, BitField3D::SimplificationLevel simplification_level);
 
         /*
             Generates and uploads the newly generated chunk mesh right away
         */
-        void syncGenerateSyncUploadMesh(Chunk* chunk, RegionCuller& buffer, std::unique_ptr<MeshInterface> mesh, BitField3D::SimplificationLevel simplification_level);
+        bool syncGenerateSyncUploadMesh(Chunk* chunk, RegionCuller& buffer, std::unique_ptr<MeshInterface> mesh, BitField3D::SimplificationLevel simplification_level);
 
         void setWorld(Terrain* world){this->world = world;}
 };

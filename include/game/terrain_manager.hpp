@@ -75,9 +75,16 @@ class TerrainManager{
         };
 
         std::mutex loaded_column_mutex;
-        std::unordered_set<glm::ivec3, IVec3Hash, IVec3Equal> loaded_columns;
+        std::unordered_set<glm::ivec2, IVec2Hash, IVec2Equal> loaded_columns;
         
         void UnloadChunkColumn(const glm::ivec2& position);
+
+        void StopUnloader(){
+            if(!unloader_running) return;
+            stop_unloader = true;
+            while(unloader_running) {}
+            stop_unloader = false;
+        }
 
         int unloader_wave_time = 10000; // 30 seconds for each unloader pass
         std::atomic<bool> stop_unloader = false;
@@ -95,6 +102,7 @@ class TerrainManager{
         ~TerrainManager(){
             StopGeneratingRegion();
             StopMeshingRegion();
+            StopUnloader();
 
             stop_unloader = true;
             while(unloader_running) {}

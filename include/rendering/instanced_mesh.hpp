@@ -53,7 +53,7 @@ class InstancedMeshLoader: public MeshLoaderInterface{
     private:
         static const size_t distinct_face_count = 4;
         bool draw_failed = false;
-        std::atomic<bool> buffer_flush = false;
+        bool updated = false;
 
         ShaderProgram shared_program = ShaderProgram("resources/shaders/terrain.vs","resources/shaders/terrain.fs");
 

@@ -29,6 +29,13 @@ MeshRegion* MeshRegion::getSubregion(uint x, uint y, uint z){
     return  registry.getRegion({subregion_position, subregion_level});
 }
 
+void MeshRegion::SetChild(uint x, uint y, uint z, bool value){
+    if(value) child_registry.set(x + y * 2 + z * 4);
+    else child_registry.reset(x + y * 2 + z * 4);
+
+    if(child_registry == 0) registry.removeRegion(this->transform);
+}
+
 RegionCuller::RegionCuller(){
     actualRegionSizes.push_back(1);
     for(int i = 1;i < maxRegionLevel;i++){
@@ -77,7 +84,8 @@ bool RegionCuller::removeMesh(const glm::ivec3& pos){
         region.loaded_mesh->destroy();
         region.loaded_mesh = nullptr;
     }
-    
+
+    removeRegion(transform);
     
     return true;
 }
@@ -92,7 +100,11 @@ MeshRegion* RegionCuller::createRegion(MeshRegion::Transform transform){
         createRegion(
             {region.getParentPosition(), region.transform.level + 1}
         );
-
+        
+    auto* parent = region.getParentRegion();
+    auto pos = region.getParentRelativePosition();
+    if(parent) parent->SetChild(pos.x,pos.y,pos.z, true);
+    
     return &regions.at(transform);
 }
 

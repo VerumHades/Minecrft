@@ -28,21 +28,28 @@ bool ChunkMeshGenerator::loadMeshFromQueue(RegionCuller&  buffer, size_t limit){
     return true;
 }
 
-void ChunkMeshGenerator::syncGenerateAsyncUploadMesh(Chunk* chunk, std::unique_ptr<MeshInterface> mesh, BitField3D::SimplificationLevel simplification_level){
+bool ChunkMeshGenerator::syncGenerateAsyncUploadMesh(Chunk* chunk, std::unique_ptr<MeshInterface> mesh, BitField3D::SimplificationLevel simplification_level){
     auto start = std::chrono::high_resolution_clock::now();
 
     auto world_position = chunk->getWorldPosition();
-    generateChunkMesh(world_position, mesh.get(), chunk, simplification_level);
+    bool result = generateChunkMesh(world_position, mesh.get(), chunk, simplification_level);
+    
+    if(!result) return false;
 
     addToChunkMeshLoadingQueue(world_position, std::move(mesh));
     meshes_pending = true;
+    
+    return true;
 }
 
-void ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, RegionCuller& buffer, std::unique_ptr<MeshInterface> mesh, BitField3D::SimplificationLevel simplification_level){
+bool ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, RegionCuller& buffer, std::unique_ptr<MeshInterface> mesh, BitField3D::SimplificationLevel simplification_level){
     auto world_position = chunk->getWorldPosition();
-    generateChunkMesh(world_position, mesh.get(), chunk, simplification_level);
+    bool result = generateChunkMesh(world_position, mesh.get(), chunk, simplification_level);
 
+    if(!result) return false;
     buffer.addMesh(mesh.get(), chunk->getWorldPosition());
+    
+    return true;
 }
 
 /*
@@ -312,15 +319,15 @@ void ChunkMeshGenerator::proccessOccludedFaces(
     agregateTypes##axis.insert(group->getPresentTypes().begin(), group->getPresentTypes().end());
 
 
-void ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, MeshInterface* solidMesh, Chunk* group, BitField3D::SimplificationLevel simplification_level){
+bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, MeshInterface* solidMesh, Chunk* group, BitField3D::SimplificationLevel simplification_level){
     if(!group){
         LogError("Missing chunk when generating mesh.");
-        return;
+        return false;
     }
 
     if(!world){
         LogError( "No world assigned, quitting mesh generation.");
-        return;
+        return false;
     }
 
     group->current_simplification = simplification_level;
@@ -335,8 +342,8 @@ void ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
 
     
     if(!nextX || !nextY || !nextZ || !forwardX || !forwardY || !forwardZ){
-        LogError("Mesh generating when chunks are missing?");
-        return;
+        //LogError("Mesh generating when chunks are missing?");
+        return false;
     }
     
     //this->solidMesh->setVertexFormat(VertexFormat({3,1,2,1,1}));  // Unused
@@ -360,17 +367,6 @@ void ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
             occlusionPlanesZ[x].rows[y + 1] = solidRotated->getRow(x,y);
         }   
 
-        auto* left  = nextX->getSolidField().getTransposed(); 
-        auto* right = forwardX->getSolidField().getTransposed();
-        auto& back  = nextZ->getSolidField();
-        auto& front = forwardZ->getSolidField();
-
-        /*for(int y = 0;y < 64;y++){
-            occlusionPlanesY[y].rows[0]  = back .getRow(63,y);
-            occlusionPlanesY[y].rows[65] = front.getRow(0 ,y);
-            occlusionPlanesY[y].left  = left->getRow(63, y);
-            occlusionPlanesY[y].right = right->getRow(0,y);
-        }*/
     }
     //timer.timestamp("Generated occlusion planes");
 
@@ -598,4 +594,6 @@ void ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
     //std::cout << "Vertices:" << solidMesh->getIndices().size() << std::endl;
     
     solidMesh->shrink();
+
+    return true;
 }

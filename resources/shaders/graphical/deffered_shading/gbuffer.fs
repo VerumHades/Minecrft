@@ -8,6 +8,7 @@ uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpec;
 
 uniform vec3 sun_direction;
+uniform float fog_density;
 uniform vec3 player_camera_position;
 uniform mat4 player_camera_view_matrix;
 
@@ -44,5 +45,17 @@ void main()
     vec3 ambient = vec3(0.4) + dot(sun_direction, vec3(0,1,0));
 
     vec3 result = (ambient + diffuse + specular) * Albedo;
-    FragColor = vec4(result, 1.0);
+
+    const vec3 fogColor = vec3(0.529, 0.808, 0.922) - 0.1;
+
+    float distance = length(player_camera_position - FragPosWorld);
+
+    // Exponential fog factor
+    float fogFactor = exp(-fog_density * distance);
+    fogFactor = clamp(fogFactor, 0.0, 1.0);
+
+    // Blend between object color and fog color
+    vec3 finalColor = mix(fogColor, result.rgb, fogFactor);
+
+    FragColor = vec4(finalColor, 1.0);
 }  

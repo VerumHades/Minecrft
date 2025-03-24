@@ -130,7 +130,7 @@ void GameState::unloadChunk(const glm::ivec3& position){
     auto* chunk = terrain.getChunk(position);
     if(!chunk) return;
 
-    if(world_stream) world_stream->save(*chunk);
+    ///if(world_stream) world_stream->save(*chunk);
     terrain.removeChunk(position);
 }
 
