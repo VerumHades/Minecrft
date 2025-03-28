@@ -15,12 +15,6 @@
 #include <path_config.hpp>
 #include <logging.hpp>
 
-
-#define ResolvedOption(resolved_name, failed_return, array, function, ...) \
-    auto resolved_name##_option = array.function(__VA_ARGS__);\
-    if(!resolved_name##_option) return failed_return;\
-    auto& resolved_name = resolved_name##_option.value();\
-
 class ByteArray: Streamable{
     private:
         std::vector<byte> data = {};

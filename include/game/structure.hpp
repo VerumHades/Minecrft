@@ -1,11 +1,14 @@
 #pragma once
 
+#include <structure/serialization/serializer.hpp>
+
 #include <blockarray.hpp>
 #include <vector>
 #include <vec_hash.hpp>
 #include <unordered_set>
 #include <shared_mutex>
 #include <mutex>
+
 
 class Terrain;
 
@@ -22,6 +25,8 @@ class Structure{
         */
         std::tuple<SparseBlockArray*, glm::ivec3> getBlockArrayForPosition(glm::ivec3 position);
 
+        friend class Serializer;
+
     public: 
         Structure(uint width, uint height, uint depth): width(width), height(height), depth(depth) {}
 
@@ -37,9 +42,6 @@ class Structure{
         
         static Structure capture(const glm::ivec3& position, const glm::ivec3& size, const Terrain& world);
         glm::ivec3 getSize(){return {width,height,depth};}
-
-        ByteArray serialize();
-        static Structure deserialize(ByteArray& source_array);
 };
 
 #include <game/world/terrain.hpp>

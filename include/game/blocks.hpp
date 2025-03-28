@@ -24,7 +24,6 @@ using BlockID = size_t;
 class BlockMetadata{
     public:
         virtual void serialize(ByteArray& to) = 0;
-        //static virtual std::shared_ptr<BlockMetadata> deserialize(ByteArray& from) = 0;
 };
 
 class BlockInterface{

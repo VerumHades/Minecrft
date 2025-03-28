@@ -63,6 +63,8 @@ class SparseBlockArray{
         std::vector<BlockID> present_types;
         std::unordered_map<BlockID, size_t> type_indexes;
         std::unordered_map<glm::ivec3, Block, IVec3Hash, IVec3Equal> interactable_blocks{};
+
+        friend class Serializer;
     
     public:
         SparseBlockArray(){}
@@ -85,7 +87,4 @@ class SparseBlockArray{
 
         void resetAlteredFlag() { altered = false; }
         bool wasAltered() {return altered;}
-
-        virtual bool serialize(ByteArray& output_array);
-        static bool deserialize(SparseBlockArray& array, ByteArray& input_array);
 };

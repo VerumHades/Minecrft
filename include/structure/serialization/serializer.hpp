@@ -5,7 +5,7 @@
 class Serializer{
     public:
         template <typename T>
-        bool Serialize(const T& object, ByteArray& output);
+        bool Serialize(T& object, ByteArray& output);
 
         template <typename T>
         bool Deserialize(T& object, ByteArray& input);

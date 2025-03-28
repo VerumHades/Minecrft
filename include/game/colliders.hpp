@@ -29,9 +29,6 @@ struct RectangularCollider {
                 otherCollider->y + other_offset.y + otherCollider->height >= y + offset.y && otherCollider->y + other_offset.y <= y + offset.y + height &&
                 otherCollider->z + other_offset.z + otherCollider->depth  >= z + offset.z && otherCollider->z + other_offset.z <= z + offset.z + depth;
     }
-
-    void serialize(ByteArray& array);
-    static bool deserialize(RectangularCollider& collider, ByteArray& array);
 };
 
 #include <structure/bitworks.hpp>
