@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <structure/bytearray.hpp>
 
 class ByteArray;
 
@@ -30,7 +31,7 @@ struct RectangularCollider {
     }
 
     void serialize(ByteArray& array);
-    static RectangularCollider deserialize(ByteArray& array);
+    static bool deserialize(RectangularCollider& collider, ByteArray& array);
 };
 
 #include <structure/bitworks.hpp>

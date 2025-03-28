@@ -8,9 +8,8 @@ void RectangularCollider::serialize(ByteArray& array){
     array.append<float>(height); 
     array.append<float>(depth);
 }
-RectangularCollider RectangularCollider::deserialize(ByteArray& array){
-    RectangularCollider collider{};
-    
+
+bool RectangularCollider::deserialize(RectangularCollider& collider, ByteArray& array){
     collider.x = array.read<float>();
     collider.y = array.read<float>();
     collider.z = array.read<float>();
@@ -18,6 +17,4 @@ RectangularCollider RectangularCollider::deserialize(ByteArray& array){
     collider.width = array.read<float>();
     collider.height = array.read<float>();
     collider.depth = array.read<float>();
-    
-    return collider;
 }

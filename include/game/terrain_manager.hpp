@@ -29,6 +29,7 @@ class TerrainManager{
 
         int bottom_y = -3;
         int top_y    =  3;
+        bool legacy_mode_on = false;
         
         BitField3D::SimplificationLevel calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition);
 

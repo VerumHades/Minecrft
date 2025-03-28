@@ -2,8 +2,13 @@
 
 #include <bitarray.hpp>
 #include <game/blocks.hpp>
+
+#include <structure/serialization/serializer.hpp>
+#include <structure/bytearray.hpp>
 #include <structure/bitworks.hpp>
+
 #include <vec_hash.hpp>
+
 class SparseBlockArray{
     protected:
         struct Layer{
@@ -81,8 +86,6 @@ class SparseBlockArray{
         void resetAlteredFlag() { altered = false; }
         bool wasAltered() {return altered;}
 
-        virtual ByteArray serialize();
-        virtual void serialize(ByteArray& output_array);
-        
-        static SparseBlockArray deserialize(ByteArray& array);
+        virtual bool serialize(ByteArray& output_array);
+        static bool deserialize(SparseBlockArray& array, ByteArray& input_array);
 };

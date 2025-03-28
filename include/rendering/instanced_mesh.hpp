@@ -55,6 +55,8 @@ class InstancedMeshLoader: public MeshLoaderInterface{
         bool draw_failed = false;
         bool updated = false;
 
+        uint max_draw_calls = 100000;
+
         ShaderProgram shared_program = ShaderProgram("resources/shaders/terrain.vs","resources/shaders/terrain.fs");
 
         struct RenderableGroup{

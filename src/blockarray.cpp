@@ -89,31 +89,23 @@ void SparseBlockArray::serialize(ByteArray& output_array) {
         block.metadata->serialize(output_array);
     }
 }
+bool SparseBlockArray::deserialize(SparseBlockArray& output, ByteArray& array){
+    ResolvedOption(solid_data, false, array, vread<uint64_t>)
 
-ByteArray SparseBlockArray::serialize(){
-    ByteArray output{};
-    serialize(output);
-    return output;
-}
-
-SparseBlockArray SparseBlockArray::deserialize(ByteArray& array){
-    SparseBlockArray output{};
-
-    auto solid_data = array.vread<uint64_t>();
     BitField3D::decompress(output.getSolidField().data(), solid_data);
 
-    size_t layer_count = array.read<size_t>();
+    ResolvedOption(layer_count, false, array, read<size_t>);
 
     for(size_t i = 0;i < layer_count;i++){
-        BlockID layer_type = array.read<BlockID>();
-        auto data = array.vread<uint64_t>();
+        ResolvedOption(layer_type, false, array, read<BlockID>);
+        ResolvedOption(data, false, array, vread<uint64_t>);
 
         BitField3D field{};
         BitField3D::decompress(field.data(), data);
         output.createLayer(layer_type, field);
     }
 
-    size_t interactable_block_count = array.read<size_t>();
+    ResolvedOption(interactable_block_count, false, array, read<size_t>);
     for(size_t i = 0;i < interactable_block_count;i++){
         glm::ivec3 position = {
             array.read<signed char>(),
@@ -121,10 +113,8 @@ SparseBlockArray SparseBlockArray::deserialize(ByteArray& array){
             array.read<signed char>()
         };
         
-        std::string prototype_name = array.sread();
+        ResolvedOption(prototype_name, false, array, sread);
         auto* prototype = BlockRegistry::get().getPrototype(prototype_name);
         if(prototype) output.interactable_blocks[position] = Block{prototype->id, prototype->interface->deserialize(array)};
     }
-
-    return output;
 }

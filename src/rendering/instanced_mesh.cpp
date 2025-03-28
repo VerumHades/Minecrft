@@ -214,16 +214,24 @@ void InstancedMeshLoader::removeMesh(LoadedMesh& mesh){
 }
 
 void InstancedMeshLoader::render(){
+    if(max_draw_calls == 0) return;
+    
     shared_program.updateUniforms();
 
     for(auto& info: render_information){
         info.vao.bind();
         info.draw_call_buffer.bind();
-        
-        glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, info.draw_call_buffer.count(), sizeof(GLDrawCallBuffer::DrawCommand));
 
-        GLenum error = glGetError();
-        if(error == GL_INVALID_OPERATION) draw_failed = true;
+        while(true){
+            for(int i = 0; i < info.draw_call_buffer.count();i += max_draw_calls) 
+                glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, (const void*)(i * sizeof(GLDrawCallBuffer::DrawCommand)), std::min(static_cast<uint>(info.draw_call_buffer.count() - i), max_draw_calls), sizeof(GLDrawCallBuffer::DrawCommand));
+
+            GLenum error = glGetError();
+            if(error == GL_NO_ERROR) break;
+
+            max_draw_calls /= 2;
+            if(max_draw_calls <= 0) break;
+        }
         
         info.vao.unbind();
     }

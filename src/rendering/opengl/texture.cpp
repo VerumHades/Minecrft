@@ -9,11 +9,16 @@ BindableTexture::BindableTexture(){
 BindableTexture::~BindableTexture(){
     GL_CALL( glDeleteTextures(1, &this->texture));
 }
+
+static int active_unit = -1;
 void BindableTexture::bind(int unit) const{
     if(unit < 0 || unit >= 32) return;
     if(texture_bindings[unit] == this->texture) return;
 
-    GL_CALL( glActiveTexture(GL_TEXTURE0 + unit));
+    //if(active_unit != unit){
+        GL_CALL( glActiveTexture(GL_TEXTURE0 + unit));
+    //    active_unit = unit;
+    //}
     GL_CALL( glBindTexture(TYPE, this->texture));
 
     texture_bindings[unit] = this->texture;
@@ -23,7 +28,10 @@ void BindableTexture::unbind(int unit) const{
     if(unit < 0 || unit >= 32) return;
     if(texture_bindings[unit] != this->texture) return;
 
-    GL_CALL( glActiveTexture(GL_TEXTURE0 + unit));
+    //if(active_unit != unit){
+        GL_CALL( glActiveTexture(GL_TEXTURE0 + unit));
+    //    active_unit = unit;
+    //}
     GL_CALL( glBindTexture(TYPE, 0));
 
     texture_bindings[unit] = 0;

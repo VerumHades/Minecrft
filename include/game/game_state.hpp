@@ -3,8 +3,12 @@
 #include <game/world/terrain.hpp>
 #include <game/items/item.hpp>
 #include <game/save_structure.hpp>
+
+#include <structure/bytearray.hpp>
+
 #include <list>
 #include <filesystem>
+
 
 class TerrainManager;
 

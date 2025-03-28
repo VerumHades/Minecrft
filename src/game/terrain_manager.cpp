@@ -135,12 +135,15 @@ bool TerrainManager::HandlePriorityMeshes(){
 bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance){
     if(!game_state || !game_state->world_stream) return false;
 
-    if(mesh_loader->DrawFailed()){ // Fall back to legacy supported renderer
+    if(mesh_loader->DrawFailed() && !legacy_mode_on){ // Fall back to legacy supported renderer
+        std::cout << "Falling back" << std::endl;
         create_mesh = [](){ return std::make_unique<PooledMesh>(); };
         reset_loader = [this](){
             mesh_loader = std::make_unique<PooledMeshLoader>();
             mesh_registry.SetMeshLoader(mesh_loader.get());
         };
+        reset_loader();
+        legacy_mode_on = true;
     }
 
     around_x = around.x;

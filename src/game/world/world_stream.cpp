@@ -217,8 +217,7 @@ bool WorldStream::save(Chunk& chunk){
 
 void WorldStream::load(Chunk* chunk){
     if(!hasChunkAt(chunk->getWorldPosition())) return;
-    //std::cout << "Loadeding: " << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
-    //std::cout << "Located at: " << chunkTable[chunk->getWorldPosition()] << std::endl;
+
     stream().seekg(chunkTable[chunk->getWorldPosition()].in_file_start, std::ios::beg);
     ByteArray source;
     
@@ -228,16 +227,11 @@ void WorldStream::load(Chunk* chunk){
         return;
     }
     
-    //std::cout << "Loaded: " << chunk->getWorldPosition().x << " " << chunk->getWorldPosition().y << " " << chunk->getWorldPosition().z << std::endl;
-
-    //std::cout << source << std::endl;
-
     *chunk = Chunk::deserialize(source);
-    
-    //std::cout << "Loaded: " << position.x << " " << position.y << " " << position.z << std::endl;
 }
 
 bool WorldStream::hasChunkAt(glm::vec3 position){
+    std::shared_lock lock(mutex);
     return chunkTable.count(position) != 0;
 }
 

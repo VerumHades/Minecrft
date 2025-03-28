@@ -297,7 +297,7 @@ void GameModeSurvival::KeyEvent(int key, int scancode, int action, int mods){
 
 }
 void GameModeSurvival::MouseEvent(int button, int action, int mods){
-    if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
+    if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && IsBaseLayerActive()){
         PlaceBlock();
         UpdateCursor();
     }

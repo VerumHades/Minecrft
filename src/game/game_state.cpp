@@ -7,8 +7,8 @@ GameState::GameState(const std::string& path, int worldSeed): save_structure(pat
     player.addTag("player");
     entities.push_back(player);
     
-    world_stream  = save_structure.save<WorldStream>("");
-    player_stream = save_structure.save<FileStream>("player", "",
+    world_stream  = save_structure.RegisterSave<WorldStream>("world", "");
+    player_stream = save_structure.RegisterSave<FileStream>("player", "",
         [this](FileStream*){
             this->savePlayer();
         },
@@ -17,7 +17,7 @@ GameState::GameState(const std::string& path, int worldSeed): save_structure(pat
         }
     );
 
-    entity_stream = save_structure.save<FileStream>("entities", "",
+    entity_stream = save_structure.RegisterSave<FileStream>("entities", "",
         [this](FileStream*){
             this->saveEntities();
         },
@@ -26,7 +26,7 @@ GameState::GameState(const std::string& path, int worldSeed): save_structure(pat
         }
     );
 
-    save_structure.open();
+    save_structure.Open();
 
     if(worldSeed != -1) world_stream->setSeed(worldSeed);
 }
@@ -37,12 +37,14 @@ void GameState::savePlayer(){
     player_inventory.serialize(array);
     player_hotbar.serialize(array);
     
-    player_stream->go_to(0);
-    array.write(player_stream->stream());
+    player_stream->SetCursor(0);
+    array.WriteToStream(*player_stream);
 }
 void GameState::loadPlayer(){
-    player_stream->go_to(0);
-    ByteArray array = ByteArray::FromStream(player_stream->stream());
+    ByteArray array{};
+
+    player_stream->SetCursor(0);
+    array.LoadFromStream(*player_stream);
 
     player_inventory = LogicalItemInventory::deserialize(array);
     player_hotbar = LogicalItemInventory::deserialize(array);
@@ -53,17 +55,26 @@ void GameState::saveEntities(){
 
     array.append<size_t>(entities.size());
     for(auto& entity: entities) entity.serialize(array);
-
-    entity_stream->go_to(0);
-    array.write(entity_stream->stream());
+    
+    entity_stream->SetCursor(0);
+    array.WriteToStream(*entity_stream);
 }
 
 void GameState::loadEntities(){
-    entity_stream->go_to(0);
     entities.clear();
-    ByteArray array = ByteArray::FromStream(entity_stream->stream());
 
-    size_t count = array.read<size_t>();
+    ByteArray array{};
+    
+    entity_stream->SetCursor(0);
+    array.LoadFromStream(*entity_stream);
+
+    auto count_opt = array.read<size_t>();
+    if(!count_opt){
+        LogError("Entity file is corrupted, failed to load.");
+        return;
+    }
+
+    size_t count = count_opt.value();
     for(size_t i = 0;i < count;i++){
         entities.emplace_back(Entity::deserialize(array));
     }
@@ -130,7 +141,7 @@ void GameState::unloadChunk(const glm::ivec3& position){
     auto* chunk = terrain.getChunk(position);
     if(!chunk) return;
 
-    ///if(world_stream) world_stream->save(*chunk);
+    if(world_stream) world_stream->save(*chunk);
     terrain.removeChunk(position);
 }
 
