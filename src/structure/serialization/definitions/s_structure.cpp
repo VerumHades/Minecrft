@@ -13,9 +13,9 @@ SerializeFunction(Structure) {
 
     array.append<size_t>(this_.block_arrays.size());
     for(auto& [position, block_array]: this_.block_arrays){
-        array.append<size_t>(position.x);
-        array.append<size_t>(position.y);
-        array.append<size_t>(position.z);
+        array.append<int>(position.x);
+        array.append<int>(position.y);
+        array.append<int>(position.z);
 
         Serialize<SparseBlockArray>(block_array, array);
     }
@@ -31,11 +31,11 @@ DeserializeFunction(Structure){
 
     ResolvedOption(arrays_total, read<size_t>);
     for(int i = 0;i < arrays_total;i++){
-        glm::ivec3 position = {
-            array.read<size_t>(),
-            array.read<size_t>(),
-            array.read<size_t>()
-        };
+        ResolvedOption(x, read<int>)
+        ResolvedOption(y, read<int>)
+        ResolvedOption(z, read<int>)
+
+        glm::ivec3 position = glm::ivec3{x,y,z};
 
         Deserialize<SparseBlockArray>(this_.block_arrays[position], array);
     }

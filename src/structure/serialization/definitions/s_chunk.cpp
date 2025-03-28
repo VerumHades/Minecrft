@@ -16,11 +16,11 @@ SerializeFunction(Chunk) {
 SerializeInstatiate(Chunk)
 
 DeserializeFunction(Chunk){
-    this_.worldPosition = {
-        array.read<int>(),
-        array.read<int>(),
-        array.read<int>(),
-    };
+    ResolvedOption(x, read<int>)
+    ResolvedOption(y, read<int>)
+    ResolvedOption(z, read<int>)
+
+    this_.worldPosition = glm::ivec3{x,y,z};
 
     return Deserialize<SparseBlockArray>(this_, array);
 }

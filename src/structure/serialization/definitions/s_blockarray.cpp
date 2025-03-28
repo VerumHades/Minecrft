@@ -49,11 +49,10 @@ DeserializeFunction(SparseBlockArray){
 
     ResolvedOption(interactable_block_count, read<size_t>);
     for(size_t i = 0;i < interactable_block_count;i++){
-        glm::ivec3 position = {
-            array.read<signed char>(),
-            array.read<signed char>(),
-            array.read<signed char>()
-        };
+        ResolvedOption(x, read<signed char>)
+        ResolvedOption(y, read<signed char>)
+        ResolvedOption(z, read<signed char>)
+        glm::ivec3 position = glm::ivec3{x,y,z};
         
         ResolvedOption(prototype_name, sread);
         auto* prototype = BlockRegistry::get().getPrototype(prototype_name);

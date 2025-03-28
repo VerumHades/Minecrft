@@ -32,36 +32,3 @@ void Entity::decellerate(float strength, float deltatime){
     glm::vec3 horizontalVelocity = glm::vec3(velocity.x, 0, velocity.z);
     if(glm::length(horizontalVelocity) >= 0) accelerate(-horizontalVelocity * glm::min(strength,1.0f), deltatime);
 }
-
-void Entity::serialize(ByteArray& array){
-    array.append<glm::vec3>(position);
-    array.append<glm::vec3>(velocity);
-    array.append<glm::vec3>(lastPosition);
-    collider.serialize(array);
-
-    array.append<size_t>(tags.size());
-    for(auto& tag: tags) array.append(tag);
-
-    if(data){
-        array.append(data->type);
-        data->serialize(array);
-    }
-    else array.append(EntityData::Type::NONE);
-}
-
-Entity Entity::deserialize(ByteArray& array){
-    Entity entity{{},glm::vec3(0.6, 1.8, 0.6)};
-
-    entity.position = array.read<glm::vec3>();
-    entity.velocity = array.read<glm::vec3>();
-    entity.lastPosition = array.read<glm::vec3>();
-
-    entity.collider = RectangularCollider::deserialize(array);
-    
-    size_t tag_count = array.read<size_t>();
-    for(size_t i = 0;i < tag_count;i++) entity.tags.emplace(array.sread());
-
-    entity.setData(deserializeData(array));
-
-    return entity;
-}

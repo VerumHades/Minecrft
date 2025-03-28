@@ -3,6 +3,9 @@
 
 #include <glm/glm.hpp>
 #include <game/blocks.hpp>
+
+#include <structure/serialization/serializer.hpp>
+
 #include <rendering/model.hpp>
 
 #include <memory>
@@ -54,6 +57,8 @@ class Entity{
         std::shared_ptr<Model> model;
         bool solid = true;
 
+        friend class Serializer;
+
     public:
         Entity(glm::vec3 position, glm::vec3 colliderDimensions);
         Entity(glm::vec3 position, glm::vec3 colliderDimensions, std::shared_ptr<EntityData> data);
@@ -79,9 +84,6 @@ class Entity{
         const RectangularCollider& getCollider() const {return collider;}
 
         bool shouldGetDestroyed(){return destroy;}
-
-        void serialize(ByteArray& array);
-        static Entity deserialize(ByteArray& array);
 
         std::shared_ptr<EntityData>& getData(){return data;}
         
