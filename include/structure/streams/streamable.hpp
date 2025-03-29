@@ -9,11 +9,11 @@ class Streamable{
 
         template <typename T>
         bool WriteToStream(T& stream){
-            WriteToStream(reinterpret_cast<Stream&>(stream));
+            return WriteToStream(reinterpret_cast<Stream&>(stream));
         }
 
         template <typename T>
         bool LoadFromStream(T& stream){
-            LoadFromStream(reinterpret_cast<Stream&>(stream));
+            return LoadFromStream(reinterpret_cast<Stream&>(stream));
         }
 };

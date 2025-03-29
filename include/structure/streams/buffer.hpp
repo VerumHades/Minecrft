@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stream.hpp>
+#include <structure/streams/stream.hpp>
 
 class Buffer: public Stream{
     private:

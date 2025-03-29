@@ -6,12 +6,16 @@
 #include <optional>
 #include <iostream>
 #include <list>
+
 #include <game/entity.hpp>
 #include <game/items/sprite_model.hpp>
 #include <game/blocks.hpp>
 #include <game/items/block_model.hpp>
+
 #include <structure/bitworks.hpp>
+#include <structure/serialization/serializer.hpp>
 #include <path_config.hpp>
+
 
 #include <memory>
 
@@ -37,9 +41,9 @@ class ItemPrototype{
         bool is_block = false;
 
         BlockID block_id = 0;
-        
+
         std::array<std::string,3> texture_paths = {"","",""};
-        
+
         std::shared_ptr<Model> model;
         std::vector<ToolEffectiveness> effective_againist_materials{};
 
@@ -68,10 +72,11 @@ class Item{
 
         friend class ItemRegistry;
         friend class ItemTextureAtlas;
+        friend class Serializer;
 
         Item (const Item&) = delete;
         Item& operator= (const Item&) = delete;
-    
+
     public:
         // DO NOT USE
         Item(ItemPrototype* prototype_ptr): prototype(prototype_ptr) {}
@@ -82,9 +87,6 @@ class Item{
         ItemPrototype* getPrototype() {return prototype;}
         int getQuantity(){ return quantity; }
         void setQuantity(int number) {quantity = number;}
-
-        void serialize(ByteArray& to);
-        static std::shared_ptr<Item> deserialize(ByteArray& from);
 };
 
 class ItemRegistry{
@@ -123,7 +125,7 @@ class LogicalItemSlot{
 
         void clear();
         bool hasItem() {return getItem() != nullptr; }
-        
+
         /*
             Decreses the item amount and returns the count removed,
             automatically clears and manages the slot
@@ -146,6 +148,8 @@ class LogicalItemInventory{
         int slots_verticaly = 0;
 
         std::vector<LogicalItemSlot> slots{};
+
+        friend class Serializer;
     public:
         LogicalItemInventory(int slots_horizontaly, int slots_verticaly);
 
@@ -158,7 +162,7 @@ class LogicalItemInventory{
         bool setItem(int x, int y, ItemRef item) {
             auto* slot = getSlot(x,y);
             if(!slot) return false;
-            
+
             return slot->addItem(item);
         }
 
@@ -175,9 +179,6 @@ class LogicalItemInventory{
         int getHeight() const {return slots_verticaly;}
 
         std::vector<LogicalItemSlot>& getItemSlots() {return slots;};
-
-        void serialize(ByteArray& to);
-        static LogicalItemInventory deserialize(ByteArray& from);
 };
 
 class DroppedItem: public EntityData{

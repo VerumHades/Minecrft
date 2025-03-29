@@ -13,7 +13,7 @@ static inline std::tuple<glm::ivec3, glm::ivec3> pointsToRegion(glm::ivec3 min, 
     swapToOrder(min.x,max.x);
     swapToOrder(min.y,max.y);
     swapToOrder(min.z,max.z);
-    
+
     return {min,max};
 }
 
@@ -32,9 +32,10 @@ void GameModeStructureCapture::Initialize(){
         const std::string& name = getElementById<UIInput>("structure_name")->getText();
 
         auto path = Paths::Get(Paths::GAME_STRUCTURES);
-        if(path) structure.serialize().saveToFile(path.value() / fs::path(name + ".structure"));
-
-        state.scene.setUILayer(GetBaseLayer().name); 
+        if(path){
+            structure.serialize().saveToFile(path.value() / fs::path(name + ".structure"));
+        }
+        state.scene.setUILayer(GetBaseLayer().name);
         RefreshStructureSelection();
     };
 
@@ -54,13 +55,15 @@ void GameModeStructureCapture::Initialize(){
             structure_name_label->update();
             return;
         }
-        
+
         auto bt = ByteArray::FromFile(structures_path.value() / (name + ".structure"));
 
         structure_name_label->setText("Selected structure:" + name);
         structure_name_label->update();
 
-        selected_structure = std::make_shared<Structure>(Structure::deserialize(bt));
+
+        selected_structure = std::make_shared<Structure>();
+        Serializer::Deserialize<Structure>(*selected_structure);
         this->UpdateStructureDisplay();
     };
 
@@ -68,14 +71,14 @@ void GameModeStructureCapture::Initialize(){
 
     GetBaseLayer().addElement(structure_selection);
     GetBaseLayer().cursorMode = GLFW_CURSOR_DISABLED;
-    
+
     GetBaseLayer().onEntered = [this](){
         UICore::get().setFocus(structure_selection);
     };
 }
 
 void GameModeStructureCapture::Open(){
-  
+
 }
 
 void GameModeStructureCapture::Render(double deltatime){
@@ -133,11 +136,11 @@ void GameModeStructureCapture::MouseMoved(int mouseX, int mouseY){
 }
 
 void GameModeStructureCapture::MouseScroll(double xoffset, double yoffset){
-    
+
 }
 
 void GameModeStructureCapture::PhysicsUpdate(double deltatime){
-    
+
 }
 
 
@@ -171,7 +174,7 @@ void  GameModeStructureCapture::UpdateStructureDisplay(){
         if(!selected_structure) return;
         state.wireframe_renderer.setCube(
             1,
-            glm::vec3(cursor_state.blockUnderCursorPosition) - 0.005f, 
+            glm::vec3(cursor_state.blockUnderCursorPosition) - 0.005f,
             glm::vec3{0.01,0.01,0.01} + glm::vec3(selected_structure->getSize()),
             {0,0.3,0.2}
         );

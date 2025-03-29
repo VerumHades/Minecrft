@@ -4,9 +4,12 @@
 /*
     BlockArray serialization
 */
-#include <blockarray.hpp> 
+#include <blockarray.hpp>
 
 SerializeFunction(SparseBlockArray) {
+    array.append<bool>(this_.isEmpty());
+    if(this_.isEmpty()) return true;
+
     array.append(this_.solid_field.getCompressed());
     array.append<size_t>(this_.layers.size());
 
@@ -32,6 +35,9 @@ SerializeFunction(SparseBlockArray) {
 SerializeInstatiate(SparseBlockArray)
 
 DeserializeFunction(SparseBlockArray){
+    ResolvedOption(is_empty, read<bool>)
+    if(is_empty) return true;
+
     ResolvedOption(solid_data, vread<uint64_t>)
 
     BitField3D::decompress(this_.getSolidField().data(), solid_data);
@@ -53,7 +59,7 @@ DeserializeFunction(SparseBlockArray){
         ResolvedOption(y, read<signed char>)
         ResolvedOption(z, read<signed char>)
         glm::ivec3 position = glm::ivec3{x,y,z};
-        
+
         ResolvedOption(prototype_name, sread);
         auto* prototype = BlockRegistry::get().getPrototype(prototype_name);
         if(prototype) this_.interactable_blocks[position] = Block{prototype->id, prototype->interface->deserialize(array)};

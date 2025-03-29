@@ -13,65 +13,33 @@ class WorldStream: public FileStream{
     private:
         std::shared_mutex mutex;
 
+        constexpr static size_t NO_RECORD = 0; // If there are no further records
+        constexpr static size_t EMTPY = 1; // If there is a record but it signals an empty chunk, only for chunk level records
+
         struct Header{
-            char name[256];
+            char world_name[256];
             int seed;
-
-            size_t chunk_table_start;
-            size_t chunk_table_size;
-
-            size_t chunk_data_start;
-            size_t chunk_data_end;
+            size_t root_index_position;
         };
 
-        struct TableRow{
-            struct{
-                int x;
-                int y;
-                int z;
-            } position;
-            size_t in_file_start;
-            size_t serialized_size;
+        struct IndexHeader{
+            unsigned char record_level;
+            size_t record_indexes[8];
         };
 
-        std::unordered_map<glm::ivec3, TableRow, IVec3Hash, IVec3Equal> chunkTable = {}; // Chunk locations in the file
-
-        Header header;
-
-        ByteArray serializeTableData();
-        void saveHeader();
-        void loadHeader();
-
-        void loadTable();
-        void saveTable();
-
-        size_t moveChunk(size_t from, size_t to);
-
-        size_t findFirstChunk();
     public:
         WorldStream(const std::string& path);
         ~WorldStream();
         //bool save(Chunk& chunk);
         //void load(Chunk* chunk);
-        bool hasChunkAt(glm::vec3 position);
+        bool HasChunkAt(glm::vec3 position);
 
-        int getSeed() const {return header.seed;};
-        void setSeed(int value) {header.seed = value; saveHeader();}
-        std::string getName() const {return std::string(header.name);}
-        
-        int getChunkCount() {return chunkTable.size();}
+        int GetSeed() const;
+        void SetSeed(int value);
 
-        void bulkSave(std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>, IVec3Hash, IVec3Equal>& chunks);
+        std::string GetName() const;
+        void SetName(const std::string& name);
 
         bool save(Chunk& chunk);
         void load(Chunk* chunk);
-
-        void setName(const std::string& name) {
-            if(name.length() > 256) {
-                LogError("Max world name length is 256 chars");
-                return;
-            }
-            std::strcpy(header.name,name.c_str()); // Boo unsafe
-            saveHeader();
-        }
 };

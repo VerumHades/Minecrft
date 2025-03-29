@@ -63,7 +63,7 @@ bool ItemRegistry::LoadFromXML(const std::string& path){
 
         xml_for_each_child_as(item_definition, item_attribute){
             std::string attr_name = item_attribute->Name();
-            
+
             if(attr_name == "name"){
                 const char* text = item_attribute->GetText();
                 if(!text) continue;
@@ -91,24 +91,6 @@ bool ItemRegistry::LoadFromXML(const std::string& path){
     }
 
     return true;
-}
-
-
-void Item::serialize(ByteArray& to){
-    auto* prototype = getPrototype();
-    std::string name = prototype ? prototype->getName() : "NO_NAME";
-    to.append(name);
-    to.append<int>(quantity);
-}
-ItemRef Item::deserialize(ByteArray& from){
-    std::string name = from.sread();
-    int quantity = from.read<int>();
-
-    ItemRef item = Item::Create(name);
-
-    if(!item) return NO_ITEM;
-    item->setQuantity(quantity);
-    return item;
 }
 
 ItemPrototype* ItemRegistry::createPrototypeForBlock(const BlockRegistry::BlockPrototype* prototype){
@@ -140,7 +122,7 @@ bool LogicalItemSlot::takeItemFrom(LogicalItemSlot& source, int quantity){
     bool destination_has_item = hasItem();
 
     if(!source_has_item) return false;
-    
+
     Item& source_item = *source.getItem();
     auto* source_item_prototype = source_item.getPrototype();
     if(!source_item_prototype) return false;
@@ -151,7 +133,7 @@ bool LogicalItemSlot::takeItemFrom(LogicalItemSlot& source, int quantity){
     if(destination_has_item){
         Item& destination_item = *getItem();
         auto* destination_item_prototype = destination_item.getPrototype();
-        
+
         if(source_item_prototype != destination_item_prototype) return false;
 
         if(source_quantity <= quantity){
@@ -177,7 +159,7 @@ ItemRef LogicalItemSlot::getPortion(int quantity){
     Item& source_item = *getItem();
     auto* source_item_prototype = source_item.getPrototype();
     if(!source_item_prototype) return NO_ITEM;
-    
+
     int source_quantity = source_item.getQuantity();
     if(quantity == -1) quantity = source_quantity;
 
@@ -203,7 +185,7 @@ int LogicalItemSlot::decreaseQuantity(int number){
 
     if(quantity <= number){
         clear();
-        return quantity; 
+        return quantity;
     }
     else{
         source_item.setQuantity(quantity - number);
@@ -251,51 +233,9 @@ bool LogicalItemInventory::addItem(ItemRef item){
     return false;
 }
 
-
-void LogicalItemInventory::serialize(ByteArray& to){
-    to.append<int>(slots_horizontaly);
-    to.append<int>(slots_verticaly);
-
-    size_t items_total = 0;
-    for(int y = 0;y < slots_verticaly;y++)
-    for(int x = 0;x < slots_horizontaly;x++){
-        auto* slot = getSlot(x,y);
-        if(!slot->hasItem()) continue;
-        items_total++;
-    }
-
-    to.append<size_t>(items_total);
-
-    for(int y = 0;y < slots_verticaly;y++)
-    for(int x = 0;x < slots_horizontaly;x++){
-        auto* slot = getSlot(x,y);
-
-        if(!slot->hasItem()) continue;
-
-        to.append<int>(x);
-        to.append<int>(y);
-        slot->getItem()->serialize(to);
-    }
-}
-LogicalItemInventory LogicalItemInventory::deserialize(ByteArray& from){
-    LogicalItemInventory output{from.read<int>(),from.read<int>()};
-    size_t items_total = from.read<size_t>();
-
-    for(int i = 0;i < items_total;i++){
-        int x = from.read<int>();
-        int y = from.read<int>();
-
-        auto* slot = output.getSlot(x,y);
-        if(!slot) continue;
-        slot->setItem(Item::deserialize(from));
-    }
-
-    return output;
-}
-
 void DroppedItem::serialize(ByteArray& array){
     if(!item) return;
-    item->serialize(array);
+    Serializer::Serialize<Item>(*item, array);
 }
 
 void DroppedItem::setup(Entity* entity){
@@ -310,9 +250,11 @@ void DroppedItem::setup(Entity* entity){
 }
 
 std::shared_ptr<EntityData> DroppedItem::deserializeData(ByteArray& array){
-    return std::make_shared<DroppedItem>(Item::deserialize(array));
+    ItemRef item = Item::Create(nullptr);
+    Serializer::Deserialize<Item>(*item,array);
+    return std::make_shared<DroppedItem>(item);
 }
 
 void DroppedItem::update(GameState* state){
-    
+
 }

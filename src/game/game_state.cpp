@@ -6,7 +6,7 @@ GameState::GameState(const std::string& path, int worldSeed): save_structure(pat
     Entity player = Entity(glm::vec3(0,30,0), glm::vec3(0.6, 1.8, 0.6));
     player.addTag("player");
     entities.push_back(player);
-    
+
     world_stream  = save_structure.RegisterSave<WorldStream>("world", "");
     player_stream = save_structure.RegisterSave<FileStream>("player", "",
         [this](FileStream*){
@@ -34,9 +34,9 @@ GameState::GameState(const std::string& path, int worldSeed): save_structure(pat
 void GameState::savePlayer(){
     ByteArray array{};
 
-    player_inventory.serialize(array);
-    player_hotbar.serialize(array);
-    
+    Serializer::Serialize<LogicalItemInventory>(player_inventory, array);
+    Serializer::Serialize<LogicalItemInventory>(player_hotbar, array);
+
     player_stream->SetCursor(0);
     array.WriteToStream(*player_stream);
 }
@@ -46,16 +46,16 @@ void GameState::loadPlayer(){
     player_stream->SetCursor(0);
     array.LoadFromStream(*player_stream);
 
-    player_inventory = LogicalItemInventory::deserialize(array);
-    player_hotbar = LogicalItemInventory::deserialize(array);
+    Serializer::Deserialize<LogicalItemInventory>(player_inventory, array);
+    Serializer::Deserialize<LogicalItemInventory>(player_hotbar, array);
 }
 
 void GameState::saveEntities(){
     ByteArray array{};
 
     array.append<size_t>(entities.size());
-    for(auto& entity: entities) entity.serialize(array);
-    
+    for(auto& entity: entities) Serializer::Serialize<Entity>(entity, array);
+
     entity_stream->SetCursor(0);
     array.WriteToStream(*entity_stream);
 }
@@ -64,7 +64,7 @@ void GameState::loadEntities(){
     entities.clear();
 
     ByteArray array{};
-    
+
     entity_stream->SetCursor(0);
     array.LoadFromStream(*entity_stream);
 
@@ -76,7 +76,9 @@ void GameState::loadEntities(){
 
     size_t count = count_opt.value();
     for(size_t i = 0;i < count;i++){
-        entities.emplace_back(Entity::deserialize(array));
+        Entity entity{};
+        Serializer::Deserialize<Entity>(entity,array);
+        entities.emplace_back(entity);
     }
 }
 
@@ -91,7 +93,7 @@ static float position_mult = 1;
 
 void GameState::drawEntity(Entity& entity){
     if(!entity.getModel()) return;
-    
+
     entity.getModel()->requestDraw(entity.getPosition() + glm::vec3{0,position,0}, {0.3,0.3,0.3}, {0,rotation,0}, entity.getModel()->getRotationCenterOffset());
 }
 
@@ -114,11 +116,11 @@ bool GameState::entityCollision(Entity& checked_entity, const glm::vec3& offset)
 
         float distance = glm::distance(entity_collider.center, checked_collider.center);
         if(distance > checked_collider.bounding_sphere_radius + entity_collider.bounding_sphere_radius) continue; // Definitly dont collide
-        
+
         if(entity_collider.collidesWith(&checked_collider, entity.getPosition(), position)){
             if(checked_entity.onCollision) checked_entity.onCollision(&checked_entity, &entity);
             if(entity.onCollision) entity.onCollision(&entity, &checked_entity);
-            
+
             if(entity.isSolid()) return true;
         }
     }
@@ -159,10 +161,10 @@ void GameState::updateEntity(Entity& entity, float deltatime){
     if(entity.data && entity.data->do_update) entity.data->update(this);
 
     if(entity.hasGravity) entity.accelerate(glm::vec3(0,-(15.0 + entity.friction * 2),0), deltatime);
-    
+
     if(
-        entity.velocity.x != 0 || 
-        entity.velocity.y != 0 || 
+        entity.velocity.x != 0 ||
+        entity.velocity.y != 0 ||
         entity.velocity.z != 0
     ) entity.on_ground = false;
 

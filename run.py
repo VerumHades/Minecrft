@@ -10,8 +10,8 @@ parser.add_argument('-w', '--with-debuger', action='store_true', help="Runs gdb"
 
 parser.add_argument('-c', '--clear-build', action='store_true', help="Clears the build directory")
 parser.add_argument(
-    '-b', '--build-type', 
-    default="Release", 
+    '-b', '--build-type',
+    default="Release",
     help="Allows you to specify the build type. Ignored if -d is specified",
     choices = ["Release","Debug","RelWithDebInfo","MinSizeRel"]
 )
@@ -29,11 +29,11 @@ print(f"Selected build type: {build_type}")
 print(f"Selected build directory: {build_directory}")
 
 os.makedirs(build_directory, exist_ok=True)
-    
+
 if args.clear_build:
     shutil.rmtree(build_directory)
-    os.makedirs(build_directory, exist_ok=True) 
-    
+    os.makedirs(build_directory, exist_ok=True)
+
 os.chdir(build_directory)
 print("Verified build directory")
 
@@ -57,13 +57,13 @@ suffixus = "-DCMAKE_CXX_FLAGS=\"-DWINDOWS_PACKAGED_BUILD\"" if args.package else
 if args.remake:
     print("Remaking...")
     os_command(
-        f"cmake {root_director} -DCMAKE_BUILD_TYPE={build_type} {suffixus}",
+        f"cmake {root_director} -DCMAKE_BUILD_TYPE={build_type} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON {suffixus}",
         f"cmake {root_director} -DCMAKE_COLOR_MAKEFILE=ON -G \"Unix Makefiles\" -DCMAKE_BUILD_TYPE={build_type} {suffixus}"
     )
 
 os.chdir(root_director)
 
-prefix = "gdb -ex run " if args.debug or args.with_debuger else "" 
+prefix = "gdb -ex run " if args.debug or args.with_debuger else ""
 #prefix =  ""
 
 start_time = time.time()
@@ -72,16 +72,16 @@ build_exit_code = command(f"cmake --build {build_directory} -j 8")
 if build_exit_code != 0:
     print("Build failed.")
     exit()
-    
+
 end_time = time.time()
 elapsed_time = end_time - start_time
 print(f"Time to build: {elapsed_time} seconds")
 
 if args.package:
     start_time = time.time()
-    
+
     os.chdir(build_directory)
-    
+
     file_path = 'CPackConfig.cmake'
 
     with open(file_path, 'r') as file:
@@ -92,14 +92,14 @@ if args.package:
             if line.startswith("set(CPACK_COMPONENTS_ALL"):
                 line = line.replace("-","_")
             file.write(line)
-        
-    os.system(f"cpack --config {file_path}")    
-    
+
+    os.system(f"cpack --config {file_path}")
+
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Time to package: {elapsed_time} seconds")
 
-    
+
 elif not args.no_run:
     os_command(
         f"./{build_directory}/majnkraft",
@@ -109,4 +109,3 @@ elif not args.no_run:
 
 
 #platform_command("clear","cls")
-

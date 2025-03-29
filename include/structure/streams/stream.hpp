@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include <cstdlib>
 #include <cstdint>
-
 
 #define WriteBreak(stream, args) if(!stream.Write##args) return false;
 

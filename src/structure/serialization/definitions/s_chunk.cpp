@@ -4,7 +4,7 @@
 /*
     BlockArray serialization
 */
-#include <chunk.hpp> 
+#include <game/chunk.hpp> 
 
 SerializeFunction(Chunk) {
     array.append<int>(this_.worldPosition.x);

@@ -1,79 +1,97 @@
 #include <game/world/world_stream.hpp>
 
-
-WorldStream::WorldStream(const std::string& path): FileStream("world", path){
-    set_callbacks(
-        [this](FileStream* stream){
-            std::strcpy(header.name,"Terrain");
+WorldStream::WorldStream(const std::string &path) : FileStream() {
+    SetCallbacks(
+        [this](FileStream *stream) {
+            std::strcpy(header.name, "Terrain");
 
             std::random_device rd;
-            header.seed = rd(); 
-            
+            header.seed = rd();
+
             header.chunk_table_start = sizeof(Header);
             header.chunk_data_start = 20 * 1000; // Reserve ahead for about 1000 chunks
             header.chunk_data_end = 20 * 1000;
             header.chunk_table_size = 0;
-    
+
             saveHeader();
             saveTable();
         },
-        [this](FileStream* stream){
+        [this](FileStream *stream) {
             loadHeader();
             loadTable();
-        }
-    );
+        });
 }
 
-void WorldStream::saveHeader(){
+int WorldStream::GetSeed() const {
+    return header.seed;
+};
+void WorldStream::SetSeed(int value) {
+    header.seed = value;
+    saveHeader();
+}
+
+std::string WorldStream::GetName() const {
+    return std::string(header.name);
+}
+void WorldStream::SetName(const std::string &name) {
+    if (name.length() > 256) {
+        LogError("Max world name length is 256 chars");
+        return;
+    }
+    std::strcpy(header.name, name.c_str()); // Boo unsafe
+    saveHeader();
+}
+
+void WorldStream::saveHeader() {
     stream().seekp(0, std::ios::beg); // Move cursor to the file start
-    
+
     bitworks::saveValue(stream(), header);
 }
 
-void WorldStream::loadHeader(){
+void WorldStream::loadHeader() {
     stream().seekg(0, std::ios::beg); // Move cursor to the file start
-    
+
     header = bitworks::readValue<Header>(stream());
 
-    //std::cout << "Table start: " << header.chunk_table_start << " Chunk data start: " << header.chunk_data_start << std::endl;
+    // std::cout << "Table start: " << header.chunk_table_start << " Chunk data start: " << header.chunk_data_start <<
+    // std::endl;
 }
 
-void WorldStream::loadTable(){
+void WorldStream::loadTable() {
     stream().seekg(header.chunk_table_start, std::ios::beg); // Move cursor to the tables start
     chunkTable.clear();
 
     ByteArray tableData;
-    if(!tableData.read(stream())){
+    if (!tableData.read(stream())) {
         LogWarning("Terrain file table invalid, automatically overwriten.");
         saveTable();
         return;
     }
 
     size_t size = tableData.read<size_t>();
-    //std::cout << "Chunks total: " << size << std::endl;
-    for(int i = 0;i < size;i++){
+    // std::cout << "Chunks total: " << size << std::endl;
+    for (int i = 0; i < size; i++) {
         auto row = tableData.read<TableRow>();
-        chunkTable[glm::ivec3(row.position.x,row.position.y,row.position.z)] = row;
+        chunkTable[glm::ivec3(row.position.x, row.position.y, row.position.z)] = row;
     }
 }
 
-ByteArray WorldStream::serializeTableData(){
+ByteArray WorldStream::serializeTableData() {
     ByteArray tableData;
     tableData.append<size_t>(chunkTable.size());
 
-    for(auto& [position, row]: chunkTable) tableData.append<TableRow>(row);
+    for (auto &[position, row] : chunkTable)
+        tableData.append<TableRow>(row);
 
     return tableData;
 }
 
-
-
-void WorldStream::saveTable(){
+void WorldStream::saveTable() {
     ByteArray tableData = serializeTableData();
-    while(header.chunk_table_start + tableData.getFullSize() >= header.chunk_data_start){
+    while (header.chunk_table_start + tableData.getFullSize() >= header.chunk_data_start) {
         size_t movedSize = moveChunk(header.chunk_data_start, header.chunk_data_end); // Move the first chunk to the end
 
-        //std::cout << movedSize << " > " << tableData.getFullSize() << std::endl;
+        // std::cout << movedSize << " > " << tableData.getFullSize() << std::endl;
         header.chunk_data_start = findFirstChunk();
         header.chunk_data_end += movedSize;
     }
@@ -84,112 +102,107 @@ void WorldStream::saveTable(){
     saveHeader();
 }
 
-size_t WorldStream::findFirstChunk(){
+size_t WorldStream::findFirstChunk() {
     size_t position = std::numeric_limits<size_t>::max();
-    
-    for(auto& [geo_position, file_position]: chunkTable){
-        position = std::min(position,file_position.in_file_start);
+
+    for (auto &[geo_position, file_position] : chunkTable) {
+        position = std::min(position, file_position.in_file_start);
     }
 
     return position;
 }
 
-size_t WorldStream::moveChunk(size_t from, size_t to){
+size_t WorldStream::moveChunk(size_t from, size_t to) {
     stream().seekg(from, std::ios::beg); // Move to the position
-    
+
     ByteArray fromData;
-    if(!fromData.read(stream())){
+    if (!fromData.read(stream())) {
         LogError("No chunk at: {}", from);
         return 10000;
     }
 
     auto loaded_chunk = Chunk::deserialize(fromData);
 
-    stream().seekp(to, std::ios::beg); 
+    stream().seekp(to, std::ios::beg);
     fromData.write(stream());
 
     chunkTable[loaded_chunk.getWorldPosition()].in_file_start = to;
 
-    if(from == header.chunk_data_start) 
+    if (from == header.chunk_data_start)
         header.chunk_data_start += chunkTable[loaded_chunk.getWorldPosition()].serialized_size;
 
     return fromData.getFullSize();
 }
 
-void WorldStream::bulkSave(std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>, IVec3Hash, IVec3Equal>& chunks){
+void WorldStream::bulkSave(std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>, IVec3Hash, IVec3Equal> &chunks) {
     static std::vector<byte> buffer{};
     buffer.clear();
 
     size_t block_size = 10ULL * 1024ULL * 1024ULL; // 10MB blocks
-    if(buffer.capacity() != block_size) buffer.reserve(block_size);
+    if (buffer.capacity() != block_size)
+        buffer.reserve(block_size);
 
     size_t head = header.chunk_data_end;
 
-    for(auto& [position, chunk]: chunks){
-        ByteArray out = chunk->serialize();
+    for (auto &[position, chunk] : chunks) {
+        ByteArray out{};
+        Serializer::Serialize<Chunk>(*chunk, out);
 
-        if(hasChunkAt(position)){
-            auto& old_registered_value = chunkTable[chunk->getWorldPosition()];
+        if (hasChunkAt(position)) {
+            auto &old_registered_value = chunkTable[chunk->getWorldPosition()];
             auto new_size = out.getFullSize();
 
-            if(out.getFullSize() < old_registered_value.serialized_size){
+            if (out.getFullSize() < old_registered_value.serialized_size) {
                 stream().seekp(old_registered_value.in_file_start, std::ios::beg);
                 out.write(stream());
-                
+
                 old_registered_value.serialized_size = new_size;
                 continue;
             }
         }
-        
-        if(buffer.size() + out.getFullSize() > block_size){
+
+        if (buffer.size() + out.getFullSize() > block_size) {
             stream().seekp(header.chunk_data_end, std::ios::beg);
-            stream().write(reinterpret_cast<const char*>(buffer.data()), buffer.size());
+            stream().write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
 
             header.chunk_data_end = head;
-            
+
             buffer.resize(0);
         }
-        
-        chunkTable[chunk->getWorldPosition()] = {
-            {
-                position.x,
-                position.y,
-                position.z
-            },
-            head,
-            out.getFullSize()
-        };
+
+        chunkTable[chunk->getWorldPosition()] = {{position.x, position.y, position.z}, head, out.getFullSize()};
 
         out.writeToBuffer(buffer);
         head += out.getFullSize();
     }
 
-    if(buffer.size() != 0){
+    if (buffer.size() != 0) {
         stream().seekp(header.chunk_data_end, std::ios::beg);
-        stream().write(reinterpret_cast<const char*>(buffer.data()), buffer.size());
+        stream().write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
 
         header.chunk_data_end = head;
 
         buffer.resize(0);
     }
- 
+
     saveHeader();
     saveTable();
 }
 
-bool WorldStream::save(Chunk& chunk){
+bool WorldStream::save(Chunk &chunk) {
     auto position = chunk.getWorldPosition();
-    
-    ByteArray out = chunk.serialize();
 
-    if(hasChunkAt(position)){
-        auto& old_registered_value = chunkTable[chunk.getWorldPosition()];
+    ByteArray out{};
+    Serializer::Serialize<Chunk>(*chunk, out);
+
+    if (hasChunkAt(position)) {
+        auto &old_registered_value = chunkTable[chunk.getWorldPosition()];
         auto new_size = out.getFullSize();
 
-        if(out.getFullSize() < old_registered_value.serialized_size){
+        if (out.getFullSize() < old_registered_value.serialized_size) {
             stream().seekp(old_registered_value.in_file_start, std::ios::beg);
             out.write(stream());
-            
+
             old_registered_value.serialized_size = new_size;
             return true;
         }
@@ -199,14 +212,7 @@ bool WorldStream::save(Chunk& chunk){
     out.write(stream());
 
     chunkTable[chunk.getWorldPosition()] = {
-        {
-            position.x,
-            position.y,
-            position.z
-        },
-        header.chunk_data_end,
-        out.getFullSize()
-    };
+        {position.x, position.y, position.z}, header.chunk_data_end, out.getFullSize()};
 
     header.chunk_data_end += out.getFullSize();
 
@@ -215,27 +221,28 @@ bool WorldStream::save(Chunk& chunk){
     return true;
 }
 
-void WorldStream::load(Chunk* chunk){
-    if(!hasChunkAt(chunk->getWorldPosition())) return;
+void WorldStream::load(Chunk *chunk) {
+    if (!hasChunkAt(chunk->getWorldPosition()))
+        return;
 
     stream().seekg(chunkTable[chunk->getWorldPosition()].in_file_start, std::ios::beg);
     ByteArray source;
-    
-    if(!source.read(stream())){
-        auto& world_pos =chunk->getWorldPosition();
+
+    if (!source.read(stream())) {
+        auto &world_pos = chunk->getWorldPosition();
         LogError("Corrupted chunk record for {}x{}x{}", world_pos.x, world_pos.y, world_pos.z);
         return;
     }
-    
+
     *chunk = Chunk::deserialize(source);
 }
 
-bool WorldStream::hasChunkAt(glm::vec3 position){
+bool WorldStream::hasChunkAt(glm::vec3 position) {
     std::shared_lock lock(mutex);
     return chunkTable.count(position) != 0;
 }
 
-WorldStream::~WorldStream(){
+WorldStream::~WorldStream() {
     saveHeader();
     saveTable();
 }

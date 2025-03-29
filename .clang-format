@@ -1,0 +1,7 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+AccessModifierOffset: -2
+UseTab: Never
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: Empty
+ColumnLimit: 120

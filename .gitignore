@@ -6,3 +6,4 @@ docs/
 releases/
 _CPack_Packages/
 appdata/
+.cache/

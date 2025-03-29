@@ -24,7 +24,7 @@ CraftingDisplay::CraftingDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr
 
         result_display->update();
     };
-    
+
     result_display  = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
     result_display->setLockPlacing(true);
     result_display->setAttribute(&UIFrame::Style::margin, UISideSizesT(TValue(PIXELS, 0),TValue(PIXELS, 0),TValue(PIXELS, 0),TValue(PIXELS,40)));
@@ -45,7 +45,7 @@ CraftingDisplay::CraftingDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr
                 for(int y = 0;y < inventory->getHeight();y++)
                 {
                     auto* slot = inventory->getSlot(x,y);
-    
+
                     bool hasItem = slot && slot->hasItem() && slot->getItem()->getPrototype();
                     if(!hasItem) continue;
                     if(slot->getItem()->getPrototype()->getName() != requirement.name) continue;
@@ -57,7 +57,7 @@ CraftingDisplay::CraftingDisplay(ItemTextureAtlas& textureAtlas, std::shared_ptr
         else{
             for(auto& requirement: current_recipe->required_items){
                 auto* slot = inventory->getSlot(requirement.slotX + recipe_offset_x,requirement.slotY + recipe_offset_y);
-                
+
                 slot->decreaseQuantity(requirement.amount);
             }
         }
@@ -82,7 +82,7 @@ CraftingInterface::CraftingInterface(const std::shared_ptr<UILayer>& layer, Item
 
     crafting_display = std::make_shared<CraftingDisplay>(textureAtlas, held_item_ptr);
     player_inventory = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
-    
+
     player_hotbar = std::make_shared<InventoryDisplay>(textureAtlas, held_item_ptr);
     player_hotbar->setPosition(
         TValue::Center(),
@@ -97,7 +97,7 @@ CraftingInterface::CraftingInterface(const std::shared_ptr<UILayer>& layer, Item
     frame->appendChild(crafting_display);
     player_inventory->setAttribute(&UIFrame::Style::margin, {TValue::Pixels(40),TValue::Pixels(0),TValue::Pixels(0),TValue::Pixels(0)});
     frame->appendChild(player_inventory);
-    
+
     ui_layer->addElement(frame);
     ui_layer->addElement(player_hotbar);
 
@@ -132,7 +132,7 @@ CraftingRecipe::CraftingRecipe(const std::vector<CraftingRecipe::ItemRequirement
 void CraftingRecipe::GenerateTag(){
     tag = "";
     std::vector<CraftingRecipe::ItemRequirement> elems(required_items.begin(), required_items.end());
-    
+
     struct
     {
         bool operator()(ItemRequirement a, ItemRequirement b) const {
@@ -193,13 +193,13 @@ std::tuple<CraftingRecipe*, int, int> CraftingRecipeRegistry::getCraftingFor(Log
         }
 
         return {&recipe,xOffset,yOffset};
-    }    
+    }
     if(recipes.contains(shapeless_tag)){
         auto& recipe = recipes.at(shapeless_tag);
 
         for(auto& requirement: recipe.required_items){
             bool found = false;
-            
+
             for(int y = 0;y < inventory.getHeight();y++)
             for(int x = 0;x < inventory.getWidth();x++)
             {
@@ -242,7 +242,7 @@ bool CraftingRecipeRegistry::LoadRecipesFromXML(const std::string& path){
     xml_for_each_child_as(root, recipe_definition)
     {
         CraftingRecipe recipe{};
-        
+
         XMLExtras::Load<CraftingRecipe>(
             recipe,
             recipe_definition,
@@ -256,7 +256,7 @@ bool CraftingRecipeRegistry::LoadRecipesFromXML(const std::string& path){
 
                 if(name == "items"){
                     xml_for_each_child_as(element, recipe_item){
-                        recipe.required_items.push_back( 
+                        recipe.required_items.push_back(
                             XMLExtras::Load<CraftingRecipe::ItemRequirement>(
                                 recipe_item, {
                                     {"slotX", offsetof(CraftingRecipe::ItemRequirement, slotX), XType::INT},
@@ -281,14 +281,14 @@ bool CraftingRecipeRegistry::LoadRecipesFromXML(const std::string& path){
 }
 
 void CraftingMetadata::serialize(ByteArray& to){
-    crafting_field.serialize(to);
-    result_slot.serialize(to);
+    Serializer::Serialize<LogicalItemInventory>(crafting_field, to);
+    Serializer::Serialize<LogicalItemInventory>(result_slot, to);
 }
 std::shared_ptr<BlockMetadata> CraftingInterface::deserialize(ByteArray& from){
     auto output = std::make_shared<CraftingMetadata>();
 
-    output->crafting_field = LogicalItemInventory::deserialize(from);
-    output->result_slot = LogicalItemInventory::deserialize(from);
+    Serializer::Deserialize<LogicalItemInventory>(output->crafting_field, from);
+    Serializer::Deserialize<LogicalItemInventory>(output->result_slot, from);
 
     return output;
 }
