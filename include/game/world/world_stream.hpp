@@ -13,18 +13,10 @@ class WorldStream: public FileStream{
     private:
         std::shared_mutex mutex;
 
-        constexpr static size_t NO_RECORD = 0; // If there are no further records
-        constexpr static size_t EMTPY = 1; // If there is a record but it signals an empty chunk, only for chunk level records
-
         struct Header{
             char world_name[256];
             int seed;
             size_t root_index_position;
-        };
-
-        struct IndexHeader{
-            unsigned char record_level;
-            size_t record_indexes[8];
         };
 
     public:
@@ -40,6 +32,6 @@ class WorldStream: public FileStream{
         std::string GetName() const;
         void SetName(const std::string& name);
 
-        bool save(Chunk& chunk);
-        void load(Chunk* chunk);
+        bool Save(Chunk& chunk);
+        void Load(Chunk* chunk);
 };

@@ -75,9 +75,6 @@ template <typename T> class Octree {
         }
     }
 
-    template <typename A>
-    friend class OctreeSerializer;
-
   public:
     /*
         Sets a value to be at a set position.
@@ -93,4 +90,6 @@ template <typename T> class Octree {
     const std::unique_ptr<T> &Get(const glm::uvec3 &position) const {
         return InternalGet(position, false);
     }
+
+
 };

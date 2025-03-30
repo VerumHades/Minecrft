@@ -5,3 +5,4 @@ UseTab: Never
 BreakBeforeBraces: Attach
 AllowShortFunctionsOnASingleLine: Empty
 ColumnLimit: 120
+PointerAlignment: Left

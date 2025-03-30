@@ -8,7 +8,7 @@ class Buffer: public Stream{
 
     public:
         /*
-            Read bytes into buffer 
+            Read bytes into buffer
         */
         virtual bool Read(size_t offset, size_t size, byte* buffer) = 0;
         /*
@@ -30,4 +30,16 @@ class Buffer: public Stream{
         bool Read(size_t size, byte* buffer) override;
         // Write bytes into buffer at cursor
         bool Write(size_t size, byte* buffer) override;
+
+        template <typename T>
+        bool Write(size_t offset, const T& value){
+            return Write(offset, sizeof(T), &value);
+        }
+
+        template <typename T>
+        std::optional<T> Read(size_t offset){
+            T object{};
+            if(!Read(offset, sizeof(T), &object)) return std::nullopt;
+            return object;
+        }
 };

@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <cstdint>
+#include <optional>
 
 #define WriteBreak(stream, args) if(!stream.Write##args) return false;
 
@@ -25,9 +26,9 @@ class Stream{
         }
 
         template <typename T>
-        T Read(){
+        std::optional<T> Read(){
             T object{};
-            return Read(sizeof(T), &object);
+            if(!Read(sizeof(T), &object)) return std::nullopt;
             return object;
         }
 };

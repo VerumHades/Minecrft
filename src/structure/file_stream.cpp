@@ -1,8 +1,8 @@
 #include <structure/streams/file_stream.hpp>
 
 FileStream::FileStream(
-    const Callback& init = nullptr, 
-    const Callback& load = nullptr):
+    const Callback& init,
+    const Callback& load):
     init(init), load(load)
 {
 
@@ -13,12 +13,16 @@ bool FileStream::Read(size_t offset, size_t size, byte* buffer) {
 
     stream.seekg(offset, std::ios::beg);
     stream.read(reinterpret_cast<char*>(buffer), size);
+
+    return true;
 }
 bool FileStream::Write(size_t offset, size_t size, byte* buffer) {
     std::lock_guard lock(mutex);
 
     stream.seekp(offset, std::ios::beg);
     stream.write(reinterpret_cast<char*>(buffer), size);
+
+    return true;
 }
 size_t FileStream::Size() {
     std::lock_guard lock(mutex);
@@ -34,7 +38,7 @@ void FileStream::SetCallbacks(const Callback& init, const Callback& load) {
 
 bool FileStream::Open(const fs::path& path){
     std::lock_guard lock(mutex);
-    
+
     fs::path dir_path = path.parent_path();
 
     if (!dir_path.empty() && !fs::exists(dir_path)) {
@@ -42,7 +46,7 @@ bool FileStream::Open(const fs::path& path){
     }
 
     bool newlyCreated = false;
-    
+
     if(!fs::exists(path)){
         std::ofstream file(path, std::ios::binary);
         if(!file.is_open()){
@@ -51,7 +55,7 @@ bool FileStream::Open(const fs::path& path){
         file.close();
         newlyCreated = true;
     }
-    
+
     stream = std::fstream(path, std::ios::out | std::ios::in | std::ios::binary);
 
     if(!stream.is_open()) return false;
