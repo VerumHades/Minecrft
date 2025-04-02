@@ -1,96 +1,82 @@
 #pragma once
 
-#include <structure/streams/buffer.hpp>
-#include <unordered_map>
-#include <unordered_set>
+#include <basetsd.h>
+#include <cstdint>
+#include <vector>
 
-template <typename Key, typename Value, typename Hash = std::hash<Key>, typename Equal = std::equal_to<Key>>
+#include <structure/allocators/linear_allocator.hpp>
+#include <structure/caching/cache.hpp>
+#include <structure/serialization/serializer.hpp>
+#include <structure/streams/buffer.hpp>
+
 class RecordStore {
+  protected:
+    constexpr static size_t master_records_max = 0;
+    struct Header {
+        size_t end;
+        size_t master_records[master_records_max];
+    } loaded_header;
+
+    struct BlockHeader {
+        enum Type { RECORD, WAYSTONE } type;
+        size_t capacity = 0;      // Total capacity
+        size_t records_total = 0; // Actual taken up space
+    };
+
+    struct WaystoneRecord {
+        size_t block_start;
+
+        size_t lowest_hash;
+        size_t largest_hash;
+    };
+
   private:
     Buffer* buffer = nullptr;
 
-    struct Header {
-        size_t first_block; // Start of the first record block
-    } loaded_header;
+    struct CachedBlock {
+        BlockHeader header;
 
-    struct RecordBlockHeader {
-        size_t next_block;
-        size_t last_block;
-        size_t records_total;
+        size_t record_size;
+        std::vector<uint8_t> data;
     };
 
-    struct Record {
-        bool free;
+    Cache<size_t, CachedBlock> block_cache;
 
-        Key key;
-        size_t start;
+    template <typename T> std::optional<T> Load(size_t location);
+    template <typename Key, typename T> CachedBlock* GetBlock(size_t location);
+    template <typename Key, typename T> CachedBlock* GetMasterRecord(int id);
 
-        size_t size;
-        size_t used_size;
-    };
+    /*
+        Finds where to go when looking for a hash in the waystone tree,
 
-    Record* GetRecord(Key key) {
-        if (!buffer)
-            return nullptr;
+        Tho very unlikely a hash could possibly span multiple waystone blocks in some limited scenarios so this function returns all the possible ones to check,
+        will return just one index where applicable, and in rare cases the second part will have a value.
 
-        if (loaded_records.contains(key))
-            return &loaded_records.at(key);
+        In every other case everything is nullopt.
 
-        RecordBlockHeader* block = GetRecordHeader(loaded_header.first_block);
-        while (block != nullptr) {
+        one index => index, std::nullopt
+        more indices => std::nullopt, {index array}
+        not found => std::nullopt, std::nullopt
+    */
+    std::tuple<std::optional<size_t>, std::optional<std::vector<size_t>>> FindByWaystone(CachedBlock* waystone_block, size_t hash);
 
-            block = GetRecordHeader(block->next_block);
-        }
-    }
+    template <typename Key, typename T, typename Hash = std::hash<Key>, typename Equal = std::equal_to<Key>>
+    std::optional<T> FindRecordInternal(size_t block_start, Key key);
 
-    RecordBlockHeader* GetRecordHeader(size_t start) {
-        if (!buffer)
-            return nullptr;
+  protected:
+    template <typename Key, typename T, typename Hash = std::hash<Key>, typename Equal = std::equal_to<Key>>
+    void StoreRecord(int id, Key key, const T& record);
 
-        auto block_option = buffer->Read<RecordBlockHeader>(start);
-        if (!block_option)
-            return nullptr;
+    template <typename Key, typename T, typename Hash = std::hash<Key>, typename Equal = std::equal_to<Key>>
+    std::optional<T> FindRecord(int id, Key key);
 
-        loaded_record_blocks[start] = block_option.value();
-
-        return &loaded_record_blocks.at(start);
-    }
-
-    std::unordered_set<size_t> certainly_nonexistent_records{};
-    std::unordered_map<size_t, Record> loaded_records{};
-    std::unordered_map<size_t, RecordBlockHeader> loaded_record_blocks{};
-
-    const size_t block_record_count = 500;
+    // Zeroes out header
+    void ResetHeader();
+    // Flushes header to buffer
+    void SaveHeader();
 
   public:
-    void Set(Key key, byte* data, size_t size) {
-        if (!buffer)
-            return;
-    }
-    size_t GetSize(Key key) {
-        if (!buffer)
-            return 0;
-    }
-    void Get(Key key, byte* data) {
-        if (!buffer)
-            return;
-    }
+    RecordStore();
 
-    void Remove(Key key) {
-        if (!buffer)
-            return;
-    }
-
-    void SetBuffer(Buffer* buffer) {
-        auto header_opt = buffer->Read<Header>(0);
-
-        if (!header_opt) {
-            this->buffer = nullptr;
-            return;
-        }
-
-        loaded_header = header_opt.value();
-        loaded_records = {};
-        certainly_nonexistent_records = {};
-    }
+    void SetBuffer(Buffer* buffer);
 };
