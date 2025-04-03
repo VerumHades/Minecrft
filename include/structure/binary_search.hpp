@@ -34,11 +34,11 @@ template <typename T, typename K> T* BinarySearch(K T::* key_ptr, K key, T* arra
     return nullptr;
 }
 
+#define BINARY_SEARCH_ORDER_INVALID -2
 /*
     In an array of T, look for the lowest index where K arithmetic can be placed and maintain the ascending order, where
    K is a property of T
 */
-#define BINARY_SEARCH_ORDER_INVALID -2
 template <typename T, typename K> int BinarySearchOrder(K T::* key_ptr, K key, T* array, size_t size) {
     size_t current_start = 0;
     size_t current_size = size;
