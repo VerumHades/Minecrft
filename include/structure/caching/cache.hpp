@@ -53,4 +53,11 @@ class Cache {
         cached_values.insert_or_assign(key, std::move(t));
         return std::move(result);
     }
+
+    void Clear(const std::function<void(Key, T)> evict){
+        for(auto& [key, value]: cached_values)
+            evict(key,value);
+
+        cached_values.clear();
+    }
 };
