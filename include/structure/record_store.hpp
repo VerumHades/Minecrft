@@ -3,12 +3,11 @@
 #include <map>
 #include <unordered_map>
 
-#include <structure/allocators/linear_allocator.hpp>
 #include <structure/caching/cache.hpp>
 #include <structure/serialization/serializer.hpp>
 #include <structure/streams/buffer.hpp>
 
-template <typename Key, typename Hash = std::hash<Key>, typename Equal = std::equal_to<Key>>
+template <typename Key, typename OuterHeader, typename Hash = std::hash<Key>, typename Equal = std::equal_to<Key>>
 class RecordStore {
     public:
     struct Header {
@@ -17,6 +16,8 @@ class RecordStore {
 
         size_t first_block;
         size_t last_block;
+
+        OuterHeader header;
     } loaded_header;
 
     struct BlockHeader {
@@ -56,7 +57,7 @@ class RecordStore {
     // Does no checks, only registers a block as free
     size_t FreeBlock(size_t location, size_t capacity);
 
-    Cache<size_t, CachedBlock> block_cache;
+    Cache<size_t, CachedBlock> block_cache{50};
 
     void LoadBlockIntoCache(size_t location, const CachedBlock& block);
 
@@ -85,6 +86,8 @@ class RecordStore {
         Returns a pointer to a record based on its key if it exists, other operations may invalidate this pointer.
     */
     Record* Get(const Key& key);
+
+    OuterHeader& GetHeader() const { return loaded_header.header; };
 
     void ResetHeader();
     void SetBuffer(Buffer* buffer);
