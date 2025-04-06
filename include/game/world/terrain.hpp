@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <optional>
 #include <functional>
-#include <mutex> 
+#include <mutex>
 #include <chrono>
 #include <queue>
 #include <atomic>
@@ -36,19 +36,22 @@ class Terrain{
     private:
         std::mutex mutex;
         std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>, IVec3Hash, IVec3Equal> chunks{};
-        
+
     public:
         Terrain(){}
         Block* getBlock(glm::ivec3 position) const;
         bool setBlock(const glm::ivec3& position, const Block& index);
 
         Chunk* createEmptyChunk(glm::ivec3 position);
+
         void addChunk(const glm::ivec3& position, std::unique_ptr<Chunk> chunk);
+        std::unique_ptr<Chunk> takeChunk(const glm::ivec3& position);
+
         void removeChunk(const glm::ivec3& position);
 
         Chunk* getChunk(glm::ivec3 position) const;
         Chunk* getChunkFromBlockPosition(glm::ivec3 position) const;
-        
+
         glm::ivec3 blockToChunkPosition(glm::ivec3 blockPosition) const;
         glm::ivec3 getGetChunkRelativeBlockPosition(glm::ivec3 position);
 

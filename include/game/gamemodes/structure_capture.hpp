@@ -6,6 +6,8 @@
 
 #include <game/gamemodes/interactable_base.hpp>
 
+#include <structure/serialization/serializer.hpp>
+
 
 #include <atomic>
 
@@ -31,10 +33,10 @@ class GameModeStructureCapture: public GameModeInteractable{
         void RefreshStructureSelection();
 
     public:
-        GameModeStructureCapture(GameModeState& state): GameModeInteractable(state, "structure_capture") {}; 
+        GameModeStructureCapture(GameModeState& state): GameModeInteractable(state, "structure_capture") {};
 
         void Initialize() override;
-        
+
         void Open() override;
         void Render(double deltatime) override;
         void PhysicsUpdate(double deltatime) override;
@@ -45,4 +47,4 @@ class GameModeStructureCapture: public GameModeInteractable{
         void MouseScroll(double xoffset, double yoffset) override;
 
         bool NoClip() override { return true; };
-};      
+};

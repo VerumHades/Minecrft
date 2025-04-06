@@ -5,12 +5,12 @@
 */
 template <typename T>
 bool Serializer::Serialize(T& value, ByteArray& output) {
-    return output.append<T>(value);
+    return output.Append<T>(value);
 }
 
 template <typename T>
 bool Serializer::Deserialize(T& value, ByteArray& input) {
-    auto opt = input.read<T>(value);
+    auto opt = input.Read<T>(value);
     if(!opt) return false;
     value = opt.value();
     return true;

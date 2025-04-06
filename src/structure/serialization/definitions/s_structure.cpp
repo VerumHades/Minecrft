@@ -4,18 +4,18 @@
 /*
     BlockArray serialization
 */
-#include <game/structure.hpp> 
+#include <game/structure.hpp>
 
 SerializeFunction(Structure) {
-    array.append<size_t>(this_.width);
-    array.append<size_t>(this_.height);
-    array.append<size_t>(this_.depth);
+    array.Append<size_t>(this_.width);
+    array.Append<size_t>(this_.height);
+    array.Append<size_t>(this_.depth);
 
-    array.append<size_t>(this_.block_arrays.size());
+    array.Append<size_t>(this_.block_arrays.size());
     for(auto& [position, block_array]: this_.block_arrays){
-        array.append<int>(position.x);
-        array.append<int>(position.y);
-        array.append<int>(position.z);
+        array.Append<int>(position.x);
+        array.Append<int>(position.y);
+        array.Append<int>(position.z);
 
         Serialize<SparseBlockArray>(block_array, array);
     }
@@ -25,15 +25,15 @@ SerializeFunction(Structure) {
 SerializeInstatiate(Structure)
 
 DeserializeFunction(Structure){
-    ResolvedOption(width , read<size_t>);
-    ResolvedOption(height, read<size_t>);
-    ResolvedOption(depth , read<size_t>);
+    ResolvedOption(width , Read<size_t>);
+    ResolvedOption(height, Read<size_t>);
+    ResolvedOption(depth , Read<size_t>);
 
-    ResolvedOption(arrays_total, read<size_t>);
+    ResolvedOption(arrays_total, Read<size_t>);
     for(int i = 0;i < arrays_total;i++){
-        ResolvedOption(x, read<int>)
-        ResolvedOption(y, read<int>)
-        ResolvedOption(z, read<int>)
+        ResolvedOption(x, Read<int>)
+        ResolvedOption(y, Read<int>)
+        ResolvedOption(z, Read<int>)
 
         glm::ivec3 position = glm::ivec3{x,y,z};
 

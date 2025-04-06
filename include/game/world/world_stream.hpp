@@ -5,6 +5,7 @@
 #include <game/save_structure.hpp>
 
 #include <structure/record_store.hpp>
+#include <structure/serialization/octree_serializer.hpp>
 #include <structure/octree.hpp>
 
 #include <fstream>
@@ -42,7 +43,9 @@ class WorldStream: public FileStream{
         std::mutex marking_mutex;
         std::unordered_map<glm::ivec3, std::unique_ptr<SegmentPack>, IVec3Hash, IVec3Equal> marked_for_deletion;
 
-        RecordStore<glm::ivec3, Header, IVec3Hash, IVec2Equal> record_store;
+
+        using SegmentRecordStore = RecordStore<glm::ivec3, Header, IVec3Hash, IVec2Equal>;
+        SegmentRecordStore record_store;
 
         // Thread safe, Returns whether the segment could be loaded
         bool LoadSegment(const glm::ivec3& position);

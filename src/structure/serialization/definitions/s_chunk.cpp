@@ -4,21 +4,21 @@
 /*
     BlockArray serialization
 */
-#include <game/chunk.hpp> 
+#include <game/chunk.hpp>
 
 SerializeFunction(Chunk) {
-    array.append<int>(this_.worldPosition.x);
-    array.append<int>(this_.worldPosition.y);
-    array.append<int>(this_.worldPosition.z);
-    
+    array.Append<int>(this_.worldPosition.x);
+    array.Append<int>(this_.worldPosition.y);
+    array.Append<int>(this_.worldPosition.z);
+
     return Serialize<SparseBlockArray>(this_, array);
 }
 SerializeInstatiate(Chunk)
 
 DeserializeFunction(Chunk){
-    ResolvedOption(x, read<int>)
-    ResolvedOption(y, read<int>)
-    ResolvedOption(z, read<int>)
+    ResolvedOption(x, Read<int>)
+    ResolvedOption(y, Read<int>)
+    ResolvedOption(z, Read<int>)
 
     this_.worldPosition = glm::ivec3{x,y,z};
 

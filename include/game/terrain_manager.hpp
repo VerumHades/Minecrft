@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #include <rendering/region_culler.hpp>
 #include <rendering/vertex_pooling/pooled_mesh.hpp>
@@ -24,13 +24,12 @@ class TerrainManager{
 
         RegionCuller mesh_registry;
         std::unique_ptr<MeshLoaderInterface> mesh_loader;
-        
+
         GameState* game_state = nullptr;
 
         int bottom_y = -3;
         int top_y    =  3;
-        bool legacy_mode_on = false;
-        
+
         BitField3D::SimplificationLevel calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition);
 
         std::unique_ptr<Service> service_manager;

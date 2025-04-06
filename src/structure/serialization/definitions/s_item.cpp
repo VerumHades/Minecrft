@@ -4,19 +4,19 @@
 /*
     BlockArray serialization
 */
-#include <game/items/item.hpp> 
+#include <game/items/item.hpp>
 
 SerializeFunction(Item) {
     auto* prototype = getPrototype();
     std::string name = prototype ? prototype->getName() : "NO_NAME";
-    array.append(name);
-    array.append<int>(quantity);
+    array.Append(name);
+    array.Append<int>(quantity);
 }
 SerializeInstatiate(Item)
 
 DeserializeFunction(Item){
-    ResolvedOption(name, sread);
-    ResolvedOption(quantity, read<int>);
+    ResolvedOption(name, ReadString);
+    ResolvedOption(quantity, Read<int>);
 
     ItemRef item = Item::Create(name);
 

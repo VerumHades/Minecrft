@@ -8,11 +8,9 @@
 template <typename T> class Octree {
   private:
     class Node {
-      private:
-        union {
-            std::array<std::unique_ptr<Node>, 8> sub_nodes;
-            std::array<std::unique_ptr<T>, 8> values;
-        };
+      public:
+        std::array<std::unique_ptr<Node>, 8> sub_nodes;
+        std::array<std::unique_ptr<T>, 8> values;
     };
     unsigned int top_level = 0; // What level is the root node;
     std::unique_ptr<Node> root_node = nullptr;
@@ -69,12 +67,15 @@ template <typename T> class Octree {
                     return {nullptr, 0};
             }
 
-            current_node = sub_node;
+            current_node = sub_node.get();
 
             level--;
         }
         return {nullptr, 0};
     }
+
+    template <typename A>
+    friend class OctreeSerializer;
 
   public:
     /*

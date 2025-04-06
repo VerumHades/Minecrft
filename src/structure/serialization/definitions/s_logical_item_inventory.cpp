@@ -7,8 +7,8 @@
 #include <game/items/item.hpp>
 
 SerializeFunction(LogicalItemInventory) {
-    array.append<int>(this_.slots_horizontaly);
-    array.append<int>(this_.slots_verticaly);
+    array.Append<int>(this_.slots_horizontaly);
+    array.Append<int>(this_.slots_verticaly);
 
     size_t items_total = 0;
     for(int y = 0;y < this_.slots_verticaly;y++)
@@ -18,7 +18,7 @@ SerializeFunction(LogicalItemInventory) {
             items_total++;
         }
 
-    array.append<size_t>(items_total);
+    array.Append<size_t>(items_total);
 
     for(int y = 0;y < this_.slots_verticaly;y++)
         for(int x = 0;x < this_.slots_horizontaly;x++){
@@ -26,8 +26,8 @@ SerializeFunction(LogicalItemInventory) {
 
             if(!slot->hasItem()) continue;
 
-            array.append<int>(x);
-            array.append<int>(y);
+            array.Append<int>(x);
+            array.Append<int>(y);
             Serializer::Serialize<Item>(*slot->getItem(), array);
         }
 
@@ -36,13 +36,13 @@ SerializeFunction(LogicalItemInventory) {
 SerializeInstatiate(LogicalItemInventory)
 
 DeserializeFunction(LogicalItemInventory){
-    ResolveOptionTo(this_.slots_horizontaly, wopt, read<int>)
-    ResolveOptionTo(this_.slots_verticaly, hopt, read<int>)
-    ResolvedOption(items_total, read<size_t>);
+    ResolveOptionTo(this_.slots_horizontaly, wopt, Read<int>)
+    ResolveOptionTo(this_.slots_verticaly, hopt, Read<int>)
+    ResolvedOption(items_total, Read<size_t>);
 
     for(int i = 0;i < items_total;i++){
-        ResolvedOption(x, read<int>);
-        ResolvedOption(y, read<int>);
+        ResolvedOption(x, Read<int>);
+        ResolvedOption(y, Read<int>);
 
         auto* slot = this_.getSlot(x,y);
         if(!slot) continue;

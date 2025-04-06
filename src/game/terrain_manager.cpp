@@ -28,14 +28,14 @@ TerrainManager::TerrainManager(){
                 for(int i = bottom_y;i < top_y;i++){
                     if(should_stop) return;
                     if(HandlePriorityMeshes()) continue;
-        
+
                     glm::ivec3 chunkPosition = glm::ivec3{column_position.x,i,column_position.y} + around;
-        
+
                     auto* chunk = terrain.getChunk(chunkPosition);
                     if(!chunk) continue;
-        
+
                     auto level = calculateSimplificationLevel(around,chunkPosition);
-        
+
                     mesh_generator.syncGenerateAsyncUploadMesh(chunk, create_mesh(), level);
                 }
             }
@@ -47,9 +47,9 @@ TerrainManager::TerrainManager(){
 
         auto& terrain = game_state->getTerrain();
         auto& world_stream = *game_state->world_stream;
-        
+
         SpiralIndexer generation_indexer = {};
-        
+
         generated_count = 0;
 
         glm::ivec3 around = glm::ivec3{around_x.load(),around_y.load(),around_z.load()};
@@ -65,7 +65,7 @@ TerrainManager::TerrainManager(){
 
             for(int i = bottom_y;i < top_y;i++){
                 glm::ivec3 chunkPosition = glm::ivec3{column_position.x,i,column_position.y} + around;
-                
+
                 auto* chunk = terrain.getChunk(chunkPosition);
                 auto level = calculateSimplificationLevel(around,chunkPosition);
 
@@ -73,14 +73,14 @@ TerrainManager::TerrainManager(){
                     chunk->current_simplification = level;
                     continue;
                 }
+
+                if(world_stream.HasChunkAt(chunkPosition)){
+                    terrain.addChunk(chunkPosition, world_stream.Load(chunkPosition));
+                    continue;
+                }
                 chunk = terrain.createEmptyChunk(chunkPosition);
                 chunk->current_simplification = level;
 
-                if(world_stream.hasChunkAt(chunkPosition)){
-                    world_stream.load(chunk);
-                    continue;
-                }
-                
                 world_generator.generateTerrainChunk(chunk, chunkPosition);
             }
 
@@ -93,7 +93,7 @@ TerrainManager::TerrainManager(){
     });
 
     service_manager->AddModule("unloader", [this](std::atomic<bool>& should_stop){
-        std::unordered_set<glm::ivec2, IVec2Hash, IVec2Equal> wave_copy; 
+        std::unordered_set<glm::ivec2, IVec2Hash, IVec2Equal> wave_copy;
         {
             std::lock_guard lock(loaded_column_mutex);
             wave_copy = loaded_columns;
@@ -135,17 +135,6 @@ bool TerrainManager::HandlePriorityMeshes(){
 bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance){
     if(!game_state || !game_state->world_stream) return false;
 
-    if(mesh_loader->DrawFailed() && !legacy_mode_on){ // Fall back to legacy supported renderer
-        std::cout << "Falling back" << std::endl;
-        create_mesh = [](){ return std::make_unique<PooledMesh>(); };
-        reset_loader = [this](){
-            mesh_loader = std::make_unique<PooledMeshLoader>();
-            mesh_registry.SetMeshLoader(mesh_loader.get());
-        };
-        reset_loader();
-        legacy_mode_on = true;
-    }
-
     around_x = around.x;
     around_y = around.y;
     around_z = around.z;
@@ -167,7 +156,7 @@ bool TerrainManager::uploadPendingMeshes(){
 
 void TerrainManager::UnloadChunkColumn(const glm::ivec2& position){
     if(!game_state || !game_state->world_stream) return;
-    
+
     auto& terrain = game_state->getTerrain();
 
     for(int i = bottom_y;i < top_y;i++){

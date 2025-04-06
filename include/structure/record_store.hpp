@@ -79,6 +79,8 @@ class RecordStore {
         Makes no guarantess about the contents of the allocated spaces, will not copy any data.
 
         Optionally can upload data of set size.
+
+        For existing keys uses existing space if its enough otherwise allocates new space.
     */
     size_t Save(const Key& key, size_t capacity, byte* data = nullptr, size_t size = 0);
 
@@ -87,7 +89,7 @@ class RecordStore {
     */
     Record* Get(const Key& key);
 
-    OuterHeader& GetHeader() const { return loaded_header.header; };
+    OuterHeader& GetHeader() { return loaded_header.header; };
 
     void ResetHeader();
     void SetBuffer(Buffer* buffer);

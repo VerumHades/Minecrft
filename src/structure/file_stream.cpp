@@ -12,7 +12,7 @@ bool FileStream::Read(size_t offset, size_t size, byte* buffer) {
     std::lock_guard lock(mutex);
 
     stream.seekg(offset, std::ios::beg);
-    stream.read(reinterpret_cast<char*>(buffer), size);
+    stream.Read(reinterpret_cast<char*>(buffer), size);
 
     return true;
 }

@@ -21,14 +21,14 @@ class GameState{
 
         LogicalItemInventory player_inventory{10,5};
         LogicalItemInventory player_hotbar{9,1};
-        
+
         LogicalItemInventory player_crafting_inventory{2,2};
         LogicalItemInventory player_crafting_inventory_result{1,1};
 
         int player_health = 20;
 
         FileSaveStructure save_structure;
-        
+
         WorldStream* world_stream;
         FileStream* player_stream;
         FileStream* entity_stream;
@@ -44,12 +44,12 @@ class GameState{
         friend class TerrainManager;
 
         int seed = 0;
-        
+
     public:
         GameState(const std::string& filename, int worldSeed = -1);
 
         void unload();
-        
+
         void loadChunk(const glm::ivec3& position);
         void unloadChunk(const glm::ivec3& position);
 
@@ -64,7 +64,7 @@ class GameState{
 
         void giveItemToPlayer(ItemRef item);
 
-        int getSeed(){return world_stream->getSeed();}
+        int getSeed(){return world_stream->GetSeed();}
         Entity& getPlayer(){return entities.front();}
         LogicalItemInventory& getPlayerInventory(){return player_inventory;};
         LogicalItemInventory& getPlayerHotbar(){return player_hotbar;}

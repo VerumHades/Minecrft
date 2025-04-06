@@ -1,4 +1,6 @@
 #include "logging.hpp"
+#include "structure/bytearray.hpp"
+#include "structure/serialization/octree_serializer.hpp"
 #include <game/world/world_stream.hpp>
 #include <mutex>
 
@@ -15,14 +17,39 @@ glm::ivec3 WorldStream::GetSegmentPositionFor(const glm::ivec3& position) {
     return glm::floor(glm::vec3(position) / static_cast<float>(segment_size));
 }
 
-void WorldStream::LoadSegment(const glm::ivec3& position) {
-    auto* record = record_store.Get(position);
+bool WorldStream::LoadSegment(const glm::ivec3& position) {
+    SegmentRecordStore::Record* record = nullptr;
 
-    if (record)
-        return;
+    {
+        std::unique_lock lock(mutex);
+        record = record_store.Get(position);
+    }
+
+    if (!record) return false;
+
+    ByteArray array{};
+    {
+        std::unique_lock lock(mutex);
+        array.Vector().resize(record->used_size);
+        Read(record->location, record->used_size, array.Data());
+    }
+
+    std::unique_ptr<SegmentPack> pack = std::make_unique<SegmentPack>();
+    OctreeSerializer<Chunk>::Deserialize(pack->segment, array);
+
+    LoadSegmentToCache(position, pack);
+
+    return true;
 }
-void WorldStream::SaveSegment(const glm::ivec3& position, const SegmentPack& segment) {
 
+void WorldStream::SaveSegment(const glm::ivec3& position, const SegmentPack& segment) {
+    ByteArray array{};
+    OctreeSerializer<Chunk>::Serialize(segment.segment, array);
+
+    {
+        std::unique_lock lock(mutex);
+        record_store.Save(position, array.Size(), array.Data(), array.Size());
+    }
 }
 
 WorldStream::SegmentPack* WorldStream::GetSegment(const glm::ivec3& position, bool set_in_use) {
