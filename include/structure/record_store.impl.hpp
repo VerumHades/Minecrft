@@ -202,6 +202,7 @@ void CLASS::SetBuffer(Buffer* buffer) {
 TEMPLATE
 void CLASS::ResetHeader() {
     memset(&loaded_header, 0, sizeof(Header));
+    loaded_header.end = sizeof(Header);
 }
 
 TEMPLATE

@@ -2,7 +2,7 @@
 #include <iostream>
 
 std::shared_ptr<EntityData> Entity::deserializeData(ByteArray& array){
-    auto type_opt = array.read<EntityData::Type>();
+    auto type_opt = array.Read<EntityData::Type>();
     if(!type_opt) return nullptr;
     auto type = type_opt.value();
     if(type == EntityData::DROPPED_ITEM) return DroppedItem::deserializeData(array);

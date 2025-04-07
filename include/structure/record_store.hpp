@@ -3,12 +3,11 @@
 #include <map>
 #include <unordered_map>
 
-#include <structure/allocators/linear_allocator.hpp>
 #include <structure/caching/cache.hpp>
 #include <structure/serialization/serializer.hpp>
 #include <structure/streams/buffer.hpp>
 
-template <typename Key, typename Hash = std::hash<Key>, typename Equal = std::equal_to<Key>>
+template <typename Key, typename OuterHeader, typename Hash = std::hash<Key>, typename Equal = std::equal_to<Key>>
 class RecordStore {
     public:
     struct Header {
@@ -17,6 +16,8 @@ class RecordStore {
 
         size_t first_block;
         size_t last_block;
+
+        OuterHeader header;
     } loaded_header;
 
     struct BlockHeader {
@@ -56,7 +57,7 @@ class RecordStore {
     // Does no checks, only registers a block as free
     size_t FreeBlock(size_t location, size_t capacity);
 
-    Cache<size_t, CachedBlock> block_cache;
+    Cache<size_t, CachedBlock> block_cache{50};
 
     void LoadBlockIntoCache(size_t location, const CachedBlock& block);
 
@@ -78,6 +79,8 @@ class RecordStore {
         Makes no guarantess about the contents of the allocated spaces, will not copy any data.
 
         Optionally can upload data of set size.
+
+        For existing keys uses existing space if its enough otherwise allocates new space.
     */
     size_t Save(const Key& key, size_t capacity, byte* data = nullptr, size_t size = 0);
 
@@ -85,6 +88,8 @@ class RecordStore {
         Returns a pointer to a record based on its key if it exists, other operations may invalidate this pointer.
     */
     Record* Get(const Key& key);
+
+    OuterHeader& GetHeader() { return loaded_header.header; };
 
     void ResetHeader();
     void SetBuffer(Buffer* buffer);

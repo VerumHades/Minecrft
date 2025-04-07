@@ -2,9 +2,9 @@
 
 void MenuScene::initialize(){
     UICore::get().loadWindowFromXML(*this->getWindow(), "resources/templates/menu.xml");
-    
+
     auto scrollable = getElementById<UIScrollableFrame>("world_selection");
-    
+
     getUILayer("world_menu").onEntered = [this, scrollable] {
         scrollable->clearChildren();
 
@@ -22,9 +22,9 @@ void MenuScene::initialize(){
 
             auto frame = std::make_shared<UIFrame>();
             frame->setIdentifiers({"world_option_frame"});
-            
+
             auto temp = std::make_shared<UILabel>();
-            if(state.getWorldStream()) temp->setText(state.getWorldStream()->getName());
+            if(state.getWorldStream()) temp->setText(state.getWorldStream()->GetName());
             temp->setSize({PERCENT,100}, 40_px);
             temp->setHoverable(false);
             temp->setIdentifiers({"world_option_label"});
@@ -45,7 +45,7 @@ void MenuScene::initialize(){
             frame->appendChild(chunkCountLabel);
             scrollable->appendChild(frame);
         }
-        
+
         scrollable->calculateTransforms();
         scrollable->update();
         scrollable->updateChildren();
@@ -63,15 +63,15 @@ void MenuScene::initialize(){
         static WorldGenerator generator{};
         int seed = std::stoi(seedInput->getText());
         generator.setSeed(seed);
-        
+
         previewContainer->clearChildren();
-    
+
         int max_size = std::min(previewContainer->getContentTransform().width, previewContainer->getContentTransform().height) - 100;
 
         auto preview = std::make_shared<UIImage>(
             generator.createPreview(max_size,max_size)
         );
-        
+
         preview->setPosition(TValue::Center(), TValue::Center());
         preview->setSize(TValue::Pixels(max_size), TValue::Pixels(max_size));
 
@@ -88,7 +88,7 @@ void MenuScene::initialize(){
     seedRegenerate->onClicked = [this,seedInput,resetPreview](){
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<int> dist(100000000,999999999); 
+        std::uniform_int_distribution<int> dist(100000000,999999999);
 
         seedInput->setText(std::to_string(dist(gen)));
         seedInput->update();
@@ -98,7 +98,7 @@ void MenuScene::initialize(){
     seedRegenerate->onClicked.trigger();
 
     auto newWorldNameInput = getElementById<UIInput>("new_world_name");
-    
+
     auto newWorldFunc = [newWorldNameInput, seedInput, this]{
         auto name = newWorldNameInput->getText();
         newWorldNameInput->setText("");
@@ -109,10 +109,10 @@ void MenuScene::initialize(){
         if(path) {
             GameState state{(path.value() / fs::path(name)).string(), std::stoi(seedInput->getText())};
 
-            if(state.getWorldStream()) 
-                state.getWorldStream()->setName(name);
+            if(state.getWorldStream())
+                state.getWorldStream()->SetName(name);
         }
-        
+
         this->setUILayer("world_menu");
     };
 

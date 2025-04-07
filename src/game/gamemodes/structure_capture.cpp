@@ -1,3 +1,5 @@
+#include "structure/bytearray.hpp"
+#include "structure/streams/file_stream.hpp"
 #include <game/gamemodes/structure_capture.hpp>
 
 template <typename T>
@@ -33,7 +35,13 @@ void GameModeStructureCapture::Initialize(){
 
         auto path = Paths::Get(Paths::GAME_STRUCTURES);
         if(path){
-            structure.serialize().saveToFile(path.value() / fs::path(name + ".structure"));
+            ByteArray array{};
+            Serializer::Serialize<Structure>(structure, array);
+
+            FileStream stream{};
+            stream.Open(path.value() / (name + ".structure"));
+
+            array.WriteToStream(stream);
         }
         state.scene.setUILayer(GetBaseLayer().name);
         RefreshStructureSelection();
@@ -56,14 +64,18 @@ void GameModeStructureCapture::Initialize(){
             return;
         }
 
-        auto bt = ByteArray::FromFile(structures_path.value() / (name + ".structure"));
+        ByteArray array{};
+
+        FileStream stream{};
+        stream.Open(structures_path.value() / (name + ".structure"));
+        array.LoadFromStream(stream);
+
+        selected_structure = std::make_shared<Structure>(0,0,0);
+        Serializer::Deserialize<Structure>(*selected_structure.get(), array);
 
         structure_name_label->setText("Selected structure:" + name);
         structure_name_label->update();
 
-
-        selected_structure = std::make_shared<Structure>();
-        Serializer::Deserialize<Structure>(*selected_structure);
         this->UpdateStructureDisplay();
     };
 
