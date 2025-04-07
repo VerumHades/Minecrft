@@ -7,7 +7,7 @@ GameState::GameState(const std::string& path, int worldSeed) : save_structure(pa
 
     world_stream = save_structure.RegisterSave<WorldStream>("world", "", "world");
     player_stream = save_structure.RegisterSave<FileStream>(
-        "player", "", [this](FileStream*) { this->savePlayer(); }, [this](FileStream* stream) { this->loadPlayer(); });
+        "player", "", [this](FileStream*) { this->savePlayer(); }, [this](FileStream*) { this->loadPlayer(); });
 
     entity_stream = save_structure.RegisterSave<FileStream>(
         "entities", "", [this](FileStream*) { this->saveEntities(); }, [this](FileStream*) { this->loadEntities(); });
@@ -49,8 +49,6 @@ void GameState::saveEntities() {
 }
 
 void GameState::loadEntities() {
-    entities.clear();
-
     ByteArray array{};
 
     entity_stream->SetCursor(0);
@@ -59,8 +57,11 @@ void GameState::loadEntities() {
     auto count_opt = array.Read<size_t>();
     if (!count_opt) {
         LogError("Entity file is corrupted, failed to load.");
+        saveEntities();
         return;
     }
+
+    entities.clear();
 
     size_t count = count_opt.value();
     for (size_t i = 0; i < count; i++) {
@@ -68,6 +69,14 @@ void GameState::loadEntities() {
         Serializer::Deserialize<Entity>(entity, array);
         entities.emplace_back(entity);
     }
+
+    if(entities.size() == 0) { // Player entity cannot be missing
+        Entity player = Entity(glm::vec3(0, 30, 0), glm::vec3(0.6, 1.8, 0.6));
+        player.addTag("player");
+        entities.push_back(player);
+    }
+
+    std::cout << "LOADING: " <<entities.size() << std::endl;
 }
 
 void GameState::giveItemToPlayer(ItemRef item) {
@@ -143,11 +152,11 @@ void GameState::unloadChunk(const glm::ivec3& position) {
         return;
 
     if (world_stream)
-        world_stream->Save(chunk);
+        world_stream->Save(std::move(chunk));
 }
 
 void GameState::unload() {
-    for (auto it = terrain.chunks.begin(); it != terrain.chunks.end(); ) {
+    for (auto it = terrain.chunks.begin(); it != terrain.chunks.end();) {
         auto current = it++;
         unloadChunk(current->first);
     }

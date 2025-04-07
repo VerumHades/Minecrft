@@ -30,8 +30,8 @@ class ByteArray : Streamable {
     */
     template <typename T, typename = std::enable_if_t<std::is_trivially_copyable<T>::value>>
     size_t Write(size_t offset, size_t count, const T* source) {
-        while(offset + sizeof(T) * count > data.size())
-            data.resize(data.size() * 2);
+        while (offset + sizeof(T) * count > data.size())
+            data.resize((data.size() == 0 ? 1 : data.size()) * 2);
 
         std::memcpy(data.data() + offset, source, sizeof(T) * count);
 
@@ -66,15 +66,15 @@ class ByteArray : Streamable {
     }
 
     template <typename T> void Append(size_t count, const T* source) {
-        cursor += Write<T>(cursor, count, source);
+        cursor += Write(cursor, count, source);
     }
 
     template <typename T> void Append(const std::vector<T>& source) {
-        cursor += Write<T>(cursor, source);
+        cursor += Write(cursor, source);
     }
 
     template <typename T> void Append(const T& value) {
-        cursor += Write<T>(cursor, value);
+        cursor += Write(cursor, value);
     }
 
     template <typename T, typename = std::enable_if_t<std::is_trivially_copyable<T>::value>> std::optional<T> Read() {
@@ -146,7 +146,13 @@ class ByteArray : Streamable {
     const std::vector<byte>& GetData() const {
         return data;
     }
-    std::vector<byte>& Vector() {return data;}
-    byte* Data(){ return data.data(); }
-    size_t Size() {return data.size(); }
+    std::vector<byte>& Vector() {
+        return data;
+    }
+    byte* Data() {
+        return data.data();
+    }
+    size_t Size() {
+        return data.size();
+    }
 };

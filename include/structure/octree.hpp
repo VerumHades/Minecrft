@@ -81,7 +81,7 @@ template <typename T> class Octree {
     /*
         Sets a value to be at a set position.
     */
-    void Set(const glm::uvec3& position, const std::unique_ptr<T>& value) {
+    void Set(const glm::uvec3& position, std::unique_ptr<T> value) {
         auto [node_ptr, index] = InternalGet(position, true);
         node_ptr->values[index] = std::move(value);
     }
@@ -89,7 +89,7 @@ template <typename T> class Octree {
     /*
         Returns a value at a position or nullptr if it doensnt exist.
     */
-    const std::unique_ptr<T>& Get(const glm::uvec3& position) const {
+    const std::unique_ptr<T>& Get(const glm::uvec3& position) {
         auto [node_ptr, index] = InternalGet(position, false);
         return node_ptr->values[index];
     }

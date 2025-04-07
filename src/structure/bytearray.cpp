@@ -11,9 +11,12 @@ bool ByteArray::WriteToStream(Stream& stream){
 }
 
 bool ByteArray::LoadFromStream(Stream& stream){
-    char value = stream.Read<char>();
-    if(value != '|') return false;
-    size_t size = stream.Read<size_t>();
+    auto value_opt = stream.Read<char>();
+    if(!value_opt || value_opt.value() != '|') return false;
+
+    auto size_opt = stream.Read<size_t>();
+    if(!size_opt) return false;
+    auto size = size_opt.value();
 
     data.resize(size);
     return stream.Read(size, reinterpret_cast<byte*>(data.data()));

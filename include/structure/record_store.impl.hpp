@@ -3,8 +3,8 @@
 #include <structure/binary_search.hpp>
 #include <structure/record_store.hpp>
 
-#define TEMPLATE template <typename Key, typename Hash, typename Equal>
-#define CLASS RecordStore<Key, Hash, Equal>
+#define TEMPLATE template <typename Key, typename OuterHeader, typename Hash, typename Equal>
+#define CLASS RecordStore<Key, OuterHeader, Hash, Equal>
 
 TEMPLATE
 CLASS::~RecordStore() {
@@ -22,7 +22,7 @@ CLASS::Record* CLASS::Get(const Key& key) {
     CachedBlock* block = GetRecordBlock(loaded_header.first_block);
     while (block != nullptr) {
         if (block->records.contains(key))
-            return block->records.at(key);
+            return &block->records.at(key);
 
         block = GetRecordBlock(block->header.next_block);
     }
@@ -74,15 +74,15 @@ size_t CLASS::Save(const Key& key, size_t capacity, byte* data, size_t size) {
 
 TEMPLATE
 void CLASS::LoadBlockIntoCache(size_t location, const CachedBlock& new_block) {
-    auto [evicted_location, evicted] = block_cache.Load(location, new_block);
+    auto evicted = block_cache.Load(location, new_block);
 
     if (evicted)
-        FlushBlock(evicted_location, evicted);
+        FlushBlock(evicted->first, evicted->second);
 }
 
 TEMPLATE
 void CLASS::FlushBlock(size_t location, const CachedBlock& block) {
-    buffer->Write(location, sizeof(BlockHeader), &block.header);
+    buffer->Write<BlockHeader>(location, block.header);
 
     auto temporary_vector = std::vector<Record>();
 
@@ -90,7 +90,7 @@ void CLASS::FlushBlock(size_t location, const CachedBlock& block) {
     for (auto& [key, record] : block.records)
         temporary_vector.push_back(record);
 
-    buffer->Write(location + sizeof(BlockHeader), temporary_vector.size(), temporary_vector.data());
+    buffer->Write(location + sizeof(BlockHeader), temporary_vector.size(), reinterpret_cast<byte*>(temporary_vector.data()));
 }
 
 TEMPLATE
@@ -102,8 +102,7 @@ CLASS::CachedBlock* CLASS::GetRecordBlock(size_t location) {
         return nullptr;
 
     CachedBlock* block = block_cache.Get(location);
-    if (block && sizeof(Record) == block->record_size)
-        return block;
+    if (block) return block;
 
     auto header_opt = buffer->Read<BlockHeader>(location);
     if (!header_opt)
@@ -114,7 +113,7 @@ CLASS::CachedBlock* CLASS::GetRecordBlock(size_t location) {
     CachedBlock new_block = {header, {}};
     auto temporary_vector = std::vector<Record>(header.records_total);
 
-    if (!buffer->Read(location + sizeof(BlockHeader), sizeof(Record) * header.records_total, temporary_vector.data()))
+    if (!buffer->Read(location + sizeof(BlockHeader), sizeof(Record) * header.records_total, reinterpret_cast<byte*>(temporary_vector.data())))
         return nullptr;
 
     for (auto& record : temporary_vector)
@@ -126,7 +125,7 @@ CLASS::CachedBlock* CLASS::GetRecordBlock(size_t location) {
 }
 
 TEMPLATE
-size_t CLASS::FreeBlock(size_t location, size_t capacity) {
+void CLASS::FreeBlock(size_t location, size_t capacity) {
     free_blocks.insert({location, capacity});
 }
 
@@ -157,7 +156,7 @@ CLASS::CachedBlock* CLASS::CreateNewRecordBlock(size_t capacity) {
 
     auto last_block = GetRecordBlock(loaded_header.last_block);
     if (last_block)
-        last_block->next_block = location;
+        last_block->header.next_block = location;
     else
         loaded_header.first_block = location;
 
@@ -193,7 +192,7 @@ void CLASS::SetBuffer(Buffer* buffer) {
         return;
 
     auto free_records = std::vector<FreeRecord>(loaded_header.free_records_total);
-    buffer->Read(loaded_header.end, sizeof(FreeRecord) * loaded_header.free_records_total, free_records.data());
+    buffer->Read(loaded_header.end, sizeof(FreeRecord) * loaded_header.free_records_total, reinterpret_cast<byte*>(free_records.data()));
 
     for (auto& [location, capacity] : free_records)
         FreeRecord(location, capacity);
@@ -215,7 +214,7 @@ void CLASS::SaveFreeRecords() {
     for (auto& [location, capacity] : free_blocks)
         free_records.push_back({location, capacity});
 
-    buffer->Write(loaded_header.end, sizeof(FreeRecord) * loaded_header.free_records_total, free_records.data());
+    buffer->Write(loaded_header.end, sizeof(FreeRecord) * loaded_header.free_records_total, reinterpret_cast<byte*>(free_records.data()));
 }
 
 TEMPLATE

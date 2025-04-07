@@ -7,7 +7,7 @@
 #include <structure/caching/eviction_policies.hpp>
 
 template <typename Key, typename T, typename Hash = std::hash<Key>, typename Equal = std::equal_to<Key>,
-          typename EvictionPolicy = CacheEvictionPolicies::LeastRecentlyUsed<Key>>
+          typename EvictionPolicy = CacheEvictionPolicies::LeastRecentlyUsed<Key, Hash, Equal>>
 class Cache {
   private:
     std::unordered_map<Key, T, Hash, Equal> cached_values{};
@@ -30,7 +30,7 @@ class Cache {
     /*
         If a cached value was evicted returns it with its key, otherwise returns std::nullopt
     */
-    std::optional<std::pair<Key, T>> Load(const Key& key, const T& t) {
+    std::optional<std::pair<Key, T>> Load(const Key& key, T t) {
         std::optional<std::pair<Key, T>> result = std::nullopt;
 
         if (cached_values.size() > max_cached_elements) {

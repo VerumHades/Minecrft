@@ -47,10 +47,11 @@ class Chunk: public SparseBlockArray{
         friend class Serializer;
 
     public:
+        Chunk(): Chunk({0,0,0}){}
         Chunk(glm::ivec3 worldPosition): SparseBlockArray(), worldPosition(worldPosition) { }
 
         const glm::ivec3& getWorldPosition() const { return worldPosition; }
-        void setWorldPosition(const glm::ivec3& position){ worldPosition = position; } 
-}; 
+        void setWorldPosition(const glm::ivec3& position){ worldPosition = position; }
+};
 
 #endif

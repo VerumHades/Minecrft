@@ -6,9 +6,9 @@
 
 template <typename T> class OctreeSerializer {
   private:
-    static size_t SerializeValueNode(const T& value, ByteArray& array) {
+    static size_t SerializeValueNode(std::unique_ptr<T>& value, ByteArray& array) {
         size_t location = array.GetCursor();
-        Serializer::Serialize<T>(value, array);
+        Serializer::Serialize<T>(*value.get(), array);
         return location;
     }
     static std::unique_ptr<T> DeserializeValueNode(ByteArray& array) {
@@ -17,7 +17,7 @@ template <typename T> class OctreeSerializer {
         return value;
     }
 
-    static size_t SerializeNode(const typename Octree<T>::Node& node, ByteArray& array, unsigned int level = 0) {
+    static size_t SerializeNode(typename Octree<T>::Node& node, ByteArray& array, unsigned int level = 0) {
         size_t location = array.GetCursor();
         array.Write<unsigned int>(location, level);
 
@@ -29,7 +29,7 @@ template <typename T> class OctreeSerializer {
             size_t node_start = 0;
             if (node.sub_nodes[i] != nullptr || node.values[i] != nullptr) {
                 if (level == 0)
-                    node_start = SerializeValueNode(*node.values[i], array);
+                    node_start = SerializeValueNode(node.values[i], array);
                 else
                     node_start = SerializeNode(*node.sub_nodes[i], array);
             }

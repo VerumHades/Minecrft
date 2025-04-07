@@ -18,17 +18,17 @@ class Stream{
         /*
             Write bytes into stream
         */
-        virtual bool Write(size_t size, byte* buffer) = 0;
+        virtual bool Write(size_t size, const byte* buffer) = 0;
 
         template <typename T>
         bool Write(const T& value){
-            return Write(sizeof(T), &value);
+            return Write(sizeof(T), reinterpret_cast<const byte*>(&value));
         }
 
         template <typename T>
         std::optional<T> Read(){
             T object{};
-            if(!Read(sizeof(T), &object)) return std::nullopt;
+            if(!Read(sizeof(T), reinterpret_cast<byte*>(&object))) return std::nullopt;
             return object;
         }
 };

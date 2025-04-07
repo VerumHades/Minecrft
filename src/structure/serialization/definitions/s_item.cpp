@@ -7,10 +7,12 @@
 #include <game/items/item.hpp>
 
 SerializeFunction(Item) {
-    auto* prototype = getPrototype();
+    auto* prototype = this_.getPrototype();
     std::string name = prototype ? prototype->getName() : "NO_NAME";
     array.Append(name);
-    array.Append<int>(quantity);
+    array.Append<int>(this_.quantity);
+
+    return true;
 }
 SerializeInstatiate(Item)
 
@@ -18,11 +20,9 @@ DeserializeFunction(Item){
     ResolvedOption(name, ReadString);
     ResolvedOption(quantity, Read<int>);
 
-    ItemRef item = Item::Create(name);
-
-    if(!item) return NO_ITEM;
-    this_ = *item;
+    this_.prototype = ItemRegistry::get().getPrototype(name);
     this_.setQuantity(quantity);
-    return item;
+
+    return true;
 }
 DeserializeInstatiate(Item);

@@ -18,7 +18,7 @@
 class WorldStream: public FileStream{
     private:
         constexpr static int segment_size = 4;
-        std::shared_mutex mutex;
+        std::shared_mutex record_mutex;
 
         struct Header{
             char name[256];
@@ -50,7 +50,7 @@ class WorldStream: public FileStream{
         // Thread safe, Returns whether the segment could be loaded
         bool LoadSegment(const glm::ivec3& position);
         // Thread safe
-        void LoadSegmentToCache(const glm::ivec3& position, const std::unique_ptr<SegmentPack>& segment);
+        void LoadSegmentToCache(const glm::ivec3& position, std::unique_ptr<SegmentPack> segment);
         // Thread safe
         void SaveSegment(const glm::ivec3& position, const SegmentPack& segment);
         // Thread safe
@@ -75,6 +75,6 @@ class WorldStream: public FileStream{
         std::string GetName() const;
         void SetName(const std::string& name);
 
-        bool Save(const std::unique_ptr<Chunk>& chunk);
+        bool Save(std::unique_ptr<Chunk> chunk);
         std::unique_ptr<Chunk> Load(const glm::ivec3& position);
 };

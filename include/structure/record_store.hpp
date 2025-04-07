@@ -55,7 +55,7 @@ class RecordStore {
     */
     size_t AllocateBlock(size_t capacity);
     // Does no checks, only registers a block as free
-    size_t FreeBlock(size_t location, size_t capacity);
+    void FreeBlock(size_t location, size_t capacity);
 
     Cache<size_t, CachedBlock> block_cache{50};
 
@@ -90,7 +90,10 @@ class RecordStore {
     Record* Get(const Key& key);
 
     OuterHeader& GetHeader() { return loaded_header.header; };
+    const OuterHeader& GetHeader() const { return loaded_header.header; };
 
     void ResetHeader();
     void SetBuffer(Buffer* buffer);
 };
+
+#include <structure/record_store.impl.hpp>

@@ -1,24 +1,31 @@
 #pragma once
 
-#include <map>
-#include <chrono>
+#include <list>
+#include <unordered_map>
 
 namespace CacheEvictionPolicies{
-    template <typename Key>
-    class LeastRecentlyUsed{
-        private:
-            using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
+    template <typename Key, typename Hash, typename Equal>
+    class LeastRecentlyUsed {
+    private:
+        std::list<Key> access_order;
+        std::unordered_map<Key, typename std::list<Key>::iterator, Hash, Equal> key_positions;
 
-            std::map<TimePoint, Key> timestamps;
-        public:
-            void KeyRequested(const Key& key){
-                timestamps.insert_or_assign(key, std::chrono::high_resolution_clock::now());
+    public:
+        void KeyRequested(const Key& key) {
+            auto it = key_positions.find(key);
+            if (it != key_positions.end()) {
+                access_order.erase(it->second);
             }
 
-            Key Evict(){
-                auto [timestamp, key] = timestamps.begin();
-                timestamps.erase(timestamp);
-                return key;
-            }
+            access_order.push_front(key);
+            key_positions[key] = access_order.begin();
+        }
+
+        Key Evict() {
+            Key lru_key = access_order.back();
+            access_order.pop_back();
+            key_positions.erase(lru_key);
+            return lru_key;
+        }
     };
 }

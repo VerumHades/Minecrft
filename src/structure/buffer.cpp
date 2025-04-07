@@ -6,7 +6,7 @@ bool Buffer::Read(size_t size, byte* buffer) {
     return result;
 }
 
-bool Buffer::Write(size_t size, byte* buffer) {
+bool Buffer::Write(size_t size, const byte* buffer) {
     bool result = Write(cursor, size, buffer);
     cursor += size;
     return result;

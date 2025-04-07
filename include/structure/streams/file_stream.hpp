@@ -15,11 +15,11 @@
 class FileStream: public Buffer{
     public:
         using Callback = std::function<void(FileStream*)>;
-    
+
     private:
         std::string name;
         fs::path path;
-        
+
         std::fstream stream;
         std::mutex mutex;
 
@@ -30,7 +30,7 @@ class FileStream: public Buffer{
         FileStream(const Callback& init = nullptr, const Callback& load = nullptr);
 
         bool Read(size_t offset, size_t size, byte* buffer) override;
-        bool Write(size_t offset, size_t size, byte* buffer) override;
+        bool Write(size_t offset, size_t size, const byte* buffer) override;
         size_t Size() override;
 
         void SetCallbacks(const Callback& init, const Callback& load);
