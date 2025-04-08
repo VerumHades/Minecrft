@@ -27,7 +27,7 @@ template <typename T> class OctreeSerializer {
             array.SetCursor(location + offset_total);
 
             size_t node_start = 0;
-            if (node.sub_nodes[i] != nullptr || node.values[i] != nullptr) {
+            if (node.sub_nodes[i] != nullptr || (level == 0 && node.values[i] != nullptr)) {
                 if (level == 0)
                     node_start = SerializeValueNode(node.values[i], array);
                 else

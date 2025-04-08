@@ -28,6 +28,7 @@ class FileStream: public Buffer{
 
     public:
         FileStream(const Callback& init = nullptr, const Callback& load = nullptr);
+        virtual ~FileStream() = default;
 
         bool Read(size_t offset, size_t size, byte* buffer) override;
         bool Write(size_t offset, size_t size, const byte* buffer) override;

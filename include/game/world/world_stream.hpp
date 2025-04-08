@@ -52,7 +52,7 @@ class WorldStream: public FileStream{
         // Thread safe
         void LoadSegmentToCache(const glm::ivec3& position, std::unique_ptr<SegmentPack> segment);
         // Thread safe
-        void SaveSegment(const glm::ivec3& position, const SegmentPack& segment);
+        void SaveSegment(const glm::ivec3& position, std::unique_ptr<SegmentPack> segment);
         // Thread safe
         void CreateSegment(const glm::ivec3& position);
 
@@ -61,6 +61,8 @@ class WorldStream: public FileStream{
 
         // Thread safe
         void StopUsingSegment(SegmentPack* segment, const glm::ivec3& position);
+
+        void Flush();
 
     public:
         WorldStream(const std::string& path);

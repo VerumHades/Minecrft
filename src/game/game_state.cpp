@@ -75,8 +75,6 @@ void GameState::loadEntities() {
         player.addTag("player");
         entities.push_back(player);
     }
-
-    std::cout << "LOADING: " <<entities.size() << std::endl;
 }
 
 void GameState::giveItemToPlayer(ItemRef item) {
@@ -157,8 +155,11 @@ void GameState::unloadChunk(const glm::ivec3& position) {
 
 void GameState::unload() {
     for (auto it = terrain.chunks.begin(); it != terrain.chunks.end();) {
-        auto current = it++;
-        unloadChunk(current->first);
+        // Extract the node - this removes it from the map
+        auto node = terrain.chunks.extract(it++);
+
+        if (world_stream)
+            world_stream->Save(std::move(node.mapped()));
     }
 
     savePlayer();

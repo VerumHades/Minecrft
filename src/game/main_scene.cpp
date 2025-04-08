@@ -2,14 +2,14 @@
 
 void MainScene::initialize(){
     fpsLock = false;
- 
+
     gBuffer = std::make_shared<GBuffer>(1920,1080);
 
     this->setUILayer("settings");
     addElement(getElementById<UIScrollableFrame>("settings_scrollable"));
 
     UICore::get().loadWindowFromXML(*getWindow(), "resources/templates/game.xml");
-    
+
     //this->getUILayer("chat").eventLocks = {true, true, true, true};
     //this->getUILayer("menu").eventLocks = {true, true, true, true};
     //this->getUILayer("settings").eventLocks = {true, true, true, true};
@@ -32,13 +32,13 @@ void MainScene::initialize(){
         "resources/skybox/stars/bottom.png",
         "resources/skybox/stars/front.png",
         "resources/skybox/stars/back.png"
-    };  
+    };
 
     //ItemRegistry::get().addPrototype(ItemPrototype("diamond","resources/textures/diamond.png"));
     //ItemRegistry::get().addPrototype(ItemPrototype("crazed","resources/textures/crazed.png"));
 
     fogDensity = 0.003f;
-    
+
     setUILayer("generation");
     generation_progress = std::make_shared<UILoading>();
     generation_progress->setPosition(TValue::Center(), TValue::Center());
@@ -47,7 +47,7 @@ void MainScene::initialize(){
 
     skyboxProgram.use();
     skybox.load(skyboxPaths);
-    
+
     block_texture_array = BlockRegistry::get().load();
 
     modelProgram.setSamplerSlot("textureIn",0);
@@ -61,7 +61,7 @@ void MainScene::initialize(){
 
     camera.setPosition(0.0f,160.0f,0.0f);
 
-    sunDirUniform.setValue({ 
+    sunDirUniform.setValue({
         cos(glm::radians(sunAngle)), // X position (cosine component)
         sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
         0  // Z position (cosine component)
@@ -96,7 +96,7 @@ void MainScene::initialize(){
         name->setText(action.name);
         name->setHoverable(false);
         name->setIdentifiers({"controlls_member_name"});
-        
+
         auto keyname = std::make_shared<UILabel>();
         keyname->setText(kename);
         keyname->setFocusable(true);
@@ -126,7 +126,7 @@ void MainScene::initialize(){
     sensitivity_slider->setMax(100);
     sensitivity_slider->setDisplayValue(true);
     sensitivity_slider->setIdentifiers({"mouse_sensitivity_slider"});
-    
+
     mouse_settings->appendChild(sensitivity_slider);
 
     auto graphics_settings = getElementById<UIFrame>("render_distance_container");
@@ -141,7 +141,7 @@ void MainScene::initialize(){
     render_distance_slider->onMove = [this](){
         update_render_distance = true;
     };
-    
+
     graphics_settings->appendChild(render_distance_slider);
 
     AddGameMode<GameModeSurvival>();
@@ -152,7 +152,7 @@ void MainScene::initialize(){
 void MainScene::resize(GLFWwindow* window, int width, int height){
     camera.resizeScreen(width, height, camFOV);
     gBuffer = std::make_shared<GBuffer>(width,height);
-    
+
     skyboxProgram.updateUniforms();
 }
 
@@ -220,7 +220,7 @@ void MainScene::scrollEvent(GLFWwindow* window, double xoffset, double yoffset){
     }
 }
 
-void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){    
+void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods){
     HandleGamemodeEvent(&GameMode::KeyEvent, key, scancode, action, mods);
 
     if(getCurrentUILayer().cursorMode == GLFW_CURSOR_DISABLED){
@@ -241,7 +241,7 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
     if(
         key == GLFW_KEY_ESCAPE && action == GLFW_PRESS
     ){
-        if(!isActiveLayer(GetCurrentBaseLayer().name)) 
+        if(!isActiveLayer(GetCurrentBaseLayer().name))
             ResetToBaseLayer();
         else
             this->setUILayer("menu");
@@ -255,7 +255,7 @@ void MainScene::open(GLFWwindow* window){
     game_state = nullptr;
     running = true;
     indexer = {};
-    
+
     game_state = std::make_unique<GameState>(worldPath);
 
     /*for(auto& prototype: BlockRegistry::get().prototypes()){
@@ -272,7 +272,7 @@ void MainScene::open(GLFWwindow* window){
 
     terrain_manager.setGameState(game_state.get());
 
-    
+
     //Entity e = Entity(player.getPosition() + glm::vec3{5,0,5}, glm::vec3(1,1,1));
     //e.setModel(std::make_shared<GenericModel>("resources/models/130/scene.gltf"));
     //game_state->addEntity(e);g
@@ -291,7 +291,7 @@ void MainScene::close(GLFWwindow* window){
 
     while(threadsStopped < 1){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    } 
+    }
 
     terrain_manager.unloadAll();
     terrain_manager.setGameState(nullptr);
@@ -328,14 +328,14 @@ void MainScene::render(){
     /*const int chunk_bound_distance = 4;
 
     int counter = 10;
-    for(int x = -chunk_bound_distance; x <= chunk_bound_distance; x++) 
+    for(int x = -chunk_bound_distance; x <= chunk_bound_distance; x++)
     for(int z = -chunk_bound_distance; z <= chunk_bound_distance; z++)
     for(int y = -chunk_bound_distance; y <= chunk_bound_distance; y++) {
         glm::ivec3 position = (glm::ivec3{x,y,z} + glm::ivec3{glm::floor(game_state->getPlayer().getPosition() / (float)CHUNK_SIZE)})  * CHUNK_SIZE;
         wireframeRenderer.setCube(counter++, position, glm::vec3{CHUNK_SIZE}, glm::vec3{0.1,0.5,0.5});
     }*/
 
-    sunDirUniform.setValue({ 
+    sunDirUniform.setValue({
         cos(glm::radians(sunAngle)), // X position (cosine component)
         sin(glm::radians(sunAngle)), // Y position (sine component for vertical angle)
         0  // Z position (cosine component)
@@ -371,14 +371,14 @@ void MainScene::render(){
     gBuffer->unbind();
 
     //timer.timestamp("Rendered to gBuffer->");
-    
+
     gBufferProgram.updateUniforms();
-    
+
     GL_CALL( glViewport(0, 0, gBuffer->getWidth(), gBuffer->getHeight()));
     GL_CALL( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
     gBuffer->bindTextures();
-    
+
         fullscreen_quad.render();
 
     gBuffer->unbindTextures();
@@ -433,7 +433,7 @@ void MainScene::physicsUpdate(){
             float speed = camAcceleration;
 
             player.setGravity(true);
-            bool moving = false; 
+            bool moving = false;
             if(inputManager.isActive(STRAFE_RIGHT )){
                 player.accelerate(-leftDir * speed, deltatime);
                 moving = true;
@@ -467,8 +467,8 @@ void MainScene::physicsUpdate(){
             if(inputManager.isActive(STRAFE_LEFT  )) player.setPosition(player.getPosition() +  leftDir * camAcceleration * deltatime);
             if(inputManager.isActive(MOVE_BACKWARD)) player.setPosition(player.getPosition() + -horizontalDir * camAcceleration * deltatime);
             if(inputManager.isActive(MOVE_FORWARD )) player.setPosition(player.getPosition() +  horizontalDir * camAcceleration * deltatime);
-            
-            if(inputManager.isActive(MOVE_DOWN)) 
+
+            if(inputManager.isActive(MOVE_DOWN))
                 player.setPosition(player.getPosition() + -camera.getUp() * camAcceleration * deltatime);
             if(inputManager.isActive(MOVE_UP))
                 player.setPosition(player.getPosition() +  camera.getUp() * camAcceleration * deltatime);
@@ -488,8 +488,8 @@ void MainScene::physicsUpdate(){
 
 void UILoading::getRenderingInformation(UIRenderBatch& batch){
     if(!values) return;
-    
-    const int margin = 10; 
+
+    const int margin = 10;
     const int width = (transform.width - values->size() * margin) / values->size();
 
     int i = 0;
@@ -499,13 +499,12 @@ void UILoading::getRenderingInformation(UIRenderBatch& batch){
         float max = max_values[i] != 0 ? max_values[i] : 1;
 
         batch.Rectangle(
-            transform.x + width * i + margin * (i + 1), 
-            transform.y, 
-            width, 
-            ((float)value / max) * (float)transform.height, 
+            transform.x + width * i + margin * (i + 1),
+            transform.y,
+            width,
+            ((float)value / max) * (float)transform.height,
             UIColor{200,100,0}
         );
         i++;
     }
 }
-

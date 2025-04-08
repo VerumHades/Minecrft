@@ -12,10 +12,9 @@ TerrainManager::TerrainManager(){
 
         SpiralIndexer meshing_indexer = {};
         auto& terrain = game_state->getTerrain();
-        auto& world_stream = *game_state->world_stream;
 
-        int max = pow(render_distance * 2, 2);
-        int safe_offset = render_distance * 2 * 4;
+        int max = pow((render_distance + 1) * 2, 2);
+        int safe_offset = 0;
 
         while(generated_count < max){
             if(should_stop) return;

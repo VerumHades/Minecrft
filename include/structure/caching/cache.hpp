@@ -46,9 +46,12 @@ class Cache {
         return std::move(result);
     }
 
-    void Clear(const std::function<void(Key, T)> evict) {
-        for (auto& [key, value] : cached_values)
-            evict(key, value);
+    void Clear(const std::function<void(Key, T)>& evict) {
+        for (auto it = cached_values.begin(); it != cached_values.end();) {
+            auto node = cached_values.extract(it++);
+
+            evict(node.key(), std::move(node.mapped()));
+        }
 
         cached_values.clear();
     }

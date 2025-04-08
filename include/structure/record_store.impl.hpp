@@ -208,6 +208,7 @@ TEMPLATE
 void CLASS::SaveFreeRecords() {
     loaded_header.free_records_total = free_blocks.size();
 
+    if(loaded_header.free_records_total == 0) return;
     auto free_records = std::vector<FreeRecord>();
     free_records.reserve(loaded_header.free_records_total);
 

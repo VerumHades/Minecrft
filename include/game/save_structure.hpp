@@ -31,7 +31,7 @@ class FileSaveStructure{
         template <typename T, typename... Args>
         T* RegisterSave(const std::string& name, const fs::path& relative_path, Args&&... args){
             auto new_save = std::make_unique<T>(std::forward<Args>(args)...);
-            
+
             T* ptr = new_save.get();
 
             saves.emplace(name, RegisteredSave{name, relative_path, std::move(new_save)});

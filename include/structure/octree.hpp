@@ -4,6 +4,7 @@
 
 #include <bit>
 #include <memory>
+#include <iostream>
 
 template <typename T> class Octree {
   private:
@@ -37,7 +38,7 @@ template <typename T> class Octree {
     }*/
 
     std::tuple<Node*, int> InternalGet(const glm::uvec3& position, bool create_missing) {
-        auto lookup_top_level = 31 - std::countl_zero(position.x | position.y | position.z);
+        auto lookup_top_level = 32 - std::countl_zero(position.x | position.y | position.z);
 
         if (lookup_top_level > top_level && !create_missing)
             return {nullptr, 0};

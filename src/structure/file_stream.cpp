@@ -33,6 +33,7 @@ void FileStream::SetCallbacks(const Callback& init, const Callback& load) {
 bool FileStream::Open(const fs::path& path) {
     bool newlyCreated = false;
 
+    this->path = path;
     {
         std::lock_guard lock(mutex);
 
