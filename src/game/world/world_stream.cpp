@@ -14,8 +14,9 @@ bool WorldStream::LoadSegment(const glm::ivec3& position) {
 
     {
         std::unique_lock lock(record_mutex);
-        if (!record_store->Get(position, array.Vector()))
+        if (!record_store->Get(position, array.Vector())){
             return false;
+        }
     }
     std::unique_ptr<SegmentPack> pack = std::make_unique<SegmentPack>();
     OctreeSerializer<Chunk>::Deserialize(pack->segment, array);
@@ -92,8 +93,6 @@ bool WorldStream::Save(std::unique_ptr<Chunk> chunk) {
 
     SegmentPack* segment_pack = GetSegment(segment_position, true);
 
-    if(!chunk) std::cout << "What?" << std::endl;
-
     if (!segment_pack) {
         if (!LoadSegment(segment_position))
             CreateSegment(segment_position);
@@ -109,7 +108,7 @@ bool WorldStream::Save(std::unique_ptr<Chunk> chunk) {
     glm::ivec3 internal_position = position - segment_position * segment_size;
     {
         std::unique_lock lock(segment_pack->segment_mutex);
-        segment_pack->segment.Set(internal_position, std::move(std::make_unique<Chunk>()));
+        segment_pack->segment.Set(internal_position, std::move(chunk));
     }
 
     StopUsingSegment(segment_pack, position);

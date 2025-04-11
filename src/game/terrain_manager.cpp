@@ -78,7 +78,6 @@ TerrainManager::TerrainManager(){
                 }
 
                 if(world_saver.HasChunkAt(chunkPosition)){
-                    std::cout << "Loading chunk" << std::endl;
                     terrain.addChunk(chunkPosition, world_saver.Load(chunkPosition));
                     continue;
                 }

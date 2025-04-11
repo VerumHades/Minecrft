@@ -20,6 +20,7 @@ CLASS::Record* CLASS::Get(const Key& key) {
     if (loaded_header.first_block == 0)
         return nullptr;
 
+
     CachedBlock* block = GetRecordBlock(loaded_header.first_block);
     while (block != nullptr) {
         if (block->records.contains(key))
@@ -33,10 +34,9 @@ CLASS::Record* CLASS::Get(const Key& key) {
 
 TEMPLATE
 bool CLASS::Get(const Key& key, std::vector<byte>& output) {
-    if (!buffer){
-       std::cout << "No buffer" << std::endl;
+    if (!buffer)
         return false;
-    }
+
 
     auto* record = Get(key);
 
@@ -111,7 +111,7 @@ void CLASS::FlushBlock(size_t location, CachedBlock& block) {
         temporary_vector.push_back(record);
 
     buffer->Write<BlockHeader>(location, block.header);
-    buffer->Write(location + sizeof(BlockHeader), temporary_vector.size(),
+    buffer->Write(location + sizeof(BlockHeader), temporary_vector.size() * sizeof(Record),
                   reinterpret_cast<byte*>(temporary_vector.data()));
 }
 
@@ -140,8 +140,9 @@ CLASS::CachedBlock* CLASS::GetRecordBlock(size_t location) {
                       reinterpret_cast<byte*>(temporary_vector.data())))
         return nullptr;
 
-    for (auto& record : temporary_vector)
-        new_block.records[record.key] = record;
+    for (int i = 0;i < header.records_total;i++){
+        new_block.records[temporary_vector[i].key] = temporary_vector[i];
+    }
 
     LoadBlockIntoCache(location, new_block);
 
@@ -238,7 +239,6 @@ void CLASS::SetBuffer(Buffer* buffer) {
 
 TEMPLATE
 void CLASS::ResetHeader() {
-    std::cout << "A"  << std::endl;
     loaded_header = {};
     loaded_header.end = sizeof(Header);
     SaveHeader();

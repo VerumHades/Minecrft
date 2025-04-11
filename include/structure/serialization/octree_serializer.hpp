@@ -10,16 +10,12 @@ template <typename T> class OctreeSerializer {
         size_t location = array.GetCursor();
         Serializer::Serialize<T>(*value.get(), array);
         size_t end_location = array.GetCursor();
-
-        std::cout << "Serialized value node" << std::endl;
-
         return end_location - location;
     }
     static std::unique_ptr<T> DeserializeValueNode(ByteArray& array) {
         std::unique_ptr<T> value = std::make_unique<T>();
         Serializer::Deserialize<T>(*value.get(), array);
 
-        std::cout << "Loaded value node" << std::endl;
         return value;
     }
 
