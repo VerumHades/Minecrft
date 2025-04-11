@@ -9,11 +9,17 @@ template <typename T> class OctreeSerializer {
     static size_t SerializeValueNode(std::unique_ptr<T>& value, ByteArray& array) {
         size_t location = array.GetCursor();
         Serializer::Serialize<T>(*value.get(), array);
-        return location;
+        size_t end_location = array.GetCursor();
+
+        std::cout << "Serialized value node" << std::endl;
+
+        return end_location - location;
     }
     static std::unique_ptr<T> DeserializeValueNode(ByteArray& array) {
         std::unique_ptr<T> value = std::make_unique<T>();
-        Serializer::Deserialize(*value, array);
+        Serializer::Deserialize<T>(*value.get(), array);
+
+        std::cout << "Loaded value node" << std::endl;
         return value;
     }
 
@@ -27,21 +33,25 @@ template <typename T> class OctreeSerializer {
             array.SetCursor(location + offset_total);
 
             size_t node_start = 0;
-            if (node.sub_nodes[i] != nullptr || (level == 0 && node.values[i] != nullptr)) {
-                if (level == 0)
-                    node_start = SerializeValueNode(node.values[i], array);
-                else
-                    node_start = SerializeNode(*node.sub_nodes[i], array);
-            }
+            size_t node_size = 0;
+
+            if (level == 0 && node.values[i] != nullptr)
+                node_size = SerializeValueNode(node.values[i], array);
+            else if (level != 0 && node.sub_nodes[i] != nullptr)
+                node_size = SerializeNode(*node.sub_nodes[i], array, level - 1);
+
+            if(node_size != 0)
+                node_start = location + offset_total;
 
             array.Write<size_t>(location + sizeof(unsigned int) + i * sizeof(size_t), node_start);
-            if (node_start == 0)
+
+            if (node_size == 0)
                 continue;
 
-            offset_total += node_start - location;
+            offset_total += node_size;
         }
 
-        return location;
+        return offset_total;
     }
 
     static std::unique_ptr<typename Octree<T>::Node> DeserializeNode(ByteArray& array) {
@@ -63,6 +73,9 @@ template <typename T> class OctreeSerializer {
                 continue;
 
             auto position = pos_option.value();
+            if (position == 0)
+                continue;
+
             array.SetCursor(position);
 
             if (level == 0)
@@ -82,7 +95,8 @@ template <typename T> class OctreeSerializer {
         size_t location = array.GetCursor();
 
         auto level_option = array.Read<unsigned int>();
-        if (!level_option) return;
+        if (!level_option)
+            return;
 
         tree.top_level = level_option.value();
         array.SetCursor(location);

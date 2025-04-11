@@ -24,7 +24,7 @@ void MenuScene::initialize(){
             frame->setIdentifiers({"world_option_frame"});
 
             auto temp = std::make_shared<UILabel>();
-            if(state.getWorldStream()) temp->setText(state.getWorldStream()->GetName());
+            temp->setText(state.GetName());
             temp->setSize({PERCENT,100}, 40_px);
             temp->setHoverable(false);
             temp->setIdentifiers({"world_option_label"});
@@ -109,8 +109,7 @@ void MenuScene::initialize(){
         if(path) {
             GameState state{(path.value() / fs::path(name)).string(), std::stoi(seedInput->getText())};
 
-            if(state.getWorldStream())
-                state.getWorldStream()->SetName(name);
+            state.SetName(name);
         }
 
         this->setUILayer("world_menu");

@@ -1,11 +1,12 @@
 #pragma once
 
+#include "structure/keyed_storage.hpp"
 #include "vec_hash.hpp"
 #include <game/chunk.hpp>
 #include <game/save_structure.hpp>
 
-#include <structure/record_store.hpp>
 #include <structure/serialization/octree_serializer.hpp>
+#include <structure/caching/cache.hpp>
 #include <structure/octree.hpp>
 
 #include <fstream>
@@ -15,22 +16,17 @@
 #include <limits>
 #include <iostream>
 
-class WorldStream: public FileStream{
+class WorldStream {
     private:
         constexpr static int segment_size = 4;
         std::shared_mutex record_mutex;
-
-        struct Header{
-            char name[256];
-            int seed = 0;
-        };
 
         glm::ivec3 GetSegmentPositionFor(const glm::ivec3& position);
 
         using Segment = Octree<Chunk>;
 
         struct SegmentPack {
-            Segment segment;
+            Segment segment{};
 
             std::atomic<int> in_use_by = 0;
             std::atomic<bool> marked_for_deletion = false;
@@ -44,7 +40,7 @@ class WorldStream: public FileStream{
         std::unordered_map<glm::ivec3, std::unique_ptr<SegmentPack>, IVec3Hash, IVec3Equal> marked_for_deletion;
 
 
-        using SegmentRecordStore = RecordStore<glm::ivec3, Header, IVec3Hash, IVec2Equal>;
+        using SegmentRecordStore = std::shared_ptr<KeyedStorage<glm::ivec3>>;
         SegmentRecordStore record_store;
 
         // Thread safe, Returns whether the segment could be loaded
@@ -65,17 +61,11 @@ class WorldStream: public FileStream{
         void Flush();
 
     public:
-        WorldStream(const std::string& path);
+        WorldStream(const std::shared_ptr<KeyedStorage<glm::ivec3>>& storage);
         ~WorldStream();
         //bool save(Chunk& chunk);
         //void load(Chunk* chunk);
         bool HasChunkAt(const glm::ivec3& position);
-
-        int GetSeed() const;
-        void SetSeed(int value);
-
-        std::string GetName() const;
-        void SetName(const std::string& name);
 
         bool Save(std::unique_ptr<Chunk> chunk);
         std::unique_ptr<Chunk> Load(const glm::ivec3& position);

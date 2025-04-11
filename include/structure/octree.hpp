@@ -3,15 +3,15 @@
 #include <glm/glm.hpp>
 
 #include <bit>
-#include <memory>
 #include <iostream>
+#include <memory>
 
 template <typename T> class Octree {
   private:
     class Node {
       public:
-        std::array<std::unique_ptr<Node>, 8> sub_nodes;
-        std::array<std::unique_ptr<T>, 8> values;
+        std::array<std::unique_ptr<Node>, 8> sub_nodes{};
+        std::array<std::unique_ptr<T>, 8> values{};
     };
     unsigned int top_level = 0; // What level is the root node;
     std::unique_ptr<Node> root_node = nullptr;
@@ -25,9 +25,9 @@ template <typename T> class Octree {
         top_level++;
     }
 
-    int GetIndex(const glm::uvec3& position, int level) {
-        return (position.x & 1 << (level - 1)) + (position.y & 1 << (level - 1)) * 2 +
-               (position.z & 1 << (level - 1)) * 4;
+    int GetIndex(const glm::uvec3& position, unsigned int level) {
+        return ((position.x & 1 << (level - 1)) != 0) + ((position.y & 1 << (level - 1)) != 0) * 2 +
+               ((position.z & 1 << (level - 1)) != 0) * 4;
     }
 
     /*void SnapPosition(glm::uvec3 &position, int level) {
@@ -38,7 +38,7 @@ template <typename T> class Octree {
     }*/
 
     std::tuple<Node*, int> InternalGet(const glm::uvec3& position, bool create_missing) {
-        auto lookup_top_level = 32 - std::countl_zero(position.x | position.y | position.z);
+        unsigned int lookup_top_level = 32 - std::countl_zero(position.x | position.y | position.z);
 
         if (lookup_top_level > top_level && !create_missing)
             return {nullptr, 0};
@@ -58,10 +58,9 @@ template <typename T> class Octree {
                 return {current_node, index};
 
             // SnapPosition(current_position, level);
-
             auto& sub_node = current_node->sub_nodes[index];
 
-            if (sub_node == nullptr) {
+            if (!sub_node) {
                 if (create_missing)
                     sub_node = std::make_unique<Node>();
                 else
@@ -75,10 +74,12 @@ template <typename T> class Octree {
         return {nullptr, 0};
     }
 
-    template <typename A>
-    friend class OctreeSerializer;
+    template <typename A> friend class OctreeSerializer;
 
   public:
+    Octree() {
+        root_node = std::make_unique<Node>();
+    }
     /*
         Sets a value to be at a set position.
     */
@@ -90,13 +91,15 @@ template <typename T> class Octree {
     /*
         Returns a value at a position or nullptr if it doensnt exist.
     */
-    const std::unique_ptr<T>& Get(const glm::uvec3& position) {
+    T* Get(const glm::uvec3& position) {
         auto [node_ptr, index] = InternalGet(position, false);
-        return node_ptr->values[index];
+        if(!node_ptr) return nullptr;
+        return node_ptr->values[index].get();
     }
 
-    std::unique_ptr<T> Pop(const glm::uvec3& position){
+    std::unique_ptr<T> Pop(const glm::uvec3& position) {
         auto [node_ptr, index] = InternalGet(position, false);
+        if(!node_ptr) return nullptr;
         return std::move(node_ptr->values[index]);
     }
 };

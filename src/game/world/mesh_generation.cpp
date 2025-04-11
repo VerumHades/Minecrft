@@ -477,7 +477,7 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
 
     if(!nextX || !nextY || !nextZ || !forwardX || !forwardY || !forwardZ){
         //LogError("Mesh generating when chunks are missing?");
-        return false;
+        return true;
     }
 
     planesXforward.clear();

@@ -1,12 +1,20 @@
 #include <structure/streams/file_stream.hpp>
 
-FileStream::FileStream(const Callback& init, const Callback& load) : init(init), load(load) {}
+FileStream::FileStream(const Callback& init, const Callback& load) : init(init), load(load) {
+
+}
 
 bool FileStream::Read(size_t offset, size_t size, byte* buffer) {
     std::lock_guard lock(mutex);
 
+    if (offset + size > Size())
+        return false;
+
     stream.seekg(offset, std::ios::beg);
     stream.read(reinterpret_cast<char*>(buffer), size);
+    if (stream.fail())
+        return false;
+
 
     return true;
 }
@@ -16,13 +24,17 @@ bool FileStream::Write(size_t offset, size_t size, const byte* buffer) {
     stream.seekp(offset, std::ios::beg);
     stream.write(reinterpret_cast<const char*>(buffer), size);
 
+    if (offset + size > filesize)
+        filesize = offset + size;
+
+    if (stream.fail())
+        return false;
+
     return true;
 }
-size_t FileStream::Size() {
-    std::lock_guard lock(mutex);
 
-    stream.seekg(0, std::ios::end); // Move to the end of the file
-    return stream.tellg();
+size_t FileStream::Size() {
+    return filesize;
 }
 
 void FileStream::SetCallbacks(const Callback& init, const Callback& load) {
@@ -54,6 +66,8 @@ bool FileStream::Open(const fs::path& path) {
         }
 
         stream = std::fstream(path, std::ios::out | std::ios::in | std::ios::binary);
+        stream.seekg(0, std::ios::end); // Move to the end of the file
+        filesize = stream.tellg();
 
         if (!stream.is_open())
             return false;

@@ -1,76 +1,108 @@
 #pragma once
 
-#include <game/world/terrain.hpp>
+#include "game/world/world_stream.hpp"
 #include <game/items/item.hpp>
 #include <game/save_structure.hpp>
+#include <game/world/terrain.hpp>
 
 #include <structure/bytearray.hpp>
+#include <structure/record_store.hpp>
 
-#include <list>
 #include <filesystem>
-
+#include <list>
 
 class TerrainManager;
 
-class GameState{
-    private:
-        std::string path;
+class GameState {
+  private:
+    std::string path;
 
-        Terrain terrain;
-        std::list<Entity> entities;
+    Terrain terrain;
+    std::list<Entity> entities;
 
-        LogicalItemInventory player_inventory{10,5};
-        LogicalItemInventory player_hotbar{9,1};
+    LogicalItemInventory player_inventory{10, 5};
+    LogicalItemInventory player_hotbar{9, 1};
 
-        LogicalItemInventory player_crafting_inventory{2,2};
-        LogicalItemInventory player_crafting_inventory_result{1,1};
+    LogicalItemInventory player_crafting_inventory{2, 2};
+    LogicalItemInventory player_crafting_inventory_result{1, 1};
 
-        int player_health = 20;
+    int player_health = 20;
 
-        FileSaveStructure save_structure;
+    FileSaveStructure save_structure;
 
-        WorldStream* world_stream;
-        FileStream* player_stream;
-        FileStream* entity_stream;
-
-        void savePlayer();
-        void loadPlayer();
-
-        void saveEntities();
-        void loadEntities();
-
-        void drawEntity(Entity& entity);
-
-        friend class TerrainManager;
-
+    struct Header {
+        char name[256];
         int seed = 0;
+    };
 
-    public:
-        GameState(const std::string& filename, int worldSeed = -1);
+    using SegmentStore = RecordStore<glm::ivec3, Header, IVec3Hash, IVec3Equal>;
+    std::shared_ptr<SegmentStore> world_storage;
+    std::shared_ptr<WorldStream> world_saver;
 
-        void unload();
+    FileStream* world_stream;
+    FileStream* player_stream;
+    FileStream* entity_stream;
 
-        void loadChunk(const glm::ivec3& position);
-        void unloadChunk(const glm::ivec3& position);
+    void savePlayer();
+    void loadPlayer();
 
-        void updateEntity(Entity& entity, float deltatime);
-        void updateEntities(float deltatime);
+    void saveEntities();
+    void loadEntities();
 
-        void addEntity(Entity entity) {
-            entities.push_back(entity);
-        }
+    void drawEntity(Entity& entity);
 
-        bool entityCollision(Entity& entity, const glm::vec3& offset = {0,0,0});
+    friend class TerrainManager;
 
-        void giveItemToPlayer(ItemRef item);
+  public:
+    GameState(const std::string& filename, int worldSeed = -1);
 
-        int getSeed(){return world_stream->GetSeed();}
-        Entity& getPlayer(){return entities.front();}
-        LogicalItemInventory& getPlayerInventory(){return player_inventory;};
-        LogicalItemInventory& getPlayerHotbar(){return player_hotbar;}
-        LogicalItemInventory& getPlayerCraftingInventory(){return player_crafting_inventory;};
-        LogicalItemInventory& getPlayerCraftingResultInventory(){return player_crafting_inventory_result;}
-        Terrain& getTerrain(){return terrain;}
-        WorldStream* getWorldStream(){return world_stream;}
-        int& getPlayerHealth(){return player_health;}
+    void unload();
+
+    void loadChunk(const glm::ivec3& position);
+    void unloadChunk(const glm::ivec3& position);
+
+    void updateEntity(Entity& entity, float deltatime);
+    void updateEntities(float deltatime);
+
+    void addEntity(Entity entity) {
+        entities.push_back(entity);
+    }
+
+    bool entityCollision(Entity& entity, const glm::vec3& offset = {0, 0, 0});
+
+    void giveItemToPlayer(ItemRef item);
+
+    int getSeed() {
+        return world_storage->GetHeader().seed;
+    }
+    Entity& getPlayer() {
+        return entities.front();
+    }
+
+    std::string GetName(){
+        return "Name get not implemented.";
+    }
+    void SetName(const std::string name){
+
+    }
+
+    LogicalItemInventory& getPlayerInventory() {
+        return player_inventory;
+    };
+    LogicalItemInventory& getPlayerHotbar() {
+        return player_hotbar;
+    }
+    LogicalItemInventory& getPlayerCraftingInventory() {
+        return player_crafting_inventory;
+    };
+    LogicalItemInventory& getPlayerCraftingResultInventory() {
+        return player_crafting_inventory_result;
+    }
+
+    Terrain& getTerrain() {
+        return terrain;
+    }
+    int& getPlayerHealth() {
+        return player_health;
+    }
 };

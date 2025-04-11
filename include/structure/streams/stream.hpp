@@ -3,12 +3,12 @@
 #pragma once
 
 #include <cstdlib>
-#include <cstdint>
 #include <optional>
+
+#include <structure/definitions.hpp>
 
 #define WriteBreak(stream, args) if(!stream.Write##args) return false;
 
-using byte = uint8_t;
 class Stream{
     public:
         /*

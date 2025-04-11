@@ -1,13 +1,8 @@
 
 #include <game/world/world_stream.hpp>
 
-WorldStream::WorldStream(const std::string& path) : FileStream() {
-    SetCallbacks(
-        [this](FileStream* stream) {
-            record_store.SetBuffer(this);
-            record_store.ResetHeader();
-        },
-        [this](FileStream* stream) { record_store.SetBuffer(this); });
+WorldStream::WorldStream(const std::shared_ptr<KeyedStorage<glm::ivec3>>& storage): record_store(storage){
+
 }
 
 glm::ivec3 WorldStream::GetSegmentPositionFor(const glm::ivec3& position) {
@@ -15,23 +10,13 @@ glm::ivec3 WorldStream::GetSegmentPositionFor(const glm::ivec3& position) {
 }
 
 bool WorldStream::LoadSegment(const glm::ivec3& position) {
-    SegmentRecordStore::Record* record = nullptr;
-
-    {
-        std::unique_lock lock(record_mutex);
-        record = record_store.Get(position);
-    }
-
-    if (!record)
-        return false;
-
     ByteArray array{};
+
     {
         std::unique_lock lock(record_mutex);
-        array.Vector().resize(record->used_size);
-        Read(record->location, record->used_size, array.Data());
+        if (!record_store->Get(position, array.Vector()))
+            return false;
     }
-
     std::unique_ptr<SegmentPack> pack = std::make_unique<SegmentPack>();
     OctreeSerializer<Chunk>::Deserialize(pack->segment, array);
 
@@ -44,10 +29,7 @@ void WorldStream::SaveSegment(const glm::ivec3& position, std::unique_ptr<Segmen
     ByteArray array{};
     OctreeSerializer<Chunk>::Serialize(segment->segment, array);
 
-    {
-        std::unique_lock lock(record_mutex);
-        record_store.Save(position, array.Size(), array.Data(), array.Size());
-    }
+    record_store->Save(position, array.Size(), array.Data());
 }
 
 WorldStream::SegmentPack* WorldStream::GetSegment(const glm::ivec3& position, bool set_in_use) {
@@ -104,29 +86,13 @@ void WorldStream::CreateSegment(const glm::ivec3& position) {
     LoadSegmentToCache(position, std::make_unique<SegmentPack>());
 }
 
-int WorldStream::GetSeed() const {
-    return record_store.GetHeader().seed;
-};
-void WorldStream::SetSeed(int value) {
-    record_store.GetHeader().seed = value;
-}
-
-std::string WorldStream::GetName() const {
-    return std::string(record_store.GetHeader().name);
-}
-void WorldStream::SetName(const std::string& name) {
-    if (name.length() > 256) {
-        LogError("Max world name length is 256 chars");
-        return;
-    }
-    std::strcpy(record_store.GetHeader().name, name.c_str()); // Boo unsafe
-}
-
 bool WorldStream::Save(std::unique_ptr<Chunk> chunk) {
     auto position = chunk->getWorldPosition();
     auto segment_position = GetSegmentPositionFor(position);
 
     SegmentPack* segment_pack = GetSegment(segment_position, true);
+
+    if(!chunk) std::cout << "What?" << std::endl;
 
     if (!segment_pack) {
         if (!LoadSegment(segment_position))
@@ -140,9 +106,10 @@ bool WorldStream::Save(std::unique_ptr<Chunk> chunk) {
         return false;
     }
 
+    glm::ivec3 internal_position = position - segment_position * segment_size;
     {
         std::unique_lock lock(segment_pack->segment_mutex);
-        segment_pack->segment.Set(position - segment_position * segment_size, std::move(chunk));
+        segment_pack->segment.Set(internal_position, std::move(std::make_unique<Chunk>()));
     }
 
     StopUsingSegment(segment_pack, position);
@@ -155,8 +122,10 @@ std::unique_ptr<Chunk> WorldStream::Load(const glm::ivec3& position) {
 
     SegmentPack* segment_pack = GetSegment(segment_position, true);
 
-    if (!segment_pack)
-        return nullptr;
+    if (!segment_pack) {
+        if (!LoadSegment(segment_position)) return nullptr;
+        segment_pack = GetSegment(segment_position, true);
+    }
 
     std::unique_ptr<Chunk> chunk = nullptr;
     {
@@ -174,13 +143,16 @@ bool WorldStream::HasChunkAt(const glm::ivec3& position) {
 
     SegmentPack* segment_pack = GetSegment(segment_position, true);
 
-    if (!segment_pack)
-        return false;
+    if (!segment_pack) {
+        if (!LoadSegment(segment_position)) return false;
+        segment_pack = GetSegment(segment_position, true);
+    }
 
+    glm::ivec3 internal_position = position - segment_position * segment_size;
     bool result = false;
     {
         std::shared_lock lock(segment_pack->segment_mutex);
-        result = segment_pack->segment.Get(position - segment_position * segment_size) != nullptr;
+        result = segment_pack->segment.Get(internal_position) != nullptr;
     }
 
     StopUsingSegment(segment_pack, position);

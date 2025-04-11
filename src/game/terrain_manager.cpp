@@ -1,4 +1,6 @@
+#include <chrono>
 #include <game/terrain_manager.hpp>
+#include <thread>
 
 TerrainManager::TerrainManager(){
     service_manager = std::make_unique<Service>();
@@ -6,7 +8,7 @@ TerrainManager::TerrainManager(){
     reset_loader();
 
     service_manager->AddModule("mesher", [this](std::atomic<bool>& should_stop){
-        if(!game_state || !game_state->world_stream) return;
+        if(!game_state || !game_state->world_saver) return;
 
         glm::ivec3 around = glm::ivec3{around_x.load(),around_y.load(),around_z.load()};
 
@@ -38,14 +40,16 @@ TerrainManager::TerrainManager(){
                     mesh_generator.syncGenerateAsyncUploadMesh(chunk, create_mesh(), level);
                 }
             }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     });
 
     service_manager->AddModule("generator", [this](std::atomic<bool>& should_stop){
-        if(!game_state || !game_state->world_stream) return;
+        if(!game_state || !game_state->world_saver) return;
 
         auto& terrain = game_state->getTerrain();
-        auto& world_stream = *game_state->world_stream;
+        auto& world_saver = *game_state->world_saver;
 
         SpiralIndexer generation_indexer = {};
 
@@ -73,8 +77,9 @@ TerrainManager::TerrainManager(){
                     continue;
                 }
 
-                if(world_stream.HasChunkAt(chunkPosition)){
-                    terrain.addChunk(chunkPosition, world_stream.Load(chunkPosition));
+                if(world_saver.HasChunkAt(chunkPosition)){
+                    std::cout << "Loading chunk" << std::endl;
+                    terrain.addChunk(chunkPosition, world_saver.Load(chunkPosition));
                     continue;
                 }
                 chunk = terrain.createEmptyChunk(chunkPosition);
@@ -132,7 +137,7 @@ bool TerrainManager::HandlePriorityMeshes(){
 }
 
 bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance){
-    if(!game_state || !game_state->world_stream) return false;
+    if(!game_state || !game_state->world_saver) return false;
 
     around_x = around.x;
     around_y = around.y;
@@ -154,9 +159,7 @@ bool TerrainManager::uploadPendingMeshes(){
 }
 
 void TerrainManager::UnloadChunkColumn(const glm::ivec2& position){
-    if(!game_state || !game_state->world_stream) return;
-
-    auto& terrain = game_state->getTerrain();
+    if(!game_state || !game_state->world_saver) return;
 
     for(int i = bottom_y;i < top_y;i++){
         glm::ivec3 chunkPosition = glm::ivec3{position.x,i,position.y};

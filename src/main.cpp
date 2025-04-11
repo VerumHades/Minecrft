@@ -1,9 +1,18 @@
+#include "game/blocks.hpp"
+#include "game/chunk.hpp"
+#include "structure/bytearray.hpp"
+#include "structure/octree.hpp"
+#include "structure/record_store.hpp"
+#include "structure/serialization/octree_serializer.hpp"
+#include "structure/streams/file_stream.hpp"
+#include "vec_hash.hpp"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <iostream>
 #include <cmath>
 
+#include <memory>
 #include <ui/core.hpp>
 #include <ui/loader.hpp>
 #include <scene.hpp>
@@ -15,7 +24,7 @@
 
 #include <path_config.hpp>
 #include <logging.hpp>
-#include <format> 
+#include <format>
 
 SceneManager* s;
 int main() {
@@ -32,7 +41,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     glfwWindowHint(GLFW_SAMPLES, 4); // anti-alliasing
-    
+
     ///glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(1920, 1080, "Hello Terrain", NULL, NULL);
@@ -45,7 +54,7 @@ int main() {
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
     glfwSwapInterval(0);
-    
+
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         LogError("Failed to initialize glad!");
@@ -60,14 +69,14 @@ int main() {
     sscanf(reinterpret_cast<const char*>(version), "%d.%d", &major, &minor);
 
     if (major >= 4 && minor >= 6) {
-        
+
     } else LogWarning("Version of Opengl 4.6 is not supported. This is a pretty serious issue, maybe update drivers?");
 
     if(glfwExtensionSupported("GL_ARB_multi_draw_indirect") != GLFW_TRUE) LogError("Missing dependency, glMultiDrawElementsIndirect will not work.");
 
     GL_CALL( glEnable(GL_DEPTH_TEST));
     GL_CALL( glDepthFunc(GL_LEQUAL));
-    
+
     GL_CALL( glEnable(GL_CULL_FACE));  // Enable backface culling
     GL_CALL( glCullFace(GL_BACK));     // Cull back faces
     GL_CALL( glFrontFace(GL_CCW));     // Set counterclockwise winding order as front*/
@@ -97,7 +106,7 @@ int main() {
     glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int codepoint){
         s->keyTypedEvent(window, codepoint);
     });
-    
+
     {
         SceneManager sceneManager{window};
 
@@ -136,7 +145,7 @@ int main() {
             deltatime = (float)(current - last);
 
             if(
-                sceneManager.isFPSLocked() && 
+                sceneManager.isFPSLocked() &&
                 deltatime < sceneManager.getTickTime()
             ){
                 std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<size_t>((sceneManager.getTickTime() - deltatime) * 1000)));

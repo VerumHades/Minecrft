@@ -6,18 +6,20 @@
 #include <structure/caching/cache.hpp>
 #include <structure/serialization/serializer.hpp>
 #include <structure/streams/buffer.hpp>
+#include <structure/keyed_storage.hpp>
+
 
 template <typename Key, typename OuterHeader, typename Hash = std::hash<Key>, typename Equal = std::equal_to<Key>>
-class RecordStore {
+class RecordStore: public KeyedStorage<Key>{
     public:
     struct Header {
-        size_t end;
-        size_t free_records_total;
+        size_t end = 0;
+        size_t free_records_total = 0;
 
-        size_t first_block;
-        size_t last_block;
+        size_t first_block = 0;
+        size_t last_block = 0;
 
-        OuterHeader header;
+        OuterHeader header{};
     } loaded_header;
 
     struct BlockHeader {
@@ -39,7 +41,8 @@ class RecordStore {
     };
 
   private:
-    const static size_t per_block_record_count = 5000;
+    const static size_t per_block_record_count = 1024ULL * 1024ULL;
+    const static size_t new_allocation_padding = 1024;
     Buffer* buffer = nullptr;
 
     struct CachedBlock {
@@ -65,29 +68,19 @@ class RecordStore {
     CachedBlock* CreateNewRecordBlock(size_t capacity);
 
     void SaveFreeRecords();
-    void FlushBlock(size_t location, const CachedBlock& block);
+    void FlushBlock(size_t location, CachedBlock& block);
     void SaveHeader();
 
     void Flush();
+
+    Record* Get(const Key& key);
 
   public:
     RecordStore();
     ~RecordStore();
 
-    /*
-        Allocates space under the key and returns its start location.
-        Makes no guarantess about the contents of the allocated spaces, will not copy any data.
-
-        Optionally can upload data of set size.
-
-        For existing keys uses existing space if its enough otherwise allocates new space.
-    */
-    size_t Save(const Key& key, size_t capacity, byte* data = nullptr, size_t size = 0);
-
-    /*
-        Returns a pointer to a record based on its key if it exists, other operations may invalidate this pointer.
-    */
-    Record* Get(const Key& key);
+    void Save(const Key& key, size_t size, const byte* data) override;
+    bool Get(const Key& key, std::vector<byte>& output) override;
 
     OuterHeader& GetHeader() { return loaded_header.header; };
     const OuterHeader& GetHeader() const { return loaded_header.header; };

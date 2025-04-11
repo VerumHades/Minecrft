@@ -26,6 +26,8 @@ class FileStream: public Buffer{
         Callback init;
         Callback load;
 
+        size_t filesize = 0;
+
     public:
         FileStream(const Callback& init = nullptr, const Callback& load = nullptr);
         virtual ~FileStream() = default;

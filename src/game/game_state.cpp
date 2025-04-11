@@ -5,7 +5,19 @@ GameState::GameState(const std::string& path, int worldSeed) : save_structure(pa
     player.addTag("player");
     entities.push_back(player);
 
-    world_stream = save_structure.RegisterSave<WorldStream>("world", "", "world");
+    world_storage = std::make_shared<SegmentStore>();
+    world_saver = std::make_shared<WorldStream>(world_storage);
+
+    world_stream = save_structure.RegisterSave<FileStream>(
+        "world", "",
+        [this](FileStream* stream) {
+            world_storage->SetBuffer(stream);
+            world_storage->ResetHeader();
+        },
+        [this](FileStream* stream) {
+            world_storage->SetBuffer(stream);
+        });
+
     player_stream = save_structure.RegisterSave<FileStream>(
         "player", "", [this](FileStream*) { this->savePlayer(); }, [this](FileStream*) { this->loadPlayer(); });
 
@@ -15,7 +27,7 @@ GameState::GameState(const std::string& path, int worldSeed) : save_structure(pa
     save_structure.Open();
 
     if (worldSeed != -1)
-        world_stream->SetSeed(worldSeed);
+        world_storage->GetHeader().seed = worldSeed;
 }
 
 void GameState::savePlayer() {
@@ -70,7 +82,7 @@ void GameState::loadEntities() {
         entities.emplace_back(entity);
     }
 
-    if(entities.size() == 0) { // Player entity cannot be missing
+    if (entities.size() == 0) { // Player entity cannot be missing
         Entity player = Entity(glm::vec3(0, 30, 0), glm::vec3(0.6, 1.8, 0.6));
         player.addTag("player");
         entities.push_back(player);
@@ -138,8 +150,8 @@ void GameState::loadChunk(const glm::ivec3& position) {
     if (chunk)
         return;
 
-    if (world_stream && world_stream->HasChunkAt(position)) {
-        terrain.addChunk(position, world_stream->Load(position));
+    if (world_stream && world_saver->HasChunkAt(position)) {
+        terrain.addChunk(position, world_saver->Load(position));
         return;
     }
 }
@@ -150,7 +162,7 @@ void GameState::unloadChunk(const glm::ivec3& position) {
         return;
 
     if (world_stream)
-        world_stream->Save(std::move(chunk));
+        world_saver->Save(std::move(chunk));
 }
 
 void GameState::unload() {
@@ -159,7 +171,7 @@ void GameState::unload() {
         auto node = terrain.chunks.extract(it++);
 
         if (world_stream)
-            world_stream->Save(std::move(node.mapped()));
+            world_saver->Save(std::move(node.mapped()));
     }
 
     savePlayer();
