@@ -1,19 +1,19 @@
 #version 330 core
-layout(location = 0) in vec4 aInstanceMatrixComponent1;
-layout(location = 1) in vec4 aInstanceMatrixComponent2;
-layout(location = 2) in vec4 aInstanceMatrixComponent3;
-layout(location = 3) in vec4 aInstanceMatrixComponent4;
+layout(location = 0) in vec3 aInstancePosition;
+layout(location = 1) in vec3 aInstanceScale;
+layout(location = 2) in vec4 aInstanceRotation;
+layout(location = 3) in vec3 aInstanceRotationOffset;
 
-layout(location = 4) in vec4 aLastInstanceMatrixComponent1;
-layout(location = 5) in vec4 aLastInstanceMatrixComponent2;
-layout(location = 6) in vec4 aLastInstanceMatrixComponent3;
-layout(location = 7) in vec4 aLastInstanceMatrixComponent4;
+layout(location = 4) in vec3 aLastInstancePosition;
+layout(location = 5) in vec3 aLastInstanceScale;
+layout(location = 6) in vec4 aLastInstanceRotation;
+layout(location = 7) in vec3 aLastInstanceRotationOffset;
 
-layout(location = 8) in vec3  aPos;
-layout(location = 9) in vec3  aNormal;
-layout(location = 10) in vec2  aTexCoords;
+layout(location = 8) in vec3 aPos;
+layout(location = 9) in vec3 aNormal;
+layout(location = 10) in vec2 aTexCoords;
 layout(location = 11) in float aIsSolidColor;
-layout(location = 12) in vec3  aSolidColor;
+layout(location = 12) in vec3 aSolidColor;
 layout(location = 13) in float aPixelPerfectSampling;
 
 uniform mat4 player_camera_projection_matrix;
@@ -27,14 +27,29 @@ out vec3 SolidColor;
 out vec3 Normal;
 out float PixelPerfectSampling;
 
+// Chato
+vec3 rotateVectorByQuat(vec3 v, vec4 q) {
+    return v;
+    // q = (x, y, z, w) where w is the scalar part
+    vec3 u = q.xyz;
+    float s = q.w;
+
+    return 2.0 * dot(u, v) * u
+        + (s * s - dot(u, u)) * v
+        + 2.0 * s * cross(u, v);
+}
+
 void main()
 {
-    mat4 modelMatrix = mat4(aInstanceMatrixComponent1,aInstanceMatrixComponent2,aInstanceMatrixComponent3,aInstanceMatrixComponent4);
-    mat4 lastModelMatrix = mat4(aLastInstanceMatrixComponent1,aLastInstanceMatrixComponent2,aLastInstanceMatrixComponent3,aLastInstanceMatrixComponent4);
+    vec3 position = mix(aLastInstancePosition, aInstancePosition, model_interpolation_time);
+    vec3 scale = mix(aLastInstanceScale, aInstanceScale, model_interpolation_time);
+    vec4 rotation = aInstanceRotation;
+    vec3 rotation_offset = mix(aLastInstanceRotationOffset, aInstanceRotationOffset, model_interpolation_time);
 
-    Normal = transpose(inverse(mat3(modelMatrix))) * aNormal;
+    vec3 final_position = rotateVectorByQuat(aPos + rotation_offset, rotation) * scale + position;
+    Normal = rotateVectorByQuat(aNormal + rotation_offset, rotation) * scale;
 
-    vec4 viewPos = player_camera_view_matrix * modelMatrix * vec4(aPos, 1.0);
+    vec4 viewPos = player_camera_view_matrix * vec4(final_position, 1.0);
     FragPos = viewPos.xyz;
     gl_Position = player_camera_projection_matrix * viewPos;
 

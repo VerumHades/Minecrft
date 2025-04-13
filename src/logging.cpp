@@ -13,7 +13,7 @@ Logging::Logging(){
         SetPath(time_path.str());
         return;
     }
-    
+
     outfile.open(path.value() / time_path.str());
 
     if (outfile.fail()) {
@@ -30,7 +30,7 @@ bool Logging::isLogOld(const fs::path& file, int daysThreshold) {
     // Extract the timestamp part from the filename
     std::string filename = file.filename().string();
     std::string timestamp_str = filename.substr(0, 19); // e.g. "2025-03-11_14:30:00"
-    
+
     // Create a time_point from the extracted timestamp
     std::tm tm = {};
     std::istringstream ss(timestamp_str);
@@ -68,7 +68,7 @@ void Logging::Message(const std::string& descriptor, const std::string& message,
     std::lock_guard<std::mutex> lock(mtx);
 
     if(!outfile.is_open()) return;
-    
+
     std::time_t now = std::time(0);  // Get current system time
     std::tm* localTime = std::localtime(&now);  // Convert to local time
 
@@ -92,7 +92,7 @@ void Logging::SaveTrace(){
     if(!outfile.is_open()) return;
 
     auto trace = cpptrace::generate_trace();
-    
+
     outfile << "------------ Stack trace ---------------" << std::endl;
     for (const auto& frame : trace) {
         outfile << frame << "\n";
@@ -158,6 +158,6 @@ void CheckGLError(const char *file, int line){
             default:                               errorString = "Unknown error"; break;
         }
 
-        //Logging::Get().Message("OPENGL_ERROR",errorString,line,file);
+        Logging::Get().Message("OPENGL_ERROR",errorString,line,file);
     }
 }

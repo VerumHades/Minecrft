@@ -25,7 +25,7 @@ class GameModeSurvival: public GameModeInteractable{
 
         std::atomic<bool> update_hotbar = false;
         std::atomic<bool> update_healthbar = false;
-        
+
         bool mining = false;
         bool can_break = false;
         float mining_delay = 1.0f;
@@ -44,7 +44,7 @@ class GameModeSurvival: public GameModeInteractable{
         }
 
         void Initialize() override;
-        
+
         void Open() override;
         void Render(double deltatime) override;
         void PhysicsUpdate(double deltatime) override;
@@ -53,7 +53,7 @@ class GameModeSurvival: public GameModeInteractable{
         void MouseEvent(int button, int action, int mods) override;
         void MouseMoved(int xoffset, int yoffset) override;
         void MouseScroll(double xoffset, double yoffset) override;
-};      
+};
 
 class UICrosshair: public UIFrame{
     private:

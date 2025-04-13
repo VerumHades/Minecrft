@@ -77,7 +77,7 @@ class MainScene: public Scene{
 
         WireframeCubeRenderer wireframeRenderer{};
         CubeRenderer cubeRenderer;
-        
+
         TerrainManager terrain_manager{};
 
         std::unique_ptr<GLTextureArray> block_texture_array = nullptr;
@@ -108,7 +108,7 @@ class MainScene: public Scene{
         void AddGameMode(Args... args){
             auto mode = std::make_shared<T>(gamemodeState,args...);
             int temp = selected_game_mode;
-            
+
             selected_game_mode = game_modes.size();
             game_modes.push_back(mode);
 
@@ -124,7 +124,7 @@ class MainScene: public Scene{
         template <typename FuncName, typename ...Args>
         void HandleGamemodeEvent(FuncName func, Args... args){
             if(selected_game_mode < 0 || static_cast<size_t>(selected_game_mode) >= game_modes.size()) return;
-            
+
             HandleGamemodeEventSelective(game_modes.at(selected_game_mode).get(), func, args...);
         }
 
@@ -155,7 +155,7 @@ class MainScene: public Scene{
         bool allGenerated = false;
         bool running = false;
         int threadsStopped = 0;
-        
+
         bool lineMode = false;
         bool menuOpen = false;
         //int sunDistance = ((CHUNK_SIZE * renderDistance) / 2) ;
@@ -166,7 +166,7 @@ class MainScene: public Scene{
 
         float camAcceleration = 50.00f;
         float camFOV = 90.0f;
-        float maxFOV = 90.0f; 
+        float maxFOV = 90.0f;
         float minFOV = 2.0f;
         glm::vec3 camOffset = {0.3f,1.6f,0.3f};
         glm::ivec3 lastCamWorldPosition = {0,0,0};
@@ -197,12 +197,12 @@ class MainScene: public Scene{
         double current = glfwGetTime();
         double deltatime;
 
-        float targetTPS = 240;
+        float targetTPS = 120;
         float tickTime = 1.0f / targetTPS;
 
         double last_tick_time;
         Uniform<float> interpolation_time = Uniform<float>("model_interpolation_time");
-        
+
     public:
         MainScene(){}
         void initialize() override;

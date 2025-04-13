@@ -359,7 +359,7 @@ void MainScene::render(){
         // Draw terrain
         terrain_manager.getMeshRegistry().draw();
 
-        //interpolation_time = (current - last_tick_time) / tickTime;
+        interpolation_time = (current - last_tick_time) / tickTime;
         // Draw models
         modelProgram.updateUniforms();
         Model::DrawAll();

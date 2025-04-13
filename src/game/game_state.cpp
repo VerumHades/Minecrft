@@ -94,16 +94,11 @@ void GameState::giveItemToPlayer(ItemRef item) {
         player_inventory.addItem(item);
 }
 
-static int rotation = 0;
-static float position = 0;
-static float position_mult = 1;
-
 void GameState::drawEntity(Entity& entity) {
     if (!entity.getModel())
         return;
 
-    entity.getModel()->requestDraw(entity.getPosition() + glm::vec3{0, position, 0}, {0.3, 0.3, 0.3}, {0, rotation, 0},
-                                   entity.getModel()->getRotationCenterOffset());
+    entity.getModel()->requestDraw(entity.getPosition(), {0.3,0.3,0.3});
 }
 
 bool GameState::entityCollision(Entity& checked_entity, const glm::vec3& offset) {
@@ -220,16 +215,6 @@ void GameState::updateEntities(float deltatime) {
         drawEntity(*i);
         ++i;
     }
-
-    const float position_addition = 0.002;
-
-    position += position_mult;
-    if (position <= 0.1)
-        position_mult = position_addition;
-    if (position >= 0.4)
-        position_mult = -position_addition;
-
-    rotation = (rotation + 1) % 360;
 }
 
 /*void GameState::save(){

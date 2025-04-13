@@ -6,8 +6,8 @@
 #include <atomic>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp> 
-#include <glm/gtc/type_ptr.hpp>  
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <array>
 #include <rendering/opengl/buffer.hpp>
@@ -21,11 +21,11 @@
 
 #include <unordered_set>
 
-class Model{ 
+class Model{
     private:
         std::mutex swap_mutex;
-        const size_t request_size = 4 * 4;
-        
+        const size_t request_size = 3 + 3 + 4 + 3;
+
         std::atomic<bool> upload_data = false;
         std::atomic<int> selected = 0;
 
@@ -37,7 +37,7 @@ class Model{
 
         GLBuffer<float, GL_ARRAY_BUFFER>& getBackInstanceBuffer()  { return instance_buffers[backIndex()]; }
         GLBuffer<float, GL_ARRAY_BUFFER>& getFrontInstanceBuffer() { return instance_buffers[selected]; }
-        
+
         std::vector<std::unique_ptr<LoadedMesh>> loaded_meshes;
 
         static std::unordered_set<Model*>& getModelSet(){
@@ -69,11 +69,10 @@ class Model{
             Rotation is in degrees
         */
         void requestDraw(
-            const glm::vec3& position, 
-            const glm::vec3& scale = {1,1,1}, 
-            const glm::vec3& rotation = {0,0,0}, 
-            const glm::vec3& rotation_center_offset = {0,0,0}, 
-            const std::array<Rotation,3>& rotation_order = {Z,Y,X}
+            const glm::vec3& position,
+            const glm::vec3& scale = {1,1,1},
+            const glm::quat& rotation = glm::quat{1,0,0,0},
+            const glm::vec3& rotation_center_offset = {0,0,0}
         );
 
         void drawAllRequests();

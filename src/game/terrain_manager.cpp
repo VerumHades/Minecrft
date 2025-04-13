@@ -16,7 +16,7 @@ TerrainManager::TerrainManager(){
         auto& terrain = game_state->getTerrain();
 
         int max = pow((render_distance + 1) * 2, 2);
-        int safe_offset = 0;
+        int safe_offset = render_distance * 4;
 
         while(generated_count < max){
             if(should_stop) return;
