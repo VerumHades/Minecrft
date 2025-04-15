@@ -168,7 +168,11 @@ class MainScene: public Scene{
         float camFOV = 90.0f;
         float maxFOV = 90.0f;
         float minFOV = 2.0f;
+
         glm::vec3 camOffset = {0.3f,1.6f,0.3f};
+        glm::vec3 camPosition = {0,0,0};
+        glm::vec3 lastCamPosition = {0,0,0};
+
         glm::ivec3 lastCamWorldPosition = {0,0,0};
 
         int lastMouseX = 0;

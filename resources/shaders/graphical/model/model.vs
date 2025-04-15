@@ -37,7 +37,7 @@ void main()
 {
     vec3 position = mix(aLastInstancePosition, aInstancePosition, model_interpolation_time);
     vec3 scale = mix(aLastInstanceScale, aInstanceScale, model_interpolation_time);
-    vec4 rotation = aInstanceRotation;
+    vec4 rotation = mix(aLastInstanceRotation, aInstanceRotation, model_interpolation_time);
     vec3 rotation_offset = mix(aLastInstanceRotationOffset, aInstanceRotationOffset, model_interpolation_time);
 
     vec3 final_position = rotate(aPos + rotation_offset, rotation) * scale + position;

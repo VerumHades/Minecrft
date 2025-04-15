@@ -312,11 +312,12 @@ void MainScene::render(){
 
     if(terrain_manager.uploadPendingMeshes()) updateVisibility = 1;
 
+    interpolation_time = (current - last_tick_time) / tickTime;
+
     GL_CALL( glEnable(GL_DEPTH_TEST));
     GL_CALL( glDisable(GL_CULL_FACE));
 
-    glm::vec3 camPosition = game_state->getPlayer().getPosition() + camOffset;
-    camera.setPosition(camPosition);
+    camera.setPosition(glm::mix(lastCamPosition, camPosition, interpolation_time.getValue()));
 
     //cubeRenderer.setCube(0, game_state->getPlayer().getPosition() + camera.getDirection() * 2.0f, 0);
 
@@ -359,7 +360,6 @@ void MainScene::render(){
         // Draw terrain
         terrain_manager.getMeshRegistry().draw();
 
-        interpolation_time = (current - last_tick_time) / tickTime;
         // Draw models
         modelProgram.updateUniforms();
         Model::DrawAll();
@@ -422,12 +422,14 @@ void MainScene::physicsUpdate(){
             update_render_distance = false;
         }
 
-
         glm::vec3 camDir = glm::normalize(camera.getDirection());
         glm::vec3 horizontalDir = glm::normalize(glm::vec3(camDir.x, 0, camDir.z));
         glm::vec3 leftDir = glm::normalize(glm::cross(camera.getUp(), horizontalDir));
 
         auto& player = game_state->getPlayer();
+
+        lastCamPosition = camPosition;
+        camPosition = player.getPosition() + camOffset;
 
         if(!CurrentGameMode() || (!CurrentGameMode()->NoClip())){
             float speed = camAcceleration;
