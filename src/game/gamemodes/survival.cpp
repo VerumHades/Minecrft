@@ -339,8 +339,8 @@ void GameModeSurvival::PhysicsUpdate(double deltatime) {
             glm::mat4 look = glm::lookAt(glm::vec3(0), state.camera.getDirection(), glm::vec3(0, 1, 0));
             glm::quat rot = glm::quat_cast(glm::inverse(look));
 
-            prototype->getModel()->requestDraw(state.camera.getPosition() + item_offset, {1, 1, 1}, rot,
-                                               {-0.5, -0.5, 0});
+            //prototype->getModel()->requestDraw(state.camera.getPosition() + item_offset, {1, 1, 1}, rot,
+            //                                   {-0.5, -0.5, 0});
         }
     }
 }

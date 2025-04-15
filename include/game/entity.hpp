@@ -45,12 +45,13 @@ class Entity{
         float maxVelocityVertical = 50.0f;
         float friction = 4.0f;
         bool hasGravity = true;
-        bool on_ground = false;
 
         std::unordered_set<std::string> tags{};
 
         static std::shared_ptr<EntityData> deserializeData(ByteArray& array);
-        
+
+        std::shared_ptr<ModelInstance> model_instance;
+
     protected:
         std::shared_ptr<EntityData> data;
         RectangularCollider collider;
@@ -71,22 +72,25 @@ class Entity{
         void accelerate(glm::vec3 direction, float deltatime);
         void decellerate(float strength, float deltatime);
         void setGravity(bool value){hasGravity = value;}
-        void setModel(std::shared_ptr<Model> model) {this->model = model;}
         bool isSolid(){return solid;}
         void setSolid(bool value){solid = value;}
-        void setOnGround(bool value){on_ground = value;}
 
+        float getFriction() { return friction; }
+
+        bool HasGravity() {return hasGravity; };
+
+        void setModel(std::shared_ptr<Model> model);
         std::shared_ptr<Model>& getModel() {return model;}
 
         const glm::vec3& getPosition() const {return position;};
-        void setPosition(const glm::vec3& position) {this->position = position;}
-        const glm::vec3& getVelocity() const {return velocity;};
+        void setPosition(const glm::vec3& position);
+
+        glm::vec3& getVelocity() {return velocity;};
         const RectangularCollider& getCollider() const {return collider;}
 
         bool shouldGetDestroyed(){return destroy;}
 
         std::shared_ptr<EntityData>& getData(){return data;}
-        
         void setData(const std::shared_ptr<EntityData>& data){
             this->data = data;
             if(this->data) this->data->setup(this);
@@ -94,8 +98,6 @@ class Entity{
 
         void addTag(const std::string& tag){tags.emplace(tag);}
         bool hasTag(const std::string& tag){return tags.contains(tag);}
-
-        friend class GameState;
 };
 
 #include <game/items/item.hpp>

@@ -481,8 +481,6 @@ void MainScene::physicsUpdate(){
         HandleGamemodeEvent(&GameMode::PhysicsUpdate, deltatime);
 
         game_state->updateEntities(deltatime);
-
-        Model::SwapAll();
     }
 
     threadsStopped++;

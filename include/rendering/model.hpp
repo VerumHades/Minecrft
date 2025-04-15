@@ -15,22 +15,54 @@
 #include <rendering/opengl/shaders.hpp>
 #include <rendering/mesh.hpp>
 
+#include <structure/pool.hpp>
+
 #include <synchronization.hpp>
 #include <coherency.hpp>
 #include <vec_hash.hpp>
 
 #include <unordered_set>
 
+class ModelInstance {
+    public:
+        virtual ~ModelInstance() = default;
+
+        virtual void MoveTo(const glm::vec3& position) = 0;
+        virtual void Scale(const glm::vec3& scale) = 0;
+        virtual void Rotate(const glm::quat& rotation) = 0;
+        virtual void MoveRotationOffset(const glm::vec3& rotation_center) = 0;
+};
+
 class Model{
     private:
+        class Instance: public ModelInstance  {
+            private:
+                Model& model;
+                size_t index;
+
+            public:
+                Instance(Model& model, size_t index): model(model), index(index) {}
+
+                void MoveTo(const glm::vec3& position) override;
+                void Scale(const glm::vec3& scale) override;
+                void Rotate(const glm::quat& rotation) override;
+                void MoveRotationOffset(const glm::vec3& rotation_center) override;
+        };
+
+        struct Request {
+            glm::vec3 position;
+            glm::vec3 scale;
+            glm::vec4 rotation;
+            glm::vec3 rotation_offset;
+        };
+        Pool<Request> request_pool = {};
+
         std::mutex swap_mutex;
-        const size_t request_size = 3 + 3 + 4 + 3;
 
         std::atomic<bool> upload_data = false;
         std::atomic<int> selected = 0;
 
         std::array<GLBuffer<float, GL_ARRAY_BUFFER>,3> instance_buffers = {};
-        std::array<std::vector<float>,3> request_buffers = {};
 
         int backIndex() {return (selected + 1) % 3; }
         int lastIndex() {return (selected + 2) % 3; }
@@ -45,6 +77,8 @@ class Model{
             return models;
         };
 
+        Request& GetRequest(size_t index);
+
     protected:
         glm::vec3 rotation_center_offset = {0,0,0};
 
@@ -55,39 +89,15 @@ class Model{
         //GLBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> index_buffer;
 
     public:
-        enum Rotation{
-            X,
-            Y,
-            Z
-        };
-
         Model();
         ~Model();
-        /*
-            Adds a position to where an instance of the model will be drawn
 
-            Rotation is in degrees
-        */
-        void requestDraw(
-            const glm::vec3& position,
-            const glm::vec3& scale = {1,1,1},
-            const glm::quat& rotation = glm::quat{1,0,0,0},
-            const glm::vec3& rotation_center_offset = {0,0,0}
-        );
+        std::shared_ptr<ModelInstance> NewInstance();
 
         void drawAllRequests();
-
-        void swap() {
-            std::lock_guard<std::mutex> lock(swap_mutex);
-
-            request_buffers[selected].clear();
-            selected = (selected + 1) % 3;
-            upload_data = true;
-        }
 
         const glm::vec3& getRotationCenterOffset(){return rotation_center_offset;}
 
         static void DrawAll();
-        static void SwapAll();
         static void CleanupAll();
 };

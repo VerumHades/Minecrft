@@ -49,8 +49,6 @@ class GameState {
     void saveEntities();
     void loadEntities();
 
-    void drawEntity(Entity& entity);
-
     friend class TerrainManager;
 
   public:

@@ -17,6 +17,14 @@ Entity::Entity(glm::vec3 position, glm::vec3 colliderDimensions, std::shared_ptr
     collider = {0,0,0,colliderDimensions.x,colliderDimensions.y,colliderDimensions.z};
 }
 
+void Entity::setModel(std::shared_ptr<Model> model) {
+    this->model = model;
+    if(model) model_instance = model->NewInstance();
+}
+void Entity::setPosition(const glm::vec3& position) {
+    this->position = position;
+    if(model_instance) model_instance->MoveTo(position);
+}
 
 void Entity::accelerate(glm::vec3 direction, float deltatime){
     auto newVelocity = velocity + direction * deltatime;

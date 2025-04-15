@@ -94,13 +94,6 @@ void GameState::giveItemToPlayer(ItemRef item) {
         player_inventory.addItem(item);
 }
 
-void GameState::drawEntity(Entity& entity) {
-    if (!entity.getModel())
-        return;
-
-    entity.getModel()->requestDraw(entity.getPosition(), {0.3,0.3,0.3});
-}
-
 bool GameState::entityCollision(Entity& checked_entity, const glm::vec3& offset) {
     if (checked_entity.shouldGetDestroyed())
         return false;
@@ -174,24 +167,25 @@ void GameState::unload() {
 }
 
 void GameState::updateEntity(Entity& entity, float deltatime) {
-    if (entity.data && entity.data->do_update)
-        entity.data->update(this);
+    if (entity.getData() && entity.getData()->do_update)
+        entity.getData()->update(this);
 
-    if (entity.hasGravity)
-        entity.accelerate(glm::vec3(0, -(15.0 + entity.friction * 2), 0), deltatime);
+    if (entity.HasGravity())
+        entity.accelerate(glm::vec3(0, -(15.0 + entity.getFriction() * 2), 0), deltatime);
 
-    if (entity.velocity.x != 0 || entity.velocity.y != 0 || entity.velocity.z != 0)
-        entity.on_ground = false;
+    //if (entity.getVelocity().x != 0 || entity.getVelocity().y != 0 || entity.getVelocity().z != 0)
+    //    entity.on_ground = false;
 
-    glm::vec3& vel = entity.velocity;
+    glm::vec3& vel = entity.getVelocity();
 
-    float relative_friction = entity.friction * deltatime;
+    float relative_friction = entity.getFriction() * deltatime;
 
     float len = glm::length(vel);
     if (len > relative_friction)
         vel = glm::normalize(vel) * (len - relative_friction);
     else
         vel = glm::vec3(0);
+
 
     if (vel.x != 0 && entityCollision(entity, {vel.x * deltatime, 0, 0}))
         vel.x = 0;
@@ -200,7 +194,7 @@ void GameState::updateEntity(Entity& entity, float deltatime) {
     if (vel.z != 0 && entityCollision(entity, {0, 0, vel.z * deltatime}))
         vel.z = 0;
 
-    entity.position += vel * deltatime;
+    entity.setPosition(entity.getPosition() + vel * deltatime);
 }
 
 void GameState::updateEntities(float deltatime) {
@@ -212,7 +206,6 @@ void GameState::updateEntities(float deltatime) {
             continue;
         }
 
-        drawEntity(*i);
         ++i;
     }
 }

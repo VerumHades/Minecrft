@@ -13,10 +13,6 @@ void Model::DrawAll() {
     for (auto& model : getModelSet())
         model->drawAllRequests();
 }
-void Model::SwapAll() {
-    for (auto& model : getModelSet())
-        model->swap();
-}
 void Model::CleanupAll() {
     for (auto& model : getModelSet()) {
         model->loaded_meshes.clear();
@@ -41,39 +37,59 @@ Mesh Model::createMesh() {
     return Mesh({VEC3, VEC3, VEC2, FLOAT, VEC3, FLOAT});
 }
 
-void Model::requestDraw(const glm::vec3& position, const glm::vec3& scale, const glm::quat& rotation,
-                        const glm::vec3& rotation_center_offset) {
-    /*glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
-    modelMatrix = glm::scale(modelMatrix, scale);
-    modelMatrix *= glm::mat4_cast(rotation);
-    modelMatrix = glm::translate(modelMatrix, rotation_center_offset); // if needed
+std::shared_ptr<ModelInstance> Model::NewInstance() {
+    std::lock_guard<std::mutex> lock(swap_mutex);
 
-    //modelMatrix = glm::scale(modelMatrix, scale);*/
+    size_t index = request_pool.NextIndex();
 
-    auto& request_back_buffer = request_buffers[backIndex()];
+    auto deleter = [index, this](Instance* instance) {
+        request_pool.Free(index);
+        request_pool[index].scale = {0, 0, 0};
+        delete instance;
+        upload_data = true;
+    };
 
-    glm::vec4 rotationGLSL(rotation.x, rotation.y, rotation.z, rotation.w); // Now (x, y, z, w)
-    request_back_buffer.insert(request_back_buffer.end(), glm::value_ptr(position), glm::value_ptr(position) + 3);
-    request_back_buffer.insert(request_back_buffer.end(), glm::value_ptr(scale), glm::value_ptr(scale) + 3);
-    request_back_buffer.insert(request_back_buffer.end(), glm::value_ptr(rotationGLSL), glm::value_ptr(rotationGLSL) + 4);
-    request_back_buffer.insert(request_back_buffer.end(), glm::value_ptr(rotation_center_offset),
-                               glm::value_ptr(rotation_center_offset) + 3);
+    upload_data = true;
+
+    auto instance = std::shared_ptr<Instance>(new Instance(*this, index), deleter);
+    instance->Scale({1.0,1.0,1.0});
+    instance->Rotate(glm::quat());
+    instance->MoveRotationOffset({0.0,0.0,0.0});
+    instance->MoveTo({0.0,0.0,0.0});
+
+    return instance;
+}
+
+Model::Request& Model::GetRequest(size_t index) {
+    upload_data = true;
+    return request_pool[index];
+}
+void Model::Instance::MoveTo(const glm::vec3& position) {
+    model.GetRequest(index).position = position;
+}
+void Model::Instance::Scale(const glm::vec3& scale) {
+    model.GetRequest(index).scale = scale;
+}
+void Model::Instance::Rotate(const glm::quat& rotation) {
+    model.GetRequest(index).rotation = glm::vec4(rotation.x, rotation.y, rotation.z, rotation.w);
+}
+void Model::Instance::MoveRotationOffset(const glm::vec3& rotation_center) {
+    model.GetRequest(index).rotation_offset = rotation_center;
 }
 
 void Model::drawAllRequests() {
-    std::lock_guard<std::mutex> lock(swap_mutex);
-
-    auto& request_buffer = request_buffers[selected];
-
-    if (request_buffer.size() == 0)
+    if (request_pool.vector().size() == 0)
         return;
 
     if (upload_data) {
+        selected = (selected + 1) % 3;
         auto& front_buffer = getFrontInstanceBuffer();
 
-        if (front_buffer.size() < request_buffer.size())
-            front_buffer.initialize(request_buffer.size());
-        front_buffer.insert(0, request_buffer.size(), request_buffer.data());
+        std::lock_guard<std::mutex> lock(swap_mutex);
+
+        if (front_buffer.size() < request_pool.vector().size() * sizeof(Request))
+            front_buffer.initialize(request_pool.vector().size() * sizeof(Request));
+        front_buffer.insert(0, request_pool.vector().size() * sizeof(Request), reinterpret_cast<float*>(request_pool.vector().data()));
 
         upload_data = false;
     }
@@ -84,7 +100,7 @@ void Model::drawAllRequests() {
 
         mesh->getVAOs()[selected].bind();
         GL_CALL(glDrawElementsInstanced(GL_TRIANGLES, mesh->indicesTotal(), GL_UNSIGNED_INT, 0,
-                                        request_buffer.size() / request_size));
+                                        request_pool.Count()));
         mesh->getVAOs()[selected].unbind();
     }
 }
