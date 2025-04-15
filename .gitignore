@@ -7,3 +7,4 @@ releases/
 _CPack_Packages/
 appdata/
 .cache/
+compile_commands.json

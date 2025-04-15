@@ -52,9 +52,10 @@ void Model::requestDraw(const glm::vec3& position, const glm::vec3& scale, const
 
     auto& request_back_buffer = request_buffers[backIndex()];
 
+    glm::vec4 rotationGLSL(rotation.x, rotation.y, rotation.z, rotation.w); // Now (x, y, z, w)
     request_back_buffer.insert(request_back_buffer.end(), glm::value_ptr(position), glm::value_ptr(position) + 3);
     request_back_buffer.insert(request_back_buffer.end(), glm::value_ptr(scale), glm::value_ptr(scale) + 3);
-    request_back_buffer.insert(request_back_buffer.end(), glm::value_ptr(rotation), glm::value_ptr(rotation) + 4);
+    request_back_buffer.insert(request_back_buffer.end(), glm::value_ptr(rotationGLSL), glm::value_ptr(rotationGLSL) + 4);
     request_back_buffer.insert(request_back_buffer.end(), glm::value_ptr(rotation_center_offset),
                                glm::value_ptr(rotation_center_offset) + 3);
 }

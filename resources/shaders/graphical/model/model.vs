@@ -28,15 +28,9 @@ out vec3 Normal;
 out float PixelPerfectSampling;
 
 // Chato
-vec3 rotateVectorByQuat(vec3 v, vec4 q) {
-    return v;
-    // q = (x, y, z, w) where w is the scalar part
-    vec3 u = q.xyz;
-    float s = q.w;
-
-    return 2.0 * dot(u, v) * u
-        + (s * s - dot(u, u)) * v
-        + 2.0 * s * cross(u, v);
+vec3 rotate(vec3 v, vec4 q) {
+    vec3 temp = cross(q.xyz, v) + q.w * v;
+    return v + 2.0 * cross(q.xyz, temp);
 }
 
 void main()
@@ -46,8 +40,8 @@ void main()
     vec4 rotation = aInstanceRotation;
     vec3 rotation_offset = mix(aLastInstanceRotationOffset, aInstanceRotationOffset, model_interpolation_time);
 
-    vec3 final_position = rotateVectorByQuat(aPos + rotation_offset, rotation) * scale + position;
-    Normal = rotateVectorByQuat(aNormal + rotation_offset, rotation) * scale;
+    vec3 final_position = rotate(aPos + rotation_offset, rotation) * scale + position;
+    Normal = rotate(aNormal + rotation_offset, rotation) * scale;
 
     vec4 viewPos = player_camera_view_matrix * vec4(final_position, 1.0);
     FragPos = viewPos.xyz;
