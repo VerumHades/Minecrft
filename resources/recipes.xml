@@ -56,41 +56,68 @@
         <result>wooden_pickaxe</result>
         <result_amount>1</result_amount>
         <items>
-            <item> <slotX>0</slotX> <slotY>0</slotY> <name>block_oak_plank</name> <amount>1</amount> </item>
-            <item> <slotX>1</slotX> <slotY>0</slotY> <name>block_oak_plank</name> <amount>1</amount> </item>
-            <item> <slotX>2</slotX> <slotY>0</slotY> <name>block_oak_plank</name> <amount>1</amount> </item>
-            <item> <slotX>1</slotX> <slotY>1</slotY> <name>stick</name> <amount>1</amount> </item>
-            <item> <slotX>1</slotX> <slotY>2</slotY> <name>stick</name> <amount>1</amount> </item>
+            <item> <slotX>0</slotX> <slotY>0</slotY> <name
+                >block_oak_plank</name> <amount>1</amount> </item>
+            <item> <slotX>1</slotX> <slotY>0</slotY> <name
+                >block_oak_plank</name> <amount>1</amount> </item>
+            <item> <slotX>2</slotX> <slotY>0</slotY> <name
+                >block_oak_plank</name> <amount>1</amount> </item>
+            <item> <slotX>1</slotX> <slotY>1</slotY> <name>stick</name> <amount
+                >1</amount> </item>
+            <item> <slotX>1</slotX> <slotY>2</slotY> <name>stick</name> <amount
+                >1</amount> </item>
         </items>
     </recipe>
     <recipe>
         <result>wooden_axe</result>
         <result_amount>1</result_amount>
         <items>
-            <item> <slotX>0</slotX> <slotY>0</slotY> <name>block_oak_plank</name> <amount>1</amount> </item>
-            <item> <slotX>1</slotX> <slotY>0</slotY> <name>block_oak_plank</name> <amount>1</amount> </item>
-            <item> <slotX>0</slotX> <slotY>1</slotY> <name>block_oak_plank</name> <amount>1</amount> </item>
-            <item> <slotX>1</slotX> <slotY>1</slotY> <name>stick</name> <amount>1</amount> </item>
-            <item> <slotX>1</slotX> <slotY>2</slotY> <name>stick</name> <amount>1</amount> </item>
+            <item> <slotX>0</slotX> <slotY>0</slotY> <name
+                >block_oak_plank</name> <amount>1</amount> </item>
+            <item> <slotX>1</slotX> <slotY>0</slotY> <name
+                >block_oak_plank</name> <amount>1</amount> </item>
+            <item> <slotX>0</slotX> <slotY>1</slotY> <name
+                >block_oak_plank</name> <amount>1</amount> </item>
+            <item> <slotX>1</slotX> <slotY>1</slotY> <name>stick</name> <amount
+                >1</amount> </item>
+            <item> <slotX>1</slotX> <slotY>2</slotY> <name>stick</name> <amount
+                >1</amount> </item>
         </items>
     </recipe>
     <recipe>
         <result>wooden_hoe</result>
         <result_amount>1</result_amount>
         <items>
-            <item> <slotX>0</slotX> <slotY>0</slotY> <name>block_oak_plank</name> <amount>1</amount> </item>
-            <item> <slotX>1</slotX> <slotY>0</slotY> <name>block_oak_plank</name> <amount>1</amount> </item>
-            <item> <slotX>1</slotX> <slotY>1</slotY> <name>stick</name> <amount>1</amount> </item>
-            <item> <slotX>1</slotX> <slotY>2</slotY> <name>stick</name> <amount>1</amount> </item>
+            <item> <slotX>0</slotX> <slotY>0</slotY> <name
+                >block_oak_plank</name> <amount>1</amount> </item>
+            <item> <slotX>1</slotX> <slotY>0</slotY> <name
+                >block_oak_plank</name> <amount>1</amount> </item>
+            <item> <slotX>1</slotX> <slotY>1</slotY> <name>stick</name> <amount
+                >1</amount> </item>
+            <item> <slotX>1</slotX> <slotY>2</slotY> <name>stick</name> <amount
+                >1</amount> </item>
         </items>
     </recipe>
     <recipe>
         <result>wooden_shovel</result>
         <result_amount>1</result_amount>
         <items>
-            <item> <slotX>0</slotX> <slotY>0</slotY> <name>block_oak_plank</name> <amount>1</amount> </item>
-            <item> <slotX>0</slotX> <slotY>1</slotY> <name>stick</name> <amount>1</amount> </item>
-            <item> <slotX>0</slotX> <slotY>2</slotY> <name>stick</name> <amount>1</amount> </item>
+            <item> <slotX>0</slotX> <slotY>0</slotY> <name
+                >block_oak_plank</name> <amount>1</amount> </item>
+            <item> <slotX>0</slotX> <slotY>1</slotY> <name>stick</name> <amount
+                >1</amount> </item>
+            <item> <slotX>0</slotX> <slotY>2</slotY> <name>stick</name> <amount
+                >1</amount> </item>
+        </items>
+    </recipe>
+    <recipe>
+        <result>block_stone_brick</result>
+        <result_amount>4</result_amount>
+        <items>
+            <item><slotX>1</slotX> <slotY>0</slotY><name>block_stone</name><amount>1</amount></item>
+            <item><slotX>0</slotX> <slotY>1</slotY><name>block_stone</name><amount>1</amount></item>
+            <item><slotX>1</slotX> <slotY>1</slotY><name>block_stone</name><amount>1</amount></item>
+            <item><slotX>0</slotX> <slotY>0</slotY><name>block_stone</name><amount>1</amount></item>
         </items>
     </recipe>
 </recipes>

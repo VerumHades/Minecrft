@@ -57,8 +57,8 @@
         <textures>
             <texture>crafting_top</texture>
             <texture>iron</texture>
-            <texture>crafting_side</texture>
-            <texture>crafting_side</texture>
+            <texture>crafting_side2</texture>
+            <texture>crafting_side2</texture>
             <texture>crafting_side</texture>
             <texture>crafting_side</texture>
         </textures>
@@ -90,4 +90,10 @@
         <hardness>2</hardness>
         <material>wood</material>
     </oak_plank>
+    <stone_brick>
+        <texture>stone_brick</texture>
+        <render_type>FULL_BLOCK</render_type>
+        <hardness>3</hardness>
+        <material>stone</material>
+    </stone_brick>
 </blocks>
