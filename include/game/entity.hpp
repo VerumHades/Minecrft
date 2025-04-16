@@ -81,6 +81,7 @@ class Entity{
 
         void setModel(std::shared_ptr<Model> model);
         std::shared_ptr<Model>& getModel() {return model;}
+        std::shared_ptr<ModelInstance> getModelInstance() {return model_instance; }
 
         const glm::vec3& getPosition() const {return position;};
         void setPosition(const glm::vec3& position);

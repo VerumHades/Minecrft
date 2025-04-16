@@ -57,6 +57,8 @@ std::shared_ptr<ModelInstance> Model::NewInstance() {
     instance->MoveRotationOffset({0.0,0.0,0.0});
     instance->MoveTo({0.0,0.0,0.0});
 
+    std::cout << "Created model: " << index << std::endl;
+
     return instance;
 }
 
@@ -100,7 +102,7 @@ void Model::drawAllRequests() {
 
         mesh->getVAOs()[selected].bind();
         GL_CALL(glDrawElementsInstanced(GL_TRIANGLES, mesh->indicesTotal(), GL_UNSIGNED_INT, 0,
-                                        request_pool.Count()));
+                                        request_pool.vector().size()));
         mesh->getVAOs()[selected].unbind();
     }
 }

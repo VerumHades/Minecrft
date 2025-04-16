@@ -47,6 +47,8 @@ void main()
     FragPos = viewPos.xyz;
     gl_Position = player_camera_projection_matrix * viewPos;
 
+    gl_Position = aInstanceScale.x == 0 && aInstanceScale.y == 0 && aInstanceScale.z == 0 ? vec4(2.0, 0.0, 0.0, 1.0) : gl_Position;
+
     TexCoords = aTexCoords;
     IsSolidColor = aIsSolidColor;
     SolidColor = aSolidColor;
