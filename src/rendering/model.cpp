@@ -52,12 +52,10 @@ std::shared_ptr<ModelInstance> Model::NewInstance() {
     upload_data = true;
 
     auto instance = std::shared_ptr<Instance>(new Instance(*this, index), deleter);
-    instance->Scale({1.0,1.0,1.0});
+    instance->Scale({1.0, 1.0, 1.0});
     instance->Rotate(glm::quat());
-    instance->MoveRotationOffset({0.0,0.0,0.0});
-    instance->MoveTo({0.0,0.0,0.0});
-
-    std::cout << "Created model: " << index << std::endl;
+    instance->MoveRotationOffset({0.0, 0.0, 0.0});
+    instance->MoveTo({0.0, 0.0, 0.0});
 
     return instance;
 }
@@ -78,20 +76,24 @@ void Model::Instance::Rotate(const glm::quat& rotation) {
 void Model::Instance::MoveRotationOffset(const glm::vec3& rotation_center) {
     model.GetRequest(index).rotation_offset = rotation_center;
 }
+bool Model::Instance::IsOfModel(Model& model) {
+    return &this->model == &model;
+}
 
 void Model::drawAllRequests() {
     if (request_pool.vector().size() == 0)
         return;
 
     if (upload_data) {
-        selected = (selected + 1) % 3;
+        selected           = (selected + 1) % 3;
         auto& front_buffer = getFrontInstanceBuffer();
 
         std::lock_guard<std::mutex> lock(swap_mutex);
 
         if (front_buffer.size() < request_pool.vector().size() * sizeof(Request))
             front_buffer.initialize(request_pool.vector().size() * sizeof(Request));
-        front_buffer.insert(0, request_pool.vector().size() * sizeof(Request), reinterpret_cast<float*>(request_pool.vector().data()));
+        front_buffer.insert(0, request_pool.vector().size() * sizeof(Request),
+                            reinterpret_cast<float*>(request_pool.vector().data()));
 
         upload_data = false;
     }

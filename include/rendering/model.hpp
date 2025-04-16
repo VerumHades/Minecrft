@@ -23,6 +23,8 @@
 
 #include <unordered_set>
 
+class Model;
+
 class ModelInstance {
     public:
         virtual ~ModelInstance() = default;
@@ -31,6 +33,7 @@ class ModelInstance {
         virtual void Scale(const glm::vec3& scale) = 0;
         virtual void Rotate(const glm::quat& rotation) = 0;
         virtual void MoveRotationOffset(const glm::vec3& rotation_center) = 0;
+        virtual bool IsOfModel(Model& model) = 0;
 };
 
 class Model{
@@ -47,6 +50,7 @@ class Model{
                 void Scale(const glm::vec3& scale) override;
                 void Rotate(const glm::quat& rotation) override;
                 void MoveRotationOffset(const glm::vec3& rotation_center) override;
+                bool IsOfModel(Model& model) override;
         };
 
         struct Request {
@@ -85,12 +89,18 @@ class Model{
         void addMesh(Mesh& mesh);
         Mesh createMesh();
 
-        //GLBuffer<float, GL_ARRAY_BUFFER> vertex_buffer;
-        //GLBuffer<uint , GL_ELEMENT_ARRAY_BUFFER> index_buffer;
+        //Model<float, GL_ARRAY_BUFFER> vertex_buffer;
+        //Model<uint , GL_ELEMENT_ARRAY_BUFFER> index_buffer;
 
     public:
         Model();
         ~Model();
+
+        // Delete the copy constructor to make it non-copyable
+        Model(const Model& other) = delete;
+        Model& operator=(const Model& other) = delete;
+        Model(Model&& other) = delete;
+        Model& operator=(Model&& other) = delete;
 
         std::shared_ptr<ModelInstance> NewInstance();
 

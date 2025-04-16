@@ -6,7 +6,7 @@ GameState::GameState(const std::string& path, int worldSeed) : save_structure(pa
     entities.push_back(player);
 
     world_storage = std::make_shared<SegmentStore>();
-    world_saver = std::make_shared<WorldStream>(world_storage);
+    world_saver   = std::make_shared<WorldStream>(world_storage);
 
     world_stream = save_structure.RegisterSave<FileStream>(
         "world", "",
@@ -14,9 +14,7 @@ GameState::GameState(const std::string& path, int worldSeed) : save_structure(pa
             world_storage->SetBuffer(stream);
             world_storage->ResetHeader();
         },
-        [this](FileStream* stream) {
-            world_storage->SetBuffer(stream);
-        });
+        [this](FileStream* stream) { world_storage->SetBuffer(stream); });
 
     player_stream = save_structure.RegisterSave<FileStream>(
         "player", "", [this](FileStream*) { this->savePlayer(); }, [this](FileStream*) { this->loadPlayer(); });
@@ -99,7 +97,7 @@ bool GameState::entityCollision(Entity& checked_entity, const glm::vec3& offset)
         return false;
 
     auto& checked_collider = checked_entity.getCollider();
-    auto position = checked_entity.getPosition() + offset;
+    auto  position         = checked_entity.getPosition() + offset;
 
     if (terrain.collision(position, &checked_collider)) {
         if (checked_entity.onTerrainCollision)
@@ -173,8 +171,8 @@ void GameState::updateEntity(Entity& entity, float deltatime) {
     if (entity.HasGravity())
         entity.accelerate(glm::vec3(0, -(15.0 + entity.getFriction() * 2), 0), deltatime);
 
-    //if (entity.getVelocity().x != 0 || entity.getVelocity().y != 0 || entity.getVelocity().z != 0)
-    //    entity.on_ground = false;
+    // if (entity.getVelocity().x != 0 || entity.getVelocity().y != 0 || entity.getVelocity().z != 0)
+    //     entity.on_ground = false;
 
     glm::vec3& vel = entity.getVelocity();
 
@@ -185,7 +183,6 @@ void GameState::updateEntity(Entity& entity, float deltatime) {
         vel = glm::normalize(vel) * (len - relative_friction);
     else
         vel = glm::vec3(0);
-
 
     if (vel.x != 0 && entityCollision(entity, {vel.x * deltatime, 0, 0}))
         vel.x = 0;

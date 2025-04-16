@@ -1,5 +1,6 @@
 #pragma once
 
+#include "rendering/model.hpp"
 #include <ui/elements.hpp>
 
 #include <game/gamemodes/interactable_base.hpp>
@@ -22,6 +23,7 @@ class GameModeSurvival: public GameModeInteractable{
         std::shared_ptr<UIHotbar> hotbar;
 
         std::shared_ptr<UILabel> fps_label;
+        std::shared_ptr<ModelInstance> in_hand_model_instance;
 
         std::atomic<bool> update_hotbar = false;
         std::atomic<bool> update_healthbar = false;

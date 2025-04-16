@@ -62,7 +62,7 @@ void GameModeSurvival::Initialize() {
     onCursorTargetChange = [this]() {
         auto* block_prototype = BlockRegistry::get().getPrototype(cursor_state.blockUnderCursor->id);
         if (!block_prototype) {
-            mining_delay = 1.0f;
+            mining_delay     = 1.0f;
             mining_delay_max = 1.0f;
             return;
         }
@@ -79,9 +79,9 @@ void GameModeSurvival::Initialize() {
             }
         }
 
-        can_break = mining_power + 1 >= block_prototype->hardness;
+        can_break        = mining_power + 1 >= block_prototype->hardness;
         mining_delay_max = static_cast<float>(block_prototype->hardness) / mining_power;
-        mining_delay = mining_delay_max;
+        mining_delay     = mining_delay_max;
     };
 }
 
@@ -137,7 +137,7 @@ void GameModeSurvival::Render(double deltatime) {
 
     if (update_healthbar) {
         if (game_state.getPlayerHealth() <= 0) {
-            auto& player = game_state.getPlayer();
+            auto& player                 = game_state.getPlayer();
             game_state.getPlayerHealth() = 20;
 
             DropAllInventoryItems(player.getPosition(), &game_state.getPlayerInventory());
@@ -332,17 +332,27 @@ void GameModeSurvival::PhysicsUpdate(double deltatime) {
 
     if (in_hand_slot && in_hand_slot->hasItem()) {
         auto* prototype = in_hand_slot->getItem()->getPrototype();
-        if (prototype && prototype->getModel()) {
+        if (prototype && prototype->getModel() &&
+            (!in_hand_model_instance || !in_hand_model_instance->IsOfModel(*prototype->getModel()))) {
+            in_hand_model_instance = prototype->getModel()->NewInstance();
+            in_hand_model_instance->MoveRotationOffset({-0.5, -0.5, 0});
+            in_hand_model_instance->Scale({1.0,1.0,1.0});
+            // prototype->getModel()->requestDraw(state.camera.getPosition() + item_offset, {1, 1, 1}, rot,
+            //                                    {-0.5, -0.5, 0});
+        }
+
+        if (in_hand_model_instance) {
             glm::vec3 item_offset =
                 state.camera.getDirection() * 0.5f - state.camera.getLeft() + state.camera.getRelativeUp() * 0.4f;
 
             glm::mat4 look = glm::lookAt(glm::vec3(0), state.camera.getDirection(), glm::vec3(0, 1, 0));
-            glm::quat rot = glm::quat_cast(glm::inverse(look));
+            glm::quat rot  = glm::quat_cast(glm::inverse(look));
 
-            //prototype->getModel()->requestDraw(state.camera.getPosition() + item_offset, {1, 1, 1}, rot,
-            //                                   {-0.5, -0.5, 0});
+            in_hand_model_instance->MoveTo(state.camera.getPosition() + item_offset);
+            in_hand_model_instance->Rotate(rot);
         }
-    }
+    } else
+        in_hand_model_instance = nullptr;
 }
 
 void UICrosshair::getRenderingInformation(UIRenderBatch& batch) {
@@ -382,7 +392,7 @@ HealthBar::HealthBar(int* health) : health(health) {
 }
 
 void HealthBar::getRenderingInformation(UIRenderBatch& batch) {
-    int hearts_total = max_health / 2;
+    int hearts_total       = max_health / 2;
     int single_heart_width = transform.width / hearts_total;
 
     const float texture_step = 1.0f / 3.0f;

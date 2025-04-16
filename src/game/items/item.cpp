@@ -23,7 +23,7 @@ ItemPrototype::ItemPrototype(std::string name, const BlockRegistry::BlockPrototy
 
     if (prototype->single_texture) {
         auto texture_path = prototype->texture_paths[0];
-        texture_paths = {texture_path, texture_path, texture_path};
+        texture_paths     = {texture_path, texture_path, texture_path};
     } else if (prototype->render_type == BlockRegistry::FULL_BLOCK) {
         texture_paths = {prototype->texture_paths[0], prototype->texture_paths[2], prototype->texture_paths[4]};
     }
@@ -35,9 +35,9 @@ ItemPrototype::ItemPrototype(std::string name, const BlockRegistry::BlockPrototy
     this->block_id = prototype->id;
 }
 ItemPrototype::ItemPrototype(std::string name, std::string texture_path) : name(name) {
-    display_type = SIMPLE;
+    display_type     = SIMPLE;
     texture_paths[0] = texture_path;
-    model = std::make_shared<SpriteModel>(texture_path);
+    model            = std::make_shared<SpriteModel>(texture_path);
 }
 
 bool ItemRegistry::LoadFromXML(const std::string& path) {
@@ -55,8 +55,8 @@ bool ItemRegistry::LoadFromXML(const std::string& path) {
     }
 
     xml_for_each_child_as(root, item_definition) {
-        std::string name = "undefined_item";
-        std::string texture_path = "texture_path";
+        std::string                                   name         = "undefined_item";
+        std::string                                   texture_path = "texture_path";
         std::vector<ItemPrototype::ToolEffectiveness> effectiveness{};
 
         xml_for_each_child_as(item_definition, item_attribute) {
@@ -83,7 +83,7 @@ bool ItemRegistry::LoadFromXML(const std::string& path) {
                 }
             }
         }
-        auto prototype = ItemPrototype(name, texture_path);
+        auto prototype                         = ItemPrototype(name, texture_path);
         prototype.effective_againist_materials = effectiveness;
         ItemRegistry::get().addPrototype(prototype);
     }
@@ -117,13 +117,13 @@ ItemRef Item::Create(ItemPrototype* prototype) {
 }
 
 bool LogicalItemSlot::takeItemFrom(LogicalItemSlot& source, int quantity) {
-    bool source_has_item = source.hasItem();
+    bool source_has_item      = source.hasItem();
     bool destination_has_item = hasItem();
 
     if (!source_has_item)
         return false;
 
-    Item& source_item = *source.getItem();
+    Item& source_item           = *source.getItem();
     auto* source_item_prototype = source_item.getPrototype();
     if (!source_item_prototype)
         return false;
@@ -133,7 +133,7 @@ bool LogicalItemSlot::takeItemFrom(LogicalItemSlot& source, int quantity) {
         quantity = source_quantity;
 
     if (destination_has_item) {
-        Item& destination_item = *getItem();
+        Item& destination_item           = *getItem();
         auto* destination_item_prototype = destination_item.getPrototype();
 
         if (source_item_prototype != destination_item_prototype)
@@ -160,7 +160,7 @@ ItemRef LogicalItemSlot::getPortion(int quantity) {
     if (!hasItem())
         return NO_ITEM;
 
-    Item& source_item = *getItem();
+    Item& source_item           = *getItem();
     auto* source_item_prototype = source_item.getPrototype();
     if (!source_item_prototype)
         return NO_ITEM;
@@ -173,7 +173,7 @@ ItemRef LogicalItemSlot::getPortion(int quantity) {
 
     if (source_quantity <= quantity) {
         output = item;
-        item = NO_ITEM;
+        item   = NO_ITEM;
     } else {
         source_item.setQuantity(source_quantity - quantity);
 
@@ -187,7 +187,7 @@ int LogicalItemSlot::decreaseQuantity(int number) {
     if (!hasItem())
         return 0;
     auto& source_item = *getItem();
-    int quantity = source_item.getQuantity();
+    int   quantity    = source_item.getQuantity();
 
     if (quantity <= number) {
         clear();
@@ -203,8 +203,8 @@ void LogicalItemSlot::clear() {
 
 bool LogicalItemSlot::swap(LogicalItemSlot& slot) {
     ItemRef other = slot.item;
-    slot.item = item;
-    item = other;
+    slot.item     = item;
+    item          = other;
     return true;
 }
 
