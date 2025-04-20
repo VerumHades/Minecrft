@@ -1,6 +1,5 @@
 #pragma once
 
-#include "rendering/model.hpp"
 #include <ui/elements.hpp>
 
 #include <game/gamemodes/interactable_base.hpp>
@@ -39,6 +38,8 @@ class GameModeSurvival: public GameModeInteractable{
         void PlaceBlock();
         void DropItem(const glm::vec3& position, ItemRef item);
         void DropAllInventoryItems(const glm::vec3& position, LogicalItemInventory* inventory);
+
+        void TeleportPlayerTo(const glm::vec2& horizontal_position);
 
     public:
         GameModeSurvival(GameModeState& state): GameModeInteractable(state, "survival"){

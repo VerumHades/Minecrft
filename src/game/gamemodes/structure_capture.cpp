@@ -29,7 +29,7 @@ void GameModeStructureCapture::Initialize(){
         auto [min,max] = pointsToRegion(structureCaptureStart, structureCaptureEnd);
         glm::ivec3 size = (max - min) + glm::ivec3(1,1,1);
 
-        Structure structure = Structure::capture(min, size, state.game_state->getTerrain());
+        Structure structure = Structure::capture(min, size, state.game_state->GetTerrain());
 
         const std::string& name = getElementById<UIInput>("structure_name")->getText();
 
@@ -134,9 +134,9 @@ void GameModeStructureCapture::MouseEvent(int button, int action, int mods){
         else{
             if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
                 if(selected_structure){
-                    auto positions = selected_structure->place(cursor_state.blockUnderCursorPosition, state.game_state->getTerrain());
+                    auto positions = selected_structure->place(cursor_state.blockUnderCursorPosition, state.game_state->GetTerrain());
                     for(auto& position: positions)
-                    state.regenerateChunkMesh(state.game_state->getTerrain().getChunk(position), {1,1,1});
+                    state.regenerateChunkMesh(state.game_state->GetTerrain().getChunk(position), {1,1,1});
                 }
             }
         }

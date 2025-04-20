@@ -2,7 +2,7 @@
 #include <game/terrain_manager.hpp>
 #include <thread>
 
-TerrainManager::TerrainManager(){
+TerrainManager::TerrainManager(std::shared_ptr<Generator> generator): world_generator(generator){
     service_manager = std::make_unique<Service>();
 
     reset_loader();
@@ -13,7 +13,7 @@ TerrainManager::TerrainManager(){
         glm::ivec3 around = glm::ivec3{around_x.load(),around_y.load(),around_z.load()};
 
         SpiralIndexer meshing_indexer = {};
-        auto& terrain = game_state->getTerrain();
+        auto& terrain = game_state->GetTerrain();
 
         int max = pow((render_distance + 1) * 2, 2);
         int safe_offset = render_distance;
@@ -48,7 +48,7 @@ TerrainManager::TerrainManager(){
     service_manager->AddModule("generator", [this](std::atomic<bool>& should_stop){
         if(!game_state || !game_state->world_saver) return;
 
-        auto& terrain = game_state->getTerrain();
+        auto& terrain = game_state->GetTerrain();
         auto& world_saver = *game_state->world_saver;
 
         SpiralIndexer generation_indexer = {};
@@ -84,7 +84,7 @@ TerrainManager::TerrainManager(){
                 chunk = terrain.createEmptyChunk(chunkPosition);
                 chunk->current_simplification = level;
 
-                world_generator.generateTerrainChunk(chunk, chunkPosition);
+                world_generator->GenerateTerrainChunk(chunk, chunkPosition);
             }
 
             {
@@ -171,11 +171,11 @@ void TerrainManager::UnloadChunkColumn(const glm::ivec2& position){
 void TerrainManager::unloadAll(){
     mesh_registry.clear();
     reset_loader();
-    world_generator.getHeightMaps() = std::unordered_map<glm::ivec3, std::unique_ptr<WorldGenerator::Heightmap>, IVec3Hash, IVec3Equal>();
+    world_generator->Clear();
 }
 
 #define regenMesh(position) { \
-    Chunk* temp = game_state->getTerrain().getChunk(position);\
+    Chunk* temp = game_state->GetTerrain().getChunk(position);\
     if(temp) regenerateChunkMesh(temp);\
 }
 void TerrainManager::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords){

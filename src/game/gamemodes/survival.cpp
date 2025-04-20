@@ -1,3 +1,4 @@
+
 #include <game/gamemodes/survival.hpp>
 
 void GameModeSurvival::Initialize() {
@@ -116,9 +117,14 @@ void GameModeSurvival::Open() {
         this->update_hotbar = true;
     };
 
-    if (player.getPosition().x == 0.0f && player.getPosition().z == 0.0f) {
-        int height = state.terrain_manager.getWorldGenerator().getHeightAt({0, 0, 0});
-        player.setPosition({0, height + 5, 0});
+    if (player.getPosition().x == 0.0f && player.getPosition().z == 0.0f)
+        TeleportPlayerTo({0,0});
+
+
+    for (auto& [name, prototype] : ItemRegistry::get().GetPrototypes()) {
+        auto item = Item::Create(prototype.get());
+        item->setQuantity(256);
+        state.game_state->giveItemToPlayer(item);
     }
 }
 
@@ -145,8 +151,7 @@ void GameModeSurvival::Render(double deltatime) {
             DropAllInventoryItems(player.getPosition(), &game_state.getPlayerCraftingInventory());
             DropAllInventoryItems(player.getPosition(), &game_state.getPlayerCraftingResultInventory());
 
-            int height = state.terrain_manager.getWorldGenerator().getHeightAt({0, 0, 0});
-            game_state.getPlayer().setPosition({0, height + 5, 0});
+            TeleportPlayerTo({0,0});
 
             hotbar->update();
         }
@@ -192,6 +197,23 @@ void GameModeSurvival::DropItem(const glm::vec3& position, ItemRef item) {
     state.game_state->addEntity(entity);
 }
 
+void GameModeSurvival::TeleportPlayerTo(const glm::vec2& horizontal_position){
+    if (!state.game_state)
+        return;
+    auto& game_state = *state.game_state;
+
+    auto current_position = glm::ivec3 {horizontal_position.x, 0, horizontal_position.y};
+
+    for(int i = 255; i > 0; i--){
+        current_position = glm::ivec3 {horizontal_position.x, i, horizontal_position.y};
+        auto* block = game_state.GetTerrain().getBlock(current_position);
+
+        if(block && block->id != 0) break;
+    }
+
+    game_state.getPlayer().setPosition(current_position + glm::ivec3{0,2,0});
+}
+
 void GameModeSurvival::DropAllInventoryItems(const glm::vec3& position, LogicalItemInventory* inventory) {
     if (!inventory)
         return;
@@ -223,13 +245,13 @@ void GameModeSurvival::BreakBlockUnderCursor() {
     // auto& selected_slot = hotbar->getSelectedSlot();
     // inventory->addItem();
 
-    game_state.getTerrain().setBlock(cursor_state.blockUnderCursorPosition, {BLOCK_AIR_INDEX});
+    game_state.GetTerrain().setBlock(cursor_state.blockUnderCursorPosition, {BLOCK_AIR_INDEX});
 
-    auto chunk = game_state.getTerrain().getChunkFromBlockPosition(cursor_state.blockUnderCursorPosition);
+    auto chunk = game_state.GetTerrain().getChunkFromBlockPosition(cursor_state.blockUnderCursorPosition);
     if (!chunk)
         return;
     state.regenerateChunkMesh(
-        chunk, game_state.getTerrain().getGetChunkRelativeBlockPosition(cursor_state.blockUnderCursorPosition));
+        chunk, game_state.GetTerrain().getGetChunkRelativeBlockPosition(cursor_state.blockUnderCursorPosition));
 }
 
 void GameModeSurvival::PlaceBlock() {
@@ -260,19 +282,19 @@ void GameModeSurvival::PlaceBlock() {
     if (!prototype || !prototype->isBlock())
         return;
 
-    game_state.getTerrain().setBlock(blockPosition, {prototype->getBlockID()});
+    game_state.GetTerrain().setBlock(blockPosition, {prototype->getBlockID()});
     if (game_state.entityCollision(player, player.getVelocity()) || game_state.entityCollision(player)) {
-        game_state.getTerrain().setBlock(blockPosition, {BLOCK_AIR_INDEX});
+        game_state.GetTerrain().setBlock(blockPosition, {BLOCK_AIR_INDEX});
         return;
     }
 
     selected_slot->decreaseQuantity(1);
     hotbar->update();
 
-    auto* chunk = game_state.getTerrain().getChunkFromBlockPosition(blockPosition);
+    auto* chunk = game_state.GetTerrain().getChunkFromBlockPosition(blockPosition);
     if (!chunk)
         return;
-    state.regenerateChunkMesh(chunk, game_state.getTerrain().getGetChunkRelativeBlockPosition(blockPosition));
+    state.regenerateChunkMesh(chunk, game_state.GetTerrain().getGetChunkRelativeBlockPosition(blockPosition));
 }
 
 void GameModeSurvival::KeyEvent(int key, int scancode, int action, int mods) {
@@ -336,7 +358,7 @@ void GameModeSurvival::PhysicsUpdate(double deltatime) {
             (!in_hand_model_instance || !in_hand_model_instance->IsOfModel(*prototype->getModel()))) {
             in_hand_model_instance = prototype->getModel()->NewInstance();
             in_hand_model_instance->MoveRotationOffset({-0.5, -0.5, 0});
-            in_hand_model_instance->Scale({1.0,1.0,1.0});
+            in_hand_model_instance->Scale({1.0, 1.0, 1.0});
             // prototype->getModel()->requestDraw(state.camera.getPosition() + item_offset, {1, 1, 1}, rot,
             //                                    {-0.5, -0.5, 0});
         }

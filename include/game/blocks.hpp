@@ -50,10 +50,10 @@ class BlockRegistry: public TextureRegistry{
             BlockID id;
             std::string name;
             std::vector<RectangularCollider> colliders{};
-            
+
             bool single_texture = false; // If the block is same from all directions
             bool transparent = false; // If faces around it should get culled
-            std::array<size_t,6> textures{}; // Top, bottom, left, rigth, front, back                     
+            std::array<size_t,6> textures{}; // Top, bottom, left, rigth, front, back
             BlockRenderType render_type = FULL_BLOCK;
 
             std::array<std::string,6> texture_names{};
@@ -68,10 +68,10 @@ class BlockRegistry: public TextureRegistry{
 
     private:
         std::vector<BlockPrototype> blocks{};
-        
+
         BlockRegistry(){
             BlockPrototype prototype{};
-            
+
             prototype.id = BLOCK_AIR_INDEX;
             prototype.name = "air";
             prototype.transparent = true;
@@ -111,6 +111,10 @@ class BlockRegistry: public TextureRegistry{
 
         bool loadPrototypesFromFile(const std::string& path);
         static BlockRegistry& get();
+
+        static BlockID GetBlockID(const std::string& name){
+            return BlockRegistry::get().getIndexByName(name);
+        }
 };
 
 struct Block{

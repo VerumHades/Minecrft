@@ -6,7 +6,7 @@
 
 #include <game/world/mesh_generation.hpp>
 #include <game/world/terrain.hpp>
-#include <game/world/world_generation.hpp>
+#include <game/world/generator.hpp>
 #include <game/game_state.hpp>
 
 #include <structure/service.hpp>
@@ -20,7 +20,7 @@
 class TerrainManager{
     private:
         ChunkMeshGenerator mesh_generator;
-        WorldGenerator world_generator;
+        std::shared_ptr<Generator> world_generator;
 
         RegionCuller mesh_registry;
         std::unique_ptr<MeshLoaderInterface> mesh_loader;
@@ -60,7 +60,7 @@ class TerrainManager{
 
 
     public:
-        TerrainManager();
+        TerrainManager(std::shared_ptr<Generator> world_generator);
 
         // Actually deploys meshes
         void unloadAll();
@@ -77,11 +77,9 @@ class TerrainManager{
             game_state = state;
             if(state == nullptr) mesh_generator.setWorld(nullptr);
             else{
-                mesh_generator.setWorld(&game_state->getTerrain());
-                world_generator.setSeed(game_state->getSeed());
+                mesh_generator.setWorld(&game_state->GetTerrain());
+                world_generator->SetSeed(game_state->getSeed());
             }
         }
 
-        RegionCuller& getMeshRegistry(){ return mesh_registry; }
-        WorldGenerator& getWorldGenerator() { return world_generator; }
-};
+        RegionCuller& getMeshRegistry(){ return mesh_registry; }};

@@ -62,14 +62,14 @@ void MenuScene::initialize(){
     auto resetPreview = [this, seedInput, previewContainer](){
         static WorldGenerator generator{};
         int seed = std::stoi(seedInput->getText());
-        generator.setSeed(seed);
+        generator.SetSeed(seed);
 
         previewContainer->clearChildren();
 
         int max_size = std::min(previewContainer->getContentTransform().width, previewContainer->getContentTransform().height) - 100;
 
         auto preview = std::make_shared<UIImage>(
-            generator.createPreview(max_size,max_size)
+            generator.createPreview(max_size,max_size,20)
         );
 
         preview->setPosition(TValue::Center(), TValue::Center());

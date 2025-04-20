@@ -103,6 +103,8 @@ class ItemRegistry{
 
         static ItemRegistry& get();
         static bool LoadFromXML(const std::string& path);
+
+        const std::unordered_map<std::string, std::unique_ptr<ItemPrototype>>& GetPrototypes() {return prototypes; }
 };
 
 class LogicalItemSlot{

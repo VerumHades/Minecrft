@@ -40,8 +40,6 @@ class Chunk: public SparseBlockArray{
 
         friend class ChunkMeshGenerator;
         friend class WorldGenerator;
-        friend class AcceleratedChunkGenerator;
-        friend class RegionChunkGenerator;
         friend class TerrainManager;
 
         friend class Serializer;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "game/world/world_stream.hpp"
 #include <game/items/item.hpp>
 #include <game/save_structure.hpp>
 #include <game/world/terrain.hpp>
@@ -17,7 +16,7 @@ class GameState {
   private:
     std::string path;
 
-    Terrain terrain;
+    Terrain           terrain;
     std::list<Entity> entities;
 
     LogicalItemInventory player_inventory{10, 5};
@@ -32,12 +31,12 @@ class GameState {
 
     struct Header {
         char name[256];
-        int seed = 0;
+        int  seed = 0;
     };
 
     using SegmentStore = RecordStore<glm::ivec3, Header, IVec3Hash, IVec3Equal>;
     std::shared_ptr<SegmentStore> world_storage;
-    std::shared_ptr<WorldStream> world_saver;
+    std::shared_ptr<WorldStream>  world_saver;
 
     FileStream* world_stream;
     FileStream* player_stream;
@@ -77,11 +76,14 @@ class GameState {
         return entities.front();
     }
 
-    std::string GetName(){
-        return "Name get not implemented.";
+    std::string GetName() {
+        return world_storage->GetHeader().name;
     }
-    void SetName(const std::string name){
+    void SetName(std::string name) {
+        if (name.size() > 256)
+            name = name.substr(0, 256);
 
+        strcpy(world_storage->GetHeader().name, name.c_str());
     }
 
     LogicalItemInventory& getPlayerInventory() {
@@ -97,7 +99,7 @@ class GameState {
         return player_crafting_inventory_result;
     }
 
-    Terrain& getTerrain() {
+    Terrain& GetTerrain() {
         return terrain;
     }
     int& getPlayerHealth() {

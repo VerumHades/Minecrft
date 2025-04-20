@@ -96,4 +96,16 @@
         <hardness>3</hardness>
         <material>stone</material>
     </stone_brick>
+    <sand>
+        <texture>sand</texture>
+        <render_type>FULL_BLOCK</render_type>
+        <hardness>1</hardness>
+        <material>dirt</material>
+    </sand>
+    <volcanic_sand>
+        <texture>volcanic_sand</texture>
+        <render_type>FULL_BLOCK</render_type>
+        <hardness>1</hardness>
+        <material>dirt</material>
+    </volcanic_sand>
 </blocks>

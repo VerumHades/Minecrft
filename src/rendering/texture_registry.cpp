@@ -1,6 +1,6 @@
 #include <rendering/texture_registry.hpp>
 
-void TextureRegistry::addTexture(std::string name, const std::string& path){   
+void TextureRegistry::addTexture(std::string name, const std::string& path){
     if(textures.contains(name)){
         LogWarning("Duplicate texture name '{}'", name);
         return;

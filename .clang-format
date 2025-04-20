@@ -6,7 +6,7 @@ BreakBeforeBraces: Attach
 AllowShortFunctionsOnASingleLine: Empty
 ColumnLimit: 120
 PointerAlignment: Left
-AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: true
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
 AlignOperands: true
 AlignTrailingComments: true
