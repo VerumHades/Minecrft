@@ -1,13 +1,14 @@
-#main_menu_selection{
-    background-color: rgba(0,0,0,0);
+#main_menu_selection {
+    background-color: rgba(0, 0, 0, 0);
 }
 
-#world_selection label{
+#world_selection label {
     background-color: rgb(60, 61, 55);
     border-bottom-width: 5px;
     border-bottom-color: rgb(105, 117, 101);
 }
-#world_selection{
+
+#world_selection {
     left: 300px;
 
     width: 80%;
@@ -16,14 +17,15 @@
     display: flex;
     flex-direction: column;
 
-    background-color: rgba(0,0,0,0);
+    background-color: rgba(0, 0, 0, 0);
 }
 
-#new_world_name{
+#new_world_name {
     width: 200px;
     height: 40px;
 }
-#create_new_world{
+
+#create_new_world {
     margin: 50px 0px 0px 0px;
 }
 
@@ -35,46 +37,47 @@
 
     background-image: "resources/textures/ui/saved_world.png";
 }
-.world_option_chunk_count_label{
+
+.world_option_chunk_count_label {
     left: 20px;
     bottom: 20px;
 
-    background-color: rgba(0,0,0,0);
+    background-color: rgba(0, 0, 0, 0);
 }
 
-.world_option_label{
-    background-color: rgba(0,0,0,0);
+.world_option_label {
+    background-color: rgba(0, 0, 0, 0);
 
     margin: 30px;
 }
 
-#bottom_frame{
-    width:100%; 
-    height:20%;
+#bottom_frame {
+    width: 100%;
+    height: 20%;
 
-    background-color: rgba(0,0,0,0);
+    background-color: rgba(0, 0, 0, 0);
 }
 
-#new_world_name_label{
+#new_world_name_label {
     margin: 0px;
 }
 
-scrollable{
+scrollable {
     margin: 0px;
     display: flex;
     flex-direction: column;
 }
 
-input{
+input {
     border-width: 1px;
     border-color: rgb(105, 117, 101);
     background-color: rgb(60, 61, 55);
     margin: 10px;
 }
 
-.create_frame{
-    top:0px;
-    left:0px;
+.create_frame {
+    top: 0px;
+    left: 0px;
 
     width: 300px;
     height: 100%;
@@ -84,19 +87,33 @@ input{
 
     margin: 20px;
 
-    background-color: rgba(10,10,10,0);
+    background-color: rgba(10, 10, 10, 0);
 }
-#world_preview_container{
-    top:0px;
-    left:300px;
+
+#new_world_preview_zoom_container {
+    width: 100%;
+    height: 40px;
+}
+
+#new_world_preview_zoom_slider {
+    width: 100%;
+    height: 40px;
+}
+
+#new_world_preview_zoom_slider {}
+
+#world_preview_container {
+    top: 0px;
+    left: 300px;
 
     width: 80%;
     height: 100%;
 
     margin: 20px;
 
-    background-color: rgba(10,10,10,0);
+    background-color: rgba(10, 10, 10, 0);
 }
-#create_world_back{
+
+#create_world_back {
     margin: 0px 0px 50px 0px;
 }

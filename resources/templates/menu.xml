@@ -3,7 +3,7 @@
         <style src="resources/templates/style/general.css"></style>
         <style src="resources/templates/style/main.css"></style>
         <style src="resources/templates/style/settings.css"></style>
-        
+
         <image class="background_image" src="resources/textures/ui/background.png"></image>
         <frame class = "vertical_flex center" width="500px" height="500px" id="main_menu_selection">
             <label onclick="setLayer('world_menu')" class="interactable menu_button">New Game</label>
@@ -13,7 +13,7 @@
     <world_menu>
         <image class="background_image" src="resources/textures/ui/background_2.png"></image>
         <scrollable id="world_selection">
-            
+
         </scrollable>
         <frame class="sidebar">
             <label onclick="setLayer('default')" class="back_button interactable">Back</label>
@@ -30,11 +30,13 @@
             <label id="new_world_seed_regenerate" class="back_button interactable">Regenerate Seed</label>
             <label id="new_world_seed_preview_reset" class="back_button interactable">Update Preview</label>
             <label class="spacer"></label>
+            <frame id="new_world_preview_zoom_container">
+            </frame>
 
             <label id="create_new_world" class="back_button interactable">Create World</label>
         </frame>
         <frame id="world_preview_container">
-            
+
         </frame>
     </new_world_menu>
     <settings>
@@ -45,7 +47,7 @@
                 <frame class = "settings_section_content" width="100%">
                     <frame id="render_distance_container" class="controlls_member">
                         <label>Render distance:</label>
-                        
+
                     </frame>
                 </frame>
             </frame>
@@ -56,13 +58,13 @@
 
                 </frame>
             </frame>
-            
+
             <frame class = "settings_section">
                 <label class="settings_section_title">Mouse</label>
                 <frame class = "settings_section_content" width="100%">
                     <frame id="mouse_sensitivity_container" class="controlls_member">
                         <label>Sensitivity:</label>
-                        
+
                     </frame>
                 </frame>
             </frame>

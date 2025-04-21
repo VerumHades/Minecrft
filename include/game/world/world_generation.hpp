@@ -69,7 +69,7 @@ class WorldGenerator : public Generator {
     RegionRegistry<std::shared_ptr<Structure>> structures;
     void placeStructure(const glm::ivec3& position, const std::shared_ptr<Structure>& structure);
 
-    const int water_level = 80;
+    const int water_level = 60;
 
     void SetupBiomeLayers();
 

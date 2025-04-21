@@ -1,6 +1,7 @@
+#include "ui/core.hpp"
 #include <game/menu_scene.hpp>
 
-void MenuScene::initialize(){
+void MenuScene::initialize() {
     UICore::get().loadWindowFromXML(*this->getWindow(), "resources/templates/menu.xml");
 
     auto scrollable = getElementById<UIScrollableFrame>("world_selection");
@@ -11,10 +12,12 @@ void MenuScene::initialize(){
         auto* mainScene = static_cast<MainScene*>(sceneManager->getScene("game"));
 
         auto path = Paths::Get(Paths::GAME_SAVES);
-        if(!path) return;
+        if (!path)
+            return;
 
-        for (const auto& dirEntry: fs::directory_iterator(path.value())){
-            if(!dirEntry.is_directory()) continue;
+        for (const auto& dirEntry : fs::directory_iterator(path.value())) {
+            if (!dirEntry.is_directory())
+                continue;
 
             std::string path = dirEntry.path().string();
 
@@ -25,14 +28,14 @@ void MenuScene::initialize(){
 
             auto temp = std::make_shared<UILabel>();
             temp->setText(state.GetName());
-            temp->setSize({PERCENT,100}, 40_px);
+            temp->setSize({PERCENT, 100}, 40_px);
             temp->setHoverable(false);
             temp->setIdentifiers({"world_option_label"});
 
             auto chunkCountLabel = std::make_shared<UILabel>();
             chunkCountLabel->setText("Number of saved chunks: ");
-            chunkCountLabel->setSize({PERCENT,100},40_px);
-            chunkCountLabel->setPosition(0_px,45_px);
+            chunkCountLabel->setSize({PERCENT, 100}, 40_px);
+            chunkCountLabel->setPosition(0_px, 45_px);
             chunkCountLabel->setHoverable(false);
             chunkCountLabel->setIdentifiers({"world_option_chunk_count_label"});
 
@@ -52,25 +55,23 @@ void MenuScene::initialize(){
     };
 
     auto seedInput = getElementById<UIInput>("new_world_seed");
-    seedInput->inputValidation = [](char character){
-        return std::isdigit(character);
-    };
+    seedInput->inputValidation = [](char character) { return std::isdigit(character); };
     seedInput->max_length = 9;
 
     auto previewContainer = getElementById<UIFrame>("world_preview_container");
 
-    auto resetPreview = [this, seedInput, previewContainer](){
+    auto resetPreview = [this, seedInput, previewContainer]() {
         static WorldGenerator generator{};
         int seed = std::stoi(seedInput->getText());
         generator.SetSeed(seed);
 
         previewContainer->clearChildren();
 
-        int max_size = std::min(previewContainer->getContentTransform().width, previewContainer->getContentTransform().height) - 100;
+        int max_size =
+            std::min(previewContainer->getContentTransform().width, previewContainer->getContentTransform().height) -
+            100;
 
-        auto preview = std::make_shared<UIImage>(
-            generator.createPreview(max_size,max_size,20)
-        );
+        auto preview = std::make_shared<UIImage>(generator.createPreview(max_size, max_size, preview_zoom));
 
         preview->setPosition(TValue::Center(), TValue::Center());
         preview->setSize(TValue::Pixels(max_size), TValue::Pixels(max_size));
@@ -85,10 +86,10 @@ void MenuScene::initialize(){
     resetPreviewButton->onClicked = resetPreview;
 
     auto seedRegenerate = getElementById<UILabel>("new_world_seed_regenerate");
-    seedRegenerate->onClicked = [this,seedInput,resetPreview](){
+    seedRegenerate->onClicked = [this, seedInput, resetPreview]() {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<int> dist(100000000,999999999);
+        std::uniform_int_distribution<int> dist(100000000, 999999999);
 
         seedInput->setText(std::to_string(dist(gen)));
         seedInput->update();
@@ -99,14 +100,15 @@ void MenuScene::initialize(){
 
     auto newWorldNameInput = getElementById<UIInput>("new_world_name");
 
-    auto newWorldFunc = [newWorldNameInput, seedInput, this]{
+    auto newWorldFunc = [newWorldNameInput, seedInput, this] {
         auto name = newWorldNameInput->getText();
         newWorldNameInput->setText("");
-        if(name == "") return;
+        if (name == "")
+            return;
 
         auto path = Paths::Get(Paths::GAME_SAVES);
 
-        if(path) {
+        if (path) {
             GameState state{(path.value() / fs::path(name)).string(), std::stoi(seedInput->getText())};
 
             state.SetName(name);
@@ -115,8 +117,21 @@ void MenuScene::initialize(){
         this->setUILayer("world_menu");
     };
 
-    newWorldNameInput->onSubmit = [newWorldFunc](std::string){newWorldFunc();};
+    newWorldNameInput->onSubmit = [newWorldFunc](std::string) { newWorldFunc(); };
 
     auto newWorldButton = getElementById<UIFrame>("create_new_world");
     newWorldButton->onClicked = newWorldFunc;
+
+    auto zoom_container = getElementById<UIFrame>("new_world_preview_zoom_container");
+
+    auto zoom_slider = std::make_shared<UISlider>();
+    zoom_slider->setValuePointer(&preview_zoom);
+    zoom_slider->setSize({PERCENT, 60}, {PERCENT, 100});
+    zoom_slider->setMin(1);
+    zoom_slider->setMax(100);
+    zoom_slider->setDisplayValue(true);
+    zoom_slider->setIdentifiers({}, "new_world_preview_zoom_slider");
+    zoom_slider->onMove = resetPreview;
+
+    zoom_container->appendChild(zoom_slider);
 }

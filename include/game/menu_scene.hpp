@@ -2,16 +2,17 @@
 
 #pragma once
 
-#include <scene.hpp>
 #include <path_config.hpp>
+#include <scene.hpp>
 
 #include <game/main_scene.hpp>
 
 #include <cctype> // Needed for std::isdigit
 
-class MenuScene: public Scene{
-    private:
-        
-    public:
-        void initialize() override;
+class MenuScene : public Scene {
+  private:
+    int preview_zoom = 5;
+
+  public:
+    void initialize() override;
 };

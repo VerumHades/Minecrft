@@ -33,25 +33,25 @@ WorldGenerator::WorldGenerator() {
 void WorldGenerator::SetupBiomeLayers() {
     biomes.clear();
     auto& height_map_layer = AddNoiseLayer("continentalness");
-    height_map_layer.noise.SetFrequency(0.00005f);
+    height_map_layer.noise.SetFrequency(0.003f);
 
     auto& weirdness_layer = AddNoiseLayer("weirdness");
-    weirdness_layer.noise.SetFrequency(0.001f);
-    weirdness_layer.noise.SetFractalOctaves(3);
+    weirdness_layer.noise.SetFrequency(0.01f);
+    weirdness_layer.noise.SetFractalOctaves(15);
     weirdness_layer.noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     weirdness_layer.noise.SetFractalLacunarity(2.0f);
 
     auto& errosion_layer = AddNoiseLayer("errosion");
-    errosion_layer.noise.SetFrequency(0.0001f);
+    errosion_layer.noise.SetFrequency(0.01f);
 
     auto& temperature_layer = AddNoiseLayer("temperature");
     temperature_layer.noise.SetFrequency(0.0005f);
     temperature_layer.noise.SetFractalOctaves(3);
     temperature_layer.noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    temperature_layer.snap_range = 30;
+    temperature_layer.snap_range = 10;
 
     auto& humidity_layer = AddNoiseLayer("humidity");
-    humidity_layer.noise.SetFrequency(0.00005f);
+    humidity_layer.noise.SetFrequency(0.001f);
     humidity_layer.noise.SetFractalOctaves(3);
     humidity_layer.noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     humidity_layer.snap_range = 10;
@@ -84,7 +84,7 @@ WorldGenerator::NoiseLayer& WorldGenerator::AddNoiseLayer(const std::string& nam
     auto& layer = noise_layers[name];
     auto& noise = layer.noise;
 
-    static std::uniform_int_distribution<std::size_t> dist(10, 100);
+    static std::uniform_int_distribution<std::size_t> dist(1000, 10000);
 
     layer.offset.x = static_cast<float>(dist(*offset_random_engine));
     layer.offset.y = static_cast<float>(dist(*offset_random_engine));
@@ -100,10 +100,14 @@ float WorldGenerator::GetNoiseValueAt(const glm::vec3& position, const std::stri
         return 0;
 
     auto& layer = noise_layers.at(layer_name);
-    float value = (layer.noise.GetNoise(position.x + layer.offset.x, position.z + layer.offset.y) + 1.0) / 2.0;
+
+    glm::vec2 pos = glm::vec2(position.x + layer.offset.x, position.z + layer.offset.y) / 10.0f;
+    float value = (layer.noise.GetNoise(pos.x, pos.y) + 1.0) / 2.0;
 
     if (layer.snap_range != 0)
-        value = (floor((value * 100.0f) / static_cast<float>(layer.snap_range)) * static_cast<float>(layer.snap_range)) / 100.0f;
+        value =
+            (floor((value * 100.0f) / static_cast<float>(layer.snap_range)) * static_cast<float>(layer.snap_range)) /
+            100.0f;
 
     return value;
 }
@@ -125,10 +129,13 @@ Image WorldGenerator::createPreview(int width, int height, float step) {
 
             glm::vec3 color = biome ? biome->preview_color : glm::vec3{60, 150, 60};
 
-            if (value < water_level)
+            if (value < water_level) {
                 color = {60, 60, 150};
+                normalized = 1.0f;
+            }
 
             auto* pixel = out.getPixel(x + half_width, z + half_height);
+
             pixel[0] = color.r * normalized;
             pixel[1] = color.g * normalized;
             pixel[2] = color.b * normalized;
@@ -159,9 +166,7 @@ int WorldGenerator::GetHeightAt(const glm::vec3 position) {
     float weirdness = GetNoiseValueAt(position, "weirdness");
     float errosion = GetNoiseValueAt(position, "errosion");
 
-    float weirdness_moded = ((1.0f - abs(3.0f * abs(weirdness) - 2.0f)) + 1.0f) * 0.5f;
-
-    float value = pow(continentalness,2) * pow(pow(weirdness_moded,2), pow(errosion,3));
+    float value = pow(continentalness, 2) * pow(pow(weirdness, 4), pow(errosion, 3));
 
     return value * 300.0f;
 }
