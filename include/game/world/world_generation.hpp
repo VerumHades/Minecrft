@@ -65,6 +65,8 @@ class WorldGenerator : public Generator {
     int seed;
 
     std::shared_ptr<Structure> tree;
+    std::shared_ptr<Structure> grass;
+    std::shared_ptr<Structure> cactus;
 
     RegionRegistry<std::shared_ptr<Structure>> structures;
     void placeStructure(const glm::ivec3& position, const std::shared_ptr<Structure>& structure);

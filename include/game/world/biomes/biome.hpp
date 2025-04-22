@@ -1,9 +1,16 @@
 #pragma once
 
-#include <structure/interval.hpp>
 #include <game/blocks.hpp>
+#include <structure/interval.hpp>
 
-struct Biome{
+class Structure;
+
+struct StructurePlacement {
+    int spawn_chance;
+    std::shared_ptr<Structure> structure;
+};
+
+struct Biome {
     Interval<float> temperature;
     Interval<float> humidity;
 
@@ -13,4 +20,6 @@ struct Biome{
     BlockID water_block;
 
     glm::vec3 preview_color;
+
+    std::vector<StructurePlacement> structures = {};
 };

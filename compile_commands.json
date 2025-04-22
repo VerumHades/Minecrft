@@ -547,6 +547,12 @@
 },
 {
   "directory": "C:/Users/filah/Documents/projects/c/Minecrft/build/Release",
+  "command": "C:/msys64/mingw64/bin/c++.exe -DCPPTRACE_DEMANGLE_WITH_CXXABI -DCPPTRACE_GET_SYMBOLS_WITH_DBGHELP -DCPPTRACE_GET_SYMBOLS_WITH_LIBDWARF -DCPPTRACE_HAS_CXX_EXCEPTION_TYPE -DCPPTRACE_STATIC_DEFINE -DCPPTRACE_UNWIND_WITH_DBGHELP @CMakeFiles/majnkraft.dir/includes_CXX.rsp -DWINDOWS_PACKAGED_BUILD -O3 -DNDEBUG -std=gnu++20 -Wall -o CMakeFiles/majnkraft.dir/src/structure/bitfield.cpp.obj -c C:/Users/filah/Documents/projects/c/Minecrft/src/structure/bitfield.cpp",
+  "file": "C:/Users/filah/Documents/projects/c/Minecrft/src/structure/bitfield.cpp",
+  "output": "CMakeFiles/majnkraft.dir/src/structure/bitfield.cpp.obj"
+},
+{
+  "directory": "C:/Users/filah/Documents/projects/c/Minecrft/build/Release",
   "command": "C:/msys64/mingw64/bin/c++.exe -DCPPTRACE_DEMANGLE_WITH_CXXABI -DCPPTRACE_GET_SYMBOLS_WITH_DBGHELP -DCPPTRACE_GET_SYMBOLS_WITH_LIBDWARF -DCPPTRACE_HAS_CXX_EXCEPTION_TYPE -DCPPTRACE_STATIC_DEFINE -DCPPTRACE_UNWIND_WITH_DBGHELP @CMakeFiles/majnkraft.dir/includes_CXX.rsp -DWINDOWS_PACKAGED_BUILD -O3 -DNDEBUG -std=gnu++20 -Wall -o CMakeFiles/majnkraft.dir/src/structure/bitworks.cpp.obj -c C:/Users/filah/Documents/projects/c/Minecrft/src/structure/bitworks.cpp",
   "file": "C:/Users/filah/Documents/projects/c/Minecrft/src/structure/bitworks.cpp",
   "output": "CMakeFiles/majnkraft.dir/src/structure/bitworks.cpp.obj"
@@ -616,6 +622,12 @@
   "command": "C:/msys64/mingw64/bin/c++.exe -DCPPTRACE_DEMANGLE_WITH_CXXABI -DCPPTRACE_GET_SYMBOLS_WITH_DBGHELP -DCPPTRACE_GET_SYMBOLS_WITH_LIBDWARF -DCPPTRACE_HAS_CXX_EXCEPTION_TYPE -DCPPTRACE_STATIC_DEFINE -DCPPTRACE_UNWIND_WITH_DBGHELP @CMakeFiles/majnkraft.dir/includes_CXX.rsp -DWINDOWS_PACKAGED_BUILD -O3 -DNDEBUG -std=gnu++20 -Wall -o CMakeFiles/majnkraft.dir/src/structure/service.cpp.obj -c C:/Users/filah/Documents/projects/c/Minecrft/src/structure/service.cpp",
   "file": "C:/Users/filah/Documents/projects/c/Minecrft/src/structure/service.cpp",
   "output": "CMakeFiles/majnkraft.dir/src/structure/service.cpp.obj"
+},
+{
+  "directory": "C:/Users/filah/Documents/projects/c/Minecrft/build/Release",
+  "command": "C:/msys64/mingw64/bin/c++.exe -DCPPTRACE_DEMANGLE_WITH_CXXABI -DCPPTRACE_GET_SYMBOLS_WITH_DBGHELP -DCPPTRACE_GET_SYMBOLS_WITH_LIBDWARF -DCPPTRACE_HAS_CXX_EXCEPTION_TYPE -DCPPTRACE_STATIC_DEFINE -DCPPTRACE_UNWIND_WITH_DBGHELP @CMakeFiles/majnkraft.dir/includes_CXX.rsp -DWINDOWS_PACKAGED_BUILD -O3 -DNDEBUG -std=gnu++20 -Wall -o CMakeFiles/majnkraft.dir/src/structure/synchronization/guard.cpp.obj -c C:/Users/filah/Documents/projects/c/Minecrft/src/structure/synchronization/guard.cpp",
+  "file": "C:/Users/filah/Documents/projects/c/Minecrft/src/structure/synchronization/guard.cpp",
+  "output": "CMakeFiles/majnkraft.dir/src/structure/synchronization/guard.cpp.obj"
 },
 {
   "directory": "C:/Users/filah/Documents/projects/c/Minecrft/build/Release",

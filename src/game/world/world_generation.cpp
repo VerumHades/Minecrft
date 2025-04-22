@@ -28,6 +28,17 @@ WorldGenerator::WorldGenerator() {
         for (int j = 1; j < 4; j++) {
             tree->setBlock({i, 6, j}, {leaf_id});
         }
+
+    BlockID cactus_id = GetID("cactus");
+
+    cactus = std::make_shared<Structure>(1, 3, 1);
+    cactus->setBlock({0, 0, 0}, {cactus_id});
+    cactus->setBlock({0, 1, 0}, {cactus_id});
+
+    BlockID grass_id = GetID("grass_billboard");
+
+    grass = std::make_shared<Structure>(1, 1, 1);
+    grass->setBlock({0, 0, 0}, {grass_id});
 }
 
 void WorldGenerator::SetupBiomeLayers() {
@@ -62,19 +73,26 @@ void WorldGenerator::SetupBiomeLayers() {
                                                   GetID("grass"),
                                                   GetID("stone"),
                                                   GetID("stone"),
-                                                  GetID("blue_wool"),
-                                                  glm::vec3{100, 200, 100}});
+                                                  GetID("water"),
+                                                  glm::vec3{100, 200, 100},
+                                                  {{20, tree}, {20, grass}}});
 
     biomes.push_back(std::make_shared<Biome>(Biome{{0.7, 1.0},
                                                    {0, 0.3},
                                                    GetID("volcanic_sand"),
-                                                   GetID("volcanic_sand"),
+                                                   GetID("sand_stone"),
                                                    GetID("stone"),
-                                                   GetID("sand"),
+                                                   GetID("water"),
                                                    glm::vec3{76, 70, 50}}));
 
-    biomes.push_back(std::make_shared<Biome>(Biome{
-        {0.5, 0.7}, {0, 0.3}, GetID("sand"), GetID("sand"), GetID("stone"), GetID("sand"), glm::vec3{240, 189, 22}}));
+    biomes.push_back(std::make_shared<Biome>(Biome{{0.5, 0.7},
+                                                   {0, 0.3},
+                                                   GetID("sand"),
+                                                   GetID("sand_stone"),
+                                                   GetID("stone"),
+                                                   GetID("water"),
+                                                   glm::vec3{240, 189, 22},
+                                                   {{5, cactus}}}));
 }
 void WorldGenerator::placeStructure(const glm::ivec3& position, const std::shared_ptr<Structure>& structure) {
     structures.add(position, structure->getSize(), structure);
@@ -194,16 +212,21 @@ WorldGenerator::Heightmap& WorldGenerator::getHeightmapFor(glm::ivec3 position_i
             glm::ivec3 localPosition = glm::ivec3(x, 0, z) + position * CHUNK_SIZE;
 
             int value = GetHeightAt(localPosition);
+            auto biome = GetBiomeFor(localPosition);
 
-            static std::uniform_int_distribution<std::size_t> dist(0, 50);
+            static std::uniform_int_distribution<std::size_t> dist(0, 100);
 
-            // if (dist(gen) == 0 && localPosition.y + value > water_level)
-            //     placeStructure(localPosition + glm::ivec3{-2, value + 1, -2}, tree);
+            for (auto& structure : biome->structures) {
+                if (dist(*structure_random_engine) < structure.spawn_chance && localPosition.y + value > water_level) {
+                    placeStructure(localPosition + glm::ivec3{-2, value + 1, -2}, structure.structure);
+                    break;
+                }
+            }
 
             map->lowest = std::min(value, map->lowest);
             map->highest = std::max(value, map->highest);
             map->heights[x][z] = value;
-            map->biomes[x][z] = GetBiomeFor(localPosition);
+            map->biomes[x][z] = biome;
         }
 
     return *map;

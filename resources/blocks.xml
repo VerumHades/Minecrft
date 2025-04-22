@@ -53,6 +53,12 @@
         <transparent>true</transparent>
         <material>leaves</material>
     </grass_billboard>
+    <spider_lily>
+        <texture>spider_lily</texture>
+        <render_type>BILLBOARD</render_type>
+        <transparent>true</transparent>
+        <material>leaves</material>
+    </spider_lily>
     <crafting>
         <textures>
             <texture>crafting_top</texture>
@@ -108,4 +114,29 @@
         <hardness>1</hardness>
         <material>dirt</material>
     </volcanic_sand>
+    <sand_stone>
+        <texture>sand_stone</texture>
+        <render_type>FULL_BLOCK</render_type>
+        <hardness>3</hardness>
+        <material>stone</material>
+    </sand_stone>
+    <water>
+        <texture>water</texture>
+        <render_type>FULL_BLOCK</render_type>
+        <transparent>true</transparent>
+        <hardness>100</hardness>
+        <material>water</material>
+    </water>
+    <cactus>
+        <textures>
+            <texture>cactus_top</texture>
+            <texture>cactus_top</texture>
+            <texture>cactus</texture>
+            <texture>cactus</texture>
+            <texture>cactus</texture>
+            <texture>cactus</texture>
+        </textures>
+        <render_type>FULL_BLOCK</render_type>
+        <material>leaves</material>
+    </cactus>
 </blocks>
