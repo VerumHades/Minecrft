@@ -373,9 +373,36 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
         for (auto& field_layer : chunk->getLayers()) {
             auto& [type, block, _field] = field_layer;
 
+            auto& field = *field_layer.field().getSimplifiedWithNone(simplification_level);
+            auto* rotatedField = field.getTransposed();
+
+            auto& solidField = *chunk->getSolidField().getSimplifiedWithNone(simplification_level);
+            auto* solidRotated = solidField.getTransposed();
+
+            auto l1 = field.Guard().Shared();
+            auto l2 = rotatedField->Guard().Shared();
+            auto l3 = solidField.Guard().Shared();
+            auto l4 = solidRotated->Guard().Shared();
+
             auto* definition = BlockRegistry::get().getPrototype(type);
-            if (!definition || definition->render_type != BlockRegistry::FULL_BLOCK)
+            if (!definition || definition->render_type != BlockRegistry::FULL_BLOCK) {
+                if (!definition || definition->render_type != BlockRegistry::BILLBOARD)
+                    continue;
+
+                for (int x = 0; x < size; x++)
+                    for (int y = 0; y < size; y++)
+                        for (int z = 0; z < size; z++) {
+                            if (!field.get(x, y, z))
+                                continue;
+
+                            glm::vec3 position = glm::vec3{x, y, z} + world_position;
+
+                            solidMesh->addQuadFace(position, 1, 1, definition->textures[0], MeshInterface::BILLBOARD,
+                                                   MeshInterface::Forward, {0, 0, 0, 0});
+                        }
+
                 continue;
+            }
 
             for (int layer = 0; layer < size - 1; layer++) {
                 planeXforward.clear();
@@ -388,17 +415,6 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
                 planeZbackward.clear();
 
                 for (int row = 0; row < size; row++) {
-                    auto& field = *field_layer.field().getSimplifiedWithNone(simplification_level);
-                    auto* rotatedField = field.getTransposed();
-
-                    auto& solidField = *chunk->getSolidField().getSimplifiedWithNone(simplification_level);
-                    auto* solidRotated = solidField.getTransposed();
-
-                    auto l1 = field.Guard().Shared();
-                    auto l2 = rotatedField->Guard().Shared();
-                    auto l3 = solidField.Guard().Shared();
-                    auto l4 = solidRotated->Guard().Shared();
-
                     if (!definition->transparent) {
                         uint64_t allFacesX = (field.getRow(layer, row) | field.getRow(layer + 1, row)) &
                                              (solidField.getRow(layer, row) ^ solidField.getRow(layer + 1, row));
@@ -453,31 +469,6 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
         }
 
         ////timer.timestamp("Inner faces");
-
-        /*
-            Mesh billboards
-        */
-
-        for (auto& field_layer : chunk->getLayers()) {
-            auto& [type, block, _field] = field_layer;
-            auto& field = field_layer.field();
-
-            auto* definition = BlockRegistry::get().getPrototype(type);
-            if (!definition || definition->render_type != BlockRegistry::BILLBOARD)
-                continue;
-
-            for (int x = 0; x < size; x++)
-                for (int y = 0; y < size; y++)
-                    for (int z = 0; z < size; z++) {
-                        if (!field.get(x, y, z))
-                            continue;
-
-                        glm::vec3 position = glm::vec3{x, y, z} + world_position;
-
-                        solidMesh->addQuadFace(position, 1, 1, definition->textures[0], MeshInterface::BILLBOARD,
-                                               MeshInterface::Forward, {0, 0, 0, 0});
-                    }
-        }
     }
     ////timer.timestamp("Billboards");
     /*
