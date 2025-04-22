@@ -1,3 +1,4 @@
+#include "structure/bitworks.hpp"
 #include <game/world/mesh_generation.hpp>
 
 void ChunkMeshGenerator::addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<MeshInterface> mesh) {
@@ -358,34 +359,35 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
     /*
         Mesh chunk faces
     */
-    BlockBitPlanes planesXforward = {};
-    BlockBitPlanes planesXbackward = {};
-
-    BlockBitPlanes planesYforward = {};
-    BlockBitPlanes planesYbackward = {};
-
-    BlockBitPlanes planesZforward = {};
-    BlockBitPlanes planesZbackward = {};
 
     if (!chunk->isEmpty()) {
-        for (int layer = 0; layer < size - 1; layer++) {
-            planesXforward.clear();
-            planesXbackward.clear();
+        BitPlane planeXforward = {};
+        BitPlane planeXbackward = {};
 
-            planesYforward.clear();
-            planesYbackward.clear();
+        BitPlane planeYforward = {};
+        BitPlane planeYbackward = {};
 
-            planesZforward.clear();
-            planesZbackward.clear();
+        BitPlane planeZforward = {};
+        BitPlane planeZbackward = {};
 
-            for (int row = 0; row < size; row++) {
-                for (auto& field_layer : chunk->getLayers()) {
-                    auto& [type, block, _field] = field_layer;
+        for (auto& field_layer : chunk->getLayers()) {
+            auto& [type, block, _field] = field_layer;
 
-                    auto* definition = BlockRegistry::get().getPrototype(type);
-                    if (!definition || definition->render_type != BlockRegistry::FULL_BLOCK)
-                        continue;
+            auto* definition = BlockRegistry::get().getPrototype(type);
+            if (!definition || definition->render_type != BlockRegistry::FULL_BLOCK)
+                continue;
 
+            for (int layer = 0; layer < size - 1; layer++) {
+                planeXforward.clear();
+                planeXbackward.clear();
+
+                planeYforward.clear();
+                planeYbackward.clear();
+
+                planeZforward.clear();
+                planeZbackward.clear();
+
+                for (int row = 0; row < size; row++) {
                     auto& field = *field_layer.field().getSimplifiedWithNone(simplification_level);
                     auto* rotatedField = field.getTransposed();
 
@@ -400,64 +402,53 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
                     if (!definition->transparent) {
                         uint64_t allFacesX = (field.getRow(layer, row) | field.getRow(layer + 1, row)) &
                                              (solidField.getRow(layer, row) ^ solidField.getRow(layer + 1, row));
-                        planesXforward.setRow((size_t)type, row, solidField.getRow(layer, row) & allFacesX);
-                        planesXbackward.setRow((size_t)type, row, solidField.getRow(layer + 1, row) & allFacesX);
+                        planeXforward[row] = solidField.getRow(layer, row) & allFacesX;
+                        planeXbackward[row] = solidField.getRow(layer + 1, row) & allFacesX;
 
                         uint64_t allFacesY = (field.getRow(row, layer) | field.getRow(row, layer + 1)) &
                                              (solidField.getRow(row, layer) ^ solidField.getRow(row, layer + 1));
-                        planesYforward.setRow((size_t)type, row, solidField.getRow(row, layer) & allFacesY);
-                        planesYbackward.setRow((size_t)type, row, solidField.getRow(row, layer + 1) & allFacesY);
+                        planeYforward[row] = solidField.getRow(row, layer) & allFacesY;
+                        planeYbackward[row] = solidField.getRow(row, layer + 1) & allFacesY;
 
                         uint64_t allFacesZ = (rotatedField->getRow(layer, row) | rotatedField->getRow(layer + 1, row)) &
                                              (solidRotated->getRow(layer, row) ^ solidRotated->getRow(layer + 1, row));
-                        planesZforward.setRow((size_t)type, row, solidRotated->getRow(layer, row) & allFacesZ);
-                        planesZbackward.setRow((size_t)type, row, solidRotated->getRow(layer + 1, row) & allFacesZ);
+                        planeZforward[row] = solidRotated->getRow(layer, row) & allFacesZ;
+                        planeZbackward[row] = solidRotated->getRow(layer + 1, row) & allFacesZ;
                     } else {
                         uint64_t allFacesX = (field.getRow(layer, row) ^ field.getRow(layer + 1, row)) &
                                              ~(solidField.getRow(layer, row) | solidField.getRow(layer + 1, row));
-                        planesXforward.setRow((size_t)type, row, field.getRow(layer, row) & allFacesX);
-                        planesXbackward.setRow((size_t)type, row, field.getRow(layer + 1, row) & allFacesX);
+                        planeXforward[row] = field.getRow(layer, row) & allFacesX;
+                        planeXbackward[row] = field.getRow(layer + 1, row) & allFacesX;
 
                         uint64_t allFacesY = (field.getRow(row, layer) ^ field.getRow(row, layer + 1)) &
                                              ~(solidField.getRow(row, layer) | solidField.getRow(row, layer + 1));
-                        planesYforward.setRow((size_t)type, row, field.getRow(row, layer) & allFacesY);
-                        planesYbackward.setRow((size_t)type, row, field.getRow(row, layer + 1) & allFacesY);
+                        planeYforward[row] = field.getRow(row, layer) & allFacesY;
+                        planeYbackward[row] = field.getRow(row, layer + 1) & allFacesY;
 
                         uint64_t allFacesZ = (rotatedField->getRow(layer, row) ^ rotatedField->getRow(layer + 1, row)) &
                                              ~(solidRotated->getRow(layer, row) | solidRotated->getRow(layer + 1, row));
-                        planesZforward.setRow((size_t)type, row, rotatedField->getRow(layer, row) & allFacesZ);
-                        planesZbackward.setRow((size_t)type, row, rotatedField->getRow(layer + 1, row) & allFacesZ);
+                        planeZforward[row] = rotatedField->getRow(layer, row) & allFacesZ;
+                        planeZbackward[row] = rotatedField->getRow(layer + 1, row) & allFacesZ;
                     }
                 }
-            }
 
-            for (auto& type : chunk->getPresentTypes()) {
-                auto* definition = BlockRegistry::get().getPrototype(type);
-                if (!definition || definition->render_type != BlockRegistry::FULL_BLOCK)
-                    continue;
                 // std::cout << "Solving plane: " << getBlockTypeName(type) << std::endl;
                 // for(int j = 0;j < 64;j++) std::cout << std::bitset<64>(planes[i][j]) << std::endl;
 
-                proccessOccludedFaces(planesXforward.getPlanes()[static_cast<size_t>(type)],
-                                      occlusionPlanesX[layer + 1], MeshInterface::X_ALIGNED, MeshInterface::Forward,
-                                      definition, solidMesh, world_position, layer);
-                proccessOccludedFaces(planesXbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesX[layer],
-                                      MeshInterface::X_ALIGNED, MeshInterface::Backward, definition, solidMesh,
-                                      world_position, layer);
+                proccessOccludedFaces(planeXforward, occlusionPlanesX[layer + 1], MeshInterface::X_ALIGNED,
+                                      MeshInterface::Forward, definition, solidMesh, world_position, layer);
+                proccessOccludedFaces(planeXbackward, occlusionPlanesX[layer], MeshInterface::X_ALIGNED,
+                                      MeshInterface::Backward, definition, solidMesh, world_position, layer);
 
-                proccessOccludedFaces(planesYforward.getPlanes()[static_cast<size_t>(type)],
-                                      occlusionPlanesY[layer + 1], MeshInterface::Y_ALIGNED, MeshInterface::Forward,
-                                      definition, solidMesh, world_position, layer);
-                proccessOccludedFaces(planesYbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesY[layer],
-                                      MeshInterface::Y_ALIGNED, MeshInterface::Backward, definition, solidMesh,
-                                      world_position, layer);
+                proccessOccludedFaces(planeYforward, occlusionPlanesY[layer + 1], MeshInterface::Y_ALIGNED,
+                                      MeshInterface::Forward, definition, solidMesh, world_position, layer);
+                proccessOccludedFaces(planeYbackward, occlusionPlanesY[layer], MeshInterface::Y_ALIGNED,
+                                      MeshInterface::Backward, definition, solidMesh, world_position, layer);
 
-                proccessOccludedFaces(planesZforward.getPlanes()[static_cast<size_t>(type)],
-                                      occlusionPlanesZ[layer + 1], MeshInterface::Z_ALIGNED, MeshInterface::Forward,
-                                      definition, solidMesh, world_position, layer);
-                proccessOccludedFaces(planesZbackward.getPlanes()[static_cast<size_t>(type)], occlusionPlanesZ[layer],
-                                      MeshInterface::Z_ALIGNED, MeshInterface::Backward, definition, solidMesh,
-                                      world_position, layer);
+                proccessOccludedFaces(planeZforward, occlusionPlanesZ[layer + 1], MeshInterface::Z_ALIGNED,
+                                      MeshInterface::Forward, definition, solidMesh, world_position, layer);
+                proccessOccludedFaces(planeZbackward, occlusionPlanesZ[layer], MeshInterface::Z_ALIGNED,
+                                      MeshInterface::Backward, definition, solidMesh, world_position, layer);
             }
         }
 
@@ -506,14 +497,14 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
         return true;
     }
 
-    planesXforward.clear();
-    planesXbackward.clear();
+    BlockBitPlanes planesXforward = {};
+    BlockBitPlanes planesXbackward = {};
 
-    planesYforward.clear();
-    planesYbackward.clear();
+    BlockBitPlanes planesYforward = {};
+    BlockBitPlanes planesYbackward = {};
 
-    planesZforward.clear();
-    planesZbackward.clear();
+    BlockBitPlanes planesZforward = {};
+    BlockBitPlanes planesZbackward = {};
 
     std::array<float, 4> occlusion = {0, 0, 0, 0};
     // std::cout << nextX << " " << nextY << " " << nextZ << std::endl;
