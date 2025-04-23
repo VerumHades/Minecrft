@@ -1,4 +1,7 @@
+#include "bitarray.hpp"
 #include "structure/bitworks.hpp"
+#include <basetsd.h>
+#include <cstdint>
 #include <game/world/mesh_generation.hpp>
 
 void ChunkMeshGenerator::addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<MeshInterface> mesh) {
@@ -35,7 +38,7 @@ bool ChunkMeshGenerator::syncGenerateAsyncUploadMesh(Chunk* chunk, std::unique_p
     auto start = std::chrono::high_resolution_clock::now();
 
     auto world_position = chunk->getWorldPosition();
-    bool result = generateChunkMesh(world_position, mesh.get(), chunk, simplification_level);
+    bool result         = generateChunkMesh(world_position, mesh.get(), chunk, simplification_level);
 
     if (!result)
         return false;
@@ -50,7 +53,7 @@ bool ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk, RegionCuller& 
                                                     std::unique_ptr<MeshInterface> mesh,
                                                     BitField3D::SimplificationLevel simplification_level) {
     auto world_position = chunk->getWorldPosition();
-    bool result = generateChunkMesh(world_position, mesh.get(), chunk, simplification_level);
+    bool result         = generateChunkMesh(world_position, mesh.get(), chunk, simplification_level);
 
     if (!result)
         return false;
@@ -149,7 +152,7 @@ std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPl
 std::tuple<ChunkMeshGenerator::OccludedPlane, bool, ChunkMeshGenerator::OccludedPlane, bool>
 ChunkMeshGenerator::segregatePlane(OccludedPlane& source_plane, OcclusionPlane& occlusion_plane,
                                    std::array<bool, 4> affects, glm::ivec2 lookup_offset) {
-    OccludedPlane true_plane = {source_plane.occlusion};
+    OccludedPlane true_plane  = {source_plane.occlusion};
     OccludedPlane false_plane = {source_plane.occlusion};
 
     true_plane.occlusion[0] += affects[0];
@@ -157,7 +160,7 @@ ChunkMeshGenerator::segregatePlane(OccludedPlane& source_plane, OcclusionPlane& 
     true_plane.occlusion[2] += affects[2];
     true_plane.occlusion[3] += affects[3];
 
-    bool true_plane_empty = true;
+    bool true_plane_empty  = true;
     bool false_plane_empty = true;
 
     for (int i = source_plane.start; i < source_plane.end; i++) {
@@ -193,15 +196,15 @@ ChunkMeshGenerator::segregatePlane(OccludedPlane& source_plane, OcclusionPlane& 
                 occlusion_row |= ((occlusion_plane.left >> (lookup_y - 1)) & 1ULL);
         }
 
-        true_plane.plane[i] = source_plane.plane[i] & occlusion_row;
+        true_plane.plane[i]  = source_plane.plane[i] & occlusion_row;
         false_plane.plane[i] = source_plane.plane[i] & ~occlusion_row;
 
         if (true_plane.plane[i] != 0ULL) {
-            true_plane.end = i + 1;
+            true_plane.end   = i + 1;
             true_plane_empty = false;
         }
         if (false_plane.plane[i] != 0ULL) {
-            false_plane.end = i + 1;
+            false_plane.end   = i + 1;
             false_plane_empty = false;
         }
 
@@ -267,7 +270,7 @@ static inline void processFaces(const std::vector<ChunkMeshGenerator::Face>& fac
 
     mesh->preallocate(faces.size(), face_type);
     for (auto& face : faces) {
-        int faceWidth = face.width;
+        int faceWidth  = face.width;
         int faceHeight = face.height;
 
         switch (face_type) {
@@ -280,7 +283,7 @@ static inline void processFaces(const std::vector<ChunkMeshGenerator::Face>& fac
         case MeshInterface::Y_ALIGNED:
             face_position = glm::vec3(face.y, layer + 1, face.x) + world_position;
 
-            faceWidth = face.height;
+            faceWidth  = face.height;
             faceHeight = face.width;
 
             texture = type->single_texture ? type->textures[0] : type->textures[texture_index];
@@ -331,7 +334,7 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
     // this->solidMesh->setVertexFormat(VertexFormat({3,1,2,1,1}));  // Unused
 
     glm::vec3 world_position = worldPosition * CHUNK_SIZE;
-    int size = CHUNK_SIZE;
+    int size                 = CHUNK_SIZE;
 
     // Occlusion planes have to reach into other chunks
     std::array<OcclusionPlane, 64> occlusionPlanesX{};
@@ -339,11 +342,11 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
     std::array<OcclusionPlane, 64> occlusionPlanesZ{};
 
     { // Scope becuse transposed field doesnt neccesairly remain valid when new ones are created
-        auto& solidField = *chunk->getSolidField().getSimplifiedWithNone(simplification_level);
+        auto& solidField   = *chunk->getSolidField().getSimplifiedWithNone(simplification_level);
         auto* solidRotated = solidField.getTransposed();
         // 64 planes internale 65th external
 
-        auto slock = solidField.Guard().Shared();
+        auto slock  = solidField.Guard().Shared();
         auto srlock = solidRotated->Guard().Shared();
 
         for (int x = 0; x < 64; x++)
@@ -361,22 +364,22 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
     */
 
     if (!chunk->isEmpty()) {
-        BitPlane planeXforward = {};
+        BitPlane planeXforward  = {};
         BitPlane planeXbackward = {};
 
-        BitPlane planeYforward = {};
+        BitPlane planeYforward  = {};
         BitPlane planeYbackward = {};
 
-        BitPlane planeZforward = {};
+        BitPlane planeZforward  = {};
         BitPlane planeZbackward = {};
 
         for (auto& field_layer : chunk->getLayers()) {
             auto& [type, block, _field] = field_layer;
 
-            auto& field = *field_layer.field().getSimplifiedWithNone(simplification_level);
+            auto& field        = *field_layer.field().getSimplifiedWithNone(simplification_level);
             auto* rotatedField = field.getTransposed();
 
-            auto& solidField = *chunk->getSolidField().getSimplifiedWithNone(simplification_level);
+            auto& solidField   = *chunk->getSolidField().getSimplifiedWithNone(simplification_level);
             auto* solidRotated = solidField.getTransposed();
 
             auto l1 = field.Guard().Shared();
@@ -386,7 +389,9 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
 
             auto* definition = BlockRegistry::get().getPrototype(type);
             if (!definition || definition->render_type != BlockRegistry::FULL_BLOCK) {
-                if (!definition || definition->render_type != BlockRegistry::BILLBOARD)
+
+                if (!definition || definition->render_type != BlockRegistry::BILLBOARD ||
+                    simplification_level != BitField3D::NONE)
                     continue;
 
                 for (int x = 0; x < size; x++)
@@ -416,34 +421,33 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
 
                 for (int row = 0; row < size; row++) {
                     if (!definition->transparent) {
-                        uint64_t allFacesX = (field.getRow(layer, row) | field.getRow(layer + 1, row)) &
-                                             (solidField.getRow(layer, row) ^ solidField.getRow(layer + 1, row));
-                        planeXforward[row] = solidField.getRow(layer, row) & allFacesX;
-                        planeXbackward[row] = solidField.getRow(layer + 1, row) & allFacesX;
+                        uint64_t possible_mask_x = solidField.getRow(layer, row) ^ solidField.getRow(layer + 1, row);
+                        planeXforward[row]       = field.getRow(layer, row) & possible_mask_x;
+                        planeXbackward[row]      = field.getRow(layer + 1, row) & possible_mask_x;
 
-                        uint64_t allFacesY = (field.getRow(row, layer) | field.getRow(row, layer + 1)) &
-                                             (solidField.getRow(row, layer) ^ solidField.getRow(row, layer + 1));
-                        planeYforward[row] = solidField.getRow(row, layer) & allFacesY;
-                        planeYbackward[row] = solidField.getRow(row, layer + 1) & allFacesY;
+                        uint64_t possible_mask_y = solidField.getRow(row, layer) ^ solidField.getRow(row, layer + 1);
+                        planeYforward[row]       = field.getRow(row, layer) & possible_mask_y;
+                        planeYbackward[row]      = field.getRow(row, layer + 1) & possible_mask_y;
 
-                        uint64_t allFacesZ = (rotatedField->getRow(layer, row) | rotatedField->getRow(layer + 1, row)) &
-                                             (solidRotated->getRow(layer, row) ^ solidRotated->getRow(layer + 1, row));
-                        planeZforward[row] = solidRotated->getRow(layer, row) & allFacesZ;
-                        planeZbackward[row] = solidRotated->getRow(layer + 1, row) & allFacesZ;
+                        uint64_t possible_mask_z =
+                            solidRotated->getRow(layer, row) ^ solidRotated->getRow(layer + 1, row);
+                        planeZforward[row]  = rotatedField->getRow(layer, row) & possible_mask_z;
+                        planeZbackward[row] = rotatedField->getRow(layer + 1, row) & possible_mask_z;
+
                     } else {
                         uint64_t allFacesX = (field.getRow(layer, row) ^ field.getRow(layer + 1, row)) &
                                              ~(solidField.getRow(layer, row) | solidField.getRow(layer + 1, row));
-                        planeXforward[row] = field.getRow(layer, row) & allFacesX;
+                        planeXforward[row]  = field.getRow(layer, row) & allFacesX;
                         planeXbackward[row] = field.getRow(layer + 1, row) & allFacesX;
 
                         uint64_t allFacesY = (field.getRow(row, layer) ^ field.getRow(row, layer + 1)) &
                                              ~(solidField.getRow(row, layer) | solidField.getRow(row, layer + 1));
-                        planeYforward[row] = field.getRow(row, layer) & allFacesY;
+                        planeYforward[row]  = field.getRow(row, layer) & allFacesY;
                         planeYbackward[row] = field.getRow(row, layer + 1) & allFacesY;
 
                         uint64_t allFacesZ = (rotatedField->getRow(layer, row) ^ rotatedField->getRow(layer + 1, row)) &
                                              ~(solidRotated->getRow(layer, row) | solidRotated->getRow(layer + 1, row));
-                        planeZforward[row] = rotatedField->getRow(layer, row) & allFacesZ;
+                        planeZforward[row]  = rotatedField->getRow(layer, row) & allFacesZ;
                         planeZbackward[row] = rotatedField->getRow(layer + 1, row) & allFacesZ;
                     }
                 }
@@ -488,13 +492,13 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
         return true;
     }
 
-    BlockBitPlanes planesXforward = {};
+    BlockBitPlanes planesXforward  = {};
     BlockBitPlanes planesXbackward = {};
 
-    BlockBitPlanes planesYforward = {};
+    BlockBitPlanes planesYforward  = {};
     BlockBitPlanes planesYbackward = {};
 
-    BlockBitPlanes planesZforward = {};
+    BlockBitPlanes planesZforward  = {};
     BlockBitPlanes planesZbackward = {};
 
     std::array<float, 4> occlusion = {0, 0, 0, 0};
@@ -514,7 +518,7 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition, Mesh
             if (!definition || definition->render_type != BlockRegistry::FULL_BLOCK)
                 continue;
 
-            auto& solidField = *chunk->getSolidField().getSimplifiedWithNone(simplification_level);
+            auto& solidField       = *chunk->getSolidField().getSimplifiedWithNone(simplification_level);
             BitField3D& nextXSolid = *nextX->getSolidField().getSimplifiedWithNone(nextX->current_simplification);
 
             const uint64_t localMaskRow =
