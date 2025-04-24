@@ -4,7 +4,9 @@
 #include <structure/definitions.hpp>
 
 /*
-  A tree dimensional array of bits (64 * 64 * 64), stored as and array of unsigned 64 bit integers
+  A tree dimensional array of bits (64 * 64 * 64), stored as and array of unsigned 64 bit integers,
+
+  y is the largest dimensions that jumps around in memory the most
 */
 class BitField {
   private:
