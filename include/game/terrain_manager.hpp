@@ -55,7 +55,6 @@ class TerrainManager {
   public:
     TerrainManager(std::shared_ptr<Generator> world_generator);
 
-    // Actually deploys meshes
     void unloadAll();
 
     bool uploadPendingMeshes();
@@ -64,18 +63,7 @@ class TerrainManager {
     void regenerateChunkMesh(Chunk* chunk);
     void regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords);
 
-    void setGameState(GameState* state) {
-        if (state == nullptr)
-            service_manager->StopAll();
-
-        game_state = state;
-        if (state == nullptr)
-            mesh_generator.setWorld(nullptr);
-        else {
-            mesh_generator.setWorld(&game_state->GetTerrain());
-            world_generator->SetSeed(game_state->getSeed());
-        }
-    }
+    void setGameState(GameState* state);
 
     RegionCuller& getMeshRegistry() {
         return mesh_registry;

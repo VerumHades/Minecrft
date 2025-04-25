@@ -201,3 +201,16 @@ void TerrainManager::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords) {
 void TerrainManager::regenerateChunkMesh(Chunk* chunk) {
     mesh_generator.syncGenerateSyncUploadMesh(chunk, mesh_registry, create_mesh(), BitField3D::NONE);
 }
+
+void TerrainManager::setGameState(GameState* state) {
+    if (state == nullptr)
+        service_manager->StopAll();
+
+    game_state = state;
+    if (state == nullptr)
+        mesh_generator.setWorld(nullptr);
+    else {
+        mesh_generator.setWorld(&game_state->GetTerrain());
+        world_generator->SetSeed(game_state->getSeed());
+    }
+}
