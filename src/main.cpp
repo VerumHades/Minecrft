@@ -42,7 +42,7 @@ int main() {
 
     glfwWindowHint(GLFW_SAMPLES, 4); // anti-alliasing
 
-    ///glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
+    /// glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(1920, 1080, "Hello Terrain", NULL, NULL);
 
@@ -55,8 +55,7 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(0);
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         LogError("Failed to initialize glad!");
         return -1;
     }
@@ -70,58 +69,46 @@ int main() {
 
     if (major >= 4 && minor >= 6) {
 
-    } else LogWarning("Version of Opengl 4.6 is not supported. This is a pretty serious issue, maybe update drivers?");
+    } else
+        LogWarning("Version of Opengl 4.6 is not supported. This is a pretty serious issue, maybe update drivers?");
 
-    if(glfwExtensionSupported("GL_ARB_multi_draw_indirect") != GLFW_TRUE) LogError("Missing dependency, glMultiDrawElementsIndirect will not work.");
+    if (glfwExtensionSupported("GL_ARB_multi_draw_indirect") != GLFW_TRUE)
+        LogError("Missing dependency, glMultiDrawElementsIndirect will not work.");
 
-    GL_CALL( glEnable(GL_DEPTH_TEST));
-    GL_CALL( glDepthFunc(GL_LEQUAL));
+    GL_CALL(glEnable(GL_DEPTH_TEST));
+    GL_CALL(glDepthFunc(GL_LEQUAL));
 
-    GL_CALL( glEnable(GL_CULL_FACE));  // Enable backface culling
-    GL_CALL( glCullFace(GL_BACK));     // Cull back faces
-    GL_CALL( glFrontFace(GL_CCW));     // Set counterclockwise winding order as front*/
+    GL_CALL(glEnable(GL_CULL_FACE)); // Enable backface culling
+    GL_CALL(glCullFace(GL_BACK));    // Cull back faces
+    GL_CALL(glFrontFace(GL_CCW));    // Set counterclockwise winding order as front*/
+    GL_CALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
-    //glEnable(GL_FRAMEBUFFER_SRGB);
-    GL_CALL( glEnable(GL_MULTISAMPLE));  // Redundant perhaps
-    //glDepthMask(GL_FALSE);
-    GL_CALL( glEnable(GL_DEBUG_OUTPUT));
-    GL_CALL( glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS));
-    GL_CALL( glDebugMessageCallback(GLDebugMessageCallback, NULL));
+    // glEnable(GL_FRAMEBUFFER_SRGB);
+    GL_CALL(glEnable(GL_MULTISAMPLE)); // Redundant perhaps
+    // glDepthMask(GL_FALSE);
+    GL_CALL(glEnable(GL_DEBUG_OUTPUT));
+    GL_CALL(glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS));
+    GL_CALL(glDebugMessageCallback(GLDebugMessageCallback, NULL));
 
-    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height){
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
         s->resize(window, width, height); // Call resize on the instance
     });
-    glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y){
-        s->mouseMove(window, static_cast<int>(x), static_cast<int>(y));
-    });
-    glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods){
-        s->mouseEvent(window, button, action, mods);
-    });
-    glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset){
-        s->scrollEvent(window, xoffset, yoffset);
-    });
-    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods){
-        s->keyEvent(window, key, scancode, action, mods);
-    });
-    glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int codepoint){
-        s->keyTypedEvent(window, codepoint);
-    });
+    glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y) { s->mouseMove(window, static_cast<int>(x), static_cast<int>(y)); });
+    glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) { s->mouseEvent(window, button, action, mods); });
+    glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) { s->scrollEvent(window, xoffset, yoffset); });
+    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) { s->keyEvent(window, key, scancode, action, mods); });
+    glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int codepoint) { s->keyTypedEvent(window, codepoint); });
 
     {
         SceneManager sceneManager{window};
 
         s = &sceneManager;
 
-        UICore::get().lua().set_function("setScene", [](std::string name){
-            s->setScene(name);
-        });
+        UICore::get().lua().set_function("setScene", [](std::string name) { s->setScene(name); });
 
-        UICore::get().lua().set_function("setLayer", [](std::string name){
-            s->getCurrentScene()->setUILayer(name);
-        });
+        UICore::get().lua().set_function("setLayer", [](std::string name) { s->getCurrentScene()->setUILayer(name); });
 
-
-        BlockRegistry::get().setTextureSize(160,160);
+        BlockRegistry::get().setTextureSize(160, 160);
         BlockRegistry::get().loadFromFolder("resources/textures/blocks");
         BlockRegistry::get().loadPrototypesFromFile("resources/blocks.xml");
         CraftingRecipeRegistry::get().LoadRecipesFromXML("resources/recipes.xml");
@@ -130,33 +117,30 @@ int main() {
         sceneManager.createScene<MenuScene>("menu");
         sceneManager.createScene<MainScene>("game");
 
-        //sceneManager.createScene<TestScene>("test_scene");
+        // sceneManager.createScene<TestScene>("test_scene");
         sceneManager.setScene("menu");
-        //menuScene->setUILayer("default");
+        // menuScene->setUILayer("default");
 
-        double last = glfwGetTime();
+        double last    = glfwGetTime();
         double current = glfwGetTime();
         float deltatime;
 
         sceneManager.resize(window, 1920, 1080);
 
         while (!glfwWindowShouldClose(window)) {
-            current = glfwGetTime();
+            current   = glfwGetTime();
             deltatime = (float)(current - last);
 
-            if(
-                sceneManager.isFPSLocked() &&
-                deltatime < sceneManager.getTickTime()
-            ){
+            if (sceneManager.isFPSLocked() && deltatime < sceneManager.getTickTime()) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<size_t>((sceneManager.getTickTime() - deltatime) * 1000)));
                 continue;
             }
             last = current;
 
-            //std::cout << "VRAM usage:" << GLBufferStatistics::getMemoryUsage() << std::endl;
+            // std::cout << "VRAM usage:" << GLBufferStatistics::getMemoryUsage() << std::endl;
 
-            GL_CALL( glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
-            GL_CALL( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+            GL_CALL(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
+            GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
             sceneManager.render();
 

@@ -28,5 +28,5 @@ void main()
     gPosition = FragPos;
     gNormal = normalize(Normal);
     gAlbedoSpec.rgb = full_color.rgb;
-    gAlbedoSpec.a = full_color.r;
+    gAlbedoSpec.a = full_color.a;
 }

@@ -14,9 +14,9 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
         glm::ivec3 around = glm::ivec3{around_x.load(), around_y.load(), around_z.load()};
 
         SpiralIndexer meshing_indexer = {};
-        auto& terrain = game_state->GetTerrain();
+        auto& terrain                 = game_state->GetTerrain();
 
-        int max = pow((render_distance + 1) * 2, 2);
+        int max         = pow((render_distance + 1) * 2, 2);
         int safe_offset = 0;
 
         while (generated_count < max) {
@@ -57,7 +57,7 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
         if (!game_state || !game_state->world_saver)
             return;
 
-        auto& terrain = game_state->GetTerrain();
+        auto& terrain     = game_state->GetTerrain();
         auto& world_saver = *game_state->world_saver;
 
         SpiralIndexer generation_indexer = {};
@@ -65,8 +65,8 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
         generated_count = 0;
 
         glm::ivec3 around = glm::ivec3{around_x.load(), around_y.load(), around_z.load()};
-        int max = pow(render_distance * 2, 2);
-        int safe_offset = render_distance * 2 * 4;
+        int max           = pow(render_distance * 2, 2);
+        int safe_offset   = render_distance * 2 * 4;
 
         while (generation_indexer.getTotal() < max + safe_offset) {
             if (should_stop)
@@ -79,7 +79,7 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
                 glm::ivec3 chunkPosition = glm::ivec3{column_position.x, i, column_position.y} + around;
 
                 auto* chunk = terrain.getChunk(chunkPosition);
-                auto level = calculateSimplificationLevel(around, chunkPosition);
+                auto level  = calculateSimplificationLevel(around, chunkPosition);
 
                 if (chunk) {
                     chunk->current_simplification = level;
@@ -90,7 +90,7 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
                     terrain.addChunk(chunkPosition, world_saver.Load(chunkPosition));
                     continue;
                 }
-                chunk = terrain.createEmptyChunk(chunkPosition);
+                chunk                         = terrain.createEmptyChunk(chunkPosition);
                 chunk->current_simplification = level;
 
                 world_generator->GenerateTerrainChunk(chunk, chunkPosition);
@@ -136,8 +136,7 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
 
 bool TerrainManager::HandlePriorityMeshes() {
     if (has_priority_meshes && priority_count > 0) {
-        mesh_generator.syncGenerateAsyncUploadMesh(priority_mesh_queue[(priority_count--) - 1], create_mesh(),
-                                                   BitField3D::NONE);
+        mesh_generator.syncGenerateAsyncUploadMesh(priority_mesh_queue[(priority_count--) - 1], create_mesh(), BitField3D::NONE);
         return true;
     } else if (has_priority_meshes && priority_count == 0)
         has_priority_meshes = false;
@@ -148,9 +147,9 @@ bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance) {
     if (!game_state || !game_state->world_saver)
         return false;
 
-    around_x = around.x;
-    around_y = around.y;
-    around_z = around.z;
+    around_x              = around.x;
+    around_y              = around.y;
+    around_z              = around.z;
     this->render_distance = render_distance;
 
     service_manager->StartAll(true);
@@ -158,8 +157,7 @@ bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance) {
     return true;
 }
 
-BitField3D::SimplificationLevel TerrainManager::calculateSimplificationLevel(const glm::vec3& around,
-                                                                             const glm::vec3& chunkPosition) {
+BitField3D::SimplificationLevel TerrainManager::calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition) {
     int distance = glm::clamp(glm::distance(glm::vec3(around), glm::vec3(chunkPosition)) / 3.0f, 0.0f, 7.0f);
     return static_cast<BitField3D::SimplificationLevel>(distance - 1);
 }
@@ -181,16 +179,17 @@ void TerrainManager::UnloadChunkColumn(const glm::ivec2& position) {
 }
 
 void TerrainManager::unloadAll() {
+    service_manager->StopAll();
     mesh_registry.clear();
     reset_loader();
     world_generator->Clear();
 }
 
-#define regenMesh(position)                                                                                            \
-    {                                                                                                                  \
-        Chunk* temp = game_state->GetTerrain().getChunk(position);                                                     \
-        if (temp)                                                                                                      \
-            regenerateChunkMesh(temp);                                                                                 \
+#define regenMesh(position)                                                                                                                                    \
+    {                                                                                                                                                          \
+        Chunk* temp = game_state->GetTerrain().getChunk(position);                                                                                             \
+        if (temp)                                                                                                                                              \
+            regenerateChunkMesh(temp);                                                                                                                         \
     }
 void TerrainManager::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords) {
     regenerateChunkMesh(chunk);

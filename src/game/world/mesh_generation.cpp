@@ -326,7 +326,9 @@ std::tuple<uint64_t, uint64_t> ProcessFaceRow(int layer,
         return {field_getter(layer, row) & allFacesX, field_getter(layer + 1, row) & allFacesX};
     }
     uint64_t possible_mask = solid_getter(layer, row) ^ solid_getter(layer + 1, row);
-    return {field_getter(layer, row) & possible_mask, field_getter(layer + 1, row) & possible_mask};
+    auto result            = std::tuple<uint64_t, uint64_t>{field_getter(layer, row) & possible_mask, field_getter(layer + 1, row) & possible_mask};
+
+    return result;
 }
 
 struct FieldBoundingBox {
@@ -441,33 +443,9 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition,
     BitPlane planeZforward  = {};
     BitPlane planeZbackward = {};
 
-    auto& sfield        = chunk->getSolidField();
-    auto* sfieldRotated = sfield.getTransposed();
-
-    ScopeTimer timer("Generated mesh");
-
-    FieldBoundingBox box_x = {};
-    FieldBoundingBox box_y = {};
-    FieldBoundingBox box_z = {};
-
-    for (uint layer = 0; layer < size - 1; layer++) {
-        for (uint row = 0; row < size; row++) {
-            AdjustPossibleFaceBoundsDual(
-                layer, row, box_y, box_x, [&sfield](uint layer, uint row) { return sfield.getRow(row, layer); },
-                [&sfield](uint layer, uint row) { return sfield.getRow(layer, row); });
-
-            AdjustPossibleFaceBounds(layer, row, box_z, [sfieldRotated](uint layer, uint row) { return sfieldRotated->getRow(layer, row); });
-        }
-    }
-
-    timer.timestamp("Computed bounding box z");
-
-    std::cout << "Box X: ";
-    box_x.print();
-    std::cout << "Box Y: ";
-    box_y.print();
-    std::cout << "Box Z: ";
-    box_z.print();
+    BitField3D maskX = {};
+    BitField3D maskY = {};
+    BitField3D maskZ = {};
 
     for (auto& field_layer : chunk->getLayers()) {
         auto& [type, block, _field] = field_layer;

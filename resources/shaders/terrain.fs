@@ -1,11 +1,11 @@
 
 #version 330 core
 
-layout (location = 0) out vec3 gPosition;
-layout (location = 1) out vec3 gNormal;
-layout (location = 2) out vec4 gAlbedoSpec;
+layout(location = 0) out vec3 gPosition;
+layout(location = 1) out vec3 gNormal;
+layout(location = 2) out vec4 gAlbedoSpec;
 
-precision highp float; 
+precision highp float;
 
 in vec3 Normal;
 in vec2 TexCoords;
@@ -23,12 +23,12 @@ uniform sampler2D shadowMap;
 void main()
 {
     vec4 full_color = texture(textureArray, vec3(TexCoords, TexIndex));
-    if(full_color.a < 0.1) discard;
-    
+    if (full_color.a < 0.1) discard;
+
     full_color.rgb = full_color.rgb - ((Occlusion / 6) / 2);
 
     gPosition = FragPos;
     gNormal = normalize(Normal);
     gAlbedoSpec.rgb = full_color.rgb;
-    gAlbedoSpec.a = full_color.r;
+    gAlbedoSpec.a = full_color.a;
 }

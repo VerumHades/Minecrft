@@ -14,16 +14,14 @@ void MainScene::initialize() {
     // this->getUILayer("menu").eventLocks = {true, true, true, true};
     // this->getUILayer("settings").eventLocks = {true, true, true, true};
 
-    std::vector<std::string> freeCubeTextures = {
-        "resources/textures/block_breaking/level0.png", "resources/textures/block_breaking/level1.png",
-        "resources/textures/block_breaking/level2.png", "resources/textures/block_breaking/level3.png",
-        "resources/textures/block_breaking/level4.png", "resources/textures/block_breaking/level5.png",
-        "resources/textures/block_cursor.png"};
+    std::vector<std::string> freeCubeTextures = {"resources/textures/block_breaking/level0.png", "resources/textures/block_breaking/level1.png",
+                                                 "resources/textures/block_breaking/level2.png", "resources/textures/block_breaking/level3.png",
+                                                 "resources/textures/block_breaking/level4.png", "resources/textures/block_breaking/level5.png",
+                                                 "resources/textures/block_cursor.png"};
     cubeRenderer.loadTextures(freeCubeTextures);
 
-    std::array<std::string, 6> skyboxPaths = {"resources/skybox/stars/right.png", "resources/skybox/stars/left.png",
-                                              "resources/skybox/stars/top.png",   "resources/skybox/stars/bottom.png",
-                                              "resources/skybox/stars/front.png", "resources/skybox/stars/back.png"};
+    std::array<std::string, 6> skyboxPaths = {"resources/skybox/stars/right.png",  "resources/skybox/stars/left.png",  "resources/skybox/stars/top.png",
+                                              "resources/skybox/stars/bottom.png", "resources/skybox/stars/front.png", "resources/skybox/stars/back.png"};
 
     // ItemRegistry::get().addPrototype(ItemPrototype("diamond","resources/textures/diamond.png"));
     // ItemRegistry::get().addPrototype(ItemPrototype("crazed","resources/textures/crazed.png"));
@@ -93,8 +91,7 @@ void MainScene::initialize() {
         keyname->setFocusable(true);
         keyname->setIdentifiers({"controlls_member_keyname"});
 
-        keyname->onKeyEvent = [this, key, action, keyname](int new_key, int /*scancode*/, int /*action*/,
-                                                           int /*mods*/) {
+        keyname->onKeyEvent = [this, key, action, keyname](int new_key, int /*scancode*/, int /*action*/, int /*mods*/) {
             inputManager.unbindKey(key);
             inputManager.bindKey(new_key, action.action, action.name);
 
@@ -308,6 +305,7 @@ void MainScene::render() {
 
     GL_CALL(glEnable(GL_DEPTH_TEST));
     GL_CALL(glDisable(GL_CULL_FACE));
+    // GL_CALL(glEnable(GL_BLEND));
 
     camera.setPosition(glm::mix(lastCamPosition, camPosition, interpolation_time.getValue()));
 
@@ -386,7 +384,7 @@ void MainScene::updateLoadedLocations(glm::ivec3 old_location, glm::ivec3 new_lo
 void MainScene::physicsUpdate() {
     last_tick_time = glfwGetTime();
     double current = glfwGetTime();
-    float  deltatime;
+    float deltatime;
 
     updateLoadedLocations({}, glm::ivec3{game_state->getPlayer().getPosition() / (float)CHUNK_SIZE});
 
@@ -410,8 +408,7 @@ void MainScene::physicsUpdate() {
         last_tick_time = current;
 
         glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
-        if (glm::distance(glm::vec2(camWorldPosition.x, camWorldPosition.z),
-                          glm::vec2(lastCamWorldPosition.x, lastCamWorldPosition.z)) >= 2 ||
+        if (glm::distance(glm::vec2(camWorldPosition.x, camWorldPosition.z), glm::vec2(lastCamWorldPosition.x, lastCamWorldPosition.z)) >= 2 ||
             update_render_distance) { // Crossed chunks
 
             updateLoadedLocations(lastCamWorldPosition, camWorldPosition);
@@ -456,8 +453,7 @@ void MainScene::physicsUpdate() {
             // if(inputManager.isActive(MOVE_UP)) player.accelerate(camera.getUp() * 0.2f);
             if (inputManager.isActive(MOVE_DOWN))
                 player.accelerate(-camera.getUp() * 2.0f, deltatime);
-            if (inputManager.isActive(MOVE_UP) && game_state->entityCollision(player, {0, -0.1f, 0}) &&
-                player.getVelocity().y == 0)
+            if (inputManager.isActive(MOVE_UP) && game_state->entityCollision(player, {0, -0.1f, 0}) && player.getVelocity().y == 0)
                 player.accelerate(camera.getUp() * 10.0f, 1.0);
         } else {
             player.setGravity(false);
@@ -501,8 +497,7 @@ void UILoading::getRenderingInformation(UIRenderBatch& batch) {
 
         float max = max_values[i] != 0 ? max_values[i] : 1;
 
-        batch.Rectangle(transform.x + width * i + margin * (i + 1), transform.y, width,
-                        ((float)value / max) * (float)transform.height, UIColor{200, 100, 0});
+        batch.Rectangle(transform.x + width * i + margin * (i + 1), transform.y, width, ((float)value / max) * (float)transform.height, UIColor{200, 100, 0});
         i++;
     }
 }

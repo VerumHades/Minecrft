@@ -22,7 +22,9 @@ void main()
 
     vec3 Normal = texture(gNormal, TexCoords).rgb;
     vec3 Albedo = texture(gAlbedoSpec, TexCoords).rgb;
-    float Specular = texture(gAlbedoSpec, TexCoords).a;
+    float Alpha = texture(gAlbedoSpec, TexCoords).a;
+
+    if (Alpha < 0.1) discard;
 
     if (FragPos.z == 1) {
         FragColor = vec4(Albedo, 1.0);
@@ -57,5 +59,5 @@ void main()
     // Blend between object color and fog color
     vec3 finalColor = mix(fogColor, result.rgb, fogFactor);
 
-    FragColor = vec4(finalColor, 1.0);
+    FragColor = vec4(finalColor, Alpha);
 }
