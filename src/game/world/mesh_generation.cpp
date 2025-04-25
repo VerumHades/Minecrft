@@ -70,8 +70,9 @@ bool ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk,
 */
 std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPlane<64> rows, int start_row, int end_row) {
     const int size = 64;
-    thread_local static std::vector<Face> out{};
-    out.resize(0);
+
+    static std::vector<ChunkMeshGenerator::Face> greedy_mesh_plane_out = {};
+    greedy_mesh_plane_out.clear();
 
     /*
         Moves bits to from the right to the left
@@ -135,16 +136,16 @@ std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPl
             height++;
         }
 
-        out.push_back({// Add the face to the face list
-                       start,
-                       currentRow,
-                       width,
-                       height});
+        greedy_mesh_plane_out.push_back({// Add the face to the face list
+                                         start,
+                                         currentRow,
+                                         width,
+                                         height});
 
         // return out;
     }
 
-    return out;
+    return greedy_mesh_plane_out;
 }
 /*
     TODO:
@@ -239,13 +240,13 @@ const static std::array<OcclusionOffset, 8> occlusion_offsets = {
 
 std::vector<ChunkMeshGenerator::OccludedPlane>& ChunkMeshGenerator::calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane,
                                                                                                    OcclusionPlane& occlusion_plane) {
-    thread_local static std::vector<OccludedPlane> planes{};
-    planes.resize(0);
+    static std::vector<ChunkMeshGenerator::OccludedPlane> occluded_planes_out = {};
 
-    planes.push_back({{0, 0, 0, 0}, source_plane});
+    occluded_planes_out.clear();
+    occluded_planes_out.push_back({{0, 0, 0, 0}, source_plane});
 
     for (auto& [offset, affects] : occlusion_offsets) {
-        for (auto& plane : planes) {
+        for (auto& plane : occluded_planes_out) {
             auto [plane_1, plane_1_empty, plane_2, plane_2_empty] = segregatePlane(plane, occlusion_plane, affects, offset);
 
             if (plane_1_empty) {
@@ -257,11 +258,11 @@ std::vector<ChunkMeshGenerator::OccludedPlane>& ChunkMeshGenerator::calculatePla
 
             if (plane_2_empty)
                 continue;
-            planes.push_back(plane_2);
+            occluded_planes_out.push_back(plane_2);
         }
     }
 
-    return planes;
+    return occluded_planes_out;
 }
 
 static inline void processFaces(const std::vector<ChunkMeshGenerator::Face>& faces,
