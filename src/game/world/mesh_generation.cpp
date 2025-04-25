@@ -68,7 +68,7 @@ bool ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk,
 */
 std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPlane<64> rows, int start_row, int end_row) {
     const int size = 64;
-    static std::vector<Face> out{};
+    thread_local static std::vector<Face> out{};
     out.resize(0);
 
     /*
@@ -230,7 +230,7 @@ const static std::array<OcclusionOffset, 8> occlusion_offsets = {
 
 std::vector<ChunkMeshGenerator::OccludedPlane>& ChunkMeshGenerator::calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane,
                                                                                                    OcclusionPlane& occlusion_plane) {
-    static std::vector<OccludedPlane> planes{};
+    thread_local static std::vector<OccludedPlane> planes{};
     planes.resize(0);
 
     planes.push_back({{0, 0, 0, 0}, source_plane});

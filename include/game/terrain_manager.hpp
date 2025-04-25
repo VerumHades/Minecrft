@@ -17,69 +17,67 @@
 #include <mutex>
 #include <condition_variable>
 
-class TerrainManager{
-    private:
-        ChunkMeshGenerator mesh_generator;
-        std::shared_ptr<Generator> world_generator;
+class TerrainManager {
+  private:
+    ChunkMeshGenerator mesh_generator;
+    std::shared_ptr<Generator> world_generator;
 
-        RegionCuller mesh_registry;
-        std::unique_ptr<MeshLoaderInterface> mesh_loader;
+    RegionCuller mesh_registry;
+    std::unique_ptr<MeshLoaderInterface> mesh_loader;
 
-        GameState* game_state = nullptr;
+    GameState* game_state = nullptr;
 
-        int bottom_y = -3;
-        int top_y    =  3;
+    int bottom_y = -3;
+    int top_y    = 3;
 
-        BitField3D::SimplificationLevel calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition);
+    BitField3D::SimplificationLevel calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition);
 
-        std::unique_ptr<Service> service_manager;
+    std::unique_ptr<Service> service_manager;
 
-        std::mutex loaded_column_mutex;
-        std::unordered_set<glm::ivec2, IVec2Hash, IVec2Equal> loaded_columns;
+    std::mutex loaded_column_mutex;
+    std::unordered_set<glm::ivec2, IVec2Hash, IVec2Equal> loaded_columns;
 
-        std::atomic<int> around_x = 0;
-        std::atomic<int> around_y = 0;
-        std::atomic<int> around_z = 0;
-        std::atomic<int> render_distance = 0;
+    std::atomic<int> around_x        = 0;
+    std::atomic<int> around_y        = 0;
+    std::atomic<int> around_z        = 0;
+    std::atomic<int> render_distance = 0;
 
-        std::atomic<bool> has_priority_meshes = false;
-        std::array<Chunk*, 4> priority_mesh_queue{};
-        int priority_count = 0;
+    std::atomic<int> generated_count = 0;
 
-        std::atomic<int> generated_count = 0;
+    void UnloadChunkColumn(const glm::ivec2& position);
 
+    std::function<std::unique_ptr<MeshInterface>()> create_mesh = []() { return std::make_unique<InstancedMesh>(); };
+    std::function<void(void)> reset_loader                      = [this]() {
+        mesh_loader = std::make_unique<InstancedMeshLoader>();
+        mesh_registry.SetMeshLoader(mesh_loader.get());
+    };
 
-        void UnloadChunkColumn(const glm::ivec2& position);
-        bool HandlePriorityMeshes();
+  public:
+    TerrainManager(std::shared_ptr<Generator> world_generator);
 
-        std::function<std::unique_ptr<MeshInterface>()> create_mesh = [](){ return std::make_unique<InstancedMesh>(); };
-        std::function<void(void)> reset_loader = [this](){
-            mesh_loader = std::make_unique<InstancedMeshLoader>();
-            mesh_registry.SetMeshLoader(mesh_loader.get());
-        };
+    // Actually deploys meshes
+    void unloadAll();
 
+    bool uploadPendingMeshes();
+    bool loadRegion(glm::ivec3 around, int render_distance);
 
-    public:
-        TerrainManager(std::shared_ptr<Generator> world_generator);
+    void regenerateChunkMesh(Chunk* chunk);
+    void regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords);
 
-        // Actually deploys meshes
-        void unloadAll();
+    void setGameState(GameState* state) {
+        if (state == nullptr)
+            service_manager->StopAll();
 
-        bool uploadPendingMeshes();
-        bool loadRegion(glm::ivec3 around, int render_distance);
-
-        void regenerateChunkMesh(Chunk* chunk);
-        void regenerateChunkMesh(Chunk* chunk,glm::vec3 blockCoords);
-
-        void setGameState(GameState* state){
-            if(state == nullptr) service_manager->StopAll();
-
-            game_state = state;
-            if(state == nullptr) mesh_generator.setWorld(nullptr);
-            else{
-                mesh_generator.setWorld(&game_state->GetTerrain());
-                world_generator->SetSeed(game_state->getSeed());
-            }
+        game_state = state;
+        if (state == nullptr)
+            mesh_generator.setWorld(nullptr);
+        else {
+            mesh_generator.setWorld(&game_state->GetTerrain());
+            world_generator->SetSeed(game_state->getSeed());
         }
+    }
 
-        RegionCuller& getMeshRegistry(){ return mesh_registry; }};
+    RegionCuller& getMeshRegistry() {
+        return mesh_registry;
+    }
+};

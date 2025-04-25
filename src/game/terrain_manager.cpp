@@ -22,8 +22,6 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
         while (generated_count < max) {
             if (should_stop)
                 return;
-            if (HandlePriorityMeshes())
-                continue;
 
             safe_offset = sqrt(generated_count.load()) * 2;
 
@@ -34,8 +32,6 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
                 for (int i = bottom_y; i < top_y; i++) {
                     if (should_stop)
                         return;
-                    if (HandlePriorityMeshes())
-                        continue;
 
                     glm::ivec3 chunkPosition = glm::ivec3{column_position.x, i, column_position.y} + around;
 
@@ -134,15 +130,6 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
     });
 }
 
-bool TerrainManager::HandlePriorityMeshes() {
-    if (has_priority_meshes && priority_count > 0) {
-        mesh_generator.syncGenerateAsyncUploadMesh(priority_mesh_queue[(priority_count--) - 1], create_mesh(), BitField3D::NONE);
-        return true;
-    } else if (has_priority_meshes && priority_count == 0)
-        has_priority_meshes = false;
-    return false;
-}
-
 bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance) {
     if (!game_state || !game_state->world_saver)
         return false;
@@ -191,6 +178,7 @@ void TerrainManager::unloadAll() {
         if (temp)                                                                                                                                              \
             regenerateChunkMesh(temp);                                                                                                                         \
     }
+
 void TerrainManager::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords) {
     regenerateChunkMesh(chunk);
     if (blockCoords.x == 0)
@@ -207,16 +195,9 @@ void TerrainManager::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords) {
         regenMesh(chunk->getWorldPosition() - glm::ivec3(0, 0, 1));
     if (blockCoords.z == CHUNK_SIZE - 1)
         regenMesh(chunk->getWorldPosition() + glm::ivec3(0, 0, 1));
-
-    if (service_manager->IsRunning("mesher"))
-        has_priority_meshes = true;
 }
 #undef regenMesh
 
 void TerrainManager::regenerateChunkMesh(Chunk* chunk) {
-    if (!service_manager->IsRunning("mesher"))
-        mesh_generator.syncGenerateSyncUploadMesh(chunk, mesh_registry, create_mesh(), BitField3D::NONE);
-    else if (!has_priority_meshes) {
-        priority_mesh_queue[priority_count++] = chunk;
-    }
+    mesh_generator.syncGenerateSyncUploadMesh(chunk, mesh_registry, create_mesh(), BitField3D::NONE);
 }
