@@ -13,7 +13,6 @@
 #include <filesystem>
 #include <sstream>
 #include <cstring>
-#include <cxxabi.h>
 #include <mutex>
 
 #include <cpptrace/cpptrace.hpp>

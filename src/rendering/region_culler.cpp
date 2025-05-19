@@ -172,5 +172,6 @@ void RegionCuller::draw(){
 }
 
 void RegionCuller::clear(){
+    std::lock_guard lock(mesh_change_mutex);
     regions.clear();
 }

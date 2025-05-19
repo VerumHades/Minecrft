@@ -11,18 +11,21 @@
 #include <atomic>
 #include <rendering/mesh_spec.hpp>
 
+#include <structure/multilevel_pool.hpp>
+#include <memory>
+
 class InstancedMesh: public MeshInterface{
     public:
         const static size_t instance_data_size = 12;
 
     private:
-        std::array<std::vector<float>, 4> instance_data{};
+        std::array<std::unique_ptr<MultilevelPool<float>::List>, 4> instance_data;
     
     public:
-        InstancedMesh(){}
+        InstancedMesh();
         void addQuadFace(const glm::vec3& position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion) override;
         void preallocate(size_t size, FaceType type) override;
-        const std::vector<float>& getInstanceData(FaceType type);
+        const MultilevelPool<float>::List& getInstanceData(FaceType type);
         bool empty() override;
         void shrink() override;
 };

@@ -30,15 +30,14 @@ class WorldGenerator : public Generator {
     struct Heightmap {
         std::array<std::array<int, CHUNK_SIZE>, CHUNK_SIZE> heights;
         std::array<std::array<Biome*, CHUNK_SIZE>, CHUNK_SIZE> biomes;
-        int lowest = INT32_MAX;
+        int lowest  = INT32_MAX;
         int highest = INT32_MIN;
     };
 
     Heightmap& getHeightmapFor(glm::ivec3 position);
 
     std::unordered_map<glm::ivec3, std::unique_ptr<WorldGenerator::Heightmap>, IVec3Hash, IVec3Equal>& getHeightMaps() {
-        static std::unordered_map<glm::ivec3, std::unique_ptr<WorldGenerator::Heightmap>, IVec3Hash, IVec3Equal>
-            height_maps{};
+        static std::unordered_map<glm::ivec3, std::unique_ptr<WorldGenerator::Heightmap>, IVec3Hash, IVec3Equal> height_maps{};
         return height_maps;
     }
 
@@ -67,11 +66,12 @@ class WorldGenerator : public Generator {
     std::shared_ptr<Structure> tree;
     std::shared_ptr<Structure> grass;
     std::shared_ptr<Structure> cactus;
+    std::shared_ptr<Structure> tower;
 
     RegionRegistry<std::shared_ptr<Structure>> structures;
     void placeStructure(const glm::ivec3& position, const std::shared_ptr<Structure>& structure);
 
-    const int water_level = 60;
+    const int water_level = 0;
 
     void SetupBiomeLayers();
 

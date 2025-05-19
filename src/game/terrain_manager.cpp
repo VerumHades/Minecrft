@@ -172,11 +172,11 @@ void TerrainManager::unloadAll() {
     world_generator->Clear();
 }
 
-#define regenMesh(position)                                                                                                                                    \
-    {                                                                                                                                                          \
-        Chunk* temp = game_state->GetTerrain().getChunk(position);                                                                                             \
-        if (temp)                                                                                                                                              \
-            regenerateChunkMesh(temp);                                                                                                                         \
+#define regenMesh(position)                                                                                                           \
+    {                                                                                                                                 \
+        Chunk* temp = game_state->GetTerrain().getChunk(position);                                                                    \
+        if (temp)                                                                                                                     \
+            regenerateChunkMesh(temp);                                                                                                \
     }
 
 void TerrainManager::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords) {

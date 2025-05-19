@@ -1,6 +1,3 @@
-#include "bitarray.hpp"
-#include "general.hpp"
-#include "structure/bitworks.hpp"
 #include <basetsd.h>
 #include <cstdint>
 #include <game/world/mesh_generation.hpp>
@@ -71,7 +68,9 @@ bool ChunkMeshGenerator::syncGenerateSyncUploadMesh(Chunk* chunk,
 std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPlane<64> rows, int start_row, int end_row) {
     const int size = 64;
 
-    static std::vector<ChunkMeshGenerator::Face> greedy_mesh_plane_out = {};
+    static ThreadLocal<std::vector<ChunkMeshGenerator::Face>> greedy_mesh_plane_threadlocal{};
+
+    auto& greedy_mesh_plane_out = greedy_mesh_plane_threadlocal.Get();
     greedy_mesh_plane_out.clear();
 
     /*
@@ -240,8 +239,10 @@ const static std::array<OcclusionOffset, 8> occlusion_offsets = {
 
 std::vector<ChunkMeshGenerator::OccludedPlane>& ChunkMeshGenerator::calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane,
                                                                                                    OcclusionPlane& occlusion_plane) {
-    static std::vector<ChunkMeshGenerator::OccludedPlane> occluded_planes_out = {};
 
+    static ThreadLocal<std::vector<ChunkMeshGenerator::OccludedPlane>> occluded_planes_threadlocal{};
+
+    auto& occluded_planes_out = occluded_planes_threadlocal.Get();
     occluded_planes_out.clear();
     occluded_planes_out.push_back({{0, 0, 0, 0}, source_plane});
 

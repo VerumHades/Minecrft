@@ -1,5 +1,12 @@
 #include <rendering/instanced_mesh.hpp>
 
+static MultilevelPool<float> mesh_pool{};
+
+InstancedMesh::InstancedMesh(): instance_data(){
+    for(auto& element: instance_data)
+        element = std::make_unique<MultilevelPool<float>::List>(mesh_pool.Next(64));
+    
+}
 void InstancedMesh::addQuadFace(const glm::vec3& position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion){
     std::array<float, InstancedMesh::instance_data_size> data = {
         position.x,
@@ -20,14 +27,15 @@ void InstancedMesh::addQuadFace(const glm::vec3& position, float width, float he
     };
 
     auto& instance_data_list = instance_data.at(type);
-    instance_data_list.insert(instance_data_list.end(), data.begin(), data.end());
+    for(auto& value: data)
+        instance_data_list->Push(value);
 }
 
 void InstancedMesh::preallocate(size_t size, FaceType type){
-    instance_data.at(type).reserve(size * instance_data_size);
+    //if(size != 0) instance_data.at(type)->Resize((size + 1) * instance_data_size);
 }
-const std::vector<float>& InstancedMesh::getInstanceData(FaceType type){
-    return  instance_data[type];
+const MultilevelPool<float>::List& InstancedMesh::getInstanceData(FaceType type){
+    return *instance_data[type];
 }
 
 bool InstancedMesh::empty(){
@@ -39,7 +47,7 @@ bool InstancedMesh::empty(){
 }
 
 void InstancedMesh::shrink(){
-    for(int i = 0;i < 4;i++) instance_data[i].shrink_to_fit();
+    //for(int i = 0;i < 4;i++) instance_data[i].shrink_to_fit();
 }
 
 InstancedMeshLoader::InstancedMeshLoader(){
@@ -146,12 +154,12 @@ std::unique_ptr<LoadedMeshInterface> InstancedMeshLoader::loadMesh(MeshInterface
 
     for(int i = 0;i < distinct_face_count;i++){
         auto& component_data = mesh.getInstanceData(static_cast<InstancedMesh::FaceType>(i));
-        if(component_data.size() == 0){
+        if(component_data.Size() == 0){
             loaded_mesh->has_region[i] = false;
             continue;
         }
 
-        loaded_mesh->loaded_regions[i] = render_information[i].instance_data.append(component_data.data(), component_data.size());
+        loaded_mesh->loaded_regions[i] = render_information[i].instance_data.append(component_data.Data(), component_data.Size());
         loaded_mesh->has_region[i] = true;
 
         render_information[i].instance_data.flush();
@@ -187,15 +195,15 @@ void InstancedMeshLoader::addDrawCall(LoadedMesh& mesh){
 void InstancedMeshLoader::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new_mesh){
     for(int i = 0;i < distinct_face_count;i++){
         auto& component_data = new_mesh.getInstanceData(static_cast<InstancedMesh::FaceType>(i));
-        if(component_data.size() == 0){
+        if(component_data.Size() == 0){
             loaded_mesh.has_region[i] = false;
             continue;
         }
     
         if(loaded_mesh.has_region[i])
-            loaded_mesh.loaded_regions[i] = render_information[i].instance_data.update(loaded_mesh.loaded_regions[i], component_data.data(), component_data.size());
+            loaded_mesh.loaded_regions[i] = render_information[i].instance_data.update(loaded_mesh.loaded_regions[i], component_data.Data(), component_data.Size());
         else
-            loaded_mesh.loaded_regions[i] = render_information[i].instance_data.append(component_data.data(), component_data.size());
+            loaded_mesh.loaded_regions[i] = render_information[i].instance_data.append(component_data.Data(), component_data.Size());
 
         loaded_mesh.has_region[i] = true;
 
