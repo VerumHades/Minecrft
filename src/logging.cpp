@@ -171,6 +171,7 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLen
 }
 
 void CheckGLError(const char* file, int line) {
+    
     GLenum error;
     while ((error = glGetError()) != GL_NO_ERROR) {
         const char* errorString;
@@ -197,7 +198,14 @@ void CheckGLError(const char* file, int line) {
             break;
         }
 
-        Logging::Get().Message("OPENGL_ERROR", errorString, line, file);
-        Logging::Get().SaveTrace();
+        static int opengl_error_timout = 1000;
+        static int opengl_error_counter = 0;
+
+        if(opengl_error_counter <= 0) {    
+            Logging::Get().Message("OPENGL_ERROR", errorString, line, file);
+            Logging::Get().SaveTrace();
+            opengl_error_counter = opengl_error_timout;
+        }
+        else opengl_error_counter--;
     }
 }

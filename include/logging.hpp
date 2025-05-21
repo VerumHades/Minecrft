@@ -63,7 +63,7 @@ class Logging {
     std::mutex mtx;
 
     std::streamoff boundary = 10000;
-
+    
     Logging();
 
     bool isLogOld(const fs::path& file, int daysThreshold);
