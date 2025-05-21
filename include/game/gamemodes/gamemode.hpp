@@ -30,6 +30,7 @@ struct GameModeState{
     std::function<void(Chunk* chunk, const glm::ivec3 position)> regenerateChunkMesh;
 };
 
+
 class GameMode{
     protected:
         GameModeState& state;
