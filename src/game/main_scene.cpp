@@ -388,7 +388,7 @@ void MainScene::physicsUpdate() {
 
     updateLoadedLocations({}, glm::ivec3{game_state->getPlayer().getPosition() / (float)CHUNK_SIZE});
 
-    double last_sun_move_time = glfwGetTime();
+    //double last_sun_move_time = glfwGetTime();
 
     while (running) {
         current   = glfwGetTime();

@@ -97,8 +97,8 @@ class DepthCamera: public Camera{
 
         Uniform<glm::mat4> projectionMatrix;
         Uniform<glm::mat4> viewMatrix;
-        Uniform<glm::mat4> lightSpaceMatrix;
         Uniform<glm::mat4> modelMatrix;
+        Uniform<glm::mat4> lightSpaceMatrix;
 
         glm::vec3 position = glm::vec3(0,0,0);
         glm::vec3 target = glm::vec3(0,0,0);

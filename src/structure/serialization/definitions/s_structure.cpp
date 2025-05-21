@@ -25,12 +25,12 @@ SerializeFunction(Structure) {
 SerializeInstatiate(Structure)
 
 DeserializeFunction(Structure){
-    ResolvedOption(width , Read<size_t>);
-    ResolvedOption(height, Read<size_t>);
-    ResolvedOption(depth , Read<size_t>);
+    ResolveOptionTo(this_.width ,opt_w, Read<size_t>);
+    ResolveOptionTo(this_.height,opt_h, Read<size_t>);
+    ResolveOptionTo(this_.depth ,opt_d, Read<size_t>);
 
     ResolvedOption(arrays_total, Read<size_t>);
-    for(int i = 0;i < arrays_total;i++){
+    for(size_t i = 0;i < arrays_total;i++){
         ResolvedOption(x, Read<int>)
         ResolvedOption(y, Read<int>)
         ResolvedOption(z, Read<int>)

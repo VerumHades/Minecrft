@@ -87,7 +87,7 @@ void WorldGenerator::SetupBiomeLayers() {
                                                   GetID("stone"),
                                                   GetID("water"),
                                                   glm::vec3{100, 150, 100},
-                                                  {{20, grass}, {10, tower}}});
+                                                  {{20, grass}, {0.05, tower}}});
 
     biomes.push_back(std::make_shared<Biome>(Biome{{0.3, 0.5},
                                                    {0.2, 0.7},
@@ -156,6 +156,7 @@ Image WorldGenerator::createPreview(int width, int height, float step) {
 
             int value        = GetHeightAt(position);
             float normalized = static_cast<float>(value) / 300.0f;
+            normalized = 0.5 + (normalized / 2);
 
             Biome* biome = GetBiomeFor(position);
 
@@ -228,11 +229,12 @@ WorldGenerator::Heightmap& WorldGenerator::getHeightmapFor(glm::ivec3 position_i
             int value  = GetHeightAt(localPosition);
             auto biome = GetBiomeFor(localPosition);
 
-            static std::uniform_int_distribution<std::size_t> dist(0, 100);
+            static std::uniform_int_distribution<std::size_t> dist(0, 1000000);
 
             for (auto& structure : biome->structures) {
-                if (dist(*structure_random_engine) < structure.spawn_chance && localPosition.y + value > water_level) {
-                    placeStructure(localPosition + glm::ivec3{-2, value + 1, -2}, structure.structure);
+                float chance_value = (float)dist(*structure_random_engine) / 10000;
+                if (chance_value <= structure.spawn_chance && localPosition.y + value > water_level) {
+                    placeStructure(localPosition + glm::ivec3{0, value + 1, 0}, structure.structure);
                     break;
                 }
             }
@@ -255,6 +257,14 @@ void WorldGenerator::prepareHeightMaps(glm::ivec3 around, int distance) {
 
 void WorldGenerator::GenerateTerrainChunk(Chunk* chunk, glm::ivec3 position) {
     // static const int count = CHUNK_SIZE / ChunkDefinition::size;
+
+    // Pregen surrounding maps to keep structures whole
+    for(int i = -1;i <= 1;i++)
+    for(int j = -1;j <= 1;j++){
+        if(i == 0 && j == 0) continue;
+        getHeightmapFor(position + glm::ivec3{i,0,j});
+    }
+
     auto& heightMap = getHeightmapFor(position);
 
     if (heightMap.lowest - 1 > position.y * CHUNK_SIZE + CHUNK_SIZE) {

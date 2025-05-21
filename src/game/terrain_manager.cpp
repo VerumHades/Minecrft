@@ -16,7 +16,7 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
         SpiralIndexer meshing_indexer = {};
         auto& terrain                 = game_state->GetTerrain();
 
-        int max         = pow((render_distance + 1) * 2, 2);
+        size_t max         = pow((render_distance + 1) * 2, 2);
         int safe_offset = 0;
 
         while (generated_count < max) {
@@ -64,7 +64,7 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
         int max           = pow(render_distance * 2, 2);
         int safe_offset   = render_distance * 2 * 4;
 
-        while (generation_indexer.getTotal() < max + safe_offset) {
+        while (generation_indexer.getTotal() < static_cast<size_t>(max + safe_offset)) {
             if (should_stop)
                 return;
 

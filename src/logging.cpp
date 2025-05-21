@@ -61,6 +61,10 @@ void Logging::Message(const std::string& descriptor, const std::string& message,
     std::tm* localTime = std::localtime(&now); // Convert to local time
 
     outfile << std::put_time(localTime, "%Y-%m-%d %H:%M:%S \"") << file << "\" [at line " << line << "] <" << descriptor << "> " << message << std::endl;
+
+    if (outfile.tellp() >= boundary) {
+        outfile.seekp(0);  // wrap around
+    }
     // std::cout << std::put_time(localTime, "%Y-%m-%d %H:%M:%S \"") << file << "\" [at line " << line << "] <" << descriptor << "> " << message << std::endl;
 }
 
@@ -90,7 +94,7 @@ void Logging::SaveTrace() {
 }
 
 void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* param) {
-    const char *source_, *type_, *severity_;
+    /*const char *source_, *type_, *severity_;
 
     switch (source) {
     case GL_DEBUG_SOURCE_API:
@@ -159,7 +163,7 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLen
     default:
         severity_ = "<SEVERITY>";
         break;
-    }
+    }*/
 
     //LogOpengl("{}: GL {} {} ({}): {}", id, severity_, type_, source_, message);
 
@@ -193,6 +197,7 @@ void CheckGLError(const char* file, int line) {
             break;
         }
 
-        //Logging::Get().Message("OPENGL_ERROR", errorString, line, file);
+        Logging::Get().Message("OPENGL_ERROR", errorString, line, file);
+        Logging::Get().SaveTrace();
     }
 }

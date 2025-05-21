@@ -34,7 +34,7 @@ bool ChunkMeshGenerator::loadMeshFromQueue(RegionCuller& buffer, size_t limit) {
 bool ChunkMeshGenerator::syncGenerateAsyncUploadMesh(Chunk* chunk,
                                                      std::unique_ptr<MeshInterface> mesh,
                                                      BitField3D::SimplificationLevel simplification_level) {
-    auto start = std::chrono::high_resolution_clock::now();
+    //auto start = std::chrono::high_resolution_clock::now();
 
     auto world_position = chunk->getWorldPosition();
     bool result         = generateChunkMesh(world_position, mesh.get(), chunk, simplification_level);
@@ -276,8 +276,6 @@ static inline void processFaces(const std::vector<ChunkMeshGenerator::Face>& fac
                                 std::array<float, 4>& occlusion) {
     glm::vec3 face_position;
     int texture = 0;
-    int normal;
-    bool clockwise;
 
     bool texture_index = direction == MeshInterface::Backward;
 
@@ -305,6 +303,8 @@ static inline void processFaces(const std::vector<ChunkMeshGenerator::Face>& fac
             face_position = glm::vec3(face.x, face.y + face.height, layer + 1) + world_position;
 
             texture = type->single_texture ? type->textures[0] : type->textures[2 + texture_index];
+            break;
+        case MeshInterface::BILLBOARD:
             break;
         }
 

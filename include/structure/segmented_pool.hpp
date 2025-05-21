@@ -3,6 +3,7 @@
 #include <vector>
 #include <queue>
 #include <cpptrace/cpptrace.hpp>
+#include <mutex>
 
 template <typename T>
 class SegmentedPool
@@ -16,7 +17,7 @@ public:
         size_t start;
         size_t size;
 
-        Segment(size_t start, size_t size, SegmentedPool<T> *pool) : start(start), size(size), pool(pool)
+        Segment(SegmentedPool<T> *pool, size_t start, size_t size) : pool(pool), start(start), size(size)
         {
         }
 
@@ -85,16 +86,21 @@ private:
     size_t count = 0;
     size_t block_size = 1;
 
-    void Extend()
+    std::mutex mutex;
+
+    void ExtendIfNeeded()
     {
-        int old_size = vec.size();
-        vec.resize(vec.size() * 2);
+        std::lock_guard lock(mutex);
+        while(free.empty()){
+            size_t old_size = vec.size();
+            vec.resize(vec.size() * 2);
 
-        if (old_size < block_size)
-            return;
+            if (old_size < block_size)
+                return;
 
-        for (size_t i = 0; i < old_size; i += block_size)
-            free.push(i + old_size);
+            for (size_t i = 0; i < old_size; i += block_size)
+                free.push(i + old_size);
+        }
     }
 
     /*
@@ -102,6 +108,7 @@ private:
     */
     void Free(size_t index)
     {
+        std::lock_guard lock(mutex);
         count--;
         free.push(index);
     }
@@ -132,14 +139,15 @@ public:
     */
     Segment Next()
     {
-        while (free.empty())
-            Extend();
-
+        ExtendIfNeeded();
+        
+        std::lock_guard lock(mutex);
+        
         auto index = free.front();
         free.pop();
 
         count++;
-        return Segment{index, block_size, this};
+        return Segment{this, index, block_size};
     }
 
     size_t Count() { return count; }

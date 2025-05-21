@@ -197,11 +197,11 @@ void UICore::setCurrentWindow(UIWindowIdentifier id){
     updateAll();
 }
 UIWindow* UICore::getCurrentWindow(){
-    if(currentWindow < 0 || currentWindow >= windows.size()) return nullptr;
+    if(currentWindow < 0 || currentWindow >= static_cast<int>(windows.size())) return nullptr;
     return &windows[currentWindow];
 }
 UIWindow* UICore::getWindow(UIWindowIdentifier id){
-    if(id < 0 || id >= windows.size()) return nullptr;
+    if(id < 0 || id >=  static_cast<int>(windows.size())) return nullptr;
     return &windows[id];
 }
 UIWindowIdentifier UICore::createWindow(){

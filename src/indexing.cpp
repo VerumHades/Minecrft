@@ -26,7 +26,7 @@ glm::ivec2 SpiralIndexer::get(){
 
 glm::ivec3 SpiralIndexer3D::get(){    
     auto& current_layers = layers[current_layer_direction];
-    if(current_layer >= current_layers.size()) current_layers.push_back({});
+    if(static_cast<size_t>(current_layer) >= current_layers.size()) current_layers.push_back({});
 
     auto out = current_layers[current_layer].get();
     return {out.x, current_layer * (1 + current_layer_direction * -2), out.y};
@@ -39,7 +39,7 @@ void SpiralIndexer3D::next(){
     }
 
     auto& current_layers = layers[current_layer_direction];
-    if(current_layer >= current_layers.size()) current_layers.push_back({});
+    if(static_cast<size_t>(current_layer) >= current_layers.size()) current_layers.push_back({});
 
     auto& layer = current_layers[current_layer];
     if(layer.getTotal() >= pow(current_distance * 2, 2)){
@@ -48,7 +48,7 @@ void SpiralIndexer3D::next(){
         current_layer_direction = !current_layer_direction;
 
         auto& current_layers = layers[current_layer_direction];
-        if(current_layer >= current_layers.size()) current_layers.push_back({});
+        if(static_cast<size_t>(current_layer) >= current_layers.size()) current_layers.push_back({});
         layer = current_layers[current_layer];
     }
     layer.next();

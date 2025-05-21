@@ -31,13 +31,15 @@ struct GameModeState{
 };
 
 class GameMode{
+    protected:
+        GameModeState& state;
+
     private:
         std::string name;
         std::string getLocalLayerName(const std::string& name);
 
     protected:
         std::string base_layer_override = "";
-        GameModeState& state;
 
         UILayer& getLayerLocal(const std::string& name);
         void setLayerLocal(const std::string& name);

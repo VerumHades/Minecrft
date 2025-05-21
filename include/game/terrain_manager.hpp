@@ -42,7 +42,7 @@ class TerrainManager {
     std::atomic<int> around_z        = 0;
     std::atomic<int> render_distance = 0;
 
-    std::atomic<int> generated_count = 0;
+    std::atomic<size_t> generated_count = 0;
 
     void UnloadChunkColumn(const glm::ivec2& position);
 

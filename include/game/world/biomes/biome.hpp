@@ -6,7 +6,7 @@
 class Structure;
 
 struct StructurePlacement {
-    int spawn_chance;
+    float spawn_chance;
     std::shared_ptr<Structure> structure;
 };
 

@@ -146,10 +146,10 @@ class LogicalItemSlot{
 
 class LogicalItemInventory{
     private:
+        std::vector<LogicalItemSlot> slots{};
+
         int slots_horizontaly = 0;
         int slots_verticaly = 0;
-
-        std::vector<LogicalItemSlot> slots{};
 
         friend class Serializer;
     public:

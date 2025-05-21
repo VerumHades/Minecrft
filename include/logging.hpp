@@ -37,9 +37,9 @@
 #endif
 
 #ifdef LOG_ERROR
-#define LogError(...)                                                                                                                                          \
-    {                                                                                                                                                          \
-        Logging::Get().Message("ERROR", std::format(__VA_ARGS__), __LINE__, __FILE__);                                                                         \
+#define LogError(...)                                                                                                                 \
+    {                                                                                                                                 \
+        Logging::Get().Message("ERROR", std::format(__VA_ARGS__), __LINE__, __FILE__);                                                \
     }
 #else
 #define LogError(...)
@@ -62,6 +62,8 @@ class Logging {
     std::ofstream outfile;
     std::mutex mtx;
 
+    std::streamoff boundary = 10000;
+
     Logging();
 
     bool isLogOld(const fs::path& file, int daysThreshold);
@@ -77,9 +79,13 @@ class Logging {
     }
 };
 
-void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* param);
+void APIENTRY GLDebugMessageCallback(
+    GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* param);
 
-#define GL_CALL(call)                                                                                                                                          \
-    call;                                                                                                                                                      \
-    CheckGLError(__FILE__, __LINE__);
+#define GL_CALL(call)                                                                                                                 \
+    {                                                                                                                                 \
+        call;                                                                                                                         \
+        CheckGLError(__FILE__, __LINE__);                                                                                             \
+    }
+
 void CheckGLError(const char* file, int line);

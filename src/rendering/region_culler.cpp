@@ -38,7 +38,7 @@ void MeshRegion::SetChild(uint x, uint y, uint z, bool value){
 
 RegionCuller::RegionCuller(){
     actualRegionSizes.push_back(1);
-    for(int i = 1;i < maxRegionLevel;i++){
+    for(uint i = 1;i < maxRegionLevel;i++){
         actualRegionSizes.push_back(pow(2, i));
     }
 }
@@ -141,6 +141,7 @@ void RegionCuller::processRegionForDrawing(Frustum& frustum, MeshRegion* region)
 }
 
 void RegionCuller::updateDrawCalls(const glm::ivec3& camera_position, Frustum& frustum){
+    std::lock_guard lock(mesh_change_mutex);
     mesh_loader->clearDrawCalls();
 
     int max_level_size_in_chunks = getRegionSizeForLevel(maxRegionLevel);
@@ -168,6 +169,7 @@ void RegionCuller::updateDrawCalls(const glm::ivec3& camera_position, Frustum& f
 }
 
 void RegionCuller::draw(){
+    std::lock_guard lock(mesh_change_mutex);
     mesh_loader->render();
 }
 

@@ -93,8 +93,8 @@ std::list<UIBackend::Batch>::iterator UIOpenglBackend::addRenderBatch(UIRenderBa
     }
 
     if(
-        (vertex_ptr - (vertices.data() + vertex_start)) != vertex_count ||
-        (index_ptr - (indices.data() + index_start)) !=  index_count
+        static_cast<size_t>(vertex_ptr - (vertices.data() + vertex_start)) != vertex_count ||
+        static_cast<size_t>(index_ptr - (indices.data() + index_start)) !=  index_count
     ){
         throw std::runtime_error("Batch overeach! This is an internal bug.");
     }

@@ -40,7 +40,7 @@ class Structure{
         */
         PositionSet place(const glm::ivec3& position, Terrain& world);   
         
-        static Structure capture(const glm::ivec3& position, const glm::ivec3& size, const Terrain& world);
+        static Structure capture(const glm::ivec3& position, const glm::uvec3& size, const Terrain& world);
         glm::ivec3 getSize(){return {width,height,depth};}
 };
 

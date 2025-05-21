@@ -1,6 +1,6 @@
 #include <rendering/opengl/buffer.hpp>
 
-GLVertexFormat::GLVertexFormat(std::initializer_list<GLVertexValueType> bindings, bool per_instance): per_instance(per_instance), bindings(bindings){
+GLVertexFormat::GLVertexFormat(std::initializer_list<GLVertexValueType> bindings, bool per_instance): bindings(bindings), per_instance(per_instance){
     totalSize = 0;
     for(auto& size: bindings) totalSize += size;
 }   

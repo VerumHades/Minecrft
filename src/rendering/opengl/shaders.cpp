@@ -57,14 +57,14 @@ int ShaderProgram::getUniformLocation(std::string name){
 }
 
 void ShaderProgram::compile(){
-    for(int i = 0;i < this->shaders.size();i++){
+    for(size_t i = 0;i < this->shaders.size();i++){
         GL_CALL( glAttachShader(this->program, this->shaders[i]));
     }
 
     GL_CALL( glLinkProgram(this->program));
     GL_CALL( glUseProgram(this->program));
     
-    for(int i = 0;i < this->shaders.size();i++){
+    for(size_t i = 0;i < this->shaders.size();i++){
         GL_CALL( glDeleteShader(this->shaders[i]));
     }
 

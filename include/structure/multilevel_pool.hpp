@@ -42,8 +42,8 @@ public:
     class List
     {
     private:
-        MultilevelPool<T> *pool;
         typename SegmentedPool<T>::Segment segment;
+        MultilevelPool<T> *pool;
         size_t internal_size = 0;
 
         List(typename SegmentedPool<T>::Segment segment, MultilevelPool<T> *pool) : segment(std::move(segment)), pool(pool)
@@ -59,7 +59,7 @@ public:
 
         // Move constructor
         List(List &&other) noexcept
-            : pool(other.pool), segment(std::move(other.segment))
+            :  segment(std::move(other.segment)), pool(other.pool)
         {
             other.pool = nullptr;
         }
@@ -89,7 +89,7 @@ public:
 
         void Push(const T &value)
         {
-            if (internal_size + 1 >= segment.Size())
+            if (internal_size >= segment.Size())
                 Resize(segment.Size() * 2);
 
             segment[internal_size++] = value;

@@ -99,12 +99,10 @@ RaycastResult Terrain::raycast(const glm::vec3& from, const glm::vec3& direction
     glm::vec3 current_position = from;
     glm::vec3 block_position, ratios, local_position, last_block_position, current_movement;
 
-    int selected_ratio = 0;
     float ratio = 0.0f;
     float current_distance = 0.0f;
     float distance = 0.0f;
 
-    int i = 1;
     while (true) {
         block_position = glm::floor(current_position);
 

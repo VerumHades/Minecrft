@@ -16,9 +16,9 @@ void InstancedMesh::addQuadFace(const glm::vec3& position, float width, float he
         width,
         height,
 
-        type,
-        direction,
-        texture_index,
+        static_cast<float>(type),
+        static_cast<float>(direction),
+        static_cast<float>(texture_index),
 
         occlusion[0],
         occlusion[1],
@@ -32,7 +32,7 @@ void InstancedMesh::addQuadFace(const glm::vec3& position, float width, float he
 }
 
 void InstancedMesh::preallocate(size_t size, FaceType type){
-    //if(size != 0) instance_data.at(type)->Resize((size + 1) * instance_data_size);
+    if(size != 0 && size > instance_data.at(type)->Size()) instance_data.at(type)->Resize((size + 1) * instance_data_size);
 }
 const MultilevelPool<float>::List& InstancedMesh::getInstanceData(FaceType type){
     return *instance_data[type];
@@ -118,7 +118,7 @@ void InstancedMeshLoader::LoadedMesh::addDrawCall(const glm::ivec3& position){
     creator.addDrawCall(*this);
 }
 void InstancedMeshLoader::renderMesh(LoadedMesh& mesh){
-    for(int i = 0;i < distinct_face_count;i++){
+    for(size_t i = 0;i < distinct_face_count;i++){
         render_information[i].vao.bind();
 
         size_t instances_total = mesh.loaded_regions[i]->size  / InstancedMesh::instance_data_size;
@@ -152,7 +152,7 @@ std::unique_ptr<LoadedMeshInterface> InstancedMeshLoader::loadMesh(MeshInterface
     auto& mesh = *mesh_ptr;
     auto loaded_mesh = std::make_unique<InstancedMeshLoader::LoadedMesh>(*this);
 
-    for(int i = 0;i < distinct_face_count;i++){
+    for(size_t i = 0;i < distinct_face_count;i++){
         auto& component_data = mesh.getInstanceData(static_cast<InstancedMesh::FaceType>(i));
         if(component_data.Size() == 0){
             loaded_mesh->has_region[i] = false;
@@ -171,7 +171,7 @@ std::unique_ptr<LoadedMeshInterface> InstancedMeshLoader::loadMesh(MeshInterface
 }
 
 void InstancedMeshLoader::addDrawCall(LoadedMesh& mesh){
-    for(int i = 0;i < distinct_face_count;i++){
+    for(size_t i = 0;i < distinct_face_count;i++){
         if(!mesh.has_region[i]) continue;
         
         size_t instances_total = mesh.loaded_regions[i]->size  / InstancedMesh::instance_data_size;
@@ -179,9 +179,9 @@ void InstancedMeshLoader::addDrawCall(LoadedMesh& mesh){
 
         GLDrawCallBuffer::DrawCommand draw_call = {
             4, // Count
-            instances_total, // Number of instances to draw,
-            4 * i, // First vertex
-            instance_offset // Instance offset
+            static_cast<GLuint>(instances_total), // Number of instances to draw,
+            4 * static_cast<GLuint>(i), // First vertex
+            static_cast<GLuint>(instance_offset) // Instance offset
         };
 
         render_information[i].draw_call_buffer.push(draw_call);
@@ -193,7 +193,7 @@ void InstancedMeshLoader::addDrawCall(LoadedMesh& mesh){
 }
 
 void InstancedMeshLoader::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new_mesh){
-    for(int i = 0;i < distinct_face_count;i++){
+    for(size_t i = 0;i < distinct_face_count;i++){
         auto& component_data = new_mesh.getInstanceData(static_cast<InstancedMesh::FaceType>(i));
         if(component_data.Size() == 0){
             loaded_mesh.has_region[i] = false;
@@ -212,7 +212,7 @@ void InstancedMeshLoader::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new
 }
 
 void InstancedMeshLoader::removeMesh(LoadedMesh& mesh){
-    for(int i = 0;i < distinct_face_count;i++){
+    for(size_t i = 0;i < distinct_face_count;i++){
         if(!mesh.has_region[i]) continue;
 
         render_information[i].instance_data.remove(mesh.loaded_regions[i]);
@@ -231,7 +231,7 @@ void InstancedMeshLoader::render(){
         info.draw_call_buffer.bind();
 
         while(true){
-            for(int i = 0; i < info.draw_call_buffer.count();i += max_draw_calls) 
+            for(size_t i = 0; i < info.draw_call_buffer.count();i += max_draw_calls) 
                 glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, (const void*)(i * sizeof(GLDrawCallBuffer::DrawCommand)), std::min(static_cast<uint>(info.draw_call_buffer.count() - i), max_draw_calls), sizeof(GLDrawCallBuffer::DrawCommand));
 
             GLenum error = glGetError();

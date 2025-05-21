@@ -68,7 +68,7 @@ std::unique_ptr<LoadedMeshInterface> PooledMeshLoader::loadMesh(MeshInterface* m
 
     auto loaded_mesh = std::make_unique<PooledMeshLoader::LoadedMesh>(*this);
 
-    for(int i = 0;i < distinct_face_count;i++){
+    for(size_t i = 0;i < distinct_face_count;i++){
         auto type = static_cast<PooledMesh::FaceType>(i);
 
         auto& component_data = mesh.GetData().Get(type);
@@ -87,7 +87,7 @@ std::unique_ptr<LoadedMeshInterface> PooledMeshLoader::loadMesh(MeshInterface* m
 }
 
 void PooledMeshLoader::updateMesh(LoadedMesh& loaded_mesh, PooledMesh& new_mesh){
-    for(int i = 0;i < distinct_face_count;i++){
+    for(size_t i = 0;i < distinct_face_count;i++){
         auto& component_data = new_mesh.GetData().Get(static_cast<PooledMesh::FaceType>(i));
         if(component_data.size() == 0){
             loaded_mesh.has_region[i] = false;
@@ -112,7 +112,7 @@ void PooledMeshLoader::addDrawCall(LoadedMesh& mesh, const glm::ivec3& position)
 
     updated_world_positions = true;
 
-    for(int i = 0;i < distinct_face_count;i++){
+    for(size_t i = 0;i < distinct_face_count;i++){
         auto& info = render_information[i];
 
         if(!mesh.has_region[i]){ // Maintain alignment
@@ -143,9 +143,9 @@ void PooledMeshLoader::addDrawCall(LoadedMesh& mesh, const glm::ivec3& position)
         }
         else{
             GLDrawCallBuffer::DrawCommand draw_call = {
-                instances_total * 6, // CountPin
+                static_cast<GLuint>(instances_total) * 6, // CountPin
                 1, // Number of instances to draw,
-                instance_offset * 6, // First vertex
+                static_cast<GLuint>(instance_offset) * 6, // First vertex
                 0 // Instance offset
             };
     
@@ -155,7 +155,7 @@ void PooledMeshLoader::addDrawCall(LoadedMesh& mesh, const glm::ivec3& position)
 }
 
 void PooledMeshLoader::removeMesh(LoadedMesh& mesh){
-    for(int i = 0;i < distinct_face_count;i++){
+    for(size_t i = 0;i < distinct_face_count;i++){
         render_information[i].mesh_data.remove(mesh.loaded_regions[i]);
     }
 }
@@ -173,7 +173,7 @@ void PooledMeshLoader::render(){
 
     world_position_buffer.bindBase(0);
 
-    for(int i = 0;i < distinct_face_count;i++){
+    for(size_t i = 0;i < distinct_face_count;i++){
         auto& info = render_information[i];
 
         info.mesh_data.getBuffer().bindBase(1);
