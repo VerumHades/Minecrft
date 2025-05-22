@@ -146,13 +146,6 @@ std::vector<ChunkMeshGenerator::Face>& ChunkMeshGenerator::greedyMeshPlane(BitPl
 
     return greedy_mesh_plane_out;
 }
-/*
-    TODO:
-
-        Haven't broken anything yet
-
-
-*/
 
 std::tuple<ChunkMeshGenerator::OccludedPlane, bool, ChunkMeshGenerator::OccludedPlane, bool> ChunkMeshGenerator::segregatePlane(
     OccludedPlane& source_plane, OcclusionPlane& occlusion_plane, std::array<bool, 4> affects, glm::ivec2 lookup_offset) {
@@ -390,7 +383,7 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition,
         // ones are created
         auto& solidField   = *chunk->getSolidField().getSimplifiedWithNone(simplification_level);
         auto* solidRotated = solidField.getTransposed();
-        // 64 planes internale 65th external
+        // 64 planes internal 65th external
 
         auto slock  = solidField.Guard().Shared();
         auto srlock = solidRotated->Guard().Shared();
@@ -418,6 +411,11 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition,
     BitPlane planeZforward  = {};
     BitPlane planeZbackward = {};
 
+    /**
+     * @brief Generate faces for each block type
+     * 
+     * @param field_layer 
+     */
     for (auto& field_layer : chunk->getLayers()) {
         auto& [type, block, _field] = field_layer;
 
@@ -453,6 +451,10 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition,
             continue;
         }
 
+        /**
+         * @brief For each layer create planes from every row for potential faces then mesh them
+         * 
+         */
         for (int layer = 0; layer < size - 1; layer++) {
             for (int row = 0; row < size; row++) {
                 std::tie(planeXforward[row], planeXbackward[row]) = ProcessFaceRow(
@@ -568,6 +570,11 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition,
     auto* solidRotated      = solidField.getTransposed();
     auto* nextZSolidRotated = nextZ->getSolidField().getSimplifiedWithNone(nextZ->current_simplification)->getTransposed();
 
+    /**
+     * @brief Mesh three of the neighbouring layers, same logic just across chunks
+     * 
+     * @param fullAgregate 
+     */
     for (auto& type : fullAgregate) {
         auto* definition = BlockRegistry::get().getPrototype(type);
         if (!definition || definition->render_type != BlockRegistry::FULL_BLOCK)

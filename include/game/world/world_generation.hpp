@@ -25,6 +25,10 @@
 class Chunk;
 class Terrain;
 
+/**
+ * @brief A world generation implementation with perlin 2D noise and biome generation
+ * 
+ */
 class WorldGenerator : public Generator {
   public:
     struct Heightmap {
@@ -56,6 +60,12 @@ class WorldGenerator : public Generator {
 
     std::shared_ptr<Biome> default_biome;
 
+    /**
+     * @brief Get relevant biome for a given position
+     * 
+     * @param position 
+     * @return Biome* 
+     */
     Biome* GetBiomeFor(const glm::ivec3& position);
 
     NoiseLayer& AddNoiseLayer(const std::string& name);
@@ -79,13 +89,41 @@ class WorldGenerator : public Generator {
     WorldGenerator();
     ~WorldGenerator() {}
 
+    /**
+     * @brief Pregenerates heightmaps for a given range and position
+     * 
+     * @param around 
+     * @param distance 
+     */
     void prepareHeightMaps(glm::ivec3 around, int distance);
 
+    /**
+     * @brief Generates a chunk for a given position
+     * 
+     * @param chunk 
+     * @param position a chunk position, not a world position
+     */
     void GenerateTerrainChunk(Chunk* chunk, glm::ivec3 position) override;
+
+    /**
+     * @brief Returns noise height at a given point
+     * 
+     * @param position 
+     * @return int 
+     */
     int GetHeightAt(const glm::vec3 position) override;
+
     void Clear() override;
     void SetSeed(int seed) override;
 
+    /**
+     * @brief Generates a topdown preview of the world as an image
+     * 
+     * @param width 
+     * @param height 
+     * @param step block to pixel scale
+     * @return Image 
+     */
     Image createPreview(int width, int height, float step = 1);
 };
 

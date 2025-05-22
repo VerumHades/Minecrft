@@ -2,6 +2,10 @@
 #include <rendering/opengl/framebuffer.hpp>
 #include <rendering/opengl/shaders.hpp>
 
+/**
+ * @brief A special frame buffer
+ * 
+ */
 class GBuffer: public GLFramebuffer{
     public:
         GBuffer(int width, int height);

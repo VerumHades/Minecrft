@@ -11,6 +11,10 @@
 
 class SceneManager;
 
+/**
+ * @brief A generic scene
+ * 
+ */
 class Scene{
     protected:
         UIWindowIdentifier windowID;
@@ -44,6 +48,10 @@ class Scene{
         friend class SceneManager;
 };
 
+/**
+ * @brief A manager that hold all existing scenes
+ * 
+ */
 class SceneManager{ 
     private:
         std::string currentScene = "internal_default";

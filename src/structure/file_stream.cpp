@@ -12,8 +12,10 @@ bool FileStream::Read(size_t offset, size_t size, byte* buffer) {
 
     stream.seekg(offset, std::ios::beg);
     stream.read(reinterpret_cast<char*>(buffer), size);
-    if (stream.fail())
+    if (stream.fail()){
+        LogError("Failed to read from filestream: {} Error: {}", this->path.string(), strerror(errno));
         return false;
+    }
 
 
     return true;
@@ -27,8 +29,10 @@ bool FileStream::Write(size_t offset, size_t size, const byte* buffer) {
     if (offset + size > filesize)
         filesize = offset + size;
 
-    if (stream.fail())
+    if (stream.fail()){
+        LogError("Failed to write to filestream: {} Error: {}", this->path.string(), strerror(errno));
         return false;
+    }
 
     return true;
 }
@@ -52,14 +56,17 @@ bool FileStream::Open(const fs::path& path) {
         fs::path dir_path = path.parent_path();
 
         if (!dir_path.empty() && !fs::exists(dir_path)) {
-            if (!fs::create_directories(dir_path))
-                return false;
+            if (!fs::create_directories(dir_path)){
+                LogError("Failed to create path for: {} Error: {}", this->path.string(), strerror(errno));
+                throw std::logic_error("Failed to create required path.");
+            }
         }
 
         if (!fs::exists(path)) {
             std::ofstream file(path, std::ios::binary);
             if (!file.is_open()) {
-                std::terminate();
+                LogError("Failed to create path for: {} Error: {}", this->path.string(), strerror(errno));
+                throw std::logic_error("Failed to create required path.");
             }
             file.close();
             newlyCreated = true;
@@ -69,8 +76,10 @@ bool FileStream::Open(const fs::path& path) {
         stream.seekg(0, std::ios::end); // Move to the end of the file
         filesize = stream.tellg();
 
-        if (!stream.is_open())
+        if (!stream.is_open()){
+            LogError("Failed to open filestream: {} Error: {}", this->path.string(), strerror(errno));
             return false;
+        }
     }
 
     if (newlyCreated && init)

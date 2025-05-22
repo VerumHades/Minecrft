@@ -16,6 +16,11 @@ enum ControllActions{
     SPRINT
 };
 
+/**
+ * @brief A class to abbreviate keybindings
+ * 
+ * @tparam T 
+ */
 template <typename T>
 class KeyInputManager{
     private:

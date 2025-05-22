@@ -71,6 +71,12 @@ template <typename T, int type>
 class GLBuffer: public GLBufferWrapper {
 #else
 
+/**
+ * @brief A generic opengl buffer class
+ * 
+ * @tparam T 
+ * @tparam type 
+ */
 template <typename T, int type>
 class GLBuffer {
 #endif
@@ -122,9 +128,12 @@ class GLBuffer {
         }
 
 
-        /*
-            Creates the actual buffer of some size
-        */
+        /**
+         * @brief Creates the actual buffer of some size
+         * 
+         * @param size 
+         * @param data 
+         */
         virtual void initialize(size_t size, T* data = nullptr){
             if(size == 0) return;
 
@@ -135,9 +144,15 @@ class GLBuffer {
             initialized = true;
         }
 
-        /*
-            Inserts data into a buffer, needs to be initialized
-        */
+        /**
+         * @brief Inserts data into a buffer, needs to be initialized
+         * 
+         * @param at 
+         * @param size 
+         * @param data 
+         * @return true 
+         * @return false 
+         */
         virtual bool insert(size_t at, size_t size, T* data){
             if(!initialized) throw std::runtime_error("Inserting data into an uninitialized buffer.");
 
@@ -149,18 +164,27 @@ class GLBuffer {
             return true;
         }
 
-        /*
-            Inserts or resizes to fit the content
-        */
+        /**
+         * @brief Inserts or resizes to fit the content
+         * 
+         * @param data 
+         * @param size 
+         * @return true 
+         * @return false 
+         */
         bool insert_or_resize(T* data, size_t size){
             if(!initialized || buffer_size < size) initialize(size, data);
             else return insert(0,size,data);
             return true;
         }
 
-        /*
-            Writes the buffers contents into the destination
-        */
+        /**
+         * @brief Writes the buffers contents into the destination
+         * 
+         * @param destination 
+         * @param size 
+         * @param offset 
+         */
         void get(T* destination, size_t size, size_t offset = 0) const{
             if(!initialized) throw std::runtime_error("Getting data from an uninitialized buffer.");
 
@@ -197,6 +221,12 @@ class GLBuffer {
         }
 };
 
+/**
+ * @brief A double buffer based on the  generic buffer
+ * 
+ * @tparam T 
+ * @tparam type 
+ */
 template <typename T, int type>
 class  GLDoubleBuffer{
     private:
@@ -214,7 +244,12 @@ class  GLDoubleBuffer{
         }
 };
 
-
+/**
+ * @brief A buffer that uses an allocated list
+ * 
+ * @tparam T 
+ * @tparam type 
+ */
 template  <typename T, int type>
 class GLAllocatedBuffer: public GLBuffer<T,type>{
     private:
@@ -305,6 +340,11 @@ class GLAllocatedBuffer: public GLBuffer<T,type>{
         const auto& getTakenBlocks() const {return allocator.getTakenBlocks();}
 };
 
+/**
+ * @brief A persistent buffer mapped to memory
+ * 
+ * @tparam T 
+ */
 template <typename T>
 class GLPersistentBuffer{
     private:
@@ -335,6 +375,10 @@ class GLPersistentBuffer{
 
 };
 
+/**
+ * @brief A draw call specific buffer, configured for array drawing
+ * 
+ */
 class GLDrawCallBuffer{
     public:
         struct DrawCommand{
@@ -367,9 +411,12 @@ class GLDrawCallBuffer{
         size_t count() { return draw_commands.size(); };
 };
 
-/*
-    CoherentList with a opengl buffer attached, flushes its contents into it
-*/
+/**
+ * @brief CoherentList with a opengl buffer attached, flushes its contents into it
+ * 
+ * @tparam T 
+ * @tparam type 
+ */
 template <typename T, int type>
 class GLCoherentBuffer: public CoherentList<T> {
     private:
@@ -391,6 +438,10 @@ enum GLVertexValueType{
     VEC4 = 4
 };
 
+/**
+ * @brief A format for openg vertices
+ * 
+ */
 class GLVertexFormat{
     private:
         std::vector<GLVertexValueType> bindings = {};
@@ -403,9 +454,10 @@ class GLVertexFormat{
         uint getVertexSize(){return totalSize;}
 };
 
-/*
-    A class to manage the vertex array object and its format
-*/
+/**
+ * @brief A class to manage the vertex array object and its format, and associated buffers
+ * 
+ */
 class GLVertexArray{
     private:
         uint vao_id = 0;
@@ -442,13 +494,27 @@ class GLVertexArray{
             return *this;
         }
 
+        /**
+         * @brief Attach a buffer
+         * 
+         * @param buffer_pointer 
+         * @param format 
+         * @param index 
+         * @return size_t 
+         */
         size_t attachBuffer(GLBuffer<float, GL_ARRAY_BUFFER>* buffer_pointer, GLVertexFormat format, int index = -1);
 
+        /**
+         * @brief Attach an index buffer
+         * 
+         * @param buffer 
+         */
         void attachBuffer(GLBuffer<uint, GL_ELEMENT_ARRAY_BUFFER>* buffer);
 
-        /*
-            Updates buffers, bindings locations are based on how the buffers were attached sequentialy
-        */
+        /**
+         * @brief Updates buffers, bindings locations are based on how the buffers were attached sequentialy or forced
+         * 
+         */
         void update();
         void bind() const;
         void unbind() const;

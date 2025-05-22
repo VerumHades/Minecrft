@@ -5,6 +5,10 @@
 
 class ByteArray;
 
+/**
+ * @brief A rectangular collider
+ * 
+ */
 struct RectangularCollider {
     float x, y, z;
     float width, height, depth;

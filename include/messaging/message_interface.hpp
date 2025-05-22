@@ -9,6 +9,10 @@ struct Message {
     size_t length;
 };
 
+/**
+ * @brief An abstract class for future multiplayer implementation
+ * 
+ */
 class MessageInterface {
     public:
         /*

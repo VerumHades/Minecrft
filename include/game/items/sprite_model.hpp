@@ -11,6 +11,10 @@
 #include <bitset>
 #include <glm/glm.hpp>
 
+/**
+ * @brief A model that is dynamically generated based on an items sprite
+ * 
+ */
 class SpriteModel: public Model{
     private:
         float scale = 1.0f;

@@ -25,6 +25,11 @@ class UniformBase{
         virtual std::string getName() = 0;
 };
 
+/**
+ * @brief An actual uniform instance
+ * 
+ * @tparam T 
+ */
 template <typename T>
 class FunctionalUniform: public UniformBase{
     private:
@@ -83,6 +88,10 @@ class FunctionalUniform: public UniformBase{
         }
 };
 
+/**
+ * @brief A background class that manages linking of uniforms to shaders that use them
+ * 
+ */
 class ShaderUniformLinker{
     private:
         std::unordered_set<std::string> ignored_uniforms; // Usually uniforms reserver for texture bindings
@@ -149,6 +158,11 @@ class ShaderUniformLinker{
         static ShaderUniformLinker& get();
 };
 
+/**
+ * @brief A reference to a uniform instance that one can manipulate freely
+ * 
+ * @tparam T 
+ */
 template <typename T>
 class Uniform{
     private:
@@ -182,6 +196,10 @@ class Uniform{
         }
 };
 
+/**
+ * @brief A shader program wrapper
+ * 
+ */
 static int programInUse = -1;
 class ShaderProgram{
     private:
@@ -225,7 +243,7 @@ class ShaderProgram{
         }
 
         static std::string getSource(const std::string& path);
-
+        
         void setSamplerSlot(std::string name, int slot){
             use();
             int location = getUniformLocation(name);

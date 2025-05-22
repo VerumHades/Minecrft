@@ -19,6 +19,10 @@ struct Volume
 
 #include <rendering/opengl/shaders.hpp>
 
+/**
+ * @brief A generic camera class
+ * 
+ */
 class Camera{
     public:
         virtual void setModelPosition(const glm::vec3& position) = 0;
@@ -27,6 +31,10 @@ class Camera{
         virtual bool isVisible(Volume& volume) = 0;
 };
 
+/**
+ * @brief A class that manages a perspective player camera
+ * 
+ */
 class PerspectiveCamera: public Camera{
     private:
         Uniform<glm::mat4> projectionMatrix;
@@ -70,6 +78,13 @@ class PerspectiveCamera: public Camera{
         void setPosition(glm::vec3 pos);
         void setRotation(float pitch, float yaw);
 
+        /**
+         * @brief Check whether a volume is visible in the cameras view frustum
+         * 
+         * @param volume 
+         * @return true 
+         * @return false 
+         */
         bool isVisible(Volume& volume){
             return volume.isOnFrustum(*this);
         }
@@ -90,6 +105,10 @@ class PerspectiveCamera: public Camera{
         float getYaw() const {return yaw;};
 };
 
+/**
+ * @brief A camera used for shaddow mapping that records into a depth buffer
+ * 
+ */
 class DepthCamera: public Camera{
     private:
         ShaderProgram program = ShaderProgram("resources/shaders/graphical/depth.vs","resources/shaders/graphical/depth.fs");

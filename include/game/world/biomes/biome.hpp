@@ -10,6 +10,10 @@ struct StructurePlacement {
     std::shared_ptr<Structure> structure;
 };
 
+/**
+ * @brief A struct to represent a biome and its spawn  conditions
+ * 
+ */
 struct Biome {
     Interval<float> temperature;
     Interval<float> humidity;

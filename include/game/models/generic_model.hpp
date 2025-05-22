@@ -9,6 +9,10 @@
 
 #include <path_config.hpp>
 
+/**
+ * @brief Class for handling generic external models
+ * 
+ */
 class GenericModel: public Model{
     private:
         std::string directory;

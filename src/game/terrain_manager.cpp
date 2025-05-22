@@ -86,10 +86,12 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
                     terrain.addChunk(chunkPosition, world_saver.Load(chunkPosition));
                     continue;
                 }
-                chunk                         = terrain.createEmptyChunk(chunkPosition);
-                chunk->current_simplification = level;
+                auto uchunk = std::make_unique<Chunk>();
+                uchunk->current_simplification = level;
+                uchunk->setWorldPosition(chunkPosition);
 
-                world_generator->GenerateTerrainChunk(chunk, chunkPosition);
+                world_generator->GenerateTerrainChunk(uchunk.get(), chunkPosition);
+                terrain.addChunk(chunkPosition, std::move(uchunk));
             }
 
             {
@@ -138,6 +140,18 @@ bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance) {
     around_y              = around.y;
     around_z              = around.z;
     this->render_distance = render_distance;
+
+    /*if(mesh_loader->DrawFailed()){
+        service_manager->StopAll();
+
+        create_mesh = []() { return std::make_unique<PooledMesh>(); };
+        reset_loader = [this]() {
+            mesh_loader = std::make_unique<PooledMeshLoader>();
+            mesh_registry.SetMeshLoader(mesh_loader.get());
+        };
+
+        reset_loader();
+    }*/
 
     service_manager->StartAll(true);
 

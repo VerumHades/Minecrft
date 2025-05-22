@@ -206,11 +206,3 @@ void GameState::updateEntities(float deltatime) {
         ++i;
     }
 }
-
-/*void GameState::save(){
-    for(auto& [position,chunk]: chunks){
-        if(!chunk->wasAltered()) continue;
-        chunk->resetAlteredFlag();
-        stream->save(*chunk);
-    }
-}*/

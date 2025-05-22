@@ -25,6 +25,10 @@ class Item;
 using ItemRef = std::shared_ptr<Item>;
 #define NO_ITEM nullptr;
 
+/**
+ * @brief A prototype for an item and its display and behaviour
+ * 
+ */
 class ItemPrototype{
     public:
         struct ToolEffectiveness{
@@ -65,6 +69,10 @@ class ItemPrototype{
         const std::vector<ToolEffectiveness>& getToolEffectiveness() {return effective_againist_materials;}
 };
 
+/**
+ * @brief An instance of an item prototype
+ * 
+ */
 class Item{
     private:
         ItemPrototype* prototype = nullptr;
@@ -81,6 +89,12 @@ class Item{
         // DO NOT USE
         Item(ItemPrototype* prototype_ptr): prototype(prototype_ptr) {}
 
+        /**
+         * @brief Create an item with prototype by name
+         * 
+         * @param name 
+         * @return ItemRef 
+         */
         static ItemRef Create(const std::string& name);
         static ItemRef Create(ItemPrototype* prototype);
 
@@ -89,6 +103,10 @@ class Item{
         void setQuantity(int number) {quantity = number;}
 };
 
+/**
+ * @brief Registers all existing item prototypes
+ * 
+ */
 class ItemRegistry{
     private:
         std::unordered_map<std::string, std::unique_ptr<ItemPrototype>> prototypes = {};
@@ -98,7 +116,21 @@ class ItemRegistry{
         ItemPrototype* addPrototype(ItemPrototype prototype);
         ItemPrototype* getPrototype(const std::string& name);
 
+        /**
+         * @brief Create an item prototype for a block prototype
+         * 
+         * @param prototype 
+         * @return ItemPrototype* 
+         */
         ItemPrototype* createPrototypeForBlock(const BlockRegistry::BlockPrototype* prototype);
+
+        /**
+         * @brief Check if a prototype exists
+         * 
+         * @param name 
+         * @return true 
+         * @return false 
+         */
         bool prototypeExists(const std::string& name);
 
         static ItemRegistry& get();
@@ -107,6 +139,10 @@ class ItemRegistry{
         const std::unordered_map<std::string, std::unique_ptr<ItemPrototype>>& GetPrototypes() {return prototypes; }
 };
 
+/**
+ * @brief An item slot that holds an item and provides convinient functions associated, has no display
+ * 
+ */
 class LogicalItemSlot{
     private:
         ItemRef item;
@@ -118,6 +154,13 @@ class LogicalItemSlot{
         bool moveItemTo(LogicalItemSlot& destination, int quantity = -1);
         bool swap(LogicalItemSlot& slot);
 
+        /**
+         * @brief Adds an item if possible
+         * 
+         * @param item 
+         * @return true added
+         * @return false not added
+         */
         bool addItem(ItemRef item){
             LogicalItemSlot slot;
             slot.setItem(item);
@@ -125,25 +168,37 @@ class LogicalItemSlot{
             return takeItemFrom(slot);
         }
 
+        /**
+         * @brief Destory the held item
+         * 
+         */
         void clear();
         bool hasItem() {return getItem() != nullptr; }
 
-        /*
-            Decreses the item amount and returns the count removed,
-            automatically clears and manages the slot
-        */
+        /**
+         * @brief  Decreses the item amount and returns the count removed
+         * 
+         * @param number 
+         * @return int 
+         */
         int decreaseQuantity(int number);
 
-        /*
-            Takes a portion of the items in the slot and returns an id of an item that has exactly that quantity or less if there was not enough,
-            automatically clears and manages the slot
-        */
+        /**
+         * @brief Takes a portion of the items in the slot and returns an id of an item that has exactly that quantity or less if there was not enough.
+         * 
+         * @param quantity quantity taken
+         * @return ItemRef 
+         */
         ItemRef getPortion(int quantity = -1);
 
         ItemRef getItem() {return item;}
         void setItem(ItemRef item) {this->item = item;}
 };
 
+/**
+ * @brief A larger 2D set of logical item slots
+ * 
+ */
 class LogicalItemInventory{
     private:
         std::vector<LogicalItemSlot> slots{};
@@ -160,7 +215,7 @@ class LogicalItemInventory{
 
             return &slots[x + y * slots_horizontaly];
         }
-
+        
         bool setItem(int x, int y, ItemRef item) {
             auto* slot = getSlot(x,y);
             if(!slot) return false;
@@ -183,6 +238,10 @@ class LogicalItemInventory{
         std::vector<LogicalItemSlot>& getItemSlots() {return slots;};
 };
 
+/**
+ * @brief Special entity data for a dropped item
+ * 
+ */
 class DroppedItem: public EntityData{
     private:
         ItemRef item;
@@ -195,7 +254,13 @@ class DroppedItem: public EntityData{
         ItemRef getItem(){return item;}
 
         void setup(Entity* entity) override;
-
+        /**
+         * @brief Create a dropped item entity that holds the set item
+         * 
+         * @param position 
+         * @param item 
+         * @return Entity 
+         */
         static Entity create(glm::vec3 position, ItemRef item){
             if(!item) return {};
 

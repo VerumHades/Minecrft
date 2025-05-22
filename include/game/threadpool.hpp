@@ -7,6 +7,10 @@
 #include <memory>
 #include <iostream>
 
+/**
+ * @brief A thread that can is put to sleep waiting for more work
+ * 
+ */
 class SleepyThread{
     private:
         std::thread thread;
@@ -24,5 +28,10 @@ class SleepyThread{
         ~SleepyThread();
 
         std::function<void(void)> onAvailable;
+        /**
+         * @brief Restart the thread with new work
+         * 
+         * @param func 
+         */
         void awake(const std::function<void(void)>& func);
 };

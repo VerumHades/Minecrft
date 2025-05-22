@@ -9,7 +9,7 @@
 
 #include <glm/glm.hpp>
 #include <coherency.hpp>
-
+#include <array>
 /*
     Vertex format:
 

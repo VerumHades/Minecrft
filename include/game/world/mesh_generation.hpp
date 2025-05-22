@@ -14,6 +14,10 @@
 #include <bit>
 #include <atomic>
 
+/**
+ * @brief A chunk that uses algorithms to generate meshes
+ * 
+ */
 class ChunkMeshGenerator {
   public:
     struct Face {
@@ -22,6 +26,7 @@ class ChunkMeshGenerator {
         int width;
         int height;
     };
+
     struct OccludedPlane {
         std::array<float, 4> occlusion = {0, 0, 0, 0};
         BitPlane<64> plane;
@@ -60,19 +65,45 @@ class ChunkMeshGenerator {
     Terrain* world = nullptr; // Points to the world relative to which you generate meshes, doesnt need to be set
 
     void addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<MeshInterface> mesh);
-    /*
-        Creates separate planes from one plane with occlusion values
-    */
+    
+    /**
+     * @brief Creates separate planes from one plane with occlusion values
+     * 
+     * @param source_plane 
+     * @param occlusion_plane 
+     * @return std::vector<OccludedPlane>& 
+     */
     std::vector<OccludedPlane>& calculatePlaneAmbientOcclusion(BitPlane<64>& source_plane, OcclusionPlane& occlusion_plane);
 
-    /*
-        Returns two plains separated by the occlusion at the offset and information whether they are empty
-    */
+    /**
+     * @brief Returns two plains separated by the occlusion at the offset and information whether they are empty
+     * 
+     * Separates a plane to two planes, one plane of bits that are affected by the occlusion plane and the other that isnt,
+     * Doing this enough times separates a plane into all possible occlusion options finds each individual face with the same occlusion that can be greedy meshed later.
+     * 
+     * @param source_plane 
+     * @param occlusion_plane 
+     * @param affects 
+     * @param lookup_offset 
+     * @return std::tuple<OccludedPlane, bool, OccludedPlane, bool> 
+     */
     std::tuple<OccludedPlane, bool, OccludedPlane, bool> segregatePlane(OccludedPlane& source_plane,
                                                                         OcclusionPlane& occlusion_plane,
                                                                         std::array<bool, 4> affects,
                                                                         glm::ivec2 lookup_offset);
 
+    /**
+     * @brief Takes a plane, segregates occlusion and for each individual plane greedymeshes and inserts faces into a mesh
+     * 
+     * @param source_plane 
+     * @param occlusion_plane 
+     * @param face_type 
+     * @param direction 
+     * @param type 
+     * @param mesh 
+     * @param world_position 
+     * @param layer 
+     */
     void proccessOccludedFaces(BitPlane<64>& source_plane,
                                OcclusionPlane& occlusion_plane,
 
@@ -89,18 +120,29 @@ class ChunkMeshGenerator {
     ChunkMeshGenerator() {}
     bool loadMeshFromQueue(RegionCuller& buffer, size_t limit = 1);
 
-    /*
-        When the mesh is generated sends it to the worlds mesh loading queue,
-
-        ISNT RESPONSIBLE FOR ACTUALLY UPLOADING THE MESH
-    */
+    /**
+     * @brief When the mesh is generated sends it to the worlds mesh loading queue.
+     * 
+     * @param chunk 
+     * @param mesh 
+     * @param simplification_level 
+     * @return true 
+     * @return false 
+     */
     bool syncGenerateAsyncUploadMesh(Chunk* chunk,
                                      std::unique_ptr<MeshInterface> mesh,
                                      BitField3D::SimplificationLevel simplification_level);
 
-    /*
-        Generates and uploads the newly generated chunk mesh right away
-    */
+    /**
+     * @brief Generates and uploads the newly generated chunk mesh right away
+     * 
+     * @param chunk 
+     * @param buffer 
+     * @param mesh 
+     * @param simplification_level 
+     * @return true 
+     * @return false 
+     */
     bool syncGenerateSyncUploadMesh(Chunk* chunk,
                                     RegionCuller& buffer,
                                     std::unique_ptr<MeshInterface> mesh,

@@ -8,6 +8,10 @@
 namespace fs = std::filesystem;
 using path   = fs::path;
 
+/**
+ * @brief A configuration class with some preset paths for saving
+ * 
+ */
 class Paths {
   public:
     enum Configured { GAME_SAVES, GAME_STRUCTURES, LOG_PATH };
@@ -23,27 +27,25 @@ class Paths {
         return instance;
     }
 
-    path* GetSavePath() {
+    std::optional<fs::path> GetSavePath() {
         if (!save_path) {
-#ifdef WINDOWS_PACKAGED_BUILD
-            const char* appData     = std::getenv("LOCALAPPDATA");
             const char* userProfile = std::getenv("USERPROFILE");
 
-            if (appData)
-                save_path = path(appData) / "Majnkraft";
-            else if (userProfile)
-                save_path = path(userProfile) / "AppData" / "Local" / "Majnkraft";
+            if (userProfile) {
+                save_path = fs::path(userProfile) / "AppData" / "Local" / "Majnkraft";
+            } else {
+                // Fallback if USERPROFILE is not set
+                save_path = fs::path("appdata");
+            }
 
-#else
-            save_path = path("appdata");
-#endif
-
-            if (!fs::exists(save_path.value()) && !fs::create_directories(save_path.value()))
-                return nullptr;
+            // Try to create the directory if it doesn't exist
+            if (!fs::exists(save_path.value()) && !fs::create_directories(save_path.value())) {
+                return std::nullopt;
+            }
         }
 
-        return &save_path.value();
-    };
+        return save_path;
+    }
 
   public:
     std::optional<path> RequireDirectory(const path& path) {

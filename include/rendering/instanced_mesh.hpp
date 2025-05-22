@@ -14,6 +14,10 @@
 #include <structure/multilevel_pool.hpp>
 #include <memory>
 
+/**
+ * @brief A mesh that holds faces for instancing
+ * 
+ */
 class InstancedMesh: public MeshInterface{
     public:
         const static size_t instance_data_size = 12;
@@ -30,6 +34,10 @@ class InstancedMesh: public MeshInterface{
         void shrink() override;
 };
 
+/**
+ * @brief An aggregate loader for instanced meshes that manages actual opengl buffers and is able to draw them
+ * 
+ */
 class InstancedMeshLoader: public MeshLoaderInterface{
     public:
         class LoadedMesh: public LoadedMeshInterface{
@@ -55,10 +63,10 @@ class InstancedMeshLoader: public MeshLoaderInterface{
         
     private:
         static const size_t distinct_face_count = 4;
-        bool draw_failed = false;
+        bool draw_failed = true;
         bool updated = false;
 
-        uint max_draw_calls = 100000;
+        uint max_draw_calls = pow(2,16);
 
         ShaderProgram shared_program = ShaderProgram("resources/shaders/terrain.vs","resources/shaders/terrain.fs");
 
@@ -79,9 +87,34 @@ class InstancedMeshLoader: public MeshLoaderInterface{
     public:
         InstancedMeshLoader();
 
+        /**
+         * @brief Returns a loaded mesh that will be automatically disposed of on destruction
+         * 
+         * @param mesh 
+         * @return std::unique_ptr<LoadedMeshInterface> 
+         */
         std::unique_ptr<LoadedMeshInterface> loadMesh(MeshInterface* mesh) override;
+        /**
+         * @brief render all loaded meshes
+         * 
+         */
         void render() override;
+        /**
+         * @brief Clear all draw calls
+         * 
+         */
         void clearDrawCalls() override;
+        /**
+         * @brief Send off all draw calls to the opengl buffer
+         * 
+         */
         void flushDrawCalls() override;
+
+        /**
+         * @brief Check whether last draw failed
+         * 
+         * @return true 
+         * @return false 
+         */
         bool DrawFailed() override { return draw_failed; }
 };

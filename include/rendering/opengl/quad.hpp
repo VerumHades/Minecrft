@@ -3,6 +3,10 @@
 #include <rendering/opengl/buffer.hpp>
 #include <array>
 
+/**
+ * @brief A simple quad render for post processing
+ * 
+ */
 class GLFullscreenQuad{
     private:
         GLVertexArray vao = {};

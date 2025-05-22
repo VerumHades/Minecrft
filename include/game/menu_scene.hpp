@@ -9,6 +9,10 @@
 
 #include <cctype> // Needed for std::isdigit
 
+/**
+ * @brief A scene for the main menu
+ * 
+ */
 class MenuScene : public Scene {
   private:
     int preview_zoom = 5;

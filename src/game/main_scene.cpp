@@ -405,6 +405,7 @@ void MainScene::physicsUpdate() {
 
         if (deltatime < tickTime)
             continue;
+
         last_tick_time = current;
 
         glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
@@ -415,6 +416,9 @@ void MainScene::physicsUpdate() {
             lastCamWorldPosition   = camWorldPosition;
             update_render_distance = false;
         }
+
+        if (!game_state->GetTerrain().getChunk(camWorldPosition))
+            continue;
 
         glm::vec3 camDir        = glm::normalize(camera.getDirection());
         glm::vec3 horizontalDir = glm::normalize(glm::vec3(camDir.x, 0, camDir.z));
@@ -471,9 +475,6 @@ void MainScene::physicsUpdate() {
             if (inputManager.isActive(MOVE_UP))
                 player.setPosition(player.getPosition() + camera.getUp() * camAcceleration * deltatime);
         }
-
-        if (!game_state->GetTerrain().getChunk(camWorldPosition))
-            continue;
 
         HandleGamemodeEvent(&GameMode::PhysicsUpdate, deltatime);
 

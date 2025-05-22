@@ -86,13 +86,14 @@ int main() {
     // glEnable(GL_FRAMEBUFFER_SRGB);
     GL_CALL(glEnable(GL_MULTISAMPLE)); // Redundant perhaps
     // glDepthMask(GL_FALSE);
-    GL_CALL(glEnable(GL_DEBUG_OUTPUT));
-    GL_CALL(glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS));
-    GL_CALL(glDebugMessageCallback(GLDebugMessageCallback, NULL));
+    //GL_CALL(glEnable(GL_DEBUG_OUTPUT));
+    //GL_CALL(glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS));
+    //GL_CALL(glDebugMessageCallback(GLDebugMessageCallback, NULL));
 
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
         s->resize(window, width, height); // Call resize on the instance
     });
+    
     glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y) { s->mouseMove(window, static_cast<int>(x), static_cast<int>(y)); });
     glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) { s->mouseEvent(window, button, action, mods); });
     glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) { s->scrollEvent(window, xoffset, yoffset); });

@@ -9,6 +9,10 @@
 
 #include <atomic>
 
+/**
+ * @brief A gamemode that provides the ability to noclip, capture and place structures in the world
+ * 
+ */
 class GameModeStructureCapture : public GameModeInteractable {
   private:
     std::shared_ptr<UILabel> structure_capture_start_label;

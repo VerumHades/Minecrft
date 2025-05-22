@@ -33,6 +33,10 @@
 
 class TerrainManager;
 
+/**
+ * @brief An array of blocks with a world position and a simplification level for its mesh
+ * 
+ */
 class Chunk: public SparseBlockArray{
     private:
         glm::ivec3 worldPosition;

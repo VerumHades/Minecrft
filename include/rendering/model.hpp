@@ -25,6 +25,10 @@
 
 class Model;
 
+/**
+ * @brief An existing instance of a model
+ * 
+ */
 class ModelInstance {
     public:
         virtual ~ModelInstance() = default;
@@ -36,6 +40,10 @@ class ModelInstance {
         virtual bool IsOfModel(Model& model) = 0;
 };
 
+/**
+ * @brief The definition of a model that holds all the actual data
+ * 
+ */
 class Model{
     private:
         class Instance: public ModelInstance  {
@@ -102,12 +110,30 @@ class Model{
         Model(Model&& other) = delete;
         Model& operator=(Model&& other) = delete;
 
+        /**
+         * @brief Create an instance of the model
+         * 
+         * @return std::shared_ptr<ModelInstance> 
+         */
         std::shared_ptr<ModelInstance> NewInstance();
 
+        /**
+         * @brief Draw all instances of this model
+         * 
+         */
         void drawAllRequests();
 
         const glm::vec3& getRotationCenterOffset(){return rotation_center_offset;}
 
+        /**
+         * @brief Draw all instances of all models
+         * 
+         */
         static void DrawAll();
+
+        /**
+         * @brief Cleanup all models
+         * 
+         */
         static void CleanupAll();
 };

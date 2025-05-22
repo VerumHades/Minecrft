@@ -5,6 +5,12 @@
 #include <iostream>
 #include <game/blocks.hpp>
 
+// Some of these are a courtesy of https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
+
+/**
+ * @brief Courtesy of https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
+ * 
+ */
 struct Plane
 {
 	glm::vec3 normal = { 0.f, 1.f, 0.f }; // unit vector
@@ -27,6 +33,15 @@ struct Plane
     }
 };
 
+/**
+ * @brief Checks whether a cubiod is forward or backward to a plane
+ * 
+ * @param plane 
+ * @param min 
+ * @param max 
+ * @return true 
+ * @return false 
+ */
 inline bool isAABBOnOrForwardPlane(const Plane& plane, glm::vec3& min, glm::vec3& max){
     std::array<glm::vec3, 8> points = {
         min, // min.x,min.y,min.z
@@ -48,6 +63,10 @@ inline bool isAABBOnOrForwardPlane(const Plane& plane, glm::vec3& min, glm::vec3
     return value;
 }
 
+/**
+ * @brief A set of planes representing the cameras view space
+ * 
+ */
 struct Frustum
 {
     Plane topFace;

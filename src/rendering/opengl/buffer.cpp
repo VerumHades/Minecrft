@@ -14,7 +14,7 @@ void GLVertexFormat::apply(uint& slot){
 
         GL_CALL( glVertexAttribPointer(slot, (int) current_size, GL_FLOAT, GL_FALSE, (int)stride, (void*)pointer));
         GL_CALL( glEnableVertexAttribArray(slot));
-        if(per_instance) GL_CALL( glVertexAttribDivisor(slot, 1));
+        if(per_instance) {GL_CALL( glVertexAttribDivisor(slot, 1));}
 
         size_to_now += current_size;
         slot++;

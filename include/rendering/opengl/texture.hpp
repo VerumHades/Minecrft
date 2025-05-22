@@ -14,6 +14,10 @@
 
 #include <rendering/image_processing.hpp>
 
+/**
+ * @brief A generic bindable texture
+ * 
+ */
 class BindableTexture{
     protected: 
         uint texture = 0;
@@ -46,6 +50,10 @@ class BindableTexture{
         uint getID() const;
 };
 
+/**
+ * @brief A simple 2D texture  wrapper
+ *  
+ */
 class GLTexture2D: public BindableTexture{
     private:
         bool configured = false;
@@ -56,12 +64,41 @@ class GLTexture2D: public BindableTexture{
         GLTexture2D(const char* filename);
         GLTexture2D(const Image& image);
 
+        /**
+         * @brief Place image onto the texture
+         * 
+         * @param x 
+         * @param y 
+         * @param image 
+         */
         void putImage(int x, int y, const Image& image);
+
+        /**
+         * @brief Configuration wrapper
+         * 
+         * @param internal_format 
+         * @param format 
+         * @param data_type 
+         * @param width 
+         * @param height 
+         * @param data 
+         * @param pixel_pack 
+         */
         void configure(int internal_format, int format, int data_type, int width, int height, void* data = nullptr, int pixel_pack = 4);
         void reset();
+        
+        /**
+         * @brief Fetch the image back from the gpu
+         * 
+         * @return Image 
+         */
         Image fetch();
 };
 
+/**
+ * @brief A depth texture wrapper
+ * 
+ */
 class GLDepthTexture: public BindableTexture{
     private:
         int width;
@@ -74,6 +111,10 @@ class GLDepthTexture: public BindableTexture{
         int getHeight(){return height;}
 };
 
+/**
+ * @brief An array texture wrapper
+ * 
+ */
 class GLTextureArray: public BindableTexture{
     private:
         int layer_width = 0;
@@ -87,11 +128,29 @@ class GLTextureArray: public BindableTexture{
             layer_height = height;
             glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, width, height,  layers);
         }
+        /**
+         * @brief Place image onto the texture
+         * 
+         * @param x 
+         * @param y 
+         * @param image 
+         */
         void putImage(int x, int y, int layer, const Image& image);
 
+        /**
+         * @brief Load full texture array from files
+         * 
+         * @param filenames 
+         * @param layerWidth 
+         * @param layerHeight 
+         */
         void loadFromFiles(std::vector<std::string>& filenames, int layerWidth, int layerHeight);
 };
 
+/**
+ * @brief A skybox cube texture wrapper
+ * 
+ */
 class GLSkybox: public BindableTexture{
     private:
         uint vertexBufferID = 0;
@@ -104,6 +163,10 @@ class GLSkybox: public BindableTexture{
         void draw();
 };
 
+/**
+ * @brief A texture array that images can be appended to and it will automatically resize
+ * 
+ */
 class DynamicTextureArray: public BindableTexture{
     private:
         struct DynamicTextureMember {
