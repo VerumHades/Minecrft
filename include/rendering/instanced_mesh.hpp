@@ -63,7 +63,7 @@ class InstancedMeshLoader: public MeshLoaderInterface{
         
     private:
         static const size_t distinct_face_count = 4;
-        bool draw_failed = true;
+        bool draw_failed = false;
         bool updated = false;
 
         uint max_draw_calls = pow(2,16);
@@ -78,6 +78,9 @@ class InstancedMeshLoader: public MeshLoaderInterface{
         
         std::array<RenderableGroup, distinct_face_count> render_information{};
         GLBuffer<float, GL_ARRAY_BUFFER> loaded_face_buffer{};
+
+        std::mutex loading_mutex;
+        std::mutex draw_call_mutex;
 
         void removeMesh(LoadedMesh& mesh);
         void addDrawCall(LoadedMesh& mesh);

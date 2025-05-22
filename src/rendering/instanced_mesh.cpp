@@ -210,6 +210,8 @@ void InstancedMeshLoader::LoadedMesh::addDrawCall(const glm::ivec3& position) {
     creator.addDrawCall(*this);
 }
 void InstancedMeshLoader::renderMesh(LoadedMesh& mesh) {
+    std::lock_guard lock(loading_mutex);
+
     for (size_t i = 0; i < distinct_face_count; i++) {
         render_information[i].vao.bind();
 
@@ -234,6 +236,8 @@ void InstancedMeshLoader::renderMesh(LoadedMesh& mesh) {
 }
 
 std::unique_ptr<LoadedMeshInterface> InstancedMeshLoader::loadMesh(MeshInterface* mesh_) {
+    std::lock_guard lock(loading_mutex);
+
     auto mesh_ptr = dynamic_cast<InstancedMesh*>(mesh_);
     if (!mesh_ptr)
         return nullptr;
@@ -260,6 +264,8 @@ std::unique_ptr<LoadedMeshInterface> InstancedMeshLoader::loadMesh(MeshInterface
 }
 
 void InstancedMeshLoader::addDrawCall(LoadedMesh& mesh) {
+    std::lock_guard lock(draw_call_mutex);
+
     for (size_t i = 0; i < distinct_face_count; i++) {
         if (!mesh.has_region[i])
             continue;
@@ -283,6 +289,8 @@ void InstancedMeshLoader::addDrawCall(LoadedMesh& mesh) {
 }
 
 void InstancedMeshLoader::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new_mesh) {
+    std::lock_guard lock(loading_mutex);
+
     for (size_t i = 0; i < distinct_face_count; i++) {
         auto& component_data = new_mesh.getInstanceData(static_cast<InstancedMesh::FaceType>(i));
         if (component_data.Size() == 0) {
@@ -303,6 +311,8 @@ void InstancedMeshLoader::updateMesh(LoadedMesh& loaded_mesh, InstancedMesh& new
 }
 
 void InstancedMeshLoader::removeMesh(LoadedMesh& mesh) {
+    std::lock_guard lock(loading_mutex);
+
     for (size_t i = 0; i < distinct_face_count; i++) {
         if (!mesh.has_region[i])
             continue;
@@ -314,7 +324,10 @@ void InstancedMeshLoader::removeMesh(LoadedMesh& mesh) {
 }
 
 void InstancedMeshLoader::render() {
-    if (max_draw_calls == 0)
+    std::lock_guard lock1(draw_call_mutex);
+    std::lock_guard lock2(loading_mutex);
+    
+    if (draw_failed)
         return;
 
     shared_program.updateUniforms();
@@ -352,11 +365,15 @@ void InstancedMeshLoader::render() {
 }
 
 void InstancedMeshLoader::clearDrawCalls() {
+    std::lock_guard lock(draw_call_mutex);
+    
     for (auto& info : render_information)
         info.draw_call_buffer.clear();
 }
 
 void InstancedMeshLoader::flushDrawCalls() {
+    std::lock_guard lock(draw_call_mutex);
+
     for (auto& info : render_information) {
         // std::cout << "Flushed draw calls: " << info.draw_call_buffer.count() << std::endl;
         info.draw_call_buffer.flush();
