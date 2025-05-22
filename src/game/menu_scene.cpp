@@ -99,6 +99,7 @@ void MenuScene::initialize() {
     seedRegenerate->onClicked.trigger();
 
     auto newWorldNameInput = getElementById<UIInput>("new_world_name");
+    newWorldNameInput->max_length = 12;
 
     auto newWorldFunc = [newWorldNameInput, seedInput, this] {
         auto name = newWorldNameInput->getText();
