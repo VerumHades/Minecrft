@@ -15,17 +15,23 @@ struct TransformHash;
 struct TransformEqual;
 class RegionCuller;
 
+
+/**
+ * @brief A meshable region
+ * 
+ */
 class MeshRegion{
     private:
         struct Transform{
-            /*
-                Position within its level, actual position is 2^level * position
+            /**
+            * @brief Position within its level, actual position is 2^level * position
+            * 
             */
             glm::ivec3 position = {0,0,0};
-            /*
-                Smallest is 1.
-                The actuall size of a region based on its level is: 2^level
-            */
+            /**
+             * @brief  Smallest is 1. The actuall size of a region based on its level is: 2^level
+             * 
+             */
             uint level = 1;
         } transform;
 
@@ -38,26 +44,33 @@ class MeshRegion{
 
         void SetChild(uint x, uint y, uint z, bool value);
 
-        /*
-            Returns a pointer to the regions parent, if the region has no parents return nullptr
-        */
+        /**
+         * @brief Returns a pointer to the regions parent, if the region has no parents return nullptr
+         * 
+         * @return MeshRegion* 
+         */
         MeshRegion* getParentRegion();
-        /*
-            Returns a pointer to the subregion in relative coordinates to the parent
-
-            return nullptr if the region is at level 1 (there are no levels under 1).
-        */
+        /**
+         * @brief Returns a pointer to the subregion in relative coordinates to the parent
+         * 
+         * @param x 
+         * @param y 
+         * @param z 
+         * @return MeshRegion* 
+         */
         MeshRegion* getSubregion(uint x, uint y, uint z);
-        /*
-            Returns a position relative to the parent
-
-            will return {0,0,0} if no parent is present
-        */
+        /**
+         * @brief Returns a position relative to the parent
+         * 
+         * @return glm::ivec3 
+         */
         glm::ivec3 getParentRelativePosition();
 
-        /*
-            Returns the position of the regions parent
-        */
+        /**
+         * @brief Returns the position of the regions parent
+         * 
+         * @return glm::ivec3 
+         */
         glm::ivec3 getParentPosition() {
             return {
                 std::floor(static_cast<float>(transform.position.x) / 2.0f),
@@ -99,11 +112,13 @@ class RegionCuller{
 
         std::unordered_map<MeshRegion::Transform, MeshRegion, TransformHash, TransformEqual> regions;
 
-        /*
-            Checks the region againist the frustum. Does an octree search among its children.
-            Ignores region that arent drawn.
-            Writes their calls directly into the draw call buffer begining at the draw call index.
-        */
+        /**
+         * @brief Checks the region againist the frustum. Does an octree search among its children.
+         * Ignores region that arent drawn.
+         * Adds drawcalls automatically
+         * @param frustum 
+         * @param region 
+         */
         void processRegionForDrawing(Frustum& frustum, MeshRegion* region);
 
         MeshLoaderInterface* mesh_loader = nullptr;
@@ -122,32 +137,42 @@ class RegionCuller{
             return getRegion({pos,1}) != nullptr;
         }
 
-        /*
-            Updates draw calls to the ones visible in the frustum.
-
-            Takes the camera position in world coordinates
-        */
+        /**
+         * @brief Updates draw calls to the ones visible in the frustum.
+         * 
+         * @param camera_position world position of camera
+         * @param frustum camera frustum
+         */
         void updateDrawCalls(const glm::ivec3& camera_position, Frustum& frustum);
 
-        /*
-            Uploads the mesh as a level 1 region. (All parents are automatically created if they dont already exist)
-
-            Empty meshes will be ingnored. But registered as empty regions.
-        */
+        /**
+         * @brief Uploads the mesh as a level 1 region. (All parents are automatically created if they dont already exist)
+         * 
+         * @param mesh 
+         * @param pos 
+         * @return true 
+         * @return false 
+         */
         bool addMesh(MeshInterface* mesh, const glm::ivec3& pos);
 
-        /*
-            Updates a mesh, splits regions if old mesh is a part of them
-        */
+        /**
+         * @brief Updates a mesh, splits regions if old mesh is a part of them
+         * 
+         * @param mesh 
+         * @param pos 
+         * @return true 
+         * @return false 
+         */
         bool updateMesh(MeshInterface* mesh, const glm::ivec3& pos);
 
         bool removeMesh(const glm::ivec3& pos);
 
-        /*
-            Creates a region and all its parents if they dont already exist.
-
-            returns a `nullptr` on failure
-        */
+        /**
+         * @brief Creates a region and all its parents if they dont already exist.
+         * 
+         * @param transform 
+         * @return MeshRegion* 
+         */
         MeshRegion* createRegion(MeshRegion::Transform transform);
 
         MeshRegion* getRegion(MeshRegion::Transform transform) {
@@ -155,6 +180,11 @@ class RegionCuller{
             return &regions.at(transform);
         }
 
+        /**
+         * @brief Destroys a region
+         * 
+         * @param transform 
+         */
         void removeRegion(MeshRegion::Transform transform){
             auto* region = getRegion(transform);
             if(!region) return;
@@ -168,9 +198,12 @@ class RegionCuller{
             regions.erase(transform);
         }
 
-        /*
-            Return the real size of a region based on its level
-        */
+        /**
+         * @brief Return the real size of a region based on its level
+         * 
+         * @param level 
+         * @return int 
+         */
         int getRegionSizeForLevel(uint level) {
             if(level < 1 || level > maxRegionLevel) return 0;
             return actualRegionSizes[level - 1];

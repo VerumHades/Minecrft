@@ -17,6 +17,10 @@
 #include <mutex>
 #include <condition_variable>
 
+/**
+ * @brief A class that maintains terrain and mesh generation and oversees its ingame managment
+ * 
+ */
 class TerrainManager {
   private:
     ChunkMeshGenerator mesh_generator;
@@ -42,7 +46,7 @@ class TerrainManager {
     std::atomic<int> around_z        = 0;
     std::atomic<int> render_distance = 0;
 
-    std::atomic<int> generated_count = 0;
+    std::atomic<size_t> generated_count = 0;
 
     void UnloadChunkColumn(const glm::ivec2& position);
 
@@ -55,12 +59,42 @@ class TerrainManager {
   public:
     TerrainManager(std::shared_ptr<Generator> world_generator);
 
+	/**
+	 * @brief Unload everything, chunks and meshes
+	 * 
+	 */
     void unloadAll();
 
+	/**
+	 * @brief Actually upload generated meshes to the gpu
+	 * 
+	 * @return true 
+	 * @return false 
+	 */
     bool uploadPendingMeshes();
+
+	/**
+	 * @brief Load a region around a set point, calling it again starts loading new region instead
+	 * 
+	 * @param around 
+	 * @param render_distance 
+	 * @return true 
+	 * @return false 
+	 */
     bool loadRegion(glm::ivec3 around, int render_distance);
 
-    void regenerateChunkMesh(Chunk* chunk);
+	/**
+	 * @brief Reloads a chunks mesh
+	 * 
+	 * @param chunk 
+	 */
+    void regenerateChunkMesh(Chunk* chunk);	
+	/**
+	 * @brief Reloads a chunk mesh with a specified block placement, might regenerate other neccesary meshes
+	 * 
+	 * @param chunk 
+	 * @param blockCoords 
+	 */
     void regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords);
 
     void setGameState(GameState* state);

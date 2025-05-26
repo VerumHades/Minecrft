@@ -17,7 +17,7 @@ GLFramebuffer::GLFramebuffer(int width, int height, std::vector<FramebufferTextu
     textures.resize(textures_total);
 
     std::vector<uint> attachments(textures_total);
-    for(int i = 0; i < textures.size();i++){
+    for(size_t i = 0; i < textures.size();i++){
         auto& definition = texture_definitions[i];
         auto& texture = textures[i];
 
@@ -52,8 +52,8 @@ void GLFramebuffer::unbind(){
 
 
 void GLFramebuffer::bindTextures(){
-    for(int i = 0;i < textures.size();i++) textures[i].bind(i);
+    for(size_t  i = 0;i < textures.size();i++) textures[i].bind(i);
 }
 void GLFramebuffer::unbindTextures(){
-    for(int i = 0;i < textures.size();i++) textures[i].unbind(i);
+    for(size_t  i = 0;i < textures.size();i++) textures[i].unbind(i);
 }

@@ -40,7 +40,7 @@ DeserializeFunction(LogicalItemInventory){
     ResolveOptionTo(this_.slots_verticaly, hopt, Read<int>)
     ResolvedOption(items_total, Read<size_t>);
 
-    for(int i = 0;i < items_total;i++){
+    for(size_t i = 0;i < items_total;i++){
         ResolvedOption(x, Read<int>);
         ResolvedOption(y, Read<int>);
 

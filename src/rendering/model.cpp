@@ -24,7 +24,7 @@ void Model::CleanupAll() {
 void Model::addMesh(Mesh& mesh) {
     auto loaded_mesh = mesh.load();
 
-    for (int i = 0; i < loaded_mesh->getVAOs().size(); i++) {
+    for (size_t i = 0; i < loaded_mesh->getVAOs().size(); i++) {
         auto& vao = loaded_mesh->getVAOs()[i];
         vao.attachBuffer(&instance_buffers[i], {{VEC3, VEC3, VEC4, VEC3}, true}, 0);
         vao.attachBuffer(&instance_buffers[(i + 2) % 3], {{VEC3, VEC3, VEC4, VEC3}, true}, 1);

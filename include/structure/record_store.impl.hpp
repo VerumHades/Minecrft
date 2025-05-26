@@ -140,7 +140,7 @@ CLASS::CachedBlock* CLASS::GetRecordBlock(size_t location) {
                       reinterpret_cast<byte*>(temporary_vector.data())))
         return nullptr;
 
-    for (int i = 0;i < header.records_total;i++){
+    for (size_t i = 0;i < header.records_total;i++){
         new_block.records[temporary_vector[i].key] = temporary_vector[i];
     }
 

@@ -32,6 +32,10 @@ struct RaycastResult{
     glm::vec3 lastPosition; // Position before the hit
 };
 
+/**
+ * @brief A class that holds chunks of block data to represent an 'infinite' world
+ * 
+ */
 class Terrain{
     private:
         std::mutex mutex;
@@ -45,18 +49,66 @@ class Terrain{
         Chunk* createEmptyChunk(glm::ivec3 position);
 
         void addChunk(const glm::ivec3& position, std::unique_ptr<Chunk> chunk);
+
+        /**
+         * @brief Pull a chunk out of the world
+         * 
+         * @param position 
+         * @return std::unique_ptr<Chunk> 
+         */
         std::unique_ptr<Chunk> takeChunk(const glm::ivec3& position);
 
+        /**
+         * @brief Deletes a chunk completely
+         * 
+         * @param position 
+         */
         void removeChunk(const glm::ivec3& position);
 
         Chunk* getChunk(glm::ivec3 position) const;
+
+        /**
+         * @brief Get chunk based on a world position of a block
+         * 
+         * @param position 
+         * @return Chunk* 
+         */
         Chunk* getChunkFromBlockPosition(glm::ivec3 position) const;
 
+        /**
+         * @brief Returns the position of the chunk based on a world position, world position => chunk position
+         * 
+         * @param blockPosition 
+         * @return glm::ivec3 
+         */
         glm::ivec3 blockToChunkPosition(glm::ivec3 blockPosition) const;
+
+        /**
+         * @brief Get the relative position to the corresponding chunk for a world block position, world position => blocks position inside the chunk its in
+         * 
+         * @param blockPosition 
+         * @return glm::ivec3 
+         */
         glm::ivec3 getGetChunkRelativeBlockPosition(glm::ivec3 position);
 
+        /**
+         * @brief Check for collision with the world for a rectangular collider
+         * 
+         * @param position 
+         * @param collider 
+         * @return true 
+         * @return false 
+         */
         bool collision(glm::vec3 position, const RectangularCollider* collider);
 
+        /**
+         * @brief Cast a ray trough the world and return the first intersection or no intersection if max distance was reached
+         * 
+         * @param from start position
+         * @param direction a normalized direction
+         * @param maxDistance 
+         * @return RaycastResult 
+         */
         RaycastResult raycast(const glm::vec3& from, const glm::vec3& direction, float maxDistance);
 
         int chunksTotal() const {return chunks.size();}

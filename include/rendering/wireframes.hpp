@@ -6,6 +6,10 @@
 #include <glm/glm.hpp>
 #include <rendering/opengl/shaders.hpp>
 
+/**
+ * @brief A legacy renderer for cube wireframes
+ * 
+ */
 class WireframeCubeRenderer{
     private:
         GLVertexArray vao;
@@ -20,10 +24,33 @@ class WireframeCubeRenderer{
     public:
         WireframeCubeRenderer();
 
+        /**
+         * @brief Register an instance to be drawn
+         * 
+         * @param index 
+         * @param position 
+         * @param scale 
+         * @param color 
+         */
         void setCube(size_t index, glm::vec3 position, glm::vec3 scale, glm::vec3 color);
+        /**
+         * @brief Removes  an instance from drawing
+         * 
+         * @param index 
+         */
         void removeCube(size_t index);
+
+        /**
+         * @brief Draws all instances
+         * 
+         */
         void draw();
 
+        /**
+         * @brief Set the total amount of cubes to draw
+         * 
+         * @param value 
+         */
         void setCubes(size_t value) {cubes = value;}
 
         ShaderProgram& getProgram() { return wireframeProgram; };

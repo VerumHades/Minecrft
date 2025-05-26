@@ -14,6 +14,10 @@
 
 class Chunk;
 
+/**
+ * @brief A namespace that hold information relevant to the wave function collapse algorithm
+ * 
+ */
 namespace WaveFunctionCollapse{
     class ChunkDefinition{
         public:

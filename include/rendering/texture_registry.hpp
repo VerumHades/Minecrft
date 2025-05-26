@@ -9,6 +9,10 @@
 
 #include <path_config.hpp>
 
+/**
+ * @brief A registry for textures
+ * 
+ */
 class TextureRegistry{
     private:
         size_t last_index = 0;
@@ -32,22 +36,30 @@ class TextureRegistry{
             texture_height = height;
         }
 
-        /*
-            Registers a texture from a path under a name
-        */
+        /**
+         * @brief Registers a texture from a path under a name
+         * 
+         * @param name 
+         * @param path 
+         */
         void addTexture(std::string name, const std::string& path);
         
-        /*
-            Returns the index of a registered texture
-        */
+        /**
+         * @brief Returns the index of a registered texture
+         * 
+         * @param name 
+         * @return size_t 
+         */
         size_t getTextureIndex(std::string name);
         std::tuple<size_t,bool> getTextureIndexChecked(std::string name);
         RegisteredTexture* getTextureByName(std::string name);
 
         void loadFromFolder(const std::string& path);
 
-        /*
-            Creates the actual opengl object that holds the textures
-        */
+        /**
+         * @brief Creates the actual opengl object that holds the textures
+         * 
+         * @return std::unique_ptr<GLTextureArray> 
+         */
         std::unique_ptr<GLTextureArray> load();
 };

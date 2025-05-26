@@ -1,6 +1,6 @@
 #include <rendering/opengl/buffer.hpp>
 
-GLVertexFormat::GLVertexFormat(std::initializer_list<GLVertexValueType> bindings, bool per_instance): per_instance(per_instance), bindings(bindings){
+GLVertexFormat::GLVertexFormat(std::initializer_list<GLVertexValueType> bindings, bool per_instance): bindings(bindings), per_instance(per_instance){
     totalSize = 0;
     for(auto& size: bindings) totalSize += size;
 }   
@@ -14,7 +14,7 @@ void GLVertexFormat::apply(uint& slot){
 
         GL_CALL( glVertexAttribPointer(slot, (int) current_size, GL_FLOAT, GL_FALSE, (int)stride, (void*)pointer));
         GL_CALL( glEnableVertexAttribArray(slot));
-        if(per_instance) GL_CALL( glVertexAttribDivisor(slot, 1));
+        if(per_instance) {GL_CALL( glVertexAttribDivisor(slot, 1));}
 
         size_to_now += current_size;
         slot++;

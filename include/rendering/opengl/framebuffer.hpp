@@ -4,6 +4,10 @@
 #include <general.hpp>
 #include <rendering/opengl/texture.hpp>
 
+/**
+ * @brief A frambuffer wrapper for opengl
+ * 
+ */
 class GLFramebuffer{
     public:
         struct FramebufferTexture{

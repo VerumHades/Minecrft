@@ -19,6 +19,10 @@
 
 class Chunk;
 
+/**
+ * @brief The state of the game provided to each gamemode as an interface with the game internals
+ * 
+ */
 struct GameModeState{
     GameState* game_state;
     WireframeCubeRenderer& wireframe_renderer;
@@ -30,14 +34,20 @@ struct GameModeState{
     std::function<void(Chunk* chunk, const glm::ivec3 position)> regenerateChunkMesh;
 };
 
+/**
+ * @brief The base template for each gamemode specific class
+ * 
+ */
 class GameMode{
+    protected:
+        GameModeState& state;
+
     private:
         std::string name;
         std::string getLocalLayerName(const std::string& name);
 
     protected:
         std::string base_layer_override = "";
-        GameModeState& state;
 
         UILayer& getLayerLocal(const std::string& name);
         void setLayerLocal(const std::string& name);
@@ -49,6 +59,12 @@ class GameMode{
 
         UILayer& GetBaseLayer();
 
+        /**
+         * @brief Returns whether the player is in noclip
+         * 
+         * @return true 
+         * @return false 
+         */
         virtual bool NoClip() { return false; }
 
         virtual void Initialize() = 0;

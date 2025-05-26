@@ -265,7 +265,7 @@ UIInput::UIInput(){
     this->focusable = true;
 
     onKeyTyped = [this](unsigned int codepoint){
-        if(this->text.size() >= max_length) return;
+        if(this->text.size() >=  static_cast<size_t>(max_length)) return;
         
         char typedChar = static_cast<char>(codepoint);
 

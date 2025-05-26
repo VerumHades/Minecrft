@@ -13,6 +13,10 @@
 class UIHotbar;
 class HealthBar;
 
+/**
+ * @brief The basic survival gamemode
+ * 
+ */
 class GameModeSurvival : public GameModeInteractable {
   private:
     std::shared_ptr<ItemSlot> held_item_slot;
@@ -58,6 +62,10 @@ class GameModeSurvival : public GameModeInteractable {
     void MouseScroll(double xoffset, double yoffset) override;
 };
 
+/**
+ * @brief A crosshair component
+ * 
+ */
 class UICrosshair : public UIFrame {
   private:
     int part_margin = 5;
@@ -71,6 +79,10 @@ class UICrosshair : public UIFrame {
     void getRenderingInformation(UIRenderBatch& batch) override;
 };
 
+/**
+ * @brief A healthbar
+ * 
+ */
 class HealthBar : public UIFrame {
   private:
     const int max_health = 20;
@@ -84,6 +96,10 @@ class HealthBar : public UIFrame {
     void getRenderingInformation(UIRenderBatch& batch) override;
 };
 
+/**
+ * @brief A hotbar
+ * 
+ */
 class UIHotbar : public InventoryDisplay {
   private:
     int selected_slot     = 0;

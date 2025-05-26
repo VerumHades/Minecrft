@@ -5,6 +5,9 @@
 #include <vector>
 #include <iostream>
 
+/**
+ * @brief A class that returns 2D positions in a spiral pattern
+ */
 class SpiralIndexer{
     private:
         size_t total = 0;
@@ -19,11 +22,31 @@ class SpiralIndexer{
     public:
         SpiralIndexer(){}
 
+        /**
+         * @brief Returns the current position
+         * 
+         * @return glm::ivec2 
+         */
         glm::ivec2 get();
+
+        /**
+         * @brief Steps to the next position
+         * 
+         */
         void next();
+
+        /**
+         * @brief Get the total positions stepped
+         * 
+         * @return size_t 
+         */
         size_t getTotal(){return total;}
 };
 
+/**
+ * @brief A class that returns 3D positions propagating in spirals from the center point
+ * 
+ */
 class SpiralIndexer3D{
     private:
         int radius = 5;
@@ -37,7 +60,22 @@ class SpiralIndexer3D{
 
     public:
         SpiralIndexer3D(){}
+        /**
+         * @brief Steps to the next position
+         * 
+         */
         void next();
+        /**
+         * @brief Returns the current position
+         * 
+         * @return glm::ivec3 
+         */
         glm::ivec3 get();
+
+        /**
+         * @brief Get the current furthest distance achieved from center
+         * 
+         * @return int 
+         */
         int getCurrentDistance() { return current_distance; }
 };

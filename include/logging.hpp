@@ -13,7 +13,6 @@
 #include <filesystem>
 #include <sstream>
 #include <cstring>
-#include <cxxabi.h>
 #include <mutex>
 
 #include <cpptrace/cpptrace.hpp>
@@ -38,9 +37,9 @@
 #endif
 
 #ifdef LOG_ERROR
-#define LogError(...)                                                                                                                                          \
-    {                                                                                                                                                          \
-        Logging::Get().Message("ERROR", std::format(__VA_ARGS__), __LINE__, __FILE__);                                                                         \
+#define LogError(...)                                                                                                                 \
+    {                                                                                                                                 \
+        Logging::Get().Message("ERROR", std::format(__VA_ARGS__), __LINE__, __FILE__);                                                \
     }
 #else
 #define LogError(...)
@@ -58,18 +57,35 @@
 #define LogOpengl(...)
 #endif
 
+/**
+ * @brief A class that oversees all logging of information
+ * 
+ */
 class Logging {
   private:
     std::ofstream outfile;
     std::mutex mtx;
 
+    std::streamoff boundary = 10000;
+    
     Logging();
-
-    bool isLogOld(const fs::path& file, int daysThreshold);
 
   public:
     void SetPath(const fs::path& path);
+    /**
+     * @brief Saves a message in log
+     * 
+     * @param descriptor Like message or error
+     * @param message 
+     * @param line on which line it happened
+     * @param file in what file
+     */
     void Message(const std::string& descriptor, const std::string& message, int line, const char* file);
+
+    /**
+     * @brief Save the stacktrace in log
+     * 
+     */
     void SaveTrace();
 
     static Logging& Get() {
@@ -78,9 +94,10 @@ class Logging {
     }
 };
 
-void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* param);
+void APIENTRY GLDebugMessageCallback(
+    GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* param);
 
-#define GL_CALL(call)                                                                                                                                          \
-    call;                                                                                                                                                      \
-    CheckGLError(__FILE__, __LINE__);
+#define GL_CALL(call) call; CheckGLError(__FILE__, __LINE__);                                                                                             \
+    
+
 void CheckGLError(const char* file, int line);

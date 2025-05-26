@@ -2,6 +2,10 @@
 
 #include <game/gamemodes/gamemode.hpp>
 
+/**
+ * @brief An intermidiate gamemode that provides the cursor
+ * 
+ */
 class GameModeInteractable: public GameMode{
     protected:
         struct CursorState{

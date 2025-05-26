@@ -40,8 +40,8 @@ Font::Font(std::string filepath, int size): size(size){
 }
 
 void Font::createAtlas(){
-    int atlasWidth = 512;  // Chosen size for the atlas, adjust based on your needs
-    int atlasHeight = 512;
+    uint atlasWidth = 512;  // Chosen size for the atlas, adjust based on your needs
+    uint atlasHeight = 512;
     
     atlas = std::make_unique<GLTexture2D>();
     atlas->bind(0);
@@ -93,7 +93,7 @@ void Font::createAtlas(){
             atlas->getID(),
             glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
             glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-            face->glyph->advance.x,
+            static_cast<uint>(face->glyph->advance.x),
             glm::vec2(xOffset / (float)atlasWidth, yOffset / (float)atlasHeight),
             glm::vec2((xOffset + face->glyph->bitmap.width) / (float)atlasWidth, 
                     (yOffset + face->glyph->bitmap.rows) / (float)atlasHeight)
@@ -191,10 +191,10 @@ glm::vec2 Font::getTextDimensions(std::string text, int size){
     for (auto c = text.begin(); c != text.end(); c++) {
         Character ch = characters[*c];
 
-        GLfloat xpos = ch.Bearing.x;
-        GLfloat ypos = (ch.Size.y - ch.Bearing.y);
+        //GLfloat xpos = ch.Bearing.x;
+        //GLfloat ypos = (ch.Size.y - ch.Bearing.y);
 
-        GLfloat w = ch.Size.x;
+        //GLfloat w = ch.Size.x;
         GLfloat h = ch.Size.y;
 
         out.y = std::max(out.y, h);

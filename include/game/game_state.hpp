@@ -12,6 +12,10 @@
 
 class TerrainManager;
 
+/**
+ * @brief A record of the state of the game, stores information about the world, manages game files and streams
+ * 
+ */
 class GameState {
   private:
     std::string path;
@@ -64,7 +68,15 @@ class GameState {
     void addEntity(Entity entity) {
         entities.push_back(entity);
     }
-
+    
+    /**
+     * @brief Check if entity collides with the world at at its own position with a give offset
+     * 
+     * @param entity 
+     * @param offset 
+     * @return true 
+     * @return false 
+     */
     bool entityCollision(Entity& entity, const glm::vec3& offset = {0, 0, 0});
 
     void giveItemToPlayer(ItemRef item);
@@ -76,9 +88,20 @@ class GameState {
         return entities.front();
     }
 
+    /**
+     * @brief Returns the world name
+     * 
+     * @return std::string 
+     */
     std::string GetName() {
         return world_storage->GetHeader().name;
     }
+
+    /**
+     * @brief Sets the world name of maximal length 256
+     * 
+     * @param name 
+     */
     void SetName(std::string name) {
         if (name.size() > 256)
             name = name.substr(0, 256);

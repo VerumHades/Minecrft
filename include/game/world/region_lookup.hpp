@@ -7,11 +7,13 @@
 #include <unordered_set>
 #include <shared_mutex>
 
-/*
-    Structure for looking up regions in 'infinite' space, 
-
-    Thread safe.
-*/
+/**
+ * @brief Structure for looking up regions in 'infinite' space, 
+ * 
+ * Thread safe.
+ * 
+ * @tparam T 
+ */
 template <typename T>
 class RegionRegistry{
     public:
@@ -30,6 +32,9 @@ class RegionRegistry{
         std::unordered_map<glm::ivec3, std::vector<std::shared_ptr<Region>>, IVec3Hash, IVec3Equal> regions;
 
     public:
+        /**
+         * Add a value under a registered region
+         */
         bool add(const glm::ivec3& position, const glm::ivec3& size, const T& value){
             if(instersects(position, size)) return false;
 
@@ -63,6 +68,15 @@ class RegionRegistry{
 
             return true;
         }
+
+        /**
+         * @brief Check whether a cuboid intersects with an existing region
+         * 
+         * @param position 
+         * @param size 
+         * @return true 
+         * @return false 
+         */
         bool instersects(const glm::ivec3& position, const glm::ivec3& size){
             glm::ivec3 min = position;
             glm::ivec3 max = position + size;
@@ -102,7 +116,12 @@ class RegionRegistry{
             return false;
         }
         
-
+        /**
+         * @brief Returns a region for a position if it exists
+         * 
+         * @param position 
+         * @return Region* 
+         */
         Region* get(const glm::ivec3& position){
             glm::ivec3 subregion_position = glm::floor(glm::vec3(position) / subregion_size);
             

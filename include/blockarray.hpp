@@ -9,6 +9,10 @@
 
 #include <vec_hash.hpp>
 
+/**
+ * @brief An array of fields of different types, only recording existing blocks, nothing represents empty space
+ * 
+ */
 class SparseBlockArray {
   protected:
     struct Layer {
@@ -21,16 +25,25 @@ class SparseBlockArray {
         };
     };
 
-    /*
-        Returns whether a layer is present
-    */
+    /**
+     * @brief Returns whether a layer is present
+     * 
+     * @param type 
+     * @return true 
+     * @return false 
+     */
     bool hasLayerOfType(BlockID type) {
         return type_indexes.contains(type);
     }
 
-    /*
-        Creates a layer, if layer already exists doesnt create another
-    */
+    /**
+     * @brief Creates a layer, if layer already exists doesnt create another
+     * 
+     * @param type 
+     * @param field 
+     * @return true if success
+     * @return false if layer already exists
+     */
     bool createLayer(BlockID type, const BitField3D& field) {
         if (hasLayerOfType(type))
             return false;
@@ -40,9 +53,12 @@ class SparseBlockArray {
         return true;
     }
 
-    /*
-        Returns a layer of type if its present, otherwise crashes.
-    */
+    /**
+     * @brief Returns a layer of type, if it doesnt exist creates it
+     * 
+     * @param type 
+     * @return Layer& 
+     */
     Layer& getLayer(BlockID type) {
         if (!hasLayerOfType(type))
             createLayer(type, {});
@@ -81,24 +97,27 @@ class SparseBlockArray {
         return layers.size() == 0;
     }
 
-    /*
-        Fills the entire chunk with one kind of block
-    */
+    /**
+     * @brief Fills the entire chunk with one kind of block
+     * 
+     * @param block 
+     */
     void fill(const Block& block);
 
-    /*
-        dont_check => if true ignores already existing block if there is one (will be faster)
-    */
+    /**
+     * @brief Set the Block object
+     * 
+     * @param position 
+     * @param block 
+     * @param dont_check if true ignores already existing block if there is one (will be faster)
+     */
     void setBlock(glm::ivec3 position, const Block& block, bool dont_check = false);
-    /*
-        Returns a pointer to a block, if there is no block present returns an air block
-    */
+    
+    /**
+     * @brief Returns a block at position
+     * 
+     * @param position 
+     * @return Block* a pointer to a block, if there is no block present returns an air block
+     */
     Block* getBlock(glm::ivec3 position);
-
-    void resetAlteredFlag() {
-        altered = false;
-    }
-    bool wasAltered() {
-        return altered;
-    }
 };

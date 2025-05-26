@@ -4,8 +4,13 @@
 #include <chrono>
 #include <iostream>
 #include <logging.hpp>
+
 using uint = unsigned int;
 
+/**
+ * @brief A timer that can tell time with timestamps, used for benchmarking
+ * 
+ */
 class ScopeTimer{
     private:
         std::chrono::high_resolution_clock::time_point relative_start;

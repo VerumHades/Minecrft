@@ -15,3 +15,6 @@
     auto resolved_name##_option = array.function(__VA_ARGS__);\
     if(!resolved_name##_option) return false;\
     auto& resolved_name = resolved_name##_option.value();
+
+
+

@@ -11,7 +11,7 @@ class Pool {
         size_t count = 0;
 
         void Extend(){
-            int old_size = vec.size();
+            size_t old_size = vec.size();
             vec.resize(vec.size() * 2);
             for(size_t i = 0;i < old_size;i++)
                 free.push(i + old_size);

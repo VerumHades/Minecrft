@@ -16,7 +16,7 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
         SpiralIndexer meshing_indexer = {};
         auto& terrain                 = game_state->GetTerrain();
 
-        int max         = pow((render_distance + 1) * 2, 2);
+        size_t max         = pow((render_distance + 1) * 2, 2);
         int safe_offset = 0;
 
         while (generated_count < max) {
@@ -64,7 +64,7 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
         int max           = pow(render_distance * 2, 2);
         int safe_offset   = render_distance * 2 * 4;
 
-        while (generation_indexer.getTotal() < max + safe_offset) {
+        while (generation_indexer.getTotal() < static_cast<size_t>(max + safe_offset)) {
             if (should_stop)
                 return;
 
@@ -86,10 +86,12 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
                     terrain.addChunk(chunkPosition, world_saver.Load(chunkPosition));
                     continue;
                 }
-                chunk                         = terrain.createEmptyChunk(chunkPosition);
-                chunk->current_simplification = level;
+                auto uchunk = std::make_unique<Chunk>();
+                uchunk->current_simplification = level;
+                uchunk->setWorldPosition(chunkPosition);
 
-                world_generator->GenerateTerrainChunk(chunk, chunkPosition);
+                world_generator->GenerateTerrainChunk(uchunk.get(), chunkPosition);
+                terrain.addChunk(chunkPosition, std::move(uchunk));
             }
 
             {
@@ -139,6 +141,18 @@ bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance) {
     around_z              = around.z;
     this->render_distance = render_distance;
 
+    /*if(mesh_loader->DrawFailed()){
+        service_manager->StopAll();
+
+        create_mesh = []() { return std::make_unique<PooledMesh>(); };
+        reset_loader = [this]() {
+            mesh_loader = std::make_unique<PooledMeshLoader>();
+            mesh_registry.SetMeshLoader(mesh_loader.get());
+        };
+
+        reset_loader();
+    }*/
+
     service_manager->StartAll(true);
 
     return true;
@@ -172,11 +186,11 @@ void TerrainManager::unloadAll() {
     world_generator->Clear();
 }
 
-#define regenMesh(position)                                                                                                                                    \
-    {                                                                                                                                                          \
-        Chunk* temp = game_state->GetTerrain().getChunk(position);                                                                                             \
-        if (temp)                                                                                                                                              \
-            regenerateChunkMesh(temp);                                                                                                                         \
+#define regenMesh(position)                                                                                                           \
+    {                                                                                                                                 \
+        Chunk* temp = game_state->GetTerrain().getChunk(position);                                                                    \
+        if (temp)                                                                                                                     \
+            regenerateChunkMesh(temp);                                                                                                \
     }
 
 void TerrainManager::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords) {

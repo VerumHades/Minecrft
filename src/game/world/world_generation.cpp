@@ -39,6 +39,18 @@ WorldGenerator::WorldGenerator() {
 
     grass = std::make_shared<Structure>(1, 1, 1);
     grass->setBlock({0, 0, 0}, {grass_id});
+
+    ByteArray array{};
+
+    FileStream stream{};
+    stream.Open("resources/structures/tower.structure");
+    stream.MoveCursor(0);
+    array.LoadFromStream(stream);
+
+    tower = std::make_shared<Structure>(0, 0, 0);
+    Serializer::Deserialize<Structure>(*tower.get(), array);
+
+    std::cout << tower->getSize().x << " " << tower->getSize().y << " " << tower->getSize().z << std::endl;
 }
 
 void WorldGenerator::SetupBiomeLayers() {
@@ -74,16 +86,20 @@ void WorldGenerator::SetupBiomeLayers() {
                                                   GetID("stone"),
                                                   GetID("stone"),
                                                   GetID("water"),
-                                                  glm::vec3{100, 200, 100},
-                                                  {{20, tree}, {20, grass}}});
+                                                  glm::vec3{100, 150, 100},
+                                                  {{20, grass}, {0.05, tower}}});
 
-    biomes.push_back(std::make_shared<Biome>(Biome{{0.7, 1.0},
-                                                   {0, 0.3},
-                                                   GetID("volcanic_sand"),
-                                                   GetID("sand_stone"),
+    biomes.push_back(std::make_shared<Biome>(Biome{{0.3, 0.5},
+                                                   {0.2, 0.7},
+                                                   GetID("grass"),
+                                                   GetID("stone"),
                                                    GetID("stone"),
                                                    GetID("water"),
-                                                   glm::vec3{76, 70, 50}}));
+                                                   glm::vec3{200, 200, 200},
+                                                   {{20, tree}}}));
+
+    biomes.push_back(std::make_shared<Biome>(Biome{
+        {0.7, 1.0}, {0, 0.3}, GetID("volcanic_sand"), GetID("sand_stone"), GetID("stone"), GetID("water"), glm::vec3{76, 70, 50}}));
 
     biomes.push_back(std::make_shared<Biome>(Biome{{0.5, 0.7},
                                                    {0, 0.3},
@@ -92,7 +108,7 @@ void WorldGenerator::SetupBiomeLayers() {
                                                    GetID("stone"),
                                                    GetID("water"),
                                                    glm::vec3{240, 189, 22},
-                                                   {{5, cactus}}}));
+                                                   {{1, cactus}}}));
 }
 void WorldGenerator::placeStructure(const glm::ivec3& position, const std::shared_ptr<Structure>& structure) {
     structures.add(position, structure->getSize(), structure);
@@ -120,12 +136,10 @@ float WorldGenerator::GetNoiseValueAt(const glm::vec3& position, const std::stri
     auto& layer = noise_layers.at(layer_name);
 
     glm::vec2 pos = glm::vec2(position.x + layer.offset.x, position.z + layer.offset.y) / 10.0f;
-    float value = (layer.noise.GetNoise(pos.x, pos.y) + 1.0) / 2.0;
+    float value   = (layer.noise.GetNoise(pos.x, pos.y) + 1.0) / 2.0;
 
     if (layer.snap_range != 0)
-        value =
-            (floor((value * 100.0f) / static_cast<float>(layer.snap_range)) * static_cast<float>(layer.snap_range)) /
-            100.0f;
+        value = (floor((value * 100.0f) / static_cast<float>(layer.snap_range)) * static_cast<float>(layer.snap_range)) / 100.0f;
 
     return value;
 }
@@ -133,22 +147,23 @@ float WorldGenerator::GetNoiseValueAt(const glm::vec3& position, const std::stri
 Image WorldGenerator::createPreview(int width, int height, float step) {
     Image out{width, height, 4};
 
-    int half_width = width / 2;
+    int half_width  = width / 2;
     int half_height = height / 2;
 
     for (int x = -half_width; x < half_width; x++)
         for (int z = -half_height; z < half_height; z++) {
             auto position = glm::vec3{x, 0, z} * step;
 
-            int value = GetHeightAt(position);
+            int value        = GetHeightAt(position);
             float normalized = static_cast<float>(value) / 300.0f;
+            normalized = 0.5 + (normalized / 2);
 
             Biome* biome = GetBiomeFor(position);
 
             glm::vec3 color = biome ? biome->preview_color : glm::vec3{60, 150, 60};
 
             if (value < water_level) {
-                color = {60, 60, 150};
+                color      = {60, 60, 150};
                 normalized = 1.0f;
             }
 
@@ -165,7 +180,7 @@ Image WorldGenerator::createPreview(int width, int height, float step) {
 
 Biome* WorldGenerator::GetBiomeFor(const glm::ivec3& position) {
     auto temperature = GetNoiseValueAt(position, "temperature");
-    auto humidity = GetNoiseValueAt(position, "humidity");
+    auto humidity    = GetNoiseValueAt(position, "humidity");
 
     std::vector<Biome*> candidates{};
     for (auto& biome : biomes) {
@@ -181,8 +196,8 @@ Biome* WorldGenerator::GetBiomeFor(const glm::ivec3& position) {
 
 int WorldGenerator::GetHeightAt(const glm::vec3 position) {
     float continentalness = GetNoiseValueAt(position, "continentalness");
-    float weirdness = GetNoiseValueAt(position, "weirdness");
-    float errosion = GetNoiseValueAt(position, "errosion");
+    float weirdness       = GetNoiseValueAt(position, "weirdness");
+    float errosion        = GetNoiseValueAt(position, "errosion");
 
     float value = pow(continentalness, 2) * pow(pow(weirdness, 4), pow(errosion, 3));
 
@@ -204,29 +219,30 @@ WorldGenerator::Heightmap& WorldGenerator::getHeightmapFor(glm::ivec3 position_i
     getHeightMaps().emplace(position, std::make_unique<Heightmap>());
     auto& map = getHeightMaps().at(position);
 
-    map->lowest = INT32_MAX;
+    map->lowest  = INT32_MAX;
     map->highest = INT32_MIN;
 
     for (int x = 0; x < CHUNK_SIZE; x++)
         for (int z = 0; z < CHUNK_SIZE; z++) {
             glm::ivec3 localPosition = glm::ivec3(x, 0, z) + position * CHUNK_SIZE;
 
-            int value = GetHeightAt(localPosition);
+            int value  = GetHeightAt(localPosition);
             auto biome = GetBiomeFor(localPosition);
 
-            static std::uniform_int_distribution<std::size_t> dist(0, 100);
+            static std::uniform_int_distribution<std::size_t> dist(0, 1000000);
 
             for (auto& structure : biome->structures) {
-                if (dist(*structure_random_engine) < structure.spawn_chance && localPosition.y + value > water_level) {
-                    placeStructure(localPosition + glm::ivec3{-2, value + 1, -2}, structure.structure);
+                float chance_value = (float)dist(*structure_random_engine) / 10000;
+                if (chance_value <= structure.spawn_chance && localPosition.y + value > water_level) {
+                    placeStructure(localPosition + glm::ivec3{0, value + 1, 0}, structure.structure);
                     break;
                 }
             }
 
-            map->lowest = std::min(value, map->lowest);
-            map->highest = std::max(value, map->highest);
+            map->lowest        = std::min(value, map->lowest);
+            map->highest       = std::max(value, map->highest);
             map->heights[x][z] = value;
-            map->biomes[x][z] = biome;
+            map->biomes[x][z]  = biome;
         }
 
     return *map;
@@ -241,6 +257,14 @@ void WorldGenerator::prepareHeightMaps(glm::ivec3 around, int distance) {
 
 void WorldGenerator::GenerateTerrainChunk(Chunk* chunk, glm::ivec3 position) {
     // static const int count = CHUNK_SIZE / ChunkDefinition::size;
+
+    // Pregen surrounding maps to keep structures whole
+    for(int i = -1;i <= 1;i++)
+    for(int j = -1;j <= 1;j++){
+        if(i == 0 && j == 0) continue;
+        getHeightmapFor(position + glm::ivec3{i,0,j});
+    }
+
     auto& heightMap = getHeightmapFor(position);
 
     if (heightMap.lowest - 1 > position.y * CHUNK_SIZE + CHUNK_SIZE) {
@@ -292,7 +316,7 @@ void WorldGenerator::Clear() {
 void WorldGenerator::SetSeed(int seed) {
     this->seed = seed;
 
-    offset_random_engine = std::make_unique<std::mt19937>(seed);
+    offset_random_engine    = std::make_unique<std::mt19937>(seed);
     structure_random_engine = std::make_unique<std::mt19937>(seed);
 
     SetupBiomeLayers();

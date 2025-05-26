@@ -13,6 +13,10 @@ class CraftingRecipeRegistry;
 class CraftingInterface;
 class CraftingDisplay;
 
+/**
+ * @brief A recipe for crafting
+ * 
+ */
 class CraftingRecipe{
     public:
         struct ItemRequirement{
@@ -38,7 +42,21 @@ class CraftingRecipe{
         friend class CraftingInterface;
         friend class CraftingDisplay;
 
+        /**
+         * @brief Generates a tag member for a complete tag
+         * 
+         * @param item_name 
+         * @param slotX 
+         * @param slotY 
+         * @param shapeless 
+         * @return std::string 
+         */
         static std::string GenerateTagMember(const std::string& item_name, int slotX, int slotY, bool shapeless);
+        
+        /**
+         * @brief Generates a unique string tag for the recipe
+         * 
+         */
         void GenerateTag();
 
         CraftingRecipe() {}
@@ -46,6 +64,10 @@ class CraftingRecipe{
         CraftingRecipe(const std::vector<ItemRequirement>& required_items, const std::string& result_prototype_name, int result_amount, bool shapeless = false);
 };
 
+/**
+ * @brief Registers all existing recipes
+ * 
+ */
 class CraftingRecipeRegistry{
     private:
         std::unordered_map<std::string, CraftingRecipe> recipes{};
@@ -53,6 +75,13 @@ class CraftingRecipeRegistry{
         CraftingRecipeRegistry() {}
     public:
         void addRecipe(const CraftingRecipe& recipe);
+
+        /**
+         * @brief Returns the relevat recipe found withing an inventory
+         * 
+         * @param inventory 
+         * @return std::tuple<CraftingRecipe*, int, int> the recipe, and its offset in the inventory (every lookup snaps the recipe to the top left corner)
+         */
         std::tuple<CraftingRecipe*, int, int> getCraftingFor(LogicalItemInventory& inventory);
 
         static CraftingRecipeRegistry& get(){
@@ -63,6 +92,10 @@ class CraftingRecipeRegistry{
         static bool LoadRecipesFromXML(const std::string& path);
 };
 
+/**
+ * @brief Data for a crafting block
+ * 
+ */
 class CraftingMetadata: public BlockMetadata{
     public:
         LogicalItemInventory crafting_field{3,3};
@@ -71,6 +104,10 @@ class CraftingMetadata: public BlockMetadata{
         void serialize(ByteArray& to) override;
 };
 
+/**
+ * @brief Display ui for a crafting block
+ * 
+ */
 class CraftingDisplay: public UIFrame{
     private:
         std::shared_ptr<InventoryDisplay> crafting_display;
@@ -85,6 +122,10 @@ class CraftingDisplay: public UIFrame{
         
 };
 
+/**
+ * @brief Interface for a crafting block, handles all the relevant actions associated
+ * 
+ */
 class CraftingInterface: public BlockInterface{
     private:
         std::shared_ptr<UILayer> ui_layer;

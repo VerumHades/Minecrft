@@ -19,6 +19,10 @@
 
 class Mesh;
 
+/**
+ * @brief A loaded mesh ready for rendering
+ * 
+ */
 class LoadedMesh{
     private:
         std::array<GLVertexArray,3> vaos{};
@@ -40,6 +44,10 @@ class LoadedMesh{
         GLVertexArray& getVAO() {return vaos[0];};
 };
 
+/**
+ * @brief A logical mesh class that holds raw vertices and indices
+ * 
+ */
 class Mesh{
     private:
         std::vector<float> vertices;
@@ -51,10 +59,38 @@ class Mesh{
     public:
         Mesh(GLVertexFormat vertex_format, std::shared_ptr<GLTexture2D> texture = nullptr): vertex_format(vertex_format), texture(std::move(texture)){}
 
+        /**
+         * @brief Add quad face from greedy meshing, legacy
+         * 
+         * @param vertices_ 
+         * @param normal 
+         * @param vertexOcclusion 
+         * @param textureIndex 
+         * @param clockwise 
+         * @param width 
+         * @param height 
+         */
         void addQuadFaceGreedy(glm::vec3 vertices_[4], int normal, float vertexOcclusion[4], float textureIndex, int clockwise, int width, int height);
+        
+        /**
+         * @brief Add a more generic quad face
+         * 
+         * @param vertices 
+         * @param normal 
+         * @param clockwise 
+         * @param metadata 
+         * @param textureCoordinates 
+         */
         void addQuadFace(std::array<glm::vec3, 4> vertices, glm::vec3 normal, bool clockwise,
             std::vector<float> metadata, std::array<glm::vec2, 4> textureCoordinates = {glm::vec2{0, 0},{1, 0},{1, 1},{0, 1}});
 
+        /**
+         * @brief Add a simple quad face
+         * 
+         * @param vertices 
+         * @param normal 
+         * @param clockwise 
+         */
         void addQuadFace(std::array<glm::vec3, 4> vertices, glm::vec3 normal, bool clockwise);
 
         std::vector<float>& getVertices() {return this->vertices;}

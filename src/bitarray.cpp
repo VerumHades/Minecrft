@@ -142,7 +142,6 @@ static inline uint64_t expand(uint64_t value, BitField3D::SimplificationLevel le
     return value;
 }
 
-static bool capture = true;
 BitField3D* BitField3D::getSimplified(SimplificationLevel level) {
     if (simplified_version_pointer && simplified_version_pointer->creator_id == id) {
         return &simplified_version_pointer->field;

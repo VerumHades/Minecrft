@@ -13,6 +13,10 @@
 
 #include <game/blocks.hpp>
 
+/**
+ * @brief A model for a block that can be textured
+ * 
+ */
 class BlockModel: public Model{
     private:
         std::array<glm::vec2, 4> getTextureCoordinates(int i);

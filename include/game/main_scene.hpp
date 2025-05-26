@@ -57,9 +57,12 @@
 class UIHotbar;
 class UILoading;
 
-/*
-    Never make two instances of this class or weird things are going to happen!
-*/
+/**
+ * @brief The base class for the main ingame scene
+ * 
+ * Never make two instances of this class or weird things are going to happen!
+ * 
+ */
 class MainScene : public Scene {
   private:
     PerspectiveCamera camera = PerspectiveCamera("player");
@@ -136,6 +139,11 @@ class MainScene : public Scene {
         return game_modes.at(selected_game_mode).get();
     }
 
+    /**
+     * @brief Returns the current base ui layer, many actions will return to this layer by default
+     * 
+     * @return UILayer& 
+     */
     UILayer& GetCurrentBaseLayer() {
         if (!CurrentGameMode())
             return getUILayer("default");
@@ -148,6 +156,10 @@ class MainScene : public Scene {
         ResetToBaseLayer();
     }
 
+    /**
+     * @brief Returns to base ui layer
+     * 
+     */
     void ResetToBaseLayer() {
         setUILayer(GetCurrentBaseLayer().name);
     }
@@ -229,6 +241,10 @@ class MainScene : public Scene {
     void keyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) override;
 };
 
+/**
+ * @brief A ui component used for loading screens
+ * 
+ */
 class UILoading : public UIFrame {
   private:
     std::array<std::atomic<int>, 8>* values = nullptr;

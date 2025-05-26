@@ -5,8 +5,8 @@ template <typename T>
 class Interval{
     private:
         T min;
-        bool include_min;
         T max;
+        bool include_min;
         bool include_max;
     public:
         Interval(const T& min, const T& max, bool include_min = true, bool include_max = true):

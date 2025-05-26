@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <mutex>
 
+#include <logging.hpp>
 #include <structure/streams/buffer.hpp>
 
 #include <path_config.hpp>

@@ -4,6 +4,10 @@
 #include <glm/glm.hpp>
 #include <memory>
 
+/**
+ * @brief A specification of how a block mesh should behave
+ * 
+ */
 class MeshInterface{
     public:
         enum FaceType{
@@ -24,6 +28,10 @@ class MeshInterface{
         virtual void shrink() = 0;
 };
 
+/**
+ * @brief A specification of how a loaded mesh should behave
+ * 
+ */
 class LoadedMeshInterface{
     public:
         virtual void addDrawCall(const glm::ivec3& position) = 0;
@@ -32,6 +40,10 @@ class LoadedMeshInterface{
         virtual bool isValid() = 0;
 };
 
+/**
+ * @brief A specification of how a mesh loader should behave
+ * 
+ */
 class MeshLoaderInterface{
     public:
         virtual std::unique_ptr<LoadedMeshInterface> loadMesh(MeshInterface* mesh) = 0;

@@ -22,6 +22,10 @@ class Entity;
 class DroppedItem;
 class GameState;
 
+/**
+ * @brief Entity specific data interface
+ * 
+ */
 class EntityData{
     public:
         enum Type{
@@ -35,6 +39,10 @@ class EntityData{
         virtual void setup(Entity* entity) = 0;
 };
 
+/**
+ * @brief Base entity that can exist in the world
+ * 
+ */
 class Entity{
     private:
         glm::vec3 position = glm::vec3(0);
@@ -68,7 +76,7 @@ class Entity{
         std::function<void(Entity*, Entity*)> onCollision;
         std::function<void(Entity*)> onTerrainCollision;
         bool destroy = false;
-
+        
         void accelerate(glm::vec3 direction, float deltatime);
         void decellerate(float strength, float deltatime);
         void setGravity(bool value){hasGravity = value;}

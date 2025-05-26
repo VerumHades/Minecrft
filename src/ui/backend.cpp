@@ -89,7 +89,7 @@ void UIRenderBatch::Text(std::string text, int x, int y, int font_size, UIColor 
     commands.push_back(UIRenderCommand{
         {
             glm::vec2{x,y},
-            glm::vec2{font_size}   
+            glm::vec2{static_cast<float>(font_size)}   
         },
         color,
         {{0,0},{0,0}},

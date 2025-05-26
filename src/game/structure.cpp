@@ -2,9 +2,9 @@
 
 std::tuple<SparseBlockArray*, glm::ivec3> Structure::getBlockArrayForPosition(glm::ivec3 position){
     if(
-        position.x < 0 || position.x > width  ||
-        position.y < 0 || position.y > height ||
-        position.z < 0 || position.z > depth
+        position.x < 0 || position.x > static_cast<int>(width)  ||
+        position.y < 0 || position.y > static_cast<int>(height) ||
+        position.z < 0 || position.z > static_cast<int>(depth)
     ) return {nullptr,{0,0,0}};
 
     glm::ivec3 chunk_position = glm::floor(glm::vec3(position) / 64.0f);
@@ -35,7 +35,6 @@ Block* Structure::getBlock(glm::ivec3 position){
 Structure::PositionSet Structure::place(const glm::ivec3& position ,Terrain& world){
     PositionSet visited{};
 
-    int i = 0;
     for(auto& [chunk_position, block_array]: block_arrays){
         for(int x = 0;x < 64;x++)
         for(int y = 0;y < 64;y++)
@@ -56,15 +55,12 @@ Structure::PositionSet Structure::place(const glm::ivec3& position ,Terrain& wor
     return visited;
 }
 
-Structure Structure::capture(const glm::ivec3& position, const glm::ivec3& size, const Terrain& world){
+Structure Structure::capture(const glm::ivec3& position, const glm::uvec3& size, const Terrain& world){
     Structure output{size.x,size.y,size.z};
 
-    int i = -1;
-    int total =  (size.x * size.y * size.z);
-
-    for(int x = 0;x < size.x ;x++)
-    for(int y = 0;y < size.y;y++)
-    for(int z = 0;z < size.z;z++){
+    for(uint x = 0;x < size.x ;x++)
+    for(uint y = 0;y < size.y;y++)
+    for(uint z = 0;z < size.z;z++){
         glm::ivec3 block_position = {x,y,z};
 
         Block* block = world.getBlock(position + block_position);

@@ -11,6 +11,10 @@
 #include <rendering/opengl/texture.hpp>
 #include <rendering/image_processing.hpp>
 
+/**
+ * @brief A 2d texture atlas for item textures
+ * 
+ */
 class ItemTextureAtlas{
     private:
         const size_t single_texture_size = 32;
@@ -38,16 +42,30 @@ class ItemTextureAtlas{
             texture_array = std::make_shared<GLTextureArray>();
             texture_array->setup(atlas_size, atlas_size, layer_count);
         }
-        /*
-            Loads the texture if not loaded, returs its uv coordinates and index
-        */
+        /**
+         * @brief Loads the texture for a given prototype if not loaded, returs its uv coordinates and index
+         * 
+         * @param prototype 
+         * @return TextureSet* 
+         */
         TextureSet* getPrototypeTextureSet(ItemPrototype* prototype);
-
+        
+        /**
+         * @brief Helper function that renders an item into a slot
+         * 
+         * @param batch rendering batch for the ui component
+         * @param prototype 
+         * @param slot_transform size and position of the slot to draw in
+         */
         void RenderItemIntoSlot(UIRenderBatch& batch, ItemPrototype* prototype, UITransform slot_transform);
 
         std::shared_ptr<GLTextureArray>& getTextureArray() {return texture_array;};
 };
 
+/**
+ * @brief An interactable ui slot component
+ * 
+ */
 class ItemSlot: public UIFrame{
     private:
         const int slot_size = 64;
@@ -68,6 +86,10 @@ class ItemSlot: public UIFrame{
         
 };
 
+/**
+ * @brief A ui component that allows interaction with a logical inventory
+ * 
+ */
 class InventoryDisplay: public UIFrame{
     protected:
         const int slot_size = 64;

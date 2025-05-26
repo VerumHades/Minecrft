@@ -7,7 +7,7 @@ void CubeRenderer::loadTextures(const std::vector<std::string>& textures){
     loaded_texture = std::make_shared<GLTexture2D>();
     
     loaded_texture->configure(GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, 32 * texture_count.getValue(), 32);
-    for(int i = 0;i < textures.size();i++){
+    for(size_t i = 0;i < textures.size();i++){
         Image image = Image::LoadWithSize(textures[i], 32, 32);
         loaded_texture->putImage(32 * i, 0, image);
     }

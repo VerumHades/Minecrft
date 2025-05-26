@@ -10,7 +10,7 @@ BindableTexture::~BindableTexture(){
     GL_CALL( glDeleteTextures(1, &this->texture));
 }
 
-static int active_unit = -1;
+//static int active_unit = -1;
 void BindableTexture::bind(int unit) const{
     if(unit < 0 || unit >= 32) return;
     if(texture_bindings[unit] == this->texture) return;
@@ -184,8 +184,7 @@ void GLTextureArray::loadFromFiles(std::vector<std::string>& filenames, int laye
     int mipLevels = (int) floor(log2(fmax(layerWidth, layerHeight))) + 1;
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, GL_RGBA8, layerWidth, layerHeight,  size);
 
-    int width = 0, height = 0, nrChannels = 0;
-    unsigned char *data;  
+
     for(int i = 0; i < size; i++)
     {   
         Image texture_image = Image::LoadWithSize(filenames[i], layerWidth, layerHeight);

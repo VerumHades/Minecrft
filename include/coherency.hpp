@@ -2,9 +2,12 @@
 
 #include <structure/allocator.hpp>
 #include <cstring>
-/*
-    List that remains cache friendly
-*/
+
+/**
+ * @brief A list that allows allocation
+ * 
+ * @tparam T 
+ */
 template <typename T>
 class AllocatedList{
     private:
@@ -22,9 +25,13 @@ class AllocatedList{
             });        
         }
 
-        /*
-            If source is nullptr only allocates
-        */
+        /**
+         * @brief If source is nullptr only allocates
+         * 
+         * @param source source data to copy
+         * @param size size for the allocation
+         * @return size_t an index of the allocation
+         */
         size_t insert(T* source, size_t size){
             if(size == 0) return 0;
             
@@ -68,10 +75,13 @@ class AllocatedList{
         }
 };
 
-/*
-    A list that keeps all its contents tighly packed, 
-    uses a system of virtual regions to keep track of contents iterators to which remains valid even on removal and addition
-*/
+/**
+ * @brief A list that keeps all its contents tighly packed.
+ * 
+ * Uses a system of virtual regions to keep track of contents iterators to which remains valid even on removal and addition
+ * 
+ * @tparam T 
+ */
 template <typename T>
 class CoherentList{
     public:
@@ -87,6 +97,13 @@ class CoherentList{
 
     public:
         CoherentList(){}
+        /**
+         * @brief Appends data to the end
+         * 
+         * @param data data to copy
+         * @param size count of the elements
+         * @return const RegionIterator 
+         */
         const RegionIterator append(const T* data, const size_t size){
             RegionIterator region_iter = 
                 regions.insert(regions.end(), {internal_data.size(), size});
@@ -96,7 +113,11 @@ class CoherentList{
             
             return region_iter;
         }
-
+        /**
+         * @brief Removes a region
+         * 
+         * @param region 
+         */
         void remove(const RegionIterator region){
             size_t total_to_move = (internal_data.size() - region->start - region->size);
             if(total_to_move > 0){
@@ -112,6 +133,14 @@ class CoherentList{
             regions.erase(region);
         }
 
+        /**
+         * @brief Updates a region with new data, doesnt reallocate if not neccesarry
+         * 
+         * @param region 
+         * @param data 
+         * @param size 
+         * @return const RegionIterator 
+         */
         const RegionIterator update(const RegionIterator region, const T* data, const size_t size){
             if(region->size == size){
                 std::memcpy(internal_data.data() + region->start, data, size * sizeof(T));

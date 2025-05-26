@@ -3,64 +3,70 @@
 //%localappdata%/Majnkraft/logs
 
 Logging::Logging() {
-    /*std::time_t now = std::time(0);  // Get current system time
-    std::tm* localTime = std::localtime(&now);  // Convert to local time
-    std::ostringstream time_path;
-    time_path << std::put_time(localTime, "%Y_%m_%d_%H_%M_%S_log.txt");*/
-
     std::string log_name = "log.txt";
+    std::filesystem::path final_path;
 
+    // 1. Try LocalAppData (or whatever Paths::LOG_PATH points to)
     auto path = Paths::Get(Paths::LOG_PATH);
-    if (!path) {
-        SetPath(log_name);
-        return;
+    if (path) {
+        std::error_code ec;
+        std::filesystem::create_directories(path.value(), ec); // Ensure directory exists
+        if (ec) {
+            std::cerr << "Failed to create log directory: " << ec.message() << std::endl;
+        } else {
+            final_path = path.value() / log_name;
+            outfile.open(final_path);
+        }
     }
 
-    outfile.open(path.value() / log_name);
-
-    if (outfile.fail()) {
-        std::cerr << "Log file open failed: " << strerror(errno) << std::endl; // Use strerror to get system error
+    // 2. Fallback to Current Working Directory
+    if (!outfile.is_open()) {
+        final_path = std::filesystem::current_path() / log_name;
+        outfile.open(final_path);
+        if (outfile.is_open()) {
+            std::cout << "Fell back to current working directory: " << final_path.string() << "\n";;
+        }
     }
+
+    // 3. Fallback to Temporary Directory
+    if (!outfile.is_open()) {
+        final_path = std::filesystem::temp_directory_path() / log_name;
+        outfile.open(final_path);
+        if (outfile.is_open()) {
+            std::cout << "Fell back to temporary directory: " << final_path.string() << "\n";;
+        }
+    }
+
+    // Logging result
+    if (outfile.is_open()) {
+        std::cout << "Logging to: " << std::filesystem::absolute(final_path) << std::endl;
+    } else {
+        std::cerr << "Failed to open log file in all attempted locations.\n";
+        std::cerr << "Last attempted path: " << final_path << "\n";
+        std::cerr << "Error: " << strerror(errno) << std::endl;
+    }
+
     if (outfile.bad()) {
         std::cerr << "A serious error occurred while opening the log file." << std::endl;
     }
 }
 
-bool Logging::isLogOld(const fs::path& file, int daysThreshold) {
-    // Extract the timestamp part from the filename
-    std::string filename      = file.filename().string();
-    std::string timestamp_str = filename.substr(0, 19); // e.g. "2025-03-11_14:30:00"
-
-    // Create a time_point from the extracted timestamp
-    std::tm tm = {};
-    std::istringstream ss(timestamp_str);
-    ss >> std::get_time(&tm, "%Y_%m_%d_%H_%M_%S");
-    if (ss.fail()) {
-        LogError("Failed to parse timestamp: ", timestamp_str);
-        return false;
-    }
-
-    // Convert to time_point
-    auto file_time = std::chrono::system_clock::from_time_t(std::mktime(&tm));
-
-    // Get the current time and calculate the threshold time
-    auto now       = std::chrono::system_clock::now();
-    auto threshold = now - std::chrono::hours(24 * daysThreshold);
-
-    // Compare if the file is older than the threshold
-    return file_time < threshold;
-}
-
 void Logging::Message(const std::string& descriptor, const std::string& message, int line, const char* file) {
     std::lock_guard<std::mutex> lock(mtx);
 
-    if (!outfile.is_open())
-        return;
-
+    
     std::time_t now    = std::time(0);         // Get current system time
     std::tm* localTime = std::localtime(&now); // Convert to local time
 
-    outfile << std::put_time(localTime, "%Y-%m-%d %H:%M:%S \"") << file << "\" [at line " << line << "] <" << descriptor << "> " << message << std::endl;
+    if (!outfile.is_open())
+        std::cout << std::put_time(localTime, "%Y-%m-%d %H:%M:%S \"") << file << "\" [at line " << line << "] <" << descriptor << "> " << message << std::endl;
+    else{
+        outfile << std::put_time(localTime, "%Y-%m-%d %H:%M:%S \"") << file << "\" [at line " << line << "] <" << descriptor << "> " << message << std::endl;
+
+        if (outfile.tellp() >= boundary) {
+            outfile.seekp(0);  // wrap around
+        }
+    }
     // std::cout << std::put_time(localTime, "%Y-%m-%d %H:%M:%S \"") << file << "\" [at line " << line << "] <" << descriptor << "> " << message << std::endl;
 }
 
@@ -77,16 +83,23 @@ void Logging::SetPath(const fs::path& path) {
 void Logging::SaveTrace() {
     std::lock_guard<std::mutex> lock(mtx);
 
-    if (!outfile.is_open())
-        return;
-
+    
     auto trace = cpptrace::generate_trace();
 
-    outfile << "------------ Stack trace ---------------" << std::endl;
-    for (const auto& frame : trace) {
-        outfile << frame << "\n";
+    if (!outfile.is_open()){
+        std::cout  << "------------ Stack trace ---------------" << std::endl;
+        for (const auto& frame : trace) {
+            std::cout << frame << "\n";
+        }
+        std::cout << "----------------------------------------" << std::endl;   
     }
-    outfile << "----------------------------------------" << std::endl;
+    else{
+        outfile << "------------ Stack trace ---------------" << std::endl;
+        for (const auto& frame : trace) {
+            outfile << frame << "\n";
+        }
+        outfile << "----------------------------------------" << std::endl;
+    }
 }
 
 void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* param) {
@@ -161,12 +174,20 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLen
         break;
     }
 
-    LogOpengl("{}: GL {} {} ({}): {}", id, severity_, type_, source_, message);
+    static int opengl_error_timout = 10000;
+    static int opengl_error_counter = 0;
+
+    if(opengl_error_counter <= 0) {    
+        LogOpengl("{}: GL {} {} ({}): {}", id, severity_, type_, source_, message);
+        opengl_error_counter = opengl_error_timout;
+    }
+    else opengl_error_counter--;
 
     // if(severity == GL_DEBUG_SEVERITY_HIGH || severity == GL_DEBUG_SEVERITY_MEDIUM) Logging::Get().SaveTrace();
 }
 
 void CheckGLError(const char* file, int line) {
+    
     GLenum error;
     while ((error = glGetError()) != GL_NO_ERROR) {
         const char* errorString;
@@ -193,6 +214,14 @@ void CheckGLError(const char* file, int line) {
             break;
         }
 
-        Logging::Get().Message("OPENGL_ERROR", errorString, line, file);
+        static int opengl_error_timout = 10000;
+        static int opengl_error_counter = 0;
+
+        if(opengl_error_counter <= 0) {    
+            Logging::Get().Message("OPENGL_ERROR", errorString, line, file);
+            Logging::Get().SaveTrace();
+            opengl_error_counter = opengl_error_timout;
+        }
+        else opengl_error_counter--;
     }
 }

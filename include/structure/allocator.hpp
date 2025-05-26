@@ -10,6 +10,10 @@
 
 using AllocatorMemoryRequest = std::function<bool(size_t)>;
 
+/**
+ * @brief An allocator that allocates values but doesnt really care where.
+ * 
+ */
 class Allocator{
     private:
         size_t memsize;
@@ -51,6 +55,11 @@ class Allocator{
             markFree(blocks.insert(blocks.end(),MemBlock{0, memsize, false, freeBlocks.end()}));
         }
 
+        /**
+         * @brief Expands available memory by a set amount
+         * 
+         * @param amount 
+         */
         void expand(size_t amount){
             if(!blocks.back().used){
                 blocks.back().size += amount;
@@ -61,8 +70,14 @@ class Allocator{
             else markFree(blocks.insert(blocks.end(),{memsize, amount, false, freeBlocks.end()}));
             
             memsize += amount;
-        }
+        }   
 
+        /**
+         * @brief Allocates at chosen position if possible
+         * 
+         * @param size 
+         * @return std::tuple<bool,size_t> success, position
+         */
         std::tuple<bool,size_t> allocate(size_t size);
         bool free(size_t location, std::string fail_prefix = "");
         void clear(){
@@ -84,6 +99,10 @@ class Allocator{
         const size_t& getMemorySize() const {return memsize;}
 };
 
+/**
+ * @brief An allocator that allocates single index values
+ * 
+ */
 class PoolAllocator{
     private:
         std::queue<size_t> freeLocations = {};

@@ -16,6 +16,11 @@
 #include <limits>
 #include <iostream>
 
+/**
+ * @brief A class responsible for storing chunks into a file
+ * 
+ * Thread safe
+ */
 class WorldStream {
     private:
         constexpr static int segment_size = 4;
@@ -63,10 +68,30 @@ class WorldStream {
     public:
         WorldStream(const std::shared_ptr<KeyedStorage<glm::ivec3>>& storage);
         ~WorldStream();
-        //bool save(Chunk& chunk);
-        //void load(Chunk* chunk);
+        
+        /**
+         * @brief Check whether there is a chunk stored for the given position
+         * 
+         * @param position 
+         * @return true 
+         * @return false 
+         */
         bool HasChunkAt(const glm::ivec3& position);
 
+        /**
+         * @brief Stores a chunk, uses its world position as its position
+         * 
+         * @param chunk 
+         * @return true 
+         * @return false 
+         */
         bool Save(std::unique_ptr<Chunk> chunk);
+
+        /**
+         * @brief Loads a chunk for a given position
+         * 
+         * @param position 
+         * @return std::unique_ptr<Chunk> nullptr if it doesnt exist
+         */
         std::unique_ptr<Chunk> Load(const glm::ivec3& position);
 };

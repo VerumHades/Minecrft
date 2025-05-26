@@ -3,6 +3,10 @@
 #include <glm/glm.hpp>
 class Chunk;
 
+/**
+ * @brief A generic abstract class to describe a world generator (decoupling code)
+ * 
+ */
 class Generator {
     public:
         virtual ~Generator() = default;

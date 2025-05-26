@@ -10,6 +10,10 @@
 #include <rendering/image_processing.hpp>
 #include <rendering/mesh.hpp>
 
+/**
+ * @brief A class for rendering textured cube models
+ * 
+ */
 class CubeRenderer{
     private:
         const size_t maxCubes = 128;

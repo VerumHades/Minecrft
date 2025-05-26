@@ -54,7 +54,7 @@ void CommandProcessor::processCommand(std::string raw){
     }
 
     std::vector<CommandArgument> arguments = {};
-    for(int i = 0;i < command.getArgumentTypes().size();i++){
+    for(size_t i = 0;i < command.getArgumentTypes().size();i++){
         CommandArgument argument = processArgument(raw_args[i]);
 
         if(argument.type == command.getArgumentTypes()[i]){
