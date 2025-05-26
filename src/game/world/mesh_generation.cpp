@@ -1,4 +1,4 @@
-#include <basetsd.h>
+
 #include <cstdint>
 #include <game/world/mesh_generation.hpp>
 
