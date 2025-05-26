@@ -23,6 +23,10 @@ enum Units{
     OPERATION_DIVIDE  , // TValue / TValue (resolved to pixels)
 };
 
+/**
+ * @brief A value used for sizes in ui
+ * 
+ */
 struct TValue{
     Units unit = AUTO;
     int value = 0; 

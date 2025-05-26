@@ -2,18 +2,34 @@
 
 #include <structure/streams/stream.hpp>
 
+/**
+ * @brief A generic definition of a buffer
+ * 
+ */
 class Buffer: public Stream{
     private:
         size_t cursor = 0;
 
     public:
-        /*
-            Read bytes into buffer
-        */
+        /**
+         * @brief Read bytes into buffer
+         * 
+         * @param offset 
+         * @param size 
+         * @param buffer 
+         * @return true 
+         * @return false 
+         */
         virtual bool Read(size_t offset, size_t size, byte* buffer) = 0;
-        /*
-            Write bytes into buffer at offset
-        */
+        /**
+         * @brief Write bytes into buffer at offset
+         * 
+         * @param offset 
+         * @param size 
+         * @param buffer 
+         * @return true 
+         * @return false 
+         */
         virtual bool Write(size_t offset, size_t size, const byte* buffer) = 0;
 
         // Returns the buffers size

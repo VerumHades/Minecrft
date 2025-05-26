@@ -2,6 +2,10 @@
 
 #include <structure/bytearray.hpp>
 
+/**
+ * @brief The core serialized template, implementations for different elements are in source files
+ * 
+ */
 class Serializer{
     public:
         template <typename T>

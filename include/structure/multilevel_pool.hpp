@@ -7,12 +7,23 @@
 #include <cmath>
 #include <mutex>
 
+/**
+ * @brief A pool that allows allocation of extendable lists to minimize memory fragmentation, it hold several pools that double in size per level
+ * 
+ * @tparam T 
+ */
 template <typename T>
 class MultilevelPool
 {
 private:
     std::unordered_map<size_t, std::unique_ptr<SegmentedPool<T>>> pools;
 
+    /**
+     * @brief Returns a segment with minimal size, creates it if it doesnt exist
+     * 
+     * @param size 
+     * @return SegmentedPool<T>::Segment 
+     */
     typename SegmentedPool<T>::Segment GetSegmentOfMinSize(size_t size)
     {
         std::lock_guard lock(mutex);
@@ -102,6 +113,12 @@ public:
         const T &operator[](size_t index) const { return segment[index]; }
     };
 
+    /**
+     * @brief Get a list of size
+     * 
+     * @param size 
+     * @return List 
+     */
     List Next(size_t size)
     {
         return List{GetSegmentOfMinSize(size), this};

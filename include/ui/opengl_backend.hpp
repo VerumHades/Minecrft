@@ -7,7 +7,10 @@
 #include <list>
 #include <ui/font.hpp>
 
-
+/**
+ * @brief A UI backend opengl implementation
+ * 
+ */
 class UIOpenglBackend: public UIBackend{
     private:
         const int vertex_size = 9;

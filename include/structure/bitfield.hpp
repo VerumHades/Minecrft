@@ -3,11 +3,11 @@
 #include <array>
 #include <structure/definitions.hpp>
 
-/*
-  A tree dimensional array of bits (64 * 64 * 64), stored as and array of unsigned 64 bit integers,
-
-  y is the largest dimensions that jumps around in memory the most
-*/
+/**
+ * @brief A tree dimensional array of bits (64 * 64 * 64), stored as and array of unsigned 64 bit integers;
+ * y is the largest dimensions that jumps around in memory the most
+ *
+ */
 class BitField {
   private:
     std::array<uint64_t, 64 * 64> _internal_data = {0};
@@ -21,39 +21,37 @@ class BitField {
     }
 
   public:
-    /*
-      Sets a bit at x,y,z.
-
-      If coordinates are out of bounds returns false, otherwise returns true
-    */
+    /**
+     * @brief Sets a bit at x,y,z.
+     * 
+     */
     virtual bool set(uint x, uint y, uint z);
-    /*
-      Resets a bit at x,y,z.
-
-      If coordinates are out of bounds returns false, otherwise returns true
-    */
+    /**
+     * @brief Resets a bit at x,y,z.
+     * 
+     */
     virtual bool reset(uint x, uint y, uint z);
-    /*
-        Returns the value of a bit at x,y,z
-
-        Returns false when out of bounds.
-    */
+    /**
+     * @brief Returns the value of a bit at x,y,z
+     * 
+     */
     virtual bool get(uint x, uint y, uint z);
-    /*
-        Sets a whole row to a 64bit value.
-
-        If coordinates are out of bounds returns false, otherwise returns true
-    */
+    /**
+     * @brief Sets a whole row to a 64bit value.
+     * 
+     */
     virtual bool setRow(uint x, uint y, uint64_t value);
-    /*
-        Returns a row at x,y
-
-        If out of bounds returns 0
-    */
+    /**
+     * @brief Returns a row at x,y
+     * 
+     */
     virtual uint64_t getRow(uint x, uint y);
-    /*
-        Fill the array with the set value
-    */
+    /**
+     * @brief Fill the array with the set value
+     * 
+     * @param value 
+     * @return Fill 
+     */
     virtual void fill(bool value);
 
     std::array<uint64_t, 64 * 64>& data();

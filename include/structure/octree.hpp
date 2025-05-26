@@ -6,6 +6,11 @@
 #include <iostream>
 #include <memory>
 
+/**
+ * @brief A class that implements a generic octree (https://en.wikipedia.org/wiki/Octree)
+ * 
+ * @tparam T 
+ */
 template <typename T> class Octree {
   private:
     class Node {
@@ -80,23 +85,35 @@ template <typename T> class Octree {
     Octree() {
         root_node = std::make_unique<Node>();
     }
-    /*
-        Sets a value to be at a set position.
-    */
+    /**
+     * @brief Sets a value to be at a set position.
+     * 
+     * @param position 
+     * @param value 
+     */
     void Set(const glm::uvec3& position, std::unique_ptr<T> value) {
         auto [node_ptr, index] = InternalGet(position, true);
         node_ptr->values[index] = std::move(value);
     }
 
-    /*
-        Returns a value at a position or nullptr if it doensnt exist.
-    */
+    /**
+     * @brief Returns a value at a position or nullptr if it doensnt exist.
+     * 
+     * @param position 
+     * @return T* 
+     */
     T* Get(const glm::uvec3& position) {
         auto [node_ptr, index] = InternalGet(position, false);
         if(!node_ptr) return nullptr;
         return node_ptr->values[index].get();
     }
-
+    
+    /**
+     * @brief Return a value at a position and destroy it (the node)
+     * 
+     * @param position 
+     * @return std::unique_ptr<T> 
+     */
     std::unique_ptr<T> Pop(const glm::uvec3& position) {
         auto [node_ptr, index] = InternalGet(position, false);
         if(!node_ptr) return nullptr;

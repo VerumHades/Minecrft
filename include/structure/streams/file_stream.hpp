@@ -13,6 +13,10 @@
 
 #include <path_config.hpp>
 
+/**
+ * @brief A wrapper around the original filestream that automatically creates the file, allows loading and initialization callbacks 
+ * 
+ */
 class FileStream: public Buffer{
     public:
         using Callback = std::function<void(FileStream*)>;

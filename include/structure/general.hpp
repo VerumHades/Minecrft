@@ -6,6 +6,10 @@
 #include <logging.hpp>
 using uint = unsigned int;
 
+/**
+ * @brief A timer that allows timestamping for benchmarking
+ * 
+ */
 class ScopeTimer{
     private:
         std::chrono::high_resolution_clock::time_point relative_start;

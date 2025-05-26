@@ -6,6 +6,15 @@
 
 #include <structure/caching/eviction_policies.hpp>
 
+/**
+ * @brief A simple cache that allows different eviction strategies
+ * 
+ * @tparam Key 
+ * @tparam T 
+ * @tparam Hash 
+ * @tparam Equal 
+ * @tparam EvictionPolicy 
+ */
 template <typename Key, typename T, typename Hash = std::hash<Key>, typename Equal = std::equal_to<Key>,
           typename EvictionPolicy = CacheEvictionPolicies::LeastRecentlyUsed<Key, Hash, Equal>>
 class Cache {
@@ -27,9 +36,13 @@ class Cache {
         return nullptr;
     }
 
-    /*
-        If a cached value was evicted returns it with its key, otherwise returns std::nullopt
-    */
+    /**
+     * @brief If a cached value was evicted returns it with its key, otherwise returns std::nullopt
+     * 
+     * @param key 
+     * @param t 
+     * @return std::optional<std::pair<Key, T>> 
+     */
     std::optional<std::pair<Key, T>> Load(const Key& key, T t) {
         std::optional<std::pair<Key, T>> result = std::nullopt;
 
@@ -46,6 +59,11 @@ class Cache {
         return std::move(result);
     }
 
+    /**
+     * @brief Clears the cache and handles each individual eviction with a callback
+     * 
+     * @param evict 
+     */
     void Clear(const std::function<void(Key, T)>& evict) {
         for (auto it = cached_values.begin(); it != cached_values.end();) {
             auto node = cached_values.extract(it++);

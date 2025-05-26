@@ -8,7 +8,14 @@
 #include <structure/streams/buffer.hpp>
 #include <structure/keyed_storage.hpp>
 
-
+/**
+ * @brief A structure that writes into a buffer and stores elements by their respective keys (In large blocks), allows allocation for said blocks
+ * 
+ * @tparam Key 
+ * @tparam OuterHeader an extension to the header
+ * @tparam Hash 
+ * @tparam Equal 
+ */
 template <typename Key, typename OuterHeader, typename Hash = std::hash<Key>, typename Equal = std::equal_to<Key>>
 class RecordStore: public KeyedStorage<Key>{
     public:
@@ -52,10 +59,13 @@ class RecordStore: public KeyedStorage<Key>{
 
     // Free blocks in the format of size, location
     std::multimap<size_t, size_t> free_blocks;
-    /*
-        Finds space from free blocks (will not give blocks that are > 2 * capacity) or appends to the end to get more space
-        Returns location of newly allocated space
-    */
+    
+    /**
+     * @brief Finds space from free blocks (will not give blocks that are > 2 * capacity) or appends to the end to get more space
+     * 
+     * @param capacity 
+     * @return size_t location of newly allocated space
+     */
     size_t AllocateBlock(size_t capacity);
     // Does no checks, only registers a block as free
     void FreeBlock(size_t location, size_t capacity);
@@ -79,13 +89,38 @@ class RecordStore: public KeyedStorage<Key>{
     RecordStore();
     ~RecordStore();
 
+    /**
+     * @brief Save a value at a key
+     * 
+     * @param key 
+     * @param size 
+     * @param data 
+     */
     void Save(const Key& key, size_t size, const byte* data) override;
+    /**
+     * @brief Get the value from a key
+     * 
+     * @param key 
+     * @param output 
+     * @return true 
+     * @return false 
+     */
     bool Get(const Key& key, std::vector<byte>& output) override;
 
     OuterHeader& GetHeader() { return loaded_header.header; };
     const OuterHeader& GetHeader() const { return loaded_header.header; };
 
+    /**
+     * @brief Completely reset all stored record, clears data
+     * 
+     */
     void ResetHeader();
+
+    /**
+     * @brief Sets the currently used buffer
+     * 
+     * @param buffer 
+     */
     void SetBuffer(Buffer* buffer);
 };
 

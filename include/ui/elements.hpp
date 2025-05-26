@@ -49,9 +49,10 @@ class UIEventHandler{
 };
 
 
-/*
-    Core element that every other element inherits from
-*/
+/**
+ * @brief Core element that every other element inherits from
+ * 
+ */
 class UIFrame{
     public:
         struct Style{

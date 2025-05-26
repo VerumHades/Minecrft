@@ -25,6 +25,11 @@ struct Character {
     glm::vec2 TexCoordsMax; // Upper-right corner of the glyph in the atlas
 };
 
+
+/**
+ * @brief A simple font class that utilizes the freetype library
+ * 
+ */
 class Font{
     private:
         FT_Library ft;
@@ -45,7 +50,11 @@ class Font{
 
         int getSize(){return size;}
 };
-
+/**
+ * @brief A class that manages loads and renders font characters for rendering
+ * Made with the help of ai
+ * 
+ */
 class FontManager{
     private:
         ShaderProgram program = ShaderProgram("resources/shaders/graphical/ui/text.vs","resources/shaders/graphical/ui/text.fs");

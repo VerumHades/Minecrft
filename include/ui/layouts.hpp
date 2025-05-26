@@ -4,21 +4,31 @@
 
 class UIFrame;
 
-/*
-    Base class for all layouts
-*/
+/**
+ * @brief Base class for all layouts
+ * 
+ */
 class UILayout{
     public:
-        /*
-            Resizes or changes the element itself
+        /**
+        * @brief Resizes or changes the element itself
+        * 
+        * @param frame 
+        * @return UITransform 
         */
         virtual UITransform calculateContentTransform(UIFrame* frame);
-        /*
-            Organizes all of the elements children in some defined way
-        */
+        /**
+         * @brief Organizes all of the elements children in some defined way
+         * 
+         * @param frame 
+         */
         virtual void arrangeChildren(UIFrame* frame);
 };
 
+/**
+ * @brief A flex layout akin to the css counterpart used on the web
+ * 
+ */
 class UIFlexLayout: public UILayout{
     public:
         enum FlexDirection{

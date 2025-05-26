@@ -3,6 +3,10 @@
 
 #include <glm/glm.hpp>
 
+/**
+ * @brief Ai generated classes for custom hash functions
+ * 
+ */
 struct Vec2Hash {
     size_t operator()(const glm::vec2& v) const noexcept;
 };

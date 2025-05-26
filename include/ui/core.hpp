@@ -29,6 +29,10 @@ struct UIEventLock{
     bool scrollEvent = false;
 };
 
+/**
+ * @brief A layer of ui elements
+ * 
+ */
 class UILayer{
     private:
         std::vector<std::shared_ptr<UIFrame>> elements;
@@ -54,6 +58,10 @@ class UILayer{
 
 using UIWindowIdentifier = int;
 
+/**
+ * @brief A set of ui layers
+ * 
+ */
 class UIWindow{
     private: 
         std::unordered_map<std::string, std::shared_ptr<UILayer>> layers;
@@ -133,12 +141,21 @@ class UICore{
         UIWindow* getCurrentWindow();
         UIWindow* getWindow(UIWindowIdentifier id);
         UIWindowIdentifier createWindow();
+
         void loadWindowFromXML(UIWindow& window, std::string load_path);
 
         UILoader& loader() {return loader_;}
         sol::state& lua(){return _lua;}
         UIBackend& getBackend();
 
+        /**
+         * @brief Returns the top element at a given position
+         * 
+         * @param x 
+         * @param y 
+         * @param onlyScrollable 
+         * @return std::shared_ptr<UIFrame> 
+         */
         std::shared_ptr<UIFrame> getElementUnder(int x, int y, bool onlyScrollable = false);   
 
         glm::ivec2 getMousePosition(){return mousePosition;}

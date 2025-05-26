@@ -17,6 +17,10 @@ using namespace tinyxml2;
     child_name = child_name->NextSiblingElement()\
 )
 
+/**
+ * @brief Helper functions for loading xml data from configuration files
+ * 
+ */
 namespace XMLExtras{
     struct AttributeDefinition{
         std::string name;
@@ -32,6 +36,16 @@ namespace XMLExtras{
     #define XML_ATTR_TYPE_CASE(type, query_name) \
     if(element->query_name((type*)((unsigned char*)&instance + attribute.offset)) != tinyxml2::XML_SUCCESS) LogError("Element '{}' failed to parse.", attribute.name);
 
+    /**
+     * @brief Try to parse an attribute of set type from an xml element
+     * 
+     * @tparam T 
+     * @param element 
+     * @param attribute 
+     * @param instance 
+     * @return true 
+     * @return false 
+     */
     template <typename T>
     bool ParseAttribute(tinyxml2::XMLElement* element, const AttributeDefinition& attribute, T& instance){
         if(element->Name() != attribute.name) return false;
@@ -51,6 +65,15 @@ namespace XMLExtras{
 
     #undef XML_ATTR_TYPE_CASE
 
+    /**
+     * @brief Parse all defined attributes into a object
+     * 
+     * @tparam T 
+     * @param instance 
+     * @param element 
+     * @param attribute_definitions 
+     * @param unparsed called for every unregistered or unparsed attribute
+     */
     template <typename T>
     void Load(
         T& instance, 
@@ -73,6 +96,15 @@ namespace XMLExtras{
         }
     }
 
+    /**
+     * @brief Load but create an empty instance of element
+     * 
+     * @tparam T 
+     * @param element 
+     * @param attribute_definitions 
+     * @param unparsed 
+     * @return T 
+     */
     template <typename T>
     T Load(
         tinyxml2::XMLElement* element, 

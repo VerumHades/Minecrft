@@ -15,11 +15,11 @@
 #include <cstring>
 
 #include <path_config.hpp>
-/*
-    Type that selects the smallest type that fits the set number of bits
-
-    Max size of 64 bits.
-*/
+/**
+ * @brief Type that selects the smallest type that fits the set number of bits, max 64
+ * 
+ * @tparam Bits 
+ */
 template <size_t Bits>
 using uint_t = typename std::conditional<
     Bits <= 8, uint8_t,
@@ -29,10 +29,23 @@ using uint_t = typename std::conditional<
                                   typename std::conditional<Bits <= 64, uint64_t, void>::type>::type>::type>::type;
 
 namespace bitworks {
+/**
+ * @brief Saves T into a filestream
+ * 
+ * @tparam T 
+ * @param file 
+ * @param value 
+ */
 template <typename T> static inline void saveValue(std::fstream& file, T value) {
     file.write(reinterpret_cast<const char*>(&value), sizeof(T));
 }
-
+/**
+ * @brief Reads T from a filestream
+ * 
+ * @tparam T 
+ * @param file 
+ * @param value 
+ */
 template <typename T> static inline T readValue(std::fstream& file) {
     T value;
     file.read(reinterpret_cast<char*>(&value), sizeof(T));
@@ -40,14 +53,33 @@ template <typename T> static inline T readValue(std::fstream& file) {
 }
 }; // namespace bitworks
 
+/**
+ * @brief Counts the leading zeroes in an unsigned integer
+ * 
+ * @tparam T 
+ * @param x 
+ * @return uint8_t 
+ */
 template <typename T> inline uint8_t count_leading_zeros(T x) {
     return std::countl_zero(x);
 }
 
+/**
+ * @brief Counts the number of ones in an unsigned integer
+ * 
+ * @tparam T 
+ * @param x 
+ * @return uint8_t 
+ */
 template <typename T> inline uint8_t count_ones(T x) {
     return std::popcount(x);
 }
 
+/**
+ * @brief A 2D plane of bits
+ * 
+ * @tparam size 
+ */
 template <int size = 64> class BitPlane {
   private:
     std::array<uint_t<size>, size> data{};
@@ -77,6 +109,11 @@ template <int size = 64> class BitPlane {
     }
 };
 
+/**
+ * @brief A 2D plane mask that shouldnt allow setting same bits twice
+ * For future use
+ * @tparam size 
+ */
 template <int size = 64> class BitMask {
   private:
     BitPlane<size> plane;
@@ -91,13 +128,11 @@ template <int size = 64> class BitMask {
         if (updated_row <= lower_bound)
             while (finished_rows[lower_bound] && lower_bound < upper_bound) {
                 lower_bound++;
-                std::cout << "Lower bound moved: " << lower_bound << std::endl;
             }
 
         if (updated_row >= upper_bound)
             while (finished_rows[upper_bound] && upper_bound > lower_bound) {
                 upper_bound--;
-                std::cout << "Upper bound moved: " << upper_bound << std::endl;
             }
     }
 
@@ -117,34 +152,6 @@ template <int size = 64> class BitMask {
     }
     size_t GetUpperBound() const {
         return upper_bound;
-    }
-};
-
-class BlockBitPlanes {
-  private:
-    BitPlane<64> mask{};
-    std::vector<BitPlane<64>> planes{};
-    bool log = false;
-
-  public:
-    BlockBitPlanes();
-
-    void setRow(size_t type, size_t row, uint64_t value);
-    std::vector<BitPlane<64>>& getPlanes() {
-        return planes;
-    };
-
-    void clear() {
-        mask.clear();
-        for (auto& plane : planes)
-            plane.clear();
-    }
-
-    BitPlane<64>& getMask() {
-        return mask;
-    }
-    void setLog(bool value) {
-        log = value;
     }
 };
 

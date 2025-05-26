@@ -2,9 +2,10 @@
 
 #include <glm/glm.hpp>
 #include <string>
-/*
-    Structure used for all colors in the ui, always RGBA
-*/
+/**
+ * @brief Structure used for all colors in the ui, always RGBA
+ * 
+ */
 struct UIColor{
     float r;
     float g;
@@ -32,7 +33,6 @@ struct UIColor{
         );
     }
 
-    // Overloading the == operator as a member function
     bool operator==(const UIColor& other) const {
         return (
             r == other.r && g == other.g && b == other.b && a == other.a

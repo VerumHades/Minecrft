@@ -3,6 +3,11 @@
 #include <vector>
 #include <queue>
 
+/**
+ * @brief A simple pool of values that stores indices of free elements
+ * 
+ * @tparam T 
+ */
 template <typename T>
 class Pool {
     private:
@@ -22,17 +27,21 @@ class Pool {
             vec = std::vector<T>(1);
         }
 
-        /*
-            Marks an index as free
-        */
+        /**
+         * @brief Marks an index as free
+         * 
+         * @param index 
+         */
         void Free(size_t index){
             count--;
             free.push(index);
         }
 
-        /*
-            Returns the next free index, expands the pool if neccesary
-        */
+        /**
+         * @brief Returns the next free index, expands the pool if neccesary
+         * 
+         * @return size_t 
+         */
         size_t NextIndex(){
             if(free.empty()) Extend();
 

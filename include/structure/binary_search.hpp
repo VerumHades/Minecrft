@@ -1,9 +1,18 @@
 #pragma once
 
 #include <type_traits>
-/*
-    In an array of T, look for a key K of arithmetic type, where K is a property of T
-*/
+
+/**
+ * @brief In an array of T, look for a key K of arithmetic type, where K is a property of T
+ * 
+ * @tparam T element type
+ * @tparam K key type
+ * @param key_ptr Relative pointer to key in T
+ * @param key The key to look for
+ * @param array The array of T
+ * @param size The size of the array of T
+ * @return T* If found pointer to the element
+ */
 template <typename T, typename K> T* BinarySearch(K T::* key_ptr, K key, T* array, size_t size) {
     static_assert(std::is_arithmetic<K>::value, "Error: Type K is not arithmetic!");
 
@@ -35,10 +44,17 @@ template <typename T, typename K> T* BinarySearch(K T::* key_ptr, K key, T* arra
 }
 
 #define BINARY_SEARCH_ORDER_INVALID -2
-/*
-    In an array of T, look for the lowest index where K arithmetic can be placed and maintain the ascending order, where
-   K is a property of T
-*/
+/**
+ * @brief In an array of T, look for the lowest index where K arithmetic can be placed and maintain the ascending order, where K is a property of T
+ * 
+ * @tparam T element type
+ * @tparam K key type
+ * @param key_ptr Relative pointer to key in T
+ * @param key The key to look for
+ * @param array The array of T
+ * @param size The size of the array of T
+ * @return int index of the element or BINARY_SEARCH_ORDER_INVALID
+ */
 template <typename T, typename K> int BinarySearchOrder(K T::* key_ptr, K key, T* array, size_t size) {
     size_t current_start = 0;
     size_t current_size = size;

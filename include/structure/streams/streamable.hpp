@@ -2,6 +2,10 @@
 
 #include <structure/streams/stream.hpp>
 
+/**
+ * @brief A generic definition for a streamable object
+ * 
+ */
 class Streamable{
     public:
         virtual bool WriteToStream(Stream& stream) = 0;

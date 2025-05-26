@@ -4,6 +4,10 @@
 #include <rendering/opengl/texture.hpp>
 #include <ui/color.hpp>
 
+/**
+ * @brief A single rendering command for ui
+ * 
+ */
 struct UIRenderCommand{
     std::array<glm::vec2,4> vertex_positions;
     
@@ -19,7 +23,10 @@ struct UIRenderCommand{
     std::string text = "";
 };
 
-
+/**
+ * @brief A set of render commands for ui
+ * 
+ */
 struct UIRenderBatch{
     std::vector<UIRenderCommand> commands;
     UIRegion clipRegion;
@@ -42,7 +49,10 @@ struct UIRenderBatch{
     static std::array<glm::vec2, 4> GetRetangleVertices(int x, int y, int width, int height);
 };
 
-
+/**
+ * @brief A generic definition for an ui backend
+ * 
+ */
 class UIBackend{   
     public:
         struct Batch{

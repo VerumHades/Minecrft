@@ -4,6 +4,13 @@
 #include <unordered_map>
 
 namespace CacheEvictionPolicies{
+    /**
+     * @brief A least recently used eviction policy for caching
+     * 
+     * @tparam Key 
+     * @tparam Hash 
+     * @tparam Equal 
+     */
     template <typename Key, typename Hash, typename Equal>
     class LeastRecentlyUsed {
     private:

@@ -2,6 +2,10 @@
 
 #include <ui/core.hpp>
 
+/**
+ * @brief Element that handles a selection of elements
+ * 
+ */
 class UISelection: public UIFrame{
     private:
         std::vector<std::string> options{};

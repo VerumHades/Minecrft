@@ -20,7 +20,6 @@
 #include <ui/core.hpp>
 #include <ui/elements/selection.hpp>
 #include <ui/font.hpp>
-#include <ui/form.hpp>
 #include <ui/loader.hpp>
 
 #include <game/commands.hpp>

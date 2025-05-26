@@ -9,15 +9,29 @@
 
 #define WriteBreak(stream, args) if(!stream.Write##args) return false;
 
+/**
+ * @brief A generic definition for a stream
+ * 
+ */
 class Stream{
     public:
-        /*
-            Read bytes from stream
-        */
+        /**
+         * @brief Read bytes from stream
+         * 
+         * @param size 
+         * @param buffer 
+         * @return true 
+         * @return false 
+         */
         virtual bool Read(size_t size, byte* buffer) = 0;
-        /*
-            Write bytes into stream
-        */
+        /**
+         * @brief Write bytes into stream
+         * 
+         * @param size 
+         * @param buffer 
+         * @return true 
+         * @return false 
+         */
         virtual bool Write(size_t size, const byte* buffer) = 0;
 
         template <typename T>

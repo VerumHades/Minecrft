@@ -3,6 +3,12 @@
 #include <unordered_map>
 #include <mutex>
 
+/**
+ * @brief A class that manages threadlocal elements, when the c++20 implementation is broken,
+ * discontinued
+ * 
+ * @tparam T 
+ */
 template <typename T> class ThreadLocal {
   private:
     std::mutex mutex;

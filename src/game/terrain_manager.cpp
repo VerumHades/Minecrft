@@ -40,7 +40,7 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
                         continue;
 
                     auto level = calculateSimplificationLevel(around, chunkPosition);
-
+                    
                     mesh_generator.syncGenerateAsyncUploadMesh(chunk, create_mesh(), level);
                 }
             }
@@ -90,6 +90,7 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
                 uchunk->current_simplification = level;
                 uchunk->setWorldPosition(chunkPosition);
 
+                
                 world_generator->GenerateTerrainChunk(uchunk.get(), chunkPosition);
                 terrain.addChunk(chunkPosition, std::move(uchunk));
             }
@@ -121,7 +122,7 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
                 break;
             if (position.x > min.x && position.x < max.x && position.y > min.y && position.y < max.y)
                 continue;
-
+            
             UnloadChunkColumn({position.x, position.y});
 
             {

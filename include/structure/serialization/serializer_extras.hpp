@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @brief Some serialization helper macros
+ * 
+ */
+
 #define SerializeFunction(type)   template <> bool Serializer::Serialize<type>(type& this_, ByteArray& array)
 #define SerializeInstatiate(type) template bool Serializer::Serialize<type>(type&, ByteArray&);
 #define DeserializeFunction(type) template <> bool Serializer::Deserialize<type>(type& this_, ByteArray& array)

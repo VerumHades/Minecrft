@@ -134,17 +134,19 @@ void GameModeSurvival::Open() {
 }
 
 void GameModeSurvival::Render(double deltatime) {
-    fps_label->setText(std::to_string(1.0f / deltatime) + "FPS");
+    if (!state.game_state)
+        return;
+    auto& game_state = *state.game_state;
+    auto& player = game_state.getPlayer();
+    auto& player_position = player.getPosition();
+
+    fps_label->setText(std::to_string((int)(1.0f / deltatime)) + "FPS X:" + std::to_string(player_position.x) + " Y:" + std::to_string(player_position.y) + " Z:" + std::to_string(player_position.z));
     fps_label->update();
 
     if (update_hotbar) {
         hotbar->update();
         update_hotbar = false;
     }
-
-    if (!state.game_state)
-        return;
-    auto& game_state = *state.game_state;
 
     if (update_healthbar) {
         if (game_state.getPlayerHealth() <= 0) {

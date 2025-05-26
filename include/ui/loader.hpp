@@ -16,6 +16,10 @@ class UILayer;
 
 std::vector<std::string> split(std::string s, const std::string& delimiter);
 
+/**
+ * @brief A class that handles the managment of UI styles
+ * 
+ */
 class UIStyle{
     private:
         struct UIStyleQueryAttribute{
@@ -80,6 +84,10 @@ class UIStyle{
 #define XML_ELEMENT_LAMBDA_LOAD(class_) \
     [](tinyxml2::XMLElement*){return std::make_shared<class_>();}
 
+/**
+ * @brief A class that handles the loading of UI styles
+ * 
+ */
 class UILoader{
     public:
         using XMLElementCreationFunction = std::function<std::shared_ptr<UIFrame>(tinyxml2::XMLElement* source)>;

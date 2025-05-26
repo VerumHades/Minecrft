@@ -15,6 +15,10 @@
 #include <logging.hpp>
 #include <path_config.hpp>
 
+/**
+ * @brief An array of bytes with helper functions used for serialization
+ * 
+ */
 class ByteArray : Streamable {
   private:
     std::vector<byte> data = {};
@@ -24,10 +28,16 @@ class ByteArray : Streamable {
   public:
     ByteArray() {}
 
-    /*
-    Write at offset (in bytes) elements of T, of set count
-    Returns total size written in bytes
-    */
+    /**
+     * @brief Write at offset (in bytes) elements of T, of set count
+     * 
+     * @tparam T 
+     * @tparam typename 
+     * @param offset 
+     * @param count 
+     * @param source 
+     * @return size_t total size written in bytes
+     */
     template <typename T, typename = std::enable_if_t<std::is_trivially_copyable<T>::value>>
     size_t Write(size_t offset, size_t count, const T* source) {
         while (offset + sizeof(T) * count > data.size())
@@ -77,6 +87,13 @@ class ByteArray : Streamable {
         cursor += Write(cursor, value);
     }
 
+    /**
+     * @brief Read a value of T if possible
+     * 
+     * @tparam T 
+     * @tparam typename 
+     * @return std::optional<T> returns T if it could be read
+     */
     template <typename T, typename = std::enable_if_t<std::is_trivially_copyable<T>::value>> std::optional<T> Read() {
         if (cursor + sizeof(T) > data.size())
             return std::nullopt;
@@ -88,6 +105,11 @@ class ByteArray : Streamable {
         return out;
     }
 
+    /**
+     * @brief Read a string if possible
+     * 
+     * @return std::optional<std::string> 
+     */
     std::optional<std::string> ReadString() {
         auto size_opt = Read<size_t>();
         if (!size_opt)
@@ -105,6 +127,13 @@ class ByteArray : Streamable {
         return out;
     }
 
+    /**
+     * @brief Read a vector if possible
+     * 
+     * @tparam T 
+     * @tparam typename 
+     * @return std::optional<std::vector<T>> 
+     */
     template <typename T, typename = std::enable_if_t<std::is_trivially_copyable<T>::value>>
     std::optional<std::vector<T>> ReadVector() {
         auto size_opt = Read<size_t>();
@@ -132,6 +161,11 @@ class ByteArray : Streamable {
     bool WriteToStream(Stream& stream) override;
     bool LoadFromStream(Stream& stream) override;
 
+    /**
+     * @brief Get the full size with header of the bytearray in serialized form
+     * 
+     * @return size_t 
+     */
     size_t GetFullSize() {
         return sizeof(char) + sizeof(size_t) + data.size() * sizeof(byte);
     };

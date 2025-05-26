@@ -1,6 +1,11 @@
 #pragma once
 
 
+/**
+ * @brief A simple helper interval class
+ * 
+ * @tparam T 
+ */
 template <typename T>
 class Interval{
     private:

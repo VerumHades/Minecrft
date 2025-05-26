@@ -234,7 +234,8 @@ WorldGenerator::Heightmap& WorldGenerator::getHeightmapFor(glm::ivec3 position_i
             for (auto& structure : biome->structures) {
                 float chance_value = (float)dist(*structure_random_engine) / 10000;
                 if (chance_value <= structure.spawn_chance && localPosition.y + value > water_level) {
-                    placeStructure(localPosition + glm::ivec3{0, value + 1, 0}, structure.structure);
+                    auto size = structure.structure->getSize() / 2;
+                    placeStructure(localPosition + glm::ivec3{-size.x, value + 1, -size.y}, structure.structure);
                     break;
                 }
             }
@@ -257,8 +258,8 @@ void WorldGenerator::prepareHeightMaps(glm::ivec3 around, int distance) {
 
 void WorldGenerator::GenerateTerrainChunk(Chunk* chunk, glm::ivec3 position) {
     // static const int count = CHUNK_SIZE / ChunkDefinition::size;
-
     // Pregen surrounding maps to keep structures whole
+
     for(int i = -1;i <= 1;i++)
     for(int j = -1;j <= 1;j++){
         if(i == 0 && j == 0) continue;

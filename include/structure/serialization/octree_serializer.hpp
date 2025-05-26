@@ -4,6 +4,11 @@
 #include <structure/octree.hpp>
 #include <structure/serialization/serializer.hpp>
 
+/**
+ * @brief A generic class for serializing octrees
+ * 
+ * @tparam T 
+ */
 template <typename T> class OctreeSerializer {
   private:
     static size_t SerializeValueNode(std::unique_ptr<T>& value, ByteArray& array) {
@@ -19,6 +24,14 @@ template <typename T> class OctreeSerializer {
         return value;
     }
 
+    /**
+     * @brief Serializs a node and returns the serialized position
+     * 
+     * @param node 
+     * @param array 
+     * @param level 
+     * @return size_t 
+     */
     static size_t SerializeNode(typename Octree<T>::Node& node, ByteArray& array, unsigned int level = 0) {
         size_t location = array.GetCursor();
         array.Write<unsigned int>(location, level);
@@ -50,6 +63,12 @@ template <typename T> class OctreeSerializer {
         return offset_total;
     }
 
+    /**
+     * @brief Deserialized a node and its subnodes
+     * 
+     * @param array 
+     * @return std::unique_ptr<typename Octree<T>::Node> 
+     */
     static std::unique_ptr<typename Octree<T>::Node> DeserializeNode(ByteArray& array) {
         auto node = std::make_unique<typename Octree<T>::Node>();
 
@@ -84,9 +103,21 @@ template <typename T> class OctreeSerializer {
     }
 
   public:
+    /**
+     * @brief Serialize an octree
+     * 
+     * @param tree 
+     * @param array 
+     */
     static void Serialize(const Octree<T>& tree, ByteArray& array) {
         SerializeNode(*tree.root_node, array, tree.top_level);
     }
+    /**
+     * @brief Deserialize an octree
+     * 
+     * @param tree 
+     * @param array 
+     */
     static void Deserialize(Octree<T>& tree, ByteArray& array) {
         size_t location = array.GetCursor();
 
