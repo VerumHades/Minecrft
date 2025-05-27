@@ -256,7 +256,7 @@ void WorldGenerator::prepareHeightMaps(glm::ivec3 around, int distance) {
         }
 }
 
-void WorldGenerator::GenerateTerrainChunk(Chunk* chunk, glm::ivec3 position) {
+void WorldGenerator::GenerateTerrainChunk(Chunk* chunk, glm::ivec3 position, unsigned int simplification_step) {
     // static const int count = CHUNK_SIZE / ChunkDefinition::size;
     // Pregen surrounding maps to keep structures whole
 
@@ -276,9 +276,11 @@ void WorldGenerator::GenerateTerrainChunk(Chunk* chunk, glm::ivec3 position) {
         return;
     }
 
-    for (int x = 0; x < CHUNK_SIZE; x++)
-        for (int y = 0; y < CHUNK_SIZE; y++)
-            for (int z = 0; z < CHUNK_SIZE; z++) {
+    chunk->generated_simplification_step = simplification_step;
+
+    for (int x = 0; x < CHUNK_SIZE; x += simplification_step)
+        for (int y = 0; y < CHUNK_SIZE; y += simplification_step)
+            for (int z = 0; z < CHUNK_SIZE; z += simplification_step) {
                 glm::ivec3 localPosition = glm::ivec3(x, y, z) + position * CHUNK_SIZE;
 
                 auto* biome = heightMap.biomes[x][z];

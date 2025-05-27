@@ -40,6 +40,8 @@ class TerrainManager;
 class Chunk: public SparseBlockArray{
     private:
         glm::ivec3 worldPosition;
+        unsigned int generated_simplification_step = 1;
+
         BitField3D::SimplificationLevel current_simplification = BitField3D::NONE;
 
         friend class ChunkMeshGenerator;
@@ -53,6 +55,7 @@ class Chunk: public SparseBlockArray{
         Chunk(glm::ivec3 worldPosition): SparseBlockArray(), worldPosition(worldPosition) { }
 
         const glm::ivec3& getWorldPosition() const { return worldPosition; }
+        unsigned int GetSimplificationStep() const {return generated_simplification_step;}
         void setWorldPosition(const glm::ivec3& position){ worldPosition = position; }
 };
 

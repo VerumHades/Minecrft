@@ -10,7 +10,7 @@ class Chunk;
 class Generator {
     public:
         virtual ~Generator() = default;
-        virtual void GenerateTerrainChunk(Chunk* chunk, glm::ivec3 position) = 0;
+        virtual void GenerateTerrainChunk(Chunk* chunk, glm::ivec3 position, unsigned int simplification_step = 1) = 0;
         virtual int GetHeightAt(const glm::vec3 position) = 0;
         virtual void SetSeed(int seed) = 0;
         virtual void Clear() = 0;

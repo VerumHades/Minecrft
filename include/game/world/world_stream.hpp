@@ -41,9 +41,6 @@ class WorldStream {
 
         Cache<glm::ivec3, std::unique_ptr<SegmentPack>, IVec3Hash, IVec3Equal> segment_cache{40};
 
-        std::mutex marking_mutex;
-        std::unordered_map<glm::ivec3, std::unique_ptr<SegmentPack>, IVec3Hash, IVec3Equal> marked_for_deletion;
-
 
         using SegmentRecordStore = std::shared_ptr<KeyedStorage<glm::ivec3>>;
         SegmentRecordStore record_store;

@@ -23,6 +23,7 @@ class Cache {
 
     size_t max_cached_elements = 500;
     EvictionPolicy eviction_policy;
+    std::mutex mutex;
 
   public:
     Cache(size_t max_cached = 500) : max_cached_elements(max_cached) {}

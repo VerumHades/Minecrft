@@ -35,6 +35,7 @@ class TerrainManager {
     int top_y    = 3;
 
     BitField3D::SimplificationLevel calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition);
+    uint calculateGenerationStep(const glm::vec3& around, const glm::vec3& chunkPosition);
 
     std::unique_ptr<Service> service_manager;
 

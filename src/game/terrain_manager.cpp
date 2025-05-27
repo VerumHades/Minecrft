@@ -76,9 +76,16 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
 
                 auto* chunk = terrain.getChunk(chunkPosition);
                 auto level  = calculateSimplificationLevel(around, chunkPosition);
+                auto step = calculateGenerationStep(around, chunkPosition);
 
-                if (chunk) {
+                if(chunk && chunk->generated_simplification_step != step){
+                    terrain.removeChunk(chunkPosition);
+                }
+                else if (chunk) {
                     chunk->current_simplification = level;
+                    if(chunk->generated_simplification_step != step) 
+                        world_generator->GenerateTerrainChunk(chunk, chunkPosition, step);
+
                     continue;
                 }
 
@@ -90,8 +97,8 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
                 uchunk->current_simplification = level;
                 uchunk->setWorldPosition(chunkPosition);
 
-                
-                world_generator->GenerateTerrainChunk(uchunk.get(), chunkPosition);
+
+                world_generator->GenerateTerrainChunk(uchunk.get(), chunkPosition, step);
                 terrain.addChunk(chunkPosition, std::move(uchunk));
             }
 
@@ -160,10 +167,13 @@ bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance) {
 }
 
 BitField3D::SimplificationLevel TerrainManager::calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition) {
-    int distance = glm::clamp(glm::distance(glm::vec3(around), glm::vec3(chunkPosition)) / 3.0f, 0.0f, 7.0f);
+    int distance = glm::clamp(glm::distance(glm::vec2(around.x,around.z), glm::vec2(chunkPosition.x,chunkPosition.z)) / 3.0f, 0.0f, 7.0f);
     return static_cast<BitField3D::SimplificationLevel>(distance - 1);
 }
-
+uint TerrainManager::calculateGenerationStep(const glm::vec3& around, const glm::vec3& chunkPosition){
+    int distance = glm::clamp(glm::distance(glm::vec2(around.x,around.z), glm::vec2(chunkPosition.x,chunkPosition.z)) / 3.0f, 0.0f, 6.0f);
+    return pow(2, distance);
+}
 bool TerrainManager::uploadPendingMeshes() {
     return mesh_generator.loadMeshFromQueue(mesh_registry, 10);
 }

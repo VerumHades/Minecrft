@@ -69,7 +69,7 @@ void WorldStream::LoadSegmentToCache(const glm::ivec3& position, std::unique_ptr
 }
 
 void WorldStream::StopUsingSegment(SegmentPack* outer, const glm::ivec3& position) {
-    if (outer->marked_for_deletion) {
+    if (outer->marked_for_deletion && outer->in_use_by == 0) {
         std::unique_ptr<SegmentPack> segment = nullptr;
 
         {
@@ -88,6 +88,8 @@ void WorldStream::CreateSegment(const glm::ivec3& position) {
 }
 
 bool WorldStream::Save(std::unique_ptr<Chunk> chunk) {
+    if(chunk->GetSimplificationStep() != 1) return true; // A simplified chunk is simply deleted, no point in storing it
+
     auto position = chunk->getWorldPosition();
     auto segment_position = GetSegmentPositionFor(position);
 
@@ -163,5 +165,5 @@ void WorldStream::Flush() {
 }
 
 WorldStream::~WorldStream() {
-    Flush();
+    
 }
