@@ -29,6 +29,7 @@ class Cache {
     Cache(size_t max_cached = 500) : max_cached_elements(max_cached) {}
 
     T* Get(const Key& key) {
+        std::lock_guard lock(mutex);
         eviction_policy.KeyRequested(key);
 
         if (cached_values.contains(key))
@@ -45,6 +46,8 @@ class Cache {
      * @return std::optional<std::pair<Key, T>> 
      */
     std::optional<std::pair<Key, T>> Load(const Key& key, T t) {
+        std::lock_guard lock(mutex);
+        
         std::optional<std::pair<Key, T>> result = std::nullopt;
 
         if (cached_values.size() > max_cached_elements) {
@@ -66,6 +69,8 @@ class Cache {
      * @param evict 
      */
     void Clear(const std::function<void(Key, T)>& evict) {
+        std::lock_guard lock(mutex);
+
         for (auto it = cached_values.begin(); it != cached_values.end();) {
             auto node = cached_values.extract(it++);
 

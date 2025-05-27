@@ -18,7 +18,10 @@ bool WorldStream::LoadSegment(const glm::ivec3& position) {
             return false;
         }
     }
-    std::unique_ptr<SegmentPack> pack = std::make_unique<SegmentPack>();
+    std::shared_ptr<SegmentPack> pack = std::shared_ptr<SegmentPack>(new SegmentPack(), [this,position](SegmentPack* pack){
+        SaveSegment(position, pack);
+        delete pack;
+    });
     OctreeSerializer<Chunk>::Deserialize(pack->segment, array);
 
     LoadSegmentToCache(position, std::move(pack));
@@ -26,61 +29,27 @@ bool WorldStream::LoadSegment(const glm::ivec3& position) {
     return true;
 }
 
-void WorldStream::SaveSegment(const glm::ivec3& position, std::unique_ptr<SegmentPack> segment) {
+void WorldStream::SaveSegment(const glm::ivec3& position, SegmentPack* segment) {
     ByteArray array{};
     OctreeSerializer<Chunk>::Serialize(segment->segment, array);
 
+    std::unique_lock lock(record_mutex);
     record_store->Save(position, array.Size(), array.Data());
 }
 
-WorldStream::SegmentPack* WorldStream::GetSegment(const glm::ivec3& position, bool set_in_use) {
-    std::unique_ptr<SegmentPack>* cached = nullptr;
+std::shared_ptr<WorldStream::SegmentPack> WorldStream::GetSegment(const glm::ivec3& position, bool set_in_use) {
+    std::shared_ptr<SegmentPack>* cached = nullptr;
 
     std::shared_lock lock(record_mutex);
     cached = segment_cache.Get(position);
     if (!cached)
         return nullptr;
-    if (set_in_use)
-        (*cached)->in_use_by++;
 
-    return cached->get();
+    return *cached;
 }
 
-void WorldStream::LoadSegmentToCache(const glm::ivec3& position, std::unique_ptr<SegmentPack> segment) {
-    std::optional<std::pair<glm::ivec3, std::unique_ptr<SegmentPack>>> evicted = std::nullopt;
-
-    {
-        std::unique_lock lock(record_mutex);
-        evicted = segment_cache.Load(position, std::move(segment));
-    }
-
-    if (evicted) {
-        auto& [pos, seg] = evicted.value();
-
-        if (seg->in_use_by > 0) {
-            seg->marked_for_deletion = true;
-            {
-                std::lock_guard lock(marking_mutex);
-                marked_for_deletion.insert({position, std::move(seg)});
-            }
-        } else
-            SaveSegment(pos, std::move(seg));
-    }
-}
-
-void WorldStream::StopUsingSegment(SegmentPack* outer, const glm::ivec3& position) {
-    if (outer->marked_for_deletion && outer->in_use_by == 0) {
-        std::unique_ptr<SegmentPack> segment = nullptr;
-
-        {
-            std::lock_guard lock(marking_mutex);
-            segment = std::move(marked_for_deletion.at(position));
-            marked_for_deletion.erase(position);
-        }
-
-        SaveSegment(position, std::move(segment));
-    } else
-        outer->in_use_by--;
+void WorldStream::LoadSegmentToCache(const glm::ivec3& position, std::shared_ptr<SegmentPack> segment) {
+    segment_cache.Load(position, segment);
 }
 
 void WorldStream::CreateSegment(const glm::ivec3& position) {
@@ -93,7 +62,7 @@ bool WorldStream::Save(std::unique_ptr<Chunk> chunk) {
     auto position = chunk->getWorldPosition();
     auto segment_position = GetSegmentPositionFor(position);
 
-    SegmentPack* segment_pack = GetSegment(segment_position, true);
+    auto segment_pack = GetSegment(segment_position, true);
 
     if (!segment_pack) {
         if (!LoadSegment(segment_position))
@@ -113,15 +82,13 @@ bool WorldStream::Save(std::unique_ptr<Chunk> chunk) {
         segment_pack->segment.Set(internal_position, std::move(chunk));
     }
 
-    StopUsingSegment(segment_pack, position);
-
     return true;
 }
 
 std::unique_ptr<Chunk> WorldStream::Load(const glm::ivec3& position) {
     auto segment_position = GetSegmentPositionFor(position);
 
-    SegmentPack* segment_pack = GetSegment(segment_position, true);
+    auto segment_pack = GetSegment(segment_position, true);
 
     if (!segment_pack) {
         if (!LoadSegment(segment_position)) return nullptr;
@@ -134,15 +101,13 @@ std::unique_ptr<Chunk> WorldStream::Load(const glm::ivec3& position) {
         chunk = segment_pack->segment.Pop(position - segment_position * segment_size);
     }
 
-    StopUsingSegment(segment_pack, position);
-
     return chunk;
 }
 
 bool WorldStream::HasChunkAt(const glm::ivec3& position) {
     auto segment_position = GetSegmentPositionFor(position);
 
-    SegmentPack* segment_pack = GetSegment(segment_position, true);
+    auto segment_pack = GetSegment(segment_position, true);
 
     if (!segment_pack) {
         if (!LoadSegment(segment_position)) return false;
@@ -156,14 +121,13 @@ bool WorldStream::HasChunkAt(const glm::ivec3& position) {
         result = segment_pack->segment.Get(internal_position) != nullptr;
     }
 
-    StopUsingSegment(segment_pack, position);
     return result;
 }
 
 void WorldStream::Flush() {
-    segment_cache.Clear([this](auto key, auto segment) { SaveSegment(key, std::move(segment)); });
+    segment_cache.Clear([this](auto key, auto segment) { SaveSegment(key, segment.get()); });
 }
 
 WorldStream::~WorldStream() {
-    
+    Flush();
 }

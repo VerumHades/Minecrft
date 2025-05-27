@@ -78,13 +78,13 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
                 auto level  = calculateSimplificationLevel(around, chunkPosition);
                 auto step = calculateGenerationStep(around, chunkPosition);
 
-                if(chunk && chunk->generated_simplification_step != step){
-                    terrain.removeChunk(chunkPosition);
+                if(chunk && chunk->generated_simplification_step != step && chunk->generated_simplification_step != 1){
+                    terrain.takeChunk(chunkPosition);
                 }
                 else if (chunk) {
                     chunk->current_simplification = level;
-                    if(chunk->generated_simplification_step != step) 
-                        world_generator->GenerateTerrainChunk(chunk, chunkPosition, step);
+                    //if(chunk->generated_simplification_step != step) 
+                    //    world_generator->GenerateTerrainChunk(chunk, chunkPosition, step);
 
                     continue;
                 }

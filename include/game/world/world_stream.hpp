@@ -32,15 +32,10 @@ class WorldStream {
 
         struct SegmentPack {
             Segment segment{};
-
-            std::atomic<int> in_use_by = 0;
-            std::atomic<bool> marked_for_deletion = false;
-
             std::shared_mutex segment_mutex;
         };
 
-        Cache<glm::ivec3, std::unique_ptr<SegmentPack>, IVec3Hash, IVec3Equal> segment_cache{40};
-
+        Cache<glm::ivec3, std::shared_ptr<SegmentPack>, IVec3Hash, IVec3Equal> segment_cache{40};
 
         using SegmentRecordStore = std::shared_ptr<KeyedStorage<glm::ivec3>>;
         SegmentRecordStore record_store;
@@ -48,17 +43,14 @@ class WorldStream {
         // Thread safe, Returns whether the segment could be loaded
         bool LoadSegment(const glm::ivec3& position);
         // Thread safe
-        void LoadSegmentToCache(const glm::ivec3& position, std::unique_ptr<SegmentPack> segment);
+        void LoadSegmentToCache(const glm::ivec3& position, std::shared_ptr<SegmentPack> segment);
         // Thread safe
-        void SaveSegment(const glm::ivec3& position, std::unique_ptr<SegmentPack> segment);
+        void SaveSegment(const glm::ivec3& position, SegmentPack* segment);
         // Thread safe
         void CreateSegment(const glm::ivec3& position);
 
         // Thread safe
-        SegmentPack* GetSegment(const glm::ivec3& position, bool set_in_use = false);
-
-        // Thread safe
-        void StopUsingSegment(SegmentPack* segment, const glm::ivec3& position);
+        std::shared_ptr<SegmentPack> GetSegment(const glm::ivec3& position, bool set_in_use = false);
 
         void Flush();
 
