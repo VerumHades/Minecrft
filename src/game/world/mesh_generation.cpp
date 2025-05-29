@@ -2,6 +2,10 @@
 #include <cstdint>
 #include <game/world/mesh_generation.hpp>
 
+void ChunkMeshGenerator::clear() {
+    std::lock_guard<std::mutex> lock(meshLoadingMutex);
+    meshLoadingQueue = {};
+}
 void ChunkMeshGenerator::addToChunkMeshLoadingQueue(glm::ivec3 position, std::unique_ptr<MeshInterface> mesh) {
     std::lock_guard<std::mutex> lock(meshLoadingMutex);
     meshLoadingQueue.push({position, std::move(mesh)});

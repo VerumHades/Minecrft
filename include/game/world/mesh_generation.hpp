@@ -152,7 +152,5 @@ class ChunkMeshGenerator {
     void setWorld(Terrain* world) {
         this->world = world;
     }
-    void clear() {
-        meshLoadingQueue = {};
-    }
+    void clear();
 };

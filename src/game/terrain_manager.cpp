@@ -94,7 +94,6 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
                 uchunk->current_simplification = level;
                 uchunk->setWorldPosition(chunkPosition);
 
-
                 world_generator->GenerateTerrainChunk(uchunk.get(), chunkPosition, step);
                 terrain.addChunk(chunkPosition, std::move(uchunk));
             }

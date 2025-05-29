@@ -265,7 +265,7 @@ void MainScene::open(GLFWwindow* window) {
     // Entity e = Entity(player.getPosition() + glm::vec3{5,0,5}, glm::vec3(1,1,1));
     // e.setModel(std::make_shared<GenericModel>("resources/models/130/scene.gltf"));
     // game_state->addEntity(e);g
-
+    
     // std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this))
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
     std::cout << "Physics thread started" <<  std::endl;
