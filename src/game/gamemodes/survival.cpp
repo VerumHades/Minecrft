@@ -269,7 +269,7 @@ void GameModeSurvival::PlaceBlock() {
     auto* block_prototype = BlockRegistry::get().getPrototype(cursor_state.blockUnderCursor->id);
 
     if (block_prototype && block_prototype->interface) {
-        block_prototype->interface->open(cursor_state.blockUnderCursor->metadata, state.game_state);
+        block_prototype->interface->open(cursor_state.blockUnderCursor->metadata, state.game_state.get());
         state.scene.setUILayer(block_prototype->interface->getName());
         return;
     }

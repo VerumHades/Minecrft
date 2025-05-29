@@ -67,8 +67,6 @@ class MainScene : public Scene {
     PerspectiveCamera camera = PerspectiveCamera("player");
     DepthCamera       suncam = DepthCamera("sun");
 
-    SpiralIndexer3D indexer;
-
     std::shared_ptr<GBuffer> gBuffer;
     GLFullscreenQuad         fullscreen_quad;
 
@@ -80,7 +78,7 @@ class MainScene : public Scene {
                                                  "resources/shaders/graphical/deffered_shading/gbuffer.fs");
 
     GLSkybox                   skybox{};
-    std::unique_ptr<GameState> game_state;
+    std::shared_ptr<GameState> game_state;
 
     WireframeCubeRenderer wireframeRenderer{};
     CubeRenderer          cubeRenderer;
@@ -97,7 +95,7 @@ class MainScene : public Scene {
 
     std::atomic<bool> update_render_distance = false;
 
-    GameModeState gamemodeState = {game_state.get(),
+    GameModeState gamemodeState = {game_state,
                                    wireframeRenderer,
                                    cubeRenderer,
                                    inputManager,

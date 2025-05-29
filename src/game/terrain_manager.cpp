@@ -17,15 +17,14 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
         auto& terrain                 = game_state->GetTerrain();
 
         size_t max         = pow((render_distance + 1) * 2, 2);
-        int safe_offset = 0;
+        int safe_offset = 3;
 
         while (generated_count < max) {
             if (should_stop)
                 return;
 
             safe_offset = sqrt(generated_count.load()) * 2;
-
-            while (meshing_indexer.getTotal() < generated_count - safe_offset) {
+            while (meshing_indexer.getTotal() < (((size_t)safe_offset < generated_count) ? (generated_count - safe_offset) : 0)) {
                 glm::ivec2 column_position = meshing_indexer.get();
                 meshing_indexer.next();
 
@@ -57,8 +56,6 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
         auto& world_saver = *game_state->world_saver;
 
         SpiralIndexer generation_indexer = {};
-
-        generated_count = 0;
 
         glm::ivec3 around = glm::ivec3{around_x.load(), around_y.load(), around_z.load()};
         int max           = pow(render_distance * 2, 2);
@@ -144,6 +141,16 @@ bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance) {
     if (!game_state || !game_state->world_saver)
         return false;
 
+    service_manager->StopAll();
+
+    {
+        std::lock_guard lock(loaded_column_mutex);
+        loaded_columns.clear();
+    }
+
+    mesh_generator.clear();
+    generated_count = 0;
+
     around_x              = around.x;
     around_y              = around.y;
     around_z              = around.z;
@@ -160,8 +167,7 @@ bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance) {
 
         reset_loader();
     }*/
-
-    service_manager->StartAll(true);
+    service_manager->StartAll();
 
     return true;
 }
@@ -227,12 +233,11 @@ void TerrainManager::regenerateChunkMesh(Chunk* chunk) {
     mesh_generator.syncGenerateSyncUploadMesh(chunk, mesh_registry, create_mesh(), BitField3D::NONE);
 }
 
-void TerrainManager::setGameState(GameState* state) {
-    if (state == nullptr)
-        service_manager->StopAll();
+void TerrainManager::setGameState(std::shared_ptr<GameState> state) {
+    service_manager->StopAll();
 
     game_state = state;
-    if (state == nullptr)
+    if (!state)
         mesh_generator.setWorld(nullptr);
     else {
         mesh_generator.setWorld(&game_state->GetTerrain());

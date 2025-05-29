@@ -93,10 +93,10 @@ void SceneManager::setScene(const std::string& name){
     }
     else return;
     currentScene = name;
-    getCurrentScene()->open(window);
     UICore::get().setCurrentWindow(getCurrentScene()->windowID);
     getCurrentScene()->setUILayer("default");
     UICore::get().updateAll();
+    getCurrentScene()->open(window);
 }
 
 void SceneManager::resize(GLFWwindow* window, int width, int height){

@@ -140,4 +140,12 @@ class RegionRegistry{
 
             return nullptr;
         }
+        /**
+         * @brief Removes all registered data
+         * 
+         */
+        void clear(){
+            std::shared_lock lock(mutex);
+            regions.clear();
+        }
 };

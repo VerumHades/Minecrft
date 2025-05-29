@@ -5,7 +5,6 @@ void SpiralIndexer::next(){
     auto& polarity = this->polarity[direction];
     auto& position = current_position[direction];
     
-
     position += polarity;
     value--;
 

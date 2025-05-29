@@ -24,7 +24,7 @@ class Chunk;
  * 
  */
 struct GameModeState{
-    GameState* game_state;
+    std::shared_ptr<GameState> game_state;
     WireframeCubeRenderer& wireframe_renderer;
     CubeRenderer& cube_renderer;
     KeyInputManager<ControllActions>& input_manager;

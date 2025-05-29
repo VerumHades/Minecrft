@@ -241,12 +241,12 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 void MainScene::open(GLFWwindow* window) {
+    std::cout << game_state << std::endl;
     game_state = nullptr;
     running    = true;
-    indexer    = {};
 
-    game_state = std::make_unique<GameState>(worldPath);
-
+    game_state = std::make_shared<GameState>(worldPath);
+    std::cout << "Game state initialized" << std::endl;
     /*for(auto& prototype: BlockRegistry::get().prototypes()){
         if(prototype.id == BLOCK_AIR_INDEX) continue; // Dont make air
 
@@ -256,21 +256,25 @@ void MainScene::open(GLFWwindow* window) {
         game_state->getPlayerHotbar().addItem(item);
     }*/
 
-    gamemodeState.game_state = game_state.get();
-    HandleGamemodeEvent(&GameMode::Open);
-
-    terrain_manager.setGameState(game_state.get());
-
+    
+    terrain_manager.setGameState(game_state);
+    std::cout << "Game state set" << std::endl;
+    gamemodeState.game_state = game_state;
+    std::cout << "Game state passed to gamemode" << std::endl;
+  
     // Entity e = Entity(player.getPosition() + glm::vec3{5,0,5}, glm::vec3(1,1,1));
     // e.setModel(std::make_shared<GenericModel>("resources/models/130/scene.gltf"));
     // game_state->addEntity(e);g
 
-    // std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this));
+    // std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this))
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
+    std::cout << "Physics thread started" <<  std::endl;
 
     physicsThread.detach();
 
+
     SetGameMode(0);
+    std::cout << "Gamemode set" << std::endl;
 }
 
 void MainScene::close(GLFWwindow* window) {
@@ -281,13 +285,25 @@ void MainScene::close(GLFWwindow* window) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
+    std::cout << "Physics thread stopped" << std::endl;
+
     terrain_manager.unloadAll();
+
+    std::cout << "Terrain manager unloaded all" << std::endl;
     terrain_manager.setGameState(nullptr);
+
+    std::cout << "Terrain manager game_state set to nullptr" << std::endl;
 
     gamemodeState.game_state = nullptr;
 
+    std::cout << "Gamemode gamestate set to nullptr" << std::endl;
+
     game_state->unload();
+
+    std::cout << "Gamestate unloaded" <<  std::endl;
     game_state = nullptr;
+
+    std::cout << "Gamestate set to nullptr" << std::endl;
 }
 
 void MainScene::render() {

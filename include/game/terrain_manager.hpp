@@ -29,15 +29,13 @@ class TerrainManager {
     RegionCuller mesh_registry;
     std::unique_ptr<MeshLoaderInterface> mesh_loader;
 
-    GameState* game_state = nullptr;
+    std::shared_ptr<GameState> game_state = nullptr;
 
     int bottom_y = -3;
     int top_y    = 3;
 
     BitField3D::SimplificationLevel calculateSimplificationLevel(const glm::vec3& around, const glm::vec3& chunkPosition);
     uint calculateGenerationStep(const glm::vec3& around, const glm::vec3& chunkPosition);
-
-    std::unique_ptr<Service> service_manager;
 
     std::mutex loaded_column_mutex;
     std::unordered_set<glm::ivec2, IVec2Hash, IVec2Equal> loaded_columns;
@@ -56,6 +54,8 @@ class TerrainManager {
         mesh_loader = std::make_unique<InstancedMeshLoader>();
         mesh_registry.SetMeshLoader(mesh_loader.get());
     };
+
+    std::unique_ptr<Service> service_manager;
 
   public:
     TerrainManager(std::shared_ptr<Generator> world_generator);
@@ -98,7 +98,7 @@ class TerrainManager {
 	 */
     void regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords);
 
-    void setGameState(GameState* state);
+    void setGameState(std::shared_ptr<GameState> state);
 
     RegionCuller& getMeshRegistry() {
         return mesh_registry;

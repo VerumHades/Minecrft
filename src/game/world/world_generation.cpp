@@ -201,7 +201,7 @@ int WorldGenerator::GetHeightAt(const glm::vec3 position) {
 
     float value = pow(continentalness, 2) * pow(pow(weirdness, 4), pow(errosion, 3));
 
-    return value * 300.0f;
+    return value * ((3 * 64) - 20);
 }
 
 WorldGenerator::Heightmap& WorldGenerator::getHeightmapFor(glm::ivec3 position_in) {
@@ -314,6 +314,7 @@ void WorldGenerator::GenerateTerrainChunk(Chunk* chunk, glm::ivec3 position, uns
 
 void WorldGenerator::Clear() {
     getHeightMaps().clear();
+    structures.clear();
 }
 
 void WorldGenerator::SetSeed(int seed) {
