@@ -16,7 +16,7 @@ const Service::Module* Service::GetModule(const std::string& name) const {
     return registered_modules.at(name).get();
 }
 
-void Service::Stop(const std::string& name, int timeout) {
+void Service::Stop(const std::string& name) {
     auto* module = GetModule(name);
     if (!module || !module->thread || !module->thread->joinable())
         return;
@@ -29,9 +29,9 @@ void Service::Stop(const std::string& name, int timeout) {
     module->should_stop = false;
 }
 
-void Service::StopAll(int timeout) {
+void Service::StopAll() {
     for (auto& [name, module] : registered_modules)
-        Stop(name, timeout);
+        Stop(name);
 }
 
 void Service::Start(const std::string& name, bool restart) {

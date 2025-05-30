@@ -39,15 +39,13 @@ class Service{
          * @brief Stop a module
          * 
          * @param name 
-         * @param timeout timeout between checks of whether the threads had stopped
          */
-        void Stop(const std::string& name, int timeout = 10);
+        void Stop(const std::string& name);
         /**
          * @brief Stop all modules
          * 
-         * @param timeout 
          */
-        void StopAll(int timeout = 10);
+        void StopAll();
 
         /**
          * @brief Start a module by name
