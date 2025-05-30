@@ -52,12 +52,18 @@
         <render_type>BILLBOARD</render_type>
         <transparent>true</transparent>
         <material>leaves</material>
+        <colliders>
+
+        </colliders>
     </grass_billboard>
     <spider_lily>
         <texture>spider_lily</texture>
         <render_type>BILLBOARD</render_type>
         <transparent>true</transparent>
         <material>leaves</material>
+        <colliders>
+            
+        </colliders>
     </spider_lily>
     <crafting>
         <textures>

@@ -26,9 +26,6 @@ class TerrainManager {
     ChunkMeshGenerator mesh_generator;
     std::shared_ptr<Generator> world_generator;
 
-    RegionCuller mesh_registry;
-    std::unique_ptr<MeshLoaderInterface> mesh_loader;
-
     std::shared_ptr<GameState> game_state = nullptr;
 
     int bottom_y = -3;
@@ -40,21 +37,21 @@ class TerrainManager {
     std::mutex loaded_column_mutex;
     std::unordered_set<glm::ivec2, IVec2Hash, IVec2Equal> loaded_columns;
 
+    std::mutex unload_queue_mutex;
+    std::queue<glm::ivec3> unload_queue;
+
     std::atomic<int> around_x        = 0;
     std::atomic<int> around_y        = 0;
     std::atomic<int> around_z        = 0;
     std::atomic<int> render_distance = 0;
+    
+    std::atomic<bool> should_mesh_loader_reset = 0;
 
     std::atomic<size_t> generated_count = 0;
 
     void UnloadChunkColumn(const glm::ivec2& position);
 
     std::function<std::unique_ptr<MeshInterface>()> create_mesh = []() { return std::make_unique<InstancedMesh>(); };
-    std::function<void(void)> reset_loader                      = [this]() {
-        mesh_loader = std::make_unique<InstancedMeshLoader>();
-        mesh_registry.SetMeshLoader(mesh_loader.get());
-    };
-
     std::unique_ptr<Service> service_manager;
 
   public:
@@ -67,14 +64,6 @@ class TerrainManager {
     void unloadAll();
 
 	/**
-	 * @brief Actually upload generated meshes to the gpu
-	 * 
-	 * @return true 
-	 * @return false 
-	 */
-    bool uploadPendingMeshes();
-
-	/**
 	 * @brief Load a region around a set point, calling it again starts loading new region instead
 	 * 
 	 * @param around 
@@ -84,23 +73,19 @@ class TerrainManager {
 	 */
     bool loadRegion(glm::ivec3 around, int render_distance);
 
-	/**
-	 * @brief Reloads a chunks mesh
-	 * 
-	 * @param chunk 
-	 */
-    void regenerateChunkMesh(Chunk* chunk);	
-	/**
-	 * @brief Reloads a chunk mesh with a specified block placement, might regenerate other neccesary meshes
-	 * 
-	 * @param chunk 
-	 * @param blockCoords 
-	 */
-    void regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords);
-
     void setGameState(std::shared_ptr<GameState> state);
 
-    RegionCuller& getMeshRegistry() {
-        return mesh_registry;
+    ChunkMeshGenerator& getMeshGenerator(){
+        return mesh_generator;
     }
+
+    std::optional<glm::ivec3> nextUnloadPosition();
+
+    bool shouldMeshLoaderReset(){
+        return should_mesh_loader_reset;
+    }
+    void meshLoaderReset(){
+        should_mesh_loader_reset = false;
+    }
+
 };

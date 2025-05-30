@@ -5,8 +5,6 @@
 TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_generator(generator) {
     service_manager = std::make_unique<Service>();
 
-    reset_loader();
-
     service_manager->AddModule("mesher", [this](std::atomic<bool>& should_stop) {
         if (!game_state || !game_state->world_saver)
             return;
@@ -87,8 +85,11 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
                 }
 
                 if (world_saver.HasChunkAt(chunkPosition)) {
-                    terrain.addChunk(chunkPosition, world_saver.Load(chunkPosition));
-                    continue;
+                    auto loaded = world_saver.Load(chunkPosition);
+                    if(loaded) {
+                        terrain.addChunk(chunkPosition, std::move(loaded));
+                        continue;
+                    }
                 }
                 auto uchunk = std::make_unique<Chunk>();
                 uchunk->current_simplification = level;
@@ -155,6 +156,9 @@ bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance) {
     around_z              = around.z;
     this->render_distance = render_distance;
 
+    std::cout << "Loading region: " << around.x << " " << around.y << " " << around.z  << " " << render_distance <<  std::endl;
+    
+
     /*if(mesh_loader->DrawFailed()){
         service_manager->StopAll();
 
@@ -179,9 +183,6 @@ uint TerrainManager::calculateGenerationStep(const glm::vec3& around, const glm:
     int distance = glm::clamp(glm::distance(glm::vec2(around.x,around.z), glm::vec2(chunkPosition.x,chunkPosition.z)) / 3.0f, 0.0f, 6.0f);
     return pow(2, distance);
 }
-bool TerrainManager::uploadPendingMeshes() {
-    return mesh_generator.loadMeshFromQueue(mesh_registry, 10);
-}
 
 void TerrainManager::UnloadChunkColumn(const glm::ivec2& position) {
     if (!game_state || !game_state->world_saver)
@@ -190,50 +191,34 @@ void TerrainManager::UnloadChunkColumn(const glm::ivec2& position) {
     for (int i = bottom_y; i < top_y; i++) {
         glm::ivec3 chunkPosition = glm::ivec3{position.x, i, position.y};
 
-        mesh_registry.removeMesh(chunkPosition);
+        {
+            std::lock_guard lock(unload_queue_mutex);
+            unload_queue.push(chunkPosition);
+        }
+        //mesh_registry.removeMesh(chunkPosition);
         game_state->unloadChunk(chunkPosition);
     }
 }
 
+std::optional<glm::ivec3> TerrainManager::nextUnloadPosition(){
+    std::lock_guard lock(unload_queue_mutex);
+    if(unload_queue.empty())
+        return std::nullopt;
+    
+    auto result = unload_queue.front();
+    unload_queue.pop();
+    return result;
+}
 void TerrainManager::unloadAll() {
     service_manager->StopAll();
-    mesh_registry.clear();
-    reset_loader();
     world_generator->Clear();
+    
+    should_mesh_loader_reset = true;
 }
 
-#define regenMesh(position)                                                                                                           \
-    {                                                                                                                                 \
-        Chunk* temp = game_state->GetTerrain().getChunk(position);                                                                    \
-        if (temp)                                                                                                                     \
-            regenerateChunkMesh(temp);                                                                                                \
-    }
-
-void TerrainManager::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords) {
-    regenerateChunkMesh(chunk);
-    if (blockCoords.x == 0)
-        regenMesh(chunk->getWorldPosition() - glm::ivec3(1, 0, 0));
-    if (blockCoords.x == CHUNK_SIZE - 1)
-        regenMesh(chunk->getWorldPosition() + glm::ivec3(1, 0, 0));
-
-    if (blockCoords.y == 0)
-        regenMesh(chunk->getWorldPosition() - glm::ivec3(0, 1, 0));
-    if (blockCoords.y == CHUNK_SIZE - 1)
-        regenMesh(chunk->getWorldPosition() + glm::ivec3(0, 1, 0));
-
-    if (blockCoords.z == 0)
-        regenMesh(chunk->getWorldPosition() - glm::ivec3(0, 0, 1));
-    if (blockCoords.z == CHUNK_SIZE - 1)
-        regenMesh(chunk->getWorldPosition() + glm::ivec3(0, 0, 1));
-}
-#undef regenMesh
-
-void TerrainManager::regenerateChunkMesh(Chunk* chunk) {
-    mesh_generator.syncGenerateSyncUploadMesh(chunk, mesh_registry, create_mesh(), BitField3D::NONE);
-}
 
 void TerrainManager::setGameState(std::shared_ptr<GameState> state) {
-    service_manager->StopAll();
+    unloadAll();
 
     game_state = state;
     if (!state)

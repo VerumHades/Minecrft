@@ -4,6 +4,8 @@ void MainScene::initialize() {
     fpsLock = false;
 
     gBuffer = std::make_shared<GBuffer>(1920, 1080);
+    mesh_loader = std::make_unique<InstancedMeshLoader>();
+    mesh_registry.SetMeshLoader(mesh_loader.get());
 
     this->setUILayer("settings");
     addElement(getElementById<UIScrollableFrame>("settings_scrollable"));
@@ -261,20 +263,21 @@ void MainScene::open(GLFWwindow* window) {
     std::cout << "Game state set" << std::endl;
     gamemodeState.game_state = game_state;
     std::cout << "Game state passed to gamemode" << std::endl;
+
+    camera.setPosition(game_state->getPlayer().getPosition());
+    lastCamPosition = camera.getPosition();
   
     // Entity e = Entity(player.getPosition() + glm::vec3{5,0,5}, glm::vec3(1,1,1));
     // e.setModel(std::make_shared<GenericModel>("resources/models/130/scene.gltf"));
     // game_state->addEntity(e);g
-    
+    SetGameMode(0);
+    std::cout << "Gamemode set" << std::endl;
+
     // std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this))
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
     std::cout << "Physics thread started" <<  std::endl;
 
     physicsThread.detach();
-
-
-    SetGameMode(0);
-    std::cout << "Gamemode set" << std::endl;
 }
 
 void MainScene::close(GLFWwindow* window) {
@@ -314,7 +317,30 @@ void MainScene::render() {
 
     HandleGamemodeEvent(&GameMode::Render, deltatime);
 
-    if (terrain_manager.uploadPendingMeshes())
+    glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
+    float distance = glm::distance(glm::vec2(camWorldPosition.x, camWorldPosition.z), glm::vec2(lastCamWorldPosition.x, lastCamWorldPosition.z));
+    //std::cout << distance << std::endl;
+    //std::cout << camWorldPosition.x << " " << camWorldPosition.y << " " << camWorldPosition.z << std::endl;
+    if (distance >= 1 || update_render_distance) { // Crossed chunks
+        updateLoadedLocations(lastCamWorldPosition, camWorldPosition);
+        lastCamWorldPosition   = camWorldPosition;
+        update_render_distance = false;
+    }
+    
+    if(terrain_manager.shouldMeshLoaderReset()){
+        mesh_registry.clear();
+        mesh_loader = std::make_unique<InstancedMeshLoader>();
+        mesh_registry.SetMeshLoader(mesh_loader.get());
+        terrain_manager.meshLoaderReset();
+    }
+
+    auto next_unload = terrain_manager.nextUnloadPosition();
+    if(next_unload){
+        mesh_registry.removeMesh(next_unload.value());
+        updateVisibility = 1;
+    }
+
+    if (terrain_manager.getMeshGenerator().loadMeshFromQueue(mesh_registry, 10))
         updateVisibility = 1;
 
     interpolation_time = (current - last_tick_time) / tickTime;
@@ -328,7 +354,7 @@ void MainScene::render() {
     // cubeRenderer.setCube(0, game_state->getPlayer().getPosition() + camera.getDirection() * 2.0f, 0);
 
     if (updateVisibility > 0) {
-        terrain_manager.getMeshRegistry().updateDrawCalls(camera.getPosition(), camera.getFrustum());
+        mesh_registry.updateDrawCalls(camera.getPosition(), camera.getFrustum());
         updateVisibility = 0;
     }
 
@@ -366,7 +392,7 @@ void MainScene::render() {
     // ====
 
     // Draw terrain
-    terrain_manager.getMeshRegistry().draw();
+    mesh_registry.draw();
 
     // Draw models
     modelProgram.updateUniforms();
@@ -424,14 +450,6 @@ void MainScene::physicsUpdate() {
         last_tick_time = current;
 
         glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
-        if (glm::distance(glm::vec2(camWorldPosition.x, camWorldPosition.z), glm::vec2(lastCamWorldPosition.x, lastCamWorldPosition.z)) >= 2 ||
-            update_render_distance) { // Crossed chunks
-
-            updateLoadedLocations(lastCamWorldPosition, camWorldPosition);
-            lastCamWorldPosition   = camWorldPosition;
-            update_render_distance = false;
-        }
-
         if (!game_state->GetTerrain().getChunk(camWorldPosition))
             continue;
 
@@ -498,6 +516,37 @@ void MainScene::physicsUpdate() {
 
     threadsStopped++;
 }
+
+
+void MainScene::regenerateChunkMesh(Chunk* chunk) {
+    terrain_manager.getMeshGenerator().syncGenerateSyncUploadMesh(chunk, mesh_registry, std::make_unique<InstancedMesh>(), BitField3D::NONE);
+}
+
+#define regenMesh(position)                                                                                                           \
+{                                                                                                                                 \
+    Chunk* temp = game_state->GetTerrain().getChunk(position);                                                                    \
+    if (temp)                                                                                                                     \
+        regenerateChunkMesh(temp);                                                                                                \
+}
+
+void MainScene::regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords) {
+    regenerateChunkMesh(chunk);
+    if (blockCoords.x == 0)
+        regenMesh(chunk->getWorldPosition() - glm::ivec3(1, 0, 0));
+    if (blockCoords.x == CHUNK_SIZE - 1)
+        regenMesh(chunk->getWorldPosition() + glm::ivec3(1, 0, 0));
+
+    if (blockCoords.y == 0)
+        regenMesh(chunk->getWorldPosition() - glm::ivec3(0, 1, 0));
+    if (blockCoords.y == CHUNK_SIZE - 1)
+        regenMesh(chunk->getWorldPosition() + glm::ivec3(0, 1, 0));
+
+    if (blockCoords.z == 0)
+        regenMesh(chunk->getWorldPosition() - glm::ivec3(0, 0, 1));
+    if (blockCoords.z == CHUNK_SIZE - 1)
+        regenMesh(chunk->getWorldPosition() + glm::ivec3(0, 0, 1));
+}
+#undef regenMesh
 
 void UILoading::getRenderingInformation(UIRenderBatch& batch) {
     if (!values)

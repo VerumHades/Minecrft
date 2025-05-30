@@ -85,6 +85,10 @@ class MainScene : public Scene {
 
     TerrainManager terrain_manager{std::make_shared<WorldGenerator>()};
 
+    RegionCuller mesh_registry;
+    std::unique_ptr<MeshLoaderInterface> mesh_loader;
+
+
     std::unique_ptr<GLTextureArray> block_texture_array = nullptr;
     std::shared_ptr<UILoading>      generation_progress;
 
@@ -103,7 +107,7 @@ class MainScene : public Scene {
                                    terrain_manager,
                                    *this,
                                    [this](Chunk* chunk, glm::ivec3 position) {
-                                       terrain_manager.regenerateChunkMesh(chunk, position);
+                                       regenerateChunkMesh(chunk, position);
                                        updateVisibility = 1;
                                    }};
 
@@ -165,8 +169,8 @@ class MainScene : public Scene {
     int selectedBlock  = 4;
 
     bool allGenerated   = false;
-    bool running        = false;
-    int  threadsStopped = 0;
+    std::atomic<bool> running        = false;
+    std::atomic<int>  threadsStopped = 0;
 
     bool lineMode = false;
     bool menuOpen = false;
@@ -218,6 +222,20 @@ class MainScene : public Scene {
 
     double         last_tick_time;
     Uniform<float> interpolation_time = Uniform<float>("model_interpolation_time");
+
+    /**
+	 * @brief Reloads a chunks mesh
+	 * 
+	 * @param chunk 
+	 */
+    void regenerateChunkMesh(Chunk* chunk);	
+	/**
+	 * @brief Reloads a chunk mesh with a specified block placement, might regenerate other neccesary meshes
+	 * 
+	 * @param chunk 
+	 * @param blockCoords 
+	 */
+    void regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords);
 
   public:
     MainScene() {}

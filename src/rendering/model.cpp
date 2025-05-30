@@ -38,11 +38,15 @@ Mesh Model::createMesh() {
 }
 
 std::shared_ptr<ModelInstance> Model::NewInstance() {
-    std::lock_guard<std::mutex> lock(swap_mutex);
-
-    size_t index = request_pool.NextIndex();
+    size_t index = 0;
+    {
+        std::lock_guard<std::mutex> lock(swap_mutex);
+        index = request_pool.NextIndex();
+    }
 
     auto deleter = [index, this](Instance* instance) {
+        std::lock_guard<std::mutex> lock(swap_mutex);
+        
         request_pool.Free(index);
         request_pool[index].scale = {0, 0, 0};
         delete instance;
@@ -65,15 +69,19 @@ Model::Request& Model::GetRequest(size_t index) {
     return request_pool[index];
 }
 void Model::Instance::MoveTo(const glm::vec3& position) {
+    std::lock_guard<std::mutex> lock(model.swap_mutex);
     model.GetRequest(index).position = position;
 }
 void Model::Instance::Scale(const glm::vec3& scale) {
+    std::lock_guard<std::mutex> lock(model.swap_mutex);
     model.GetRequest(index).scale = scale;
 }
 void Model::Instance::Rotate(const glm::quat& rotation) {
+    std::lock_guard<std::mutex> lock(model.swap_mutex);
     model.GetRequest(index).rotation = glm::vec4(rotation.x, rotation.y, rotation.z, rotation.w);
 }
 void Model::Instance::MoveRotationOffset(const glm::vec3& rotation_center) {
+    std::lock_guard<std::mutex> lock(model.swap_mutex);
     model.GetRequest(index).rotation_offset = rotation_center;
 }
 bool Model::Instance::IsOfModel(Model& model) {
