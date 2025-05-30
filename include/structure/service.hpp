@@ -16,10 +16,9 @@ class Service{
     private:
         using ModuleFunction = std::function<void(std::atomic<bool>& stop_signal)>;    
         struct Module{
-            std::atomic<bool> running = false;
             std::atomic<bool> should_stop = false;
             ModuleFunction function;
-            std::thread thread;
+            std::optional<std::thread> thread;
         };
 
         std::unordered_map<std::string, std::unique_ptr<Module>> registered_modules;    
