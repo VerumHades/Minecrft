@@ -35,10 +35,10 @@ class WorldStream {
             std::shared_mutex segment_mutex;
         };
 
-        Cache<glm::ivec3, std::shared_ptr<SegmentPack>, IVec3Hash, IVec3Equal> segment_cache{40};
-
         using SegmentRecordStore = std::shared_ptr<KeyedStorage<glm::ivec3>>;
         SegmentRecordStore record_store;
+
+        Cache<glm::ivec3, std::shared_ptr<SegmentPack>, IVec3Hash, IVec3Equal> segment_cache{40};
 
         // Thread safe, Returns whether the segment could be loaded
         bool LoadSegment(const glm::ivec3& position);
@@ -56,7 +56,7 @@ class WorldStream {
 
     public:
         WorldStream(const std::shared_ptr<KeyedStorage<glm::ivec3>>& storage);
-        ~WorldStream();
+       // ~WorldStream();
         
         /**
          * @brief Check whether there is a chunk stored for the given position

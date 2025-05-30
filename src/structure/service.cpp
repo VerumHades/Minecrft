@@ -43,8 +43,9 @@ void Service::Start(const std::string& name, bool restart) {
     if (module->running)
         Stop(name);
 
+    module->should_stop = false;
+    module->running = true;
     std::thread module_thread([module, name]() {
-        module->running = true;
         module->function(module->should_stop);
         module->running = false;
     });

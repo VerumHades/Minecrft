@@ -128,6 +128,8 @@ int main() {
 
         sceneManager.resize(window, 1920, 1080);
 
+        bool toggle = false;
+
         while (!glfwWindowShouldClose(window)) {
             current   = glfwGetTime();
             deltatime = (float)(current - last);
@@ -137,6 +139,14 @@ int main() {
                 continue;
             }
             last = current;
+
+            if(toggle){
+                sceneManager.setScene("menu");
+            }   
+            else{
+                sceneManager.setScene("game");
+            }
+            toggle = !toggle;
 
             // std::cout << "VRAM usage:" << GLBufferStatistics::getMemoryUsage() << std::endl;
 

@@ -123,11 +123,3 @@ bool WorldStream::HasChunkAt(const glm::ivec3& position) {
 
     return result;
 }
-
-void WorldStream::Flush() {
-    segment_cache.Clear([this](auto key, auto segment) { SaveSegment(key, segment.get()); });
-}
-
-WorldStream::~WorldStream() {
-    Flush();
-}

@@ -316,7 +316,7 @@ void MainScene::render() {
     last      = current;
 
     HandleGamemodeEvent(&GameMode::Render, deltatime);
-
+    
     glm::ivec3 camWorldPosition = glm::floor(camera.getPosition() / static_cast<float>(CHUNK_SIZE));
     float distance = glm::distance(glm::vec2(camWorldPosition.x, camWorldPosition.z), glm::vec2(lastCamWorldPosition.x, lastCamWorldPosition.z));
     //std::cout << distance << std::endl;
