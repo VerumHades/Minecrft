@@ -75,6 +75,7 @@ bool FileStream::Open(const fs::path& path) {
         stream = std::fstream(path, std::ios::out | std::ios::in | std::ios::binary);
         stream.seekg(0, std::ios::end); // Move to the end of the file
         filesize = stream.tellg();
+        stream.seekg(0, std::ios::beg); // Move back
 
         if (!stream.is_open()){
             LogError("Failed to open filestream: {} Error: {}", this->path.string(), strerror(errno));

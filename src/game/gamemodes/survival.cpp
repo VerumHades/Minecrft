@@ -133,6 +133,27 @@ void GameModeSurvival::Open() {
     }
 }
 
+void GameModeSurvival::Close(){
+    if (!state.game_state)
+        return;
+    auto& game_state = *state.game_state;
+
+    inventory->setInventory(nullptr);
+    hotbar->setInventory(nullptr);
+    inventory_crafting->setInventories(nullptr, nullptr);
+    health_bar->setHealth(nullptr);
+
+    auto& player = game_state.getPlayer();
+
+    player.onTerrainCollision = [this](Entity* self) {
+        
+    };
+
+    player.onCollision = [this](Entity* self, Entity* collided_with) {
+        
+    };
+}
+
 void GameModeSurvival::Render(double deltatime) {
     if (!state.game_state)
         return;

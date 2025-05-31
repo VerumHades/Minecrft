@@ -156,7 +156,7 @@ bool TerrainManager::loadRegion(glm::ivec3 around, int render_distance) {
     around_z              = around.z;
     this->render_distance = render_distance;
 
-    std::cout << "Loading region: " << around.x << " " << around.y << " " << around.z  << " " << render_distance <<  std::endl;
+    //std::cout << "Loading region: " << around.x << " " << around.y << " " << around.z  << " " << render_distance <<  std::endl;
     
 
     /*if(mesh_loader->DrawFailed()){

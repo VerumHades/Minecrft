@@ -243,12 +243,12 @@ void MainScene::keyEvent(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 void MainScene::open(GLFWwindow* window) {
-    std::cout << game_state << std::endl;
+    //std::cout << game_state << std::endl;
     game_state = nullptr;
     running    = true;
 
     game_state = std::make_shared<GameState>(worldPath);
-    std::cout << "Game state initialized" << std::endl;
+    //std::cout << "Game state initialized" << std::endl;
     /*for(auto& prototype: BlockRegistry::get().prototypes()){
         if(prototype.id == BLOCK_AIR_INDEX) continue; // Dont make air
 
@@ -257,12 +257,14 @@ void MainScene::open(GLFWwindow* window) {
         item->setQuantity(256);
         game_state->getPlayerHotbar().addItem(item);
     }*/
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+    sceneManager->resize(sceneManager->getGLFWWindow(), width, height);
 
-    
     terrain_manager.setGameState(game_state);
-    std::cout << "Game state set" << std::endl;
+    //std::cout << "Game state set" << std::endl;
     gamemodeState.game_state = game_state;
-    std::cout << "Game state passed to gamemode" << std::endl;
+    //std::cout << "Game state passed to gamemode" << std::endl;
 
     camera.setPosition(game_state->getPlayer().getPosition());
     lastCamPosition = camera.getPosition();
@@ -271,11 +273,11 @@ void MainScene::open(GLFWwindow* window) {
     // e.setModel(std::make_shared<GenericModel>("resources/models/130/scene.gltf"));
     // game_state->addEntity(e);g
     SetGameMode(0);
-    std::cout << "Gamemode set" << std::endl;
+    //std::cout << "Gamemode set" << std::endl;
 
     // std::thread physicsThread(std::bind(&MainScene::pregenUpdate, this))
     std::thread physicsThread(std::bind(&MainScene::physicsUpdate, this));
-    std::cout << "Physics thread started" <<  std::endl;
+    //std::cout << "Physics thread started" <<  std::endl;
 
     physicsThread.detach();
 }
@@ -288,25 +290,27 @@ void MainScene::close(GLFWwindow* window) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    std::cout << "Physics thread stopped" << std::endl;
+    HandleGamemodeEvent(&GameMode::Close);
+
+    //std::cout << "Physics thread stopped" << std::endl;
 
     terrain_manager.unloadAll();
 
-    std::cout << "Terrain manager unloaded all" << std::endl;
+    //std::cout << "Terrain manager unloaded all" << std::endl;
     terrain_manager.setGameState(nullptr);
 
-    std::cout << "Terrain manager game_state set to nullptr" << std::endl;
+    //std::cout << "Terrain manager game_state set to nullptr" << std::endl;
 
     gamemodeState.game_state = nullptr;
 
-    std::cout << "Gamemode gamestate set to nullptr" << std::endl;
+    //std::cout << "Gamemode gamestate set to nullptr" << std::endl;
 
     game_state->unload();
 
-    std::cout << "Gamestate unloaded" <<  std::endl;
+    //std::cout << "Gamestate unloaded" <<  std::endl;
     game_state = nullptr;
 
-    std::cout << "Gamestate set to nullptr" << std::endl;
+    //std::cout << "Gamestate set to nullptr" << std::endl;
 }
 
 void MainScene::render() {

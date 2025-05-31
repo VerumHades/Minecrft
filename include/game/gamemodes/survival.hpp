@@ -53,6 +53,7 @@ class GameModeSurvival : public GameModeInteractable {
     void Initialize() override;
 
     void Open() override;
+    void Close() override;
     void Render(double deltatime) override;
     void PhysicsUpdate(double deltatime) override;
 

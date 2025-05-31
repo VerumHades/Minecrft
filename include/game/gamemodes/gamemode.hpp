@@ -70,6 +70,7 @@ class GameMode{
         virtual void Initialize() = 0;
 
         virtual void Open() = 0;
+        virtual void Close() {};
         virtual void Render(double deltatime) = 0;
         virtual void PhysicsUpdate(double deltatime) = 0;
 
