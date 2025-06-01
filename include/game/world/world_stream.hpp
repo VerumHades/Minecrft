@@ -51,6 +51,7 @@ class WorldStream {
 
         // Thread safe
         std::shared_ptr<SegmentPack> GetSegment(const glm::ivec3& position, bool set_in_use = false);
+        std::shared_ptr<SegmentPack> InitSegment(const glm::ivec3& position);
 
         void Flush();
 

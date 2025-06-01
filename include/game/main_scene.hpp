@@ -152,7 +152,7 @@ class MainScene : public Scene {
     }
 
     void SetGameMode(int index) {
-        if(selected_game_mode != index)
+        if(selected_game_mode != index && index != -1)
             HandleGamemodeEvent(&GameMode::Close);
         selected_game_mode = index;
         HandleGamemodeEvent(&GameMode::Open);

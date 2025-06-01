@@ -18,10 +18,7 @@ bool WorldStream::LoadSegment(const glm::ivec3& position) {
             return false;
         }
     }
-    std::shared_ptr<SegmentPack> pack = std::shared_ptr<SegmentPack>(new SegmentPack(), [this,position](SegmentPack* pack){
-        SaveSegment(position, pack);
-        delete pack;
-    });
+    std::shared_ptr<SegmentPack> pack = InitSegment(position);
     OctreeSerializer<Chunk>::Deserialize(pack->segment, array);
 
     LoadSegmentToCache(position, std::move(pack));
@@ -52,8 +49,15 @@ void WorldStream::LoadSegmentToCache(const glm::ivec3& position, std::shared_ptr
     segment_cache.Load(position, segment);
 }
 
+std::shared_ptr<WorldStream::SegmentPack> WorldStream::InitSegment(const glm::ivec3& position){
+    return std::shared_ptr<SegmentPack>(new SegmentPack(), [this,position](SegmentPack* pack){
+        SaveSegment(position, pack);
+        delete pack;
+    });
+}
+
 void WorldStream::CreateSegment(const glm::ivec3& position) {
-    LoadSegmentToCache(position, std::make_unique<SegmentPack>());
+    LoadSegmentToCache(position, InitSegment(position));
 }
 
 bool WorldStream::Save(std::unique_ptr<Chunk> chunk) {
