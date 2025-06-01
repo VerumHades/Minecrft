@@ -219,7 +219,7 @@ class MainScene : public Scene {
     double current = glfwGetTime();
     double deltatime;
 
-    float targetTPS = 120;
+    float targetTPS = 60;
     float tickTime  = 1.0f / targetTPS;
 
     double         last_tick_time;

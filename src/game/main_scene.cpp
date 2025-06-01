@@ -347,7 +347,7 @@ void MainScene::render() {
     if (terrain_manager.getMeshGenerator().loadMeshFromQueue(mesh_registry, 10))
         updateVisibility = 1;
 
-    interpolation_time = (current - last_tick_time) / tickTime;
+    interpolation_time = glm::clamp((current - last_tick_time) / tickTime, 0.0, 1.0);
 
     GL_CALL(glEnable(GL_DEPTH_TEST));
     GL_CALL(glDisable(GL_CULL_FACE));
