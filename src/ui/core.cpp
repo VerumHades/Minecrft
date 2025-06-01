@@ -108,27 +108,21 @@ void UICore::mouseMove(int x, int y){
 
     auto element = getElementUnder(x,y);
     underScrollHover = getElementUnder(x,y,true);
+    
+    if(element != underHover){
+        if(underHover){
+            underHover->setHover(false);
+            underHover->onMouseLeave.trigger();
+            underHover->update(); 
+        }
+        if(element){
+            element->setHover(true);
+            element->onMouseEnter.trigger();
+            element->update();
+        }
 
-    if(element == underHover) return;
-
-    if(element != underHover && underHover != nullptr){
-        underHover->setHover(false);
-        underHover->update(); 
-        underHover->onMouseLeave.trigger();
+        underHover = element;
     }
-
-    if(element != nullptr){
-        element->setHover(true);
-        element->update();
-
-        //std::cout << "Newly under hover: " << element->identifiers.tag << " #" << element->identifiers.id << " ";
-        //for(auto& classname: element->identifiers.classes) std::cout << "." << classname;
-        //std::cout << " Element has state: " << element->state << std::endl;
-
-        element->onMouseEnter.trigger();
-    }
-
-    underHover = element;
 
     if(underHover) underHover->onMouseMove.trigger(x,y);
     if(inFocus && inFocus != underHover) inFocus->onMouseMove.trigger(x,y);

@@ -155,6 +155,8 @@ void GameModeSurvival::Close(){
 }
 
 void GameModeSurvival::Render(double deltatime) {
+    GameModeInteractable::Render(deltatime);
+    
     if (!state.game_state)
         return;
     auto& game_state = *state.game_state;
@@ -374,6 +376,8 @@ void GameModeSurvival::MouseScroll(double xoffset, double yoffset) {
 }
 
 void GameModeSurvival::PhysicsUpdate(double deltatime) {
+    GameModeInteractable::PhysicsUpdate(deltatime);
+
     auto* in_hand_slot = hotbar->getSelectedSlot();
 
     if (in_hand_slot && in_hand_slot->hasItem()) {

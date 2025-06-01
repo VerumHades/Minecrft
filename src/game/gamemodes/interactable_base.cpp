@@ -20,3 +20,22 @@ void GameModeInteractable::UpdateCursor(){
     if(!cursor_state.blockUnderCursor || cursor_state.blockUnderCursor->id == BLOCK_AIR_INDEX) state.cube_renderer.removeCube(1);
     else state.cube_renderer.setCube(1,glm::vec3(hit.position) - 0.005f, 6);
 }
+
+void GameModeInteractable::PhysicsUpdate(double deltatime){
+    if(!state.game_state) return;
+    auto& game_state = *state.game_state;
+
+
+    auto player_position = game_state.getPlayer().getPosition();
+    if(glm::distance(player_position, lastPlayerPosition) >= 1){
+        pending_cursor_update = true;
+        lastPlayerPosition = player_position;
+    }
+}
+
+void GameModeInteractable::Render(double deltatime){
+    if(pending_cursor_update){
+        UpdateCursor();
+        pending_cursor_update = false;
+    }
+}

@@ -308,16 +308,21 @@ void UIInput::getRenderingInformation(UIRenderBatch& batch){
 
 UISlider::UISlider() {
     this->focusable = true;
+    this->scrollable = true;
     
     onMouseEvent = [this](int button, int action, int mods){
-        if(!this->hover) return;
+        std::cout << button << " " << action << " " << mods << std::endl;
         if(button != GLFW_MOUSE_BUTTON_1) return;
-
-        auto t = this->getHandleTransform();
         if(action == GLFW_RELEASE){
             grabbed = false;
+            return;
         }
-        else if(pointWithinBounds(UICore::get().getMousePosition(), t, 5) && action == GLFW_PRESS){
+        
+        //if(!this->hover) return;
+
+        auto t = this->getHandleTransform();
+        
+        if(pointWithinBounds(UICore::get().getMousePosition(), t, 5) && action == GLFW_PRESS){
             grabbed = true;
         }
         else if(action == GLFW_PRESS){
@@ -328,9 +333,14 @@ UISlider::UISlider() {
     
     onMouseMove = [this](int x, int y){
         if(!grabbed) return;
-    
+        std::cout << x << " " << y << std::endl;
         moveTo({x,y});
         update();
+    };
+
+    onScroll = [this](int x, int y){
+        int normalized_scroll = abs(y) / y;
+        *value = std::min(std::max(static_cast<int>(*value) + normalized_scroll, static_cast<int>(min)), static_cast<int>(max));
     };
 
     //onMouseLeave = [this](){
