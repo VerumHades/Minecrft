@@ -60,14 +60,15 @@ const uint Indices[6] = uint[6](
 );
 
 uniform float FaceType;
+uniform ivec3 world_position;
 
 void main()
 {
-    ivec3 world_position = ivec3(
+    /*ivec3 world_position = ivec3(
         world_positions[gl_DrawID * 3],
         world_positions[gl_DrawID * 3 + 1],
         world_positions[gl_DrawID * 3 + 2]
-    );
+    );*/
     
     uint id = gl_VertexID;
     uint index = (id / 6) * 2;
@@ -76,19 +77,20 @@ void main()
     uint second_portion = data[index + 1];
 
     const uint mask6 = 63;
+    const uint mask7 = 127;
     const uint mask2 = 3;
 
     uint x      = first_portion & mask6;
-    uint y      = (first_portion >> 6 ) & mask6;
-    uint z      = (first_portion >> 12) & mask6;
+    uint y      = (first_portion >> 6 ) & mask7;
+    uint z      = (first_portion >> 13) & mask6;
 
-    uint width  = (first_portion >> 18) & mask6;
-    uint height = (first_portion >> 24) & mask6;
+    uint width  = (first_portion >> 19) & mask6;
+    uint height = (first_portion >> 25) & mask6;
 
     width = width > 0 ? width : 64;
     height = height > 0 ? height : 64;
 
-    bool is_forward = bool((first_portion >> 30) & 1);
+    bool is_forward = bool((first_portion >> 31) & 1);
 
     uint[4] occlusion = uint[4](
         (second_portion     ) & mask2,

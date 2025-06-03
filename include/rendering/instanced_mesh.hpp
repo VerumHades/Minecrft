@@ -27,7 +27,7 @@ class InstancedMesh: public MeshInterface{
     
     public:
         InstancedMesh();
-        void addQuadFace(const glm::vec3& position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion) override;
+        void addQuadFace(const glm::ivec3& position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion, const glm::vec3& world_position) override;
         void preallocate(size_t size, FaceType type) override;
         const MultilevelPool<float>::List& getInstanceData(FaceType type);
         bool empty() override;
@@ -66,7 +66,7 @@ class InstancedMeshLoader: public MeshLoaderInterface{
         bool draw_failed = false;
         bool updated = false;
 
-        uint max_draw_calls = pow(2,16);
+        uint max_draw_calls = pow(2,4);
 
         ShaderProgram shared_program = ShaderProgram("resources/shaders/terrain.vs","resources/shaders/terrain.fs");
 

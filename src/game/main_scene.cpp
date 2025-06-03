@@ -4,8 +4,18 @@ void MainScene::initialize() {
     fpsLock = false;
 
     gBuffer = std::make_shared<GBuffer>(1920, 1080);
-    mesh_loader = std::make_unique<InstancedMeshLoader>();
-    mesh_registry.SetMeshLoader(mesh_loader.get());
+
+    resetMeshLoader = [this](){
+        mesh_registry.clear();
+        mesh_loader = std::make_unique<InstancedMeshLoader>();
+        mesh_registry.SetMeshLoader(mesh_loader.get());
+        terrain_manager.meshLoaderReset();
+    };
+    terrain_manager.createMesh = [this](){
+        return std::make_unique<InstancedMesh>();
+    };
+
+    resetMeshLoader();
 
     this->setUILayer("settings");
     addElement(getElementById<UIScrollableFrame>("settings_scrollable"));
@@ -330,13 +340,27 @@ void MainScene::render() {
         lastCamWorldPosition   = camWorldPosition;
         update_render_distance = false;
     }
-    
-    if(terrain_manager.shouldMeshLoaderReset()){
-        mesh_registry.clear();
-        mesh_loader = std::make_unique<InstancedMeshLoader>();
-        mesh_registry.SetMeshLoader(mesh_loader.get());
-        terrain_manager.meshLoaderReset();
+
+    if(mesh_loader->DrawFailed() && !legacy_mode_enabled){
+        terrain_manager.getMeshGenerator().clear();
+        resetMeshLoader = [this](){
+            mesh_registry.clear();
+            mesh_loader = std::make_unique<PooledMeshLoader>();
+            mesh_registry.SetMeshLoader(mesh_loader.get());
+            terrain_manager.meshLoaderReset();
+        };
+        terrain_manager.createMesh = [this](){
+            return std::make_unique<PooledMesh>();
+        };
+        resetMeshLoader();
+        updateLoadedLocations(lastCamWorldPosition, camWorldPosition);
+        updateVisibility = 1;
+        update_render_distance = true;
+        legacy_mode_enabled = true;
     }
+    
+    if(terrain_manager.shouldMeshLoaderReset())
+        resetMeshLoader();
 
     auto next_unload = terrain_manager.nextUnloadPosition();
     if(next_unload){
@@ -523,7 +547,7 @@ void MainScene::physicsUpdate() {
 
 
 void MainScene::regenerateChunkMesh(Chunk* chunk) {
-    terrain_manager.getMeshGenerator().syncGenerateSyncUploadMesh(chunk, mesh_registry, std::make_unique<InstancedMesh>(), BitField3D::NONE);
+    terrain_manager.getMeshGenerator().syncGenerateSyncUploadMesh(chunk, mesh_registry, terrain_manager.createMesh(), BitField3D::NONE);
 }
 
 #define regenMesh(position)                                                                                                           \

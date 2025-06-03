@@ -311,7 +311,7 @@ UISlider::UISlider() {
     this->scrollable = true;
     
     onMouseEvent = [this](int button, int action, int mods){
-        std::cout << button << " " << action << " " << mods << std::endl;
+        //std::cout << button << " " << action << " " << mods << std::endl;
         if(button != GLFW_MOUSE_BUTTON_1) return;
         if(action == GLFW_RELEASE){
             grabbed = false;
@@ -333,7 +333,7 @@ UISlider::UISlider() {
     
     onMouseMove = [this](int x, int y){
         if(!grabbed) return;
-        std::cout << x << " " << y << std::endl;
+        //std::cout << x << " " << y << std::endl;
         moveTo({x,y});
         update();
     };

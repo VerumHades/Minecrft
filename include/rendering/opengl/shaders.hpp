@@ -75,6 +75,10 @@ class FunctionalUniform: public UniformBase{
             glUniform3fv(location, 1, glm::value_ptr(vec));
         }
 
+        void setUniformValue(const glm::ivec3& vec, int32_t location) {
+            glUniform3iv(location, 1, glm::value_ptr(vec));
+        }
+
         void setUniformValue(const std::vector<glm::vec3>& vectors, int32_t location){
             glUniform3fv(location, static_cast<GLsizei>(vectors.size()), glm::value_ptr(vectors[0]));
         }

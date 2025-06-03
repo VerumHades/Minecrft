@@ -17,12 +17,11 @@
     
     uint32
     (0 ) -> 6 bits x
-    (6 ) -> 6 bits y
-    (12) -> 6 bits z
-    (18) -> 6 bits width
-    (24) -> 6 bits height
-    (30) -> 1 bit for direction (forward/backward)
-    (31) -> 1 bit left
+    (6 ) -> 7 bits y
+    (13) -> 6 bits z
+    (19) -> 6 bits width
+    (25) -> 6 bits height
+    (31) -> 1 bit for direction (forward/backward)
 
     uint32
     (0 ) -> 4 * 2 bits occlusion
@@ -36,7 +35,7 @@ class PooledMesh: public MeshInterface{
         const static int face_size = 2;
 
         PooledMesh(){}
-        void addQuadFace(const glm::vec3& position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion) override;
+        void addQuadFace(const glm::ivec3& position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion, const glm::vec3& world_position) override;
         void preallocate(size_t size, FaceType type) override;
         const SegregatedList<FaceType, uint32_t>& GetData() { return data; };
         bool empty() override;
@@ -84,7 +83,16 @@ class PooledMeshLoader: public MeshLoaderInterface{
         GLVertexArray dummy_vao;
 
         GLBuffer<int32_t, GL_SHADER_STORAGE_BUFFER> world_position_buffer;
-        std::vector<int32_t> world_positions = {};
+        std::vector<glm::ivec3> world_positions = {};
+
+        struct LegacyCall{
+            std::array<int, distinct_face_count> starts;
+            std::array<GLsizei, distinct_face_count> counts;
+            glm::ivec3 world_position;
+        };
+
+        std::vector<LegacyCall> legacy_calls;
+
         bool updated_world_positions = false;
 
         struct RenderableGroup{
@@ -94,6 +102,8 @@ class PooledMeshLoader: public MeshLoaderInterface{
             std::vector<int> draw_starts = {};
             std::vector<GLsizei> draw_sizes = {};
         };
+
+        Uniform<glm::ivec3> world_position =  Uniform<glm::ivec3>("world_position");
 
 
         std::array<RenderableGroup, distinct_face_count> render_information{};

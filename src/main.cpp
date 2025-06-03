@@ -127,7 +127,6 @@ int main() {
         float deltatime;
 
         sceneManager.resize(window, 1920, 1080);
-
         while (!glfwWindowShouldClose(window)) {
             current   = glfwGetTime();
             deltatime = (float)(current - last);

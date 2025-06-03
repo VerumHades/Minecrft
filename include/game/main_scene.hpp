@@ -176,6 +176,7 @@ class MainScene : public Scene {
 
     bool lineMode = false;
     bool menuOpen = false;
+    bool legacy_mode_enabled = false;
     // int sunDistance = ((CHUNK_SIZE * renderDistance) / 2) ;
     int                sunDistance   = 100;
     float              sunAngle      = 70.0f;
@@ -238,6 +239,8 @@ class MainScene : public Scene {
 	 * @param blockCoords 
 	 */
     void regenerateChunkMesh(Chunk* chunk, glm::vec3 blockCoords);
+
+    std::function<void()> resetMeshLoader;
 
   public:
     MainScene() {}

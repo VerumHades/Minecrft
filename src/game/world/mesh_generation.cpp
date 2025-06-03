@@ -271,7 +271,7 @@ static inline void processFaces(const std::vector<ChunkMeshGenerator::Face>& fac
                                 glm::vec3 world_position,
                                 int layer,
                                 std::array<float, 4>& occlusion) {
-    glm::vec3 face_position;
+    glm::ivec3 face_position;
     int texture = 0;
 
     bool texture_index = direction == MeshInterface::Backward;
@@ -283,13 +283,13 @@ static inline void processFaces(const std::vector<ChunkMeshGenerator::Face>& fac
 
         switch (face_type) {
         case MeshInterface::X_ALIGNED:
-            face_position = glm::vec3(layer + 1, face.y + face.height, face.x) + world_position;
+            face_position = glm::vec3(layer + 1, face.y + face.height, face.x);
 
             texture = type->single_texture ? type->textures[0] : type->textures[4 + texture_index];
 
             break;
         case MeshInterface::Y_ALIGNED:
-            face_position = glm::vec3(face.y, layer + 1, face.x) + world_position;
+            face_position = glm::vec3(face.y, layer + 1, face.x);
 
             faceWidth  = face.height;
             faceHeight = face.width;
@@ -297,7 +297,7 @@ static inline void processFaces(const std::vector<ChunkMeshGenerator::Face>& fac
             texture = type->single_texture ? type->textures[0] : type->textures[texture_index];
             break;
         case MeshInterface::Z_ALIGNED:
-            face_position = glm::vec3(face.x, face.y + face.height, layer + 1) + world_position;
+            face_position = glm::vec3(face.x, face.y + face.height, layer + 1);
 
             texture = type->single_texture ? type->textures[0] : type->textures[2 + texture_index];
             break;
@@ -305,7 +305,7 @@ static inline void processFaces(const std::vector<ChunkMeshGenerator::Face>& fac
             break;
         }
 
-        mesh->addQuadFace(face_position, faceWidth, faceHeight, texture, face_type, direction, occlusion);
+        mesh->addQuadFace(face_position, faceWidth, faceHeight, texture, face_type, direction, occlusion, world_position);
     }
 }
 
@@ -446,10 +446,10 @@ bool ChunkMeshGenerator::generateChunkMesh(const glm::ivec3& worldPosition,
                         if (!field.get(x, y, z))
                             continue;
 
-                        glm::vec3 position = glm::vec3{x, y, z} + world_position;
+                        glm::vec3 position = glm::vec3{x, y, z};
 
                         solidMesh->addQuadFace(
-                            position, 1, 1, definition->textures[0], MeshInterface::BILLBOARD, MeshInterface::Forward, {0, 0, 0, 0});
+                            position, 1, 1, definition->textures[0], MeshInterface::BILLBOARD, MeshInterface::Forward, {0, 0, 0, 0}, world_position);
                     }
 
             continue;

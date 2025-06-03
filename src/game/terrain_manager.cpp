@@ -38,7 +38,7 @@ TerrainManager::TerrainManager(std::shared_ptr<Generator> generator) : world_gen
 
                     auto level = calculateSimplificationLevel(around, chunkPosition);
                     
-                    mesh_generator.syncGenerateAsyncUploadMesh(chunk, create_mesh(), level);
+                    mesh_generator.syncGenerateAsyncUploadMesh(chunk, createMesh(), level);
                 }
             }
 

@@ -49,8 +49,6 @@ WorldGenerator::WorldGenerator() {
 
     tower = std::make_shared<Structure>(0, 0, 0);
     Serializer::Deserialize<Structure>(*tower.get(), array);
-
-    std::cout << tower->getSize().x << " " << tower->getSize().y << " " << tower->getSize().z << std::endl;
 }
 
 void WorldGenerator::SetupBiomeLayers() {

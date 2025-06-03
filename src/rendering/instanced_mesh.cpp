@@ -6,13 +6,9 @@ InstancedMesh::InstancedMesh() : instance_data() {
     for (auto& element : instance_data)
         element = std::make_unique<MultilevelPool<float>::List>(mesh_pool.Next(64));
 }
-void InstancedMesh::addQuadFace(const glm::vec3& position,
-                                float width,
-                                float height,
-                                int texture_index,
-                                FaceType type,
-                                Direction direction,
-                                const std::array<float, 4>& occlusion) {
+void InstancedMesh::addQuadFace(const glm::ivec3& position_, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion, const glm::vec3& world_position) {
+    glm::vec3 position = world_position + glm::vec3(position_);
+    
     std::array<float, InstancedMesh::instance_data_size> data = {
         position.x,
         position.y,
@@ -337,15 +333,21 @@ void InstancedMeshLoader::render() {
         info.draw_call_buffer.bind();
 
         while (true) {
+            bool found_error = false;
+
             for (size_t i = 0; i < info.draw_call_buffer.count(); i += max_draw_calls) {
                 glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP,
                                           (const void*)(i * sizeof(GLDrawCallBuffer::DrawCommand)),
                                           std::min(static_cast<uint>(info.draw_call_buffer.count() - i), max_draw_calls),
                                           sizeof(GLDrawCallBuffer::DrawCommand));
+                GLenum error = glGetError();
+                if (error != GL_NO_ERROR){
+                    found_error = true;
+                    break;
+                }
             }
 
-            GLenum error = glGetError();
-            if (error == GL_NO_ERROR)
+            if (!found_error) 
                 break;
 
             LogError("OpenGL error occurred. Reducing max_draw_calls: {}\n", max_draw_calls);

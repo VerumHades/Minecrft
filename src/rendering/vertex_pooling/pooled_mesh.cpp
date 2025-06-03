@@ -1,16 +1,18 @@
 #include <rendering/vertex_pooling/pooled_mesh.hpp>
 
-void PooledMesh::addQuadFace(const glm::vec3& position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion){
+void PooledMesh::addQuadFace(const glm::ivec3& position, float width, float height, int texture_index, FaceType type, Direction direction, const std::array<float, 4>& occlusion, const glm::vec3& world_position){
     uint32_t first_portion = 0;
 
-    first_portion |= (static_cast<unsigned int>(position.x) & 0b111111);
-    first_portion |= (static_cast<unsigned int>(position.y) & 0b111111) << 6;
-    first_portion |= (static_cast<unsigned int>(position.z) & 0b111111) << 12;
-    
-    first_portion |= (static_cast<unsigned int>(width)      & 0b111111) << 18;
-    first_portion |= (static_cast<unsigned int>(height)     & 0b111111) << 24;
+    if(position.x > 63 || position.z > 63) std::cout << "Uhh oh!" << position.x << " " << position.y << " " << position.z << std::endl;
 
-    first_portion |= (0b1 & direction) << 30;
+    first_portion |= (static_cast<unsigned int>(position.x) & 0b111111);
+    first_portion |= (static_cast<unsigned int>(position.y) & 0b1111111) << 6;
+    first_portion |= (static_cast<unsigned int>(position.z) & 0b111111) << 13;
+    
+    first_portion |= (static_cast<unsigned int>(width)      & 0b111111) << 19;
+    first_portion |= (static_cast<unsigned int>(height)     & 0b111111) << 25;
+
+    first_portion |= (0b1 & direction) << 31;
 
     uint32_t second_portion = 0;
     for(int i = 0;i < 4;i++)
@@ -106,19 +108,21 @@ void PooledMeshLoader::updateMesh(LoadedMesh& loaded_mesh, PooledMesh& new_mesh)
 }
 
 void PooledMeshLoader::addDrawCall(LoadedMesh& mesh, const glm::ivec3& position){
-    world_positions.push_back(position.x);
-    world_positions.push_back(position.y);
-    world_positions.push_back(position.z);
+    if(!legacy_mode){
+        world_positions.push_back(position);
+        updated_world_positions = true;
+    }
 
-    updated_world_positions = true;
+    LegacyCall call{};
+    call.world_position = position;
 
     for(size_t i = 0;i < distinct_face_count;i++){
         auto& info = render_information[i];
 
         if(!mesh.has_region[i]){ // Maintain alignment
             if(legacy_mode){
-                info.draw_starts.push_back(0); 
-                info.draw_sizes.push_back(0);
+                call.starts[i] = 0;
+                call.counts[i] = 0;
             }
             else{
                 GLDrawCallBuffer::DrawCommand draw_call = {
@@ -138,8 +142,8 @@ void PooledMeshLoader::addDrawCall(LoadedMesh& mesh, const glm::ivec3& position)
         size_t instance_offset = mesh.loaded_regions[i]->start / PooledMesh::face_size;
 
         if(legacy_mode) {
-            info.draw_starts.push_back(instance_offset * 6);
-            info.draw_sizes.push_back(instances_total * 6);
+            call.starts[i] = instance_offset * 6;
+            call.counts[i] = instances_total * 6;
         }
         else{
             GLDrawCallBuffer::DrawCommand draw_call = {
@@ -152,6 +156,8 @@ void PooledMeshLoader::addDrawCall(LoadedMesh& mesh, const glm::ivec3& position)
             render_information[i].draw_call_buffer.push(draw_call);
         }
     }
+
+    if(legacy_mode) legacy_calls.push_back(call);
 }
 
 void PooledMeshLoader::removeMesh(LoadedMesh& mesh){
@@ -166,12 +172,12 @@ void PooledMeshLoader::render(){
     dummy_vao.bind();
     GetProgram().use();
     
-    if(updated_world_positions){
-        world_position_buffer.insert_or_resize(world_positions.data(), world_positions.size());
+    if(updated_world_positions && !legacy_mode){
+        world_position_buffer.insert_or_resize(reinterpret_cast<int*>(world_positions.data()), world_positions.size());
         updated_world_positions = false;
     }
 
-    world_position_buffer.bindBase(0);
+    if(!legacy_mode) world_position_buffer.bindBase(0);
 
     for(size_t i = 0;i < distinct_face_count;i++){
         auto& info = render_information[i];
@@ -181,8 +187,18 @@ void PooledMeshLoader::render(){
         face_type_uniform = i;
         GetProgram().updateUniforms();
 
-        if(legacy_mode) glMultiDrawArrays(GL_TRIANGLES, info.draw_starts.data(), info.draw_sizes.data(), info.draw_starts.size());
-        else glMultiDrawArraysIndirect(GL_TRIANGLES, 0, info.draw_call_buffer.count(), 0);
+        if(legacy_mode){
+            for(auto& call: legacy_calls){
+                world_position = call.world_position;
+                GetProgram().updateUniforms();
+
+                if(call.counts[i] == 0) continue;   
+                glDrawArrays(GL_TRIANGLES, call.starts[i], call.counts[i]);
+            }
+        } //glMultiDrawArrays(GL_TRIANGLES, info.draw_starts.data(), info.draw_sizes.data(), info.draw_starts.size());
+        else{
+            glMultiDrawArraysIndirect(GL_TRIANGLES, 0, info.draw_call_buffer.count(), 0);
+        } //glMultiDrawArraysIndirect(GL_TRIANGLES, 0, info.draw_call_buffer.count(), 0);
     }
 
     dummy_vao.unbind();
@@ -192,6 +208,8 @@ void PooledMeshLoader::render(){
 
 void PooledMeshLoader::clearDrawCalls(){
     world_positions.clear();
+
+    if(legacy_mode) legacy_calls.clear();
 
     for(auto& info: render_information){
         if(legacy_mode){

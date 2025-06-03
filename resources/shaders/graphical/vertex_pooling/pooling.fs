@@ -15,7 +15,6 @@ in vec4 FragPosLightSpace;
 in vec3 FragPos;
 in vec3 pos;
 in float Occlusion;
-
 uniform sampler2DArray textureArray;
 uniform sampler2D shadowMap;
 //uniform sampler3D lightArray;
@@ -25,10 +24,10 @@ void main()
     vec4 full_color = texture(textureArray, vec3(TexCoords, TexIndex));
     if(full_color.a < 0.1) discard;
     
-    full_color.rgb = full_color.rgb - ((Occlusion / 6)) / 2;
+    full_color.rgb = full_color.rgb  - ((Occlusion / 6)) / 2;
 
     gPosition = FragPos;
     gNormal = normalize(Normal);
     gAlbedoSpec.rgb = full_color.rgb;
-    gAlbedoSpec.a = full_color.r;
+    gAlbedoSpec.a = full_color.a;
 }

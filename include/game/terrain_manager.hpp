@@ -51,10 +51,12 @@ class TerrainManager {
 
     void UnloadChunkColumn(const glm::ivec2& position);
 
-    std::function<std::unique_ptr<MeshInterface>()> create_mesh = []() { return std::make_unique<InstancedMesh>(); };
     std::unique_ptr<Service> service_manager;
 
   public:
+    // Dont ask please, its for legacy support on 
+    std::function<std::unique_ptr<MeshInterface>()> createMesh;
+
     TerrainManager(std::shared_ptr<Generator> world_generator);
 
 	/**
