@@ -54,7 +54,7 @@ Steps:
 - Install
 - Play the game!
 
-### Build Instructions (Source code isn't currently avaiable)
+### Build Instructions
 
 > **Note:** Make sure you have a modern C++ compiler and OpenGL development libraries installed. Download cbuild [here](https://github.com/VerumHades/cbuild)
 
